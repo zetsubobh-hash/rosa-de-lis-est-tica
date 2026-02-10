@@ -6,16 +6,30 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { LogIn, UserPlus, Loader2 } from "lucide-react";
+import { LogIn, UserPlus, Loader2, Search } from "lucide-react";
 
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+const formatCep = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
+
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
 
   // Login fields
   const [email, setEmail] = useState("");
@@ -27,7 +41,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [regPassword, setRegPassword] = useState("");
   const [regSex, setRegSex] = useState("");
   const [regPhone, setRegPhone] = useState("");
-  const [regAddress, setRegAddress] = useState("");
+  const [regCep, setRegCep] = useState("");
+  const [regRua, setRegRua] = useState("");
+  const [regNumero, setRegNumero] = useState("");
+  const [regBairro, setRegBairro] = useState("");
+  const [regCidade, setRegCidade] = useState("");
+  const [regEstado, setRegEstado] = useState("");
 
   const resetFields = () => {
     setEmail("");
@@ -37,7 +56,47 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     setRegPassword("");
     setRegSex("");
     setRegPhone("");
-    setRegAddress("");
+    setRegCep("");
+    setRegRua("");
+    setRegNumero("");
+    setRegBairro("");
+    setRegCidade("");
+    setRegEstado("");
+  };
+
+  const fetchCep = async (cep: string) => {
+    const digits = cep.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        toast({ title: "CEP não encontrado", variant: "destructive" });
+      } else {
+        setRegRua(data.logradouro || "");
+        setRegBairro(data.bairro || "");
+        setRegCidade(data.localidade || "");
+        setRegEstado(data.uf || "");
+      }
+    } catch {
+      toast({ title: "Erro ao buscar CEP", variant: "destructive" });
+    }
+    setCepLoading(false);
+  };
+
+  const handleCepChange = (value: string) => {
+    const formatted = formatCep(value);
+    setRegCep(formatted);
+    const digits = value.replace(/\D/g, "");
+    if (digits.length === 8) {
+      fetchCep(digits);
+    }
+  };
+
+  const buildFullAddress = () => {
+    const parts = [regRua, regNumero, regBairro, regCidade, regEstado].filter(Boolean);
+    return parts.join(", ");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -60,7 +119,8 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName.trim() || !regEmail.trim() || !regPassword.trim() || !regSex || !regPhone.trim() || !regAddress.trim()) {
+    const fullAddress = buildFullAddress();
+    if (!regName.trim() || !regEmail.trim() || !regPassword.trim() || !regSex || !regPhone.trim() || !fullAddress.trim()) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
@@ -81,14 +141,13 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       return;
     }
 
-    // Insert profile
     if (data.user) {
       const { error: profileError } = await supabase.from("profiles").insert({
         user_id: data.user.id,
         full_name: regName.trim(),
         sex: regSex,
         phone: regPhone.trim(),
-        address: regAddress.trim(),
+        address: fullAddress.trim(),
       });
 
       if (profileError) {
@@ -201,22 +260,85 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               <Input
                 id="reg-phone"
                 type="tel"
-                placeholder="(11) 99999-9999"
+                placeholder="(31) 99999-9999"
                 value={regPhone}
-                onChange={(e) => setRegPhone(e.target.value)}
+                onChange={(e) => setRegPhone(formatPhone(e.target.value))}
                 autoComplete="tel"
               />
             </div>
+
+            {/* CEP + Address */}
             <div className="space-y-2">
-              <Label htmlFor="reg-address" className="font-body text-sm">Endereço completo</Label>
+              <Label htmlFor="reg-cep" className="font-body text-sm">CEP</Label>
+              <div className="relative">
+                <Input
+                  id="reg-cep"
+                  placeholder="00000-000"
+                  value={regCep}
+                  onChange={(e) => handleCepChange(e.target.value)}
+                  autoComplete="postal-code"
+                />
+                {cepLoading && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="reg-rua" className="font-body text-sm">Rua</Label>
+                <Input
+                  id="reg-rua"
+                  placeholder="Rua / Avenida"
+                  value={regRua}
+                  onChange={(e) => setRegRua(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-numero" className="font-body text-sm">Nº</Label>
+                <Input
+                  id="reg-numero"
+                  placeholder="123"
+                  value={regNumero}
+                  onChange={(e) => setRegNumero(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="reg-bairro" className="font-body text-sm">Bairro</Label>
+                <Input
+                  id="reg-bairro"
+                  placeholder="Bairro"
+                  value={regBairro}
+                  onChange={(e) => setRegBairro(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-cidade" className="font-body text-sm">Cidade</Label>
+                <Input
+                  id="reg-cidade"
+                  placeholder="Cidade"
+                  value={regCidade}
+                  onChange={(e) => setRegCidade(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reg-estado" className="font-body text-sm">Estado (UF)</Label>
               <Input
-                id="reg-address"
-                placeholder="Rua, número, bairro, cidade"
-                value={regAddress}
-                onChange={(e) => setRegAddress(e.target.value)}
-                autoComplete="street-address"
+                id="reg-estado"
+                placeholder="MG"
+                value={regEstado}
+                onChange={(e) => setRegEstado(e.target.value.toUpperCase().slice(0, 2))}
+                maxLength={2}
               />
             </div>
+
             <Button type="submit" className="w-full gap-2" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               Cadastrar
