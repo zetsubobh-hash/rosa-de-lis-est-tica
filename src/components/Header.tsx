@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isHome = location.pathname === "/";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -21,19 +25,46 @@ const Header = () => {
     { label: "Contato", href: "#contato" },
   ];
 
+  const handleNavClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    setMenuOpen(false);
+
+    if (isHome) {
+      if (href === "#") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        const el = document.querySelector(href);
+        el?.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // Navigate to home, then scroll
+      navigate("/");
+      if (href !== "#") {
+        setTimeout(() => {
+          const el = document.querySelector(href);
+          el?.scrollIntoView({ behavior: "smooth" });
+        }, 300);
+      }
+    }
+  };
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
+        scrolled || !isHome
           ? "bg-primary/95 backdrop-blur-md shadow-lg"
           : "bg-transparent"
       }`}
     >
       <nav className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <a href="#" className="flex items-center gap-2">
+        <a
+          href="/"
+          onClick={(e) => handleNavClick(e, "#")}
+          className="flex items-center gap-2"
+        >
           <img src={logo} alt="Rosa de Lis" className="h-12 w-auto" />
         </a>
 
@@ -43,6 +74,7 @@ const Header = () => {
             <a
               key={item.label}
               href={item.href}
+              onClick={(e) => handleNavClick(e, item.href)}
               className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground tracking-wide transition-colors duration-300 uppercase font-medium"
             >
               {item.label}
@@ -79,7 +111,7 @@ const Header = () => {
             <a
               key={item.label}
               href={item.href}
-              onClick={() => setMenuOpen(false)}
+              onClick={(e) => handleNavClick(e, item.href)}
               className="block py-3 font-body text-sm text-primary-foreground/90 hover:text-primary-foreground uppercase tracking-wide font-medium border-b border-primary-foreground/10"
             >
               {item.label}
