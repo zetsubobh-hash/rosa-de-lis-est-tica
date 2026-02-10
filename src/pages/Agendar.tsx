@@ -91,15 +91,13 @@ const Agendar = () => {
         service_title: item.serviceTitle,
         appointment_date: item.date,
         appointment_time: item.time,
+        status: "pending",
       }));
-      const { error } = await supabase.from("appointments").insert(inserts);
+      const { data, error } = await supabase.from("appointments").insert(inserts).select("id");
       if (error) throw error;
-      toast({
-        title: "Agendamento confirmado! ✅",
-        description: `${items.length} procedimento(s) agendado(s) com sucesso.`,
-      });
+      const ids = data?.map((d: any) => d.id).join(",") || "";
       clearCart();
-      setTimeout(() => navigate("/"), 250);
+      navigate(`/checkout?ids=${ids}`);
     } catch {
       toast({
         title: "Erro ao agendar",
