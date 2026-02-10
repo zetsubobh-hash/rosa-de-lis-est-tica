@@ -1,9 +1,36 @@
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, CalendarDays } from "lucide-react";
 import { services } from "@/data/services";
+import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "@/components/AuthModal";
+import { toast } from "@/hooks/use-toast";
 
 const Services = () => {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { user } = useAuth();
+
+  const toggleService = (slug: string) => {
+    setSelected((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    );
+  };
+
+  const handleAgendar = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    if (selected.length === 0) {
+      toast({ title: "Selecione pelo menos um serviço", variant: "destructive" });
+      return;
+    }
+    // TODO: navigate to scheduling page with selected services
+    const names = selected.map((s) => services.find((sv) => sv.slug === s)?.title).join(", ");
+    toast({ title: "Serviços selecionados", description: names });
+  };
+
   return (
     <section id="servicos" className="py-20 md:py-28 bg-rose-soft">
       <div className="max-w-6xl mx-auto px-6">
@@ -22,50 +49,100 @@ const Services = () => {
             <span className="text-pink-vibrant">Estéticos Completos</span>
           </h2>
           <p className="font-body text-muted-foreground mt-4 max-w-2xl mx-auto text-sm md:text-lg leading-relaxed">
-            Oferecemos uma linha completa de procedimentos estéticos faciais e corporais, sempre com foco no seu bem-estar e nos melhores resultados.
+            Selecione os serviços desejados e clique em agendar.
           </p>
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-          {services.map((service, i) => (
-            <Link key={service.slug} to={`/servico/${service.slug}`}>
+          {services.map((service, i) => {
+            const isSelected = selected.includes(service.slug);
+            return (
               <motion.div
+                key={service.slug}
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="group relative bg-background rounded-2xl p-5 md:p-6 cursor-pointer overflow-hidden border border-transparent hover:border-primary/20 transition-all duration-500 hover:shadow-lg h-full"
+                onClick={() => toggleService(service.slug)}
+                className={`group relative rounded-2xl p-5 md:p-6 cursor-pointer overflow-hidden border-2 transition-all duration-300 h-full select-none ${
+                  isSelected
+                    ? "bg-primary/10 border-primary shadow-inner scale-[0.97]"
+                    : "bg-background border-transparent hover:border-primary/20 hover:shadow-lg"
+                }`}
               >
-                {/* Decorative gradient on hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-pink-vibrant/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
+                {/* Selected checkmark */}
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-20"
+                    >
+                      <Check className="w-4 h-4 text-primary-foreground" strokeWidth={3} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Decorative gradient */}
+                <div className={`absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-pink-vibrant/5 transition-opacity duration-500 rounded-2xl ${
+                  isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                }`} />
 
                 <div className="relative z-10">
-                  <div className="w-10 h-10 md:w-11 md:h-11 mb-4 flex items-center justify-center rounded-full bg-primary/10 group-hover:bg-primary transition-all duration-500">
+                  <div className={`w-10 h-10 md:w-11 md:h-11 mb-4 flex items-center justify-center rounded-full transition-all duration-500 ${
+                    isSelected
+                      ? "bg-primary"
+                      : "bg-primary/10 group-hover:bg-primary"
+                  }`}>
                     <service.icon
-                      className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors duration-500"
+                      className={`w-5 h-5 transition-colors duration-500 ${
+                        isSelected
+                          ? "text-primary-foreground"
+                          : "text-primary group-hover:text-primary-foreground"
+                      }`}
                       strokeWidth={1.8}
                     />
                   </div>
                   <h3 className="font-heading text-sm md:text-base font-semibold text-foreground mb-2 leading-tight">
                     {service.title}
                   </h3>
-                  <p className="font-body text-muted-foreground text-xs md:text-[13px] leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-300">
+                  <p className="font-body text-muted-foreground text-xs md:text-[13px] leading-relaxed line-clamp-3">
                     {service.shortDescription}
                   </p>
-
-                  {/* "Saiba mais" hint */}
-                  <div className="mt-3 flex items-center gap-1 text-primary text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    Saiba mais <ArrowRight className="w-3 h-3" />
-                  </div>
                 </div>
 
                 {/* Bottom accent line */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-primary to-pink-vibrant group-hover:w-3/4 transition-all duration-500 rounded-full" />
+                <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-primary to-pink-vibrant transition-all duration-500 rounded-full ${
+                  isSelected ? "w-3/4" : "w-0 group-hover:w-3/4"
+                }`} />
               </motion.div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
+
+        {/* Agendar button */}
+        <AnimatePresence>
+          {selected.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="mt-10 text-center"
+            >
+              <button
+                onClick={handleAgendar}
+                className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-primary-foreground font-body text-base font-semibold rounded-full hover:bg-primary/90 transition-all duration-300 uppercase tracking-wider shadow-lg hover:shadow-xl"
+              >
+                <CalendarDays className="w-5 h-5" />
+                Agendar {selected.length} {selected.length === 1 ? "serviço" : "serviços"}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </section>
   );
 };
