@@ -1,4 +1,4 @@
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, CreditCard, CalendarCheck, CalendarPlus, ArrowRight, ChevronRight, Check, Star } from "lucide-react";
@@ -16,11 +16,13 @@ const ServiceDetail = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const service = slug ? getServiceBySlug(slug) : undefined;
 
+  const navigate = useNavigate();
+
   const handleAgendar = () => {
     if (!user) {
       setAuthModalOpen(true);
     } else {
-      // TODO: navigate to scheduling page
+      navigate(`/agendar/${slug}`);
     }
   };
 
