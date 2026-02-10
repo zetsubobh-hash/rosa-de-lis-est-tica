@@ -302,22 +302,26 @@ const Agendar = () => {
                   {items.length} procedimento(s) selecionado(s)
                 </p>
 
-                <button
+                <motion.button
                   onClick={handleAddMore}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
                   className="flex items-center justify-center gap-2 w-full py-3.5 mb-3 border border-primary text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary/5 transition-all duration-300 uppercase tracking-wider"
                 >
                   <Plus className="w-4 h-4" />
                   Adicionar mais procedimentos
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
                   onClick={handleConfirmAll}
                   disabled={loading || items.length === 0}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
                   className="flex items-center justify-center gap-2 w-full py-4 bg-primary text-primary-foreground font-body text-sm font-bold rounded-2xl hover:bg-primary/90 transition-all duration-300 uppercase tracking-wider disabled:opacity-50"
                 >
                   <CalendarPlus className="w-5 h-5" />
                   {loading ? "Agendando..." : "Confirmar Agendamento"}
-                </button>
+                </motion.button>
 
                 <p className="font-body text-[11px] text-muted-foreground text-center mt-4">
                   Valores podem variar conforme avaliação personalizada.
