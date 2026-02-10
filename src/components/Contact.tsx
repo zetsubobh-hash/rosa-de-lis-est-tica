@@ -14,7 +14,7 @@ const Contact = () => {
     name: "",
     email: "",
     phone: "",
-    service: "",
+    subject: "",
     message: "",
   });
   const [captcha, setCaptcha] = useState(generateCaptcha);
@@ -22,20 +22,12 @@ const Contact = () => {
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const serviceOptions = [
-    "Drenagem Linfática",
-    "Criolipólise",
-    "Botox",
-    "Carboxiterapia",
-    "Peeling de Diamante",
-    "Peeling de Cristal",
-    "Massagem Redutora",
-    "Massagem Modeladora",
-    "Limpeza de Pele",
-    "Microagulhamento",
-    "Radiofrequência",
-    "Protocolo Pós-Operatório",
-    "Outro",
+  const subjectOptions = [
+    "Dúvidas sobre tratamentos",
+    "Trabalhe conosco",
+    "Seja nosso parceiro",
+    "Sugestões ou reclamações",
+    "Outro assunto",
   ];
 
   const validate = useCallback(() => {
@@ -71,15 +63,14 @@ const Contact = () => {
       `Olá! Meu nome é ${formData.name.trim()}.\n` +
       `E-mail: ${formData.email.trim()}\n` +
       `Telefone: ${formData.phone.trim()}\n` +
-      (formData.service ? `Serviço de interesse: ${formData.service}\n` : "") +
+      (formData.subject ? `Assunto: ${formData.subject}\n` : "") +
       `\nMensagem: ${formData.message.trim()}`
     );
 
-    // Open WhatsApp with the form data
     window.open(`https://wa.me/5511999999999?text=${text}`, "_blank");
     
     setStatus("success");
-    setFormData({ name: "", email: "", phone: "", service: "", message: "" });
+    setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
     setCaptchaInput("");
     setCaptcha(generateCaptcha());
 
@@ -112,12 +103,12 @@ const Contact = () => {
               Contato
             </p>
             <h2 className="font-heading text-2xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
-              Vamos agendar o seu{" "}
-              <span className="text-pink-vibrant">tratamento</span>?
+              Fale com a{" "}
+              <span className="text-pink-vibrant">Rosa de Lis</span>
             </h2>
             <p className="font-body text-muted-foreground text-sm md:text-base leading-relaxed mb-8">
-              Preencha o formulário ao lado e entraremos em contato o mais breve possível. 
-              Ou se preferir, entre em contato diretamente pelo WhatsApp.
+              Tem dúvidas, quer trabalhar conosco ou ser nosso parceiro? 
+              Preencha o formulário e retornaremos em breve. Ou fale pelo WhatsApp.
             </p>
 
             <motion.a
@@ -178,7 +169,7 @@ const Contact = () => {
               className="bg-background rounded-3xl p-6 md:p-8 shadow-lg border border-border"
             >
               <h3 className="font-heading text-lg md:text-xl font-bold text-foreground mb-6">
-                Solicite seu agendamento
+                Envie sua mensagem
               </h3>
 
               <div className="space-y-4">
@@ -242,18 +233,18 @@ const Contact = () => {
                   </div>
                 </div>
 
-                {/* Service select */}
+                {/* Subject select */}
                 <div>
                   <label className="font-body text-xs font-semibold text-foreground mb-1.5 block uppercase tracking-wider">
-                    Serviço de interesse
+                    Assunto
                   </label>
                   <select
-                    value={formData.service}
-                    onChange={(e) => handleChange("service", e.target.value)}
-                    className={`${inputClass("service")} appearance-none cursor-pointer`}
+                    value={formData.subject}
+                    onChange={(e) => handleChange("subject", e.target.value)}
+                    className={`${inputClass("subject")} appearance-none cursor-pointer`}
                   >
-                    <option value="">Selecione um serviço</option>
-                    {serviceOptions.map((s) => (
+                    <option value="">Selecione o assunto</option>
+                    {subjectOptions.map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>
