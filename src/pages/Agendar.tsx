@@ -65,19 +65,21 @@ const Agendar = () => {
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
-    // Add current service to cart and go to confirm
-    if (service && selectedDate) {
-      addItem({
-        serviceSlug: service.slug,
-        serviceTitle: service.title,
-        serviceDuration: service.duration,
-        date: format(selectedDate, "yyyy-MM-dd"),
-        dateFormatted: format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR }),
-        time,
-        iconName: service.slug,
-      });
-    }
-    setStep("confirm");
+    // Show selection visually, then add to cart and go to confirm after a short delay
+    setTimeout(() => {
+      if (service && selectedDate) {
+        addItem({
+          serviceSlug: service.slug,
+          serviceTitle: service.title,
+          serviceDuration: service.duration,
+          date: format(selectedDate, "yyyy-MM-dd"),
+          dateFormatted: format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR }),
+          time,
+          iconName: service.slug,
+        });
+      }
+      setStep("confirm");
+    }, 500);
   };
 
   const handleConfirmAll = async () => {
@@ -242,15 +244,26 @@ const Agendar = () => {
                     <motion.button
                       key={time}
                       whileHover={!disabled ? { scale: 1.05 } : undefined}
-                      whileTap={!disabled ? { scale: 0.95 } : undefined}
+                      whileTap={!disabled ? { scale: 0.92 } : undefined}
                       disabled={disabled}
                       onClick={() => handleTimeSelect(time)}
-                      className={`py-3 px-4 rounded-2xl font-body text-sm font-semibold transition-all border ${
+                      className={`relative py-3 px-4 rounded-2xl font-body text-sm font-semibold transition-all border ${
                         disabled
                           ? "bg-muted text-muted-foreground border-border cursor-not-allowed opacity-50"
+                          : selectedTime === time
+                          ? "bg-primary text-primary-foreground border-primary"
                           : "bg-card text-foreground border-border hover:border-primary hover:text-primary"
                       }`}
                     >
+                      {selectedTime === time && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-md"
+                        >
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        </motion.div>
+                      )}
                       <Clock className="w-4 h-4 mx-auto mb-1" />
                       {time}
                     </motion.button>
