@@ -17,7 +17,7 @@ const About = () => {
             <img
               src={womanAbout}
               alt="Rosa de Lis - tratamentos estéticos"
-              className="w-full max-w-md rounded-2xl shadow-xl object-cover"
+              className="w-full max-w-md object-cover"
             />
           </motion.div>
 
