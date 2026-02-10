@@ -19,17 +19,17 @@ const Header = () => {
   const isHome = location.pathname === "/";
 
   useEffect(() => {
-    const sectionIds = ["contato", "beneficios", "servicos", "sobre"];
+    const sectionIds = ["sobre", "servicos", "beneficios", "contato"];
     const onScroll = () => {
       setScrolled(window.scrollY > 50);
       if (!isHome) return;
-      // Check which section is in view
-      const scrollPos = window.scrollY + 120;
+      const scrollPos = window.scrollY + 200;
       let found = "#";
-      for (const id of sectionIds) {
-        const el = document.getElementById(id);
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sectionIds[i]);
         if (el && el.offsetTop <= scrollPos) {
-          found = `#${id}`;
+          found = `#${sectionIds[i]}`;
+          break;
         }
       }
       setActiveSection(found);
