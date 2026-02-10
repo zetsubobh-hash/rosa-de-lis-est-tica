@@ -1,16 +1,28 @@
 import { useParams, Link, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, CreditCard, CalendarCheck, CalendarPlus, ArrowRight, ChevronRight, Check, Star } from "lucide-react";
 import { getServiceBySlug, services } from "@/data/services";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import AuthModal from "@/components/AuthModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ServiceDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { pathname } = useLocation();
+  const { user } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const service = slug ? getServiceBySlug(slug) : undefined;
+
+  const handleAgendar = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+    } else {
+      // TODO: navigate to scheduling page
+    }
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -301,7 +313,7 @@ const ServiceDetail = () => {
                 </ul>
 
                 <button
-                  onClick={() => {/* TODO: navigate to scheduling page */}}
+                  onClick={handleAgendar}
                   className={`flex items-center justify-center gap-2 w-full py-3.5 font-body text-sm font-bold rounded-2xl transition-all duration-300 uppercase tracking-wider ${
                     pkg.highlight
                       ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
@@ -331,7 +343,7 @@ const ServiceDetail = () => {
             Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
           </p>
           <button
-            onClick={() => {/* TODO: navigate to scheduling page */}}
+            onClick={handleAgendar}
             className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-primary-foreground text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
           >
             <CalendarPlus className="w-5 h-5" />
@@ -394,6 +406,7 @@ const ServiceDetail = () => {
 
       <Footer />
       <WhatsAppButton />
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   );
 };
