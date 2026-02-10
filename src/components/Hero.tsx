@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import womanPointing from "@/assets/woman-pointing.jpg";
+import referenceHero from "@/assets/reference-hero.webp";
 
 const Hero = () => {
   return (
@@ -44,7 +44,7 @@ const Hero = () => {
       {/* Woman image on the right, legs aligned to bottom */}
       <div className="absolute right-0 bottom-0 hidden lg:flex items-end justify-end h-full">
         <motion.img
-          src={womanPointing}
+          src={referenceHero}
           alt="Rosa de Lis Estética"
           className="h-[85%] w-auto object-contain object-bottom"
           initial={{ opacity: 0, x: 50 }}
