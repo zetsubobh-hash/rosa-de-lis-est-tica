@@ -98,7 +98,7 @@ const Agendar = () => {
         description: `${items.length} procedimento(s) agendado(s) com sucesso.`,
       });
       clearCart();
-      navigate("/");
+      setTimeout(() => navigate("/"), 250);
     } catch {
       toast({
         title: "Erro ao agendar",
@@ -111,12 +111,13 @@ const Agendar = () => {
   };
 
   const handleAddMore = () => {
-    navigate("/");
-    // Wait for navigation, then scroll to services
     setTimeout(() => {
-      const el = document.getElementById("servicos");
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }, 300);
+      navigate("/");
+      setTimeout(() => {
+        const el = document.getElementById("servicos");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    }, 250);
   };
 
   const today = startOfDay(new Date());

@@ -21,7 +21,7 @@ const ServiceDetail = () => {
     if (!user) {
       setAuthModalOpen(true);
     } else {
-      navigate(`/agendar/${slug}`);
+      setTimeout(() => navigate(`/agendar/${slug}`), 250);
     }
   };
 
