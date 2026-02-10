@@ -1,28 +1,24 @@
 import { motion } from "framer-motion";
-import womanPointing from "@/assets/woman-pointing.jpg";
+import womanAbout from "@/assets/woman-about.webp";
 
 const About = () => {
   return (
     <section id="sobre" className="py-20 md:py-28 bg-background">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="grid md:grid-cols-2 gap-16 items-center">
-          {/* Image with decorative circle */}
+        <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Image */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="relative flex justify-center"
+            className="flex justify-center"
           >
-            <div className="relative w-80 h-80">
-              {/* Pink decorative circle behind */}
-              <div className="absolute -top-4 -left-4 w-80 h-80 rounded-full bg-primary/20" />
-              <img
-                src={womanPointing}
-                alt="Rosa de Lis - tratamentos estéticos"
-                className="relative w-80 h-80 rounded-full object-cover shadow-xl"
-              />
-            </div>
+            <img
+              src={womanAbout}
+              alt="Rosa de Lis - tratamentos estéticos"
+              className="w-full max-w-md rounded-2xl shadow-xl object-cover"
+            />
           </motion.div>
 
           {/* Content */}
