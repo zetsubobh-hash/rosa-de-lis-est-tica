@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import logo from "@/assets/logo-branca.png";
 import heroSpa from "@/assets/hero-spa.jpg";
 
 const Hero = () => {
@@ -19,45 +18,35 @@ const Hero = () => {
       <div className="absolute top-20 right-20 w-72 h-72 rounded-full border border-primary-foreground/10 hidden lg:block" />
       <div className="absolute bottom-20 right-40 w-48 h-48 rounded-full border border-primary-foreground/10 hidden lg:block" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 w-full">
-        <div className="max-w-2xl">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 w-full text-center lg:text-left">
+        <div className="max-w-2xl mx-auto lg:mx-0">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
           >
-            <motion.img
-              src={logo}
-              alt="Rosa de Lis"
-              className="h-20 w-auto mb-8"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            />
-
-            <p className="font-body text-primary-foreground/70 text-sm tracking-[0.3em] uppercase mb-4 font-medium">
+            <p className="font-body text-primary-foreground/70 text-sm tracking-[0.3em] uppercase mb-6 font-medium">
               Estética especializada em tratamentos corporais e faciais
             </p>
 
-            <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold text-primary-foreground leading-tight mb-6">
-              Drenagem
-              <br />
-              <span className="italic font-normal">Linfática</span>
+            <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl text-primary-foreground leading-[1.1] mb-6">
+              <span className="font-semibold block">Drenagem</span>
+              <span className="font-light italic block">Linfática</span>
             </h1>
 
-            <p className="font-body text-primary-foreground/80 text-lg md:text-xl font-light max-w-lg mb-10 leading-relaxed">
-              O melhor tratamento para combater a retenção de líquidos e transformar seu corpo.
+            <p className="font-body text-primary-foreground/80 text-base md:text-lg font-light max-w-lg mx-auto lg:mx-0 mb-10 leading-relaxed">
+              O melhor tratamento para combater a retenção de líquidos.
             </p>
 
             <motion.a
               href="https://wa.me/5511999999999"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block px-10 py-4 bg-primary-foreground text-primary font-body text-sm font-bold tracking-[0.15em] uppercase rounded-full hover:shadow-2xl hover:scale-105 transition-all duration-500"
+              className="inline-block px-10 py-4 border-2 border-primary-foreground text-primary-foreground font-body text-sm font-semibold tracking-[0.2em] uppercase rounded-full hover:bg-primary-foreground hover:text-primary transition-all duration-500"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
             >
-              Quero agendar agora
+              Quero agora mesmo
             </motion.a>
           </motion.div>
         </div>
