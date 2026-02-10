@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string
+          id: string
+          notes: string | null
+          service_slug: string
+          service_title: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          service_slug: string
+          service_title: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          service_slug?: string
+          service_title?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string
