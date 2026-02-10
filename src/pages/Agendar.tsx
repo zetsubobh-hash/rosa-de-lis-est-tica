@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck, ChevronRight, Clock, ArrowLeft, Check, CalendarPlus } from "lucide-react";
+import { CalendarCheck, ChevronRight, Clock, ArrowLeft, Check, CalendarPlus, Plus } from "lucide-react";
 import { getServiceBySlug } from "@/data/services";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -275,6 +275,14 @@ const Agendar = () => {
                     </div>
                   </div>
                 </div>
+
+                <Link
+                  to="/#servicos"
+                  className="flex items-center justify-center gap-2 w-full py-3.5 mb-3 border border-primary text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary/5 transition-all duration-300 uppercase tracking-wider"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar mais procedimentos
+                </Link>
 
                 <button
                   onClick={handleConfirm}
