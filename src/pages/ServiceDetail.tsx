@@ -108,6 +108,26 @@ const ServiceDetail = () => {
 
       {/* Content */}
       <section className="max-w-6xl mx-auto px-6 py-12 md:py-20">
+        {/* Service image - full width */}
+        {service.image && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="mb-12 md:mb-16"
+          >
+            <div className="relative overflow-hidden rounded-3xl">
+              <img
+                src={service.image}
+                alt={service.title}
+                className="w-full h-[300px] md:h-[450px] object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 via-transparent to-transparent" />
+            </div>
+          </motion.div>
+        )}
+
         <div className="grid lg:grid-cols-5 gap-10 md:gap-16">
           {/* Main content - 3 cols */}
           <div className="lg:col-span-3 space-y-12">

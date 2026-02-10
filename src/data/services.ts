@@ -1,3 +1,4 @@
+import drenagemImg from "@/assets/drenagem-linfatica.png";
 import {
   Droplets,
   Snowflake,
@@ -23,6 +24,7 @@ export interface ServiceData {
   duration: string;
   price: string;
   sessions: string;
+  image?: string;
 }
 
 export const services: ServiceData[] = [
@@ -45,6 +47,7 @@ export const services: ServiceData[] = [
     duration: "60 minutos",
     price: "A partir de R$ 150,00",
     sessions: "Recomendamos pacotes de 10 sessões",
+    image: drenagemImg,
   },
   {
     slug: "criolipólise",
