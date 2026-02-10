@@ -50,11 +50,11 @@ const Agendar = () => {
         .from("appointments")
         .select("appointment_time")
         .eq("appointment_date", dateStr)
-        .eq("status", "confirmed");
+        .in("status", ["confirmed", "pending"]);
       setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
     };
     fetchBooked();
-  }, [selectedDate, slug]);
+  }, [selectedDate]);
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
@@ -235,8 +235,9 @@ const Agendar = () => {
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {TIME_SLOTS.map((time) => {
                   const booked = bookedSlots.includes(time);
+                  const inCart = items.some((item) => item.date === format(selectedDate, "yyyy-MM-dd") && item.time === time);
                   const isPast = isSameDay(selectedDate, today) && time <= format(new Date(), "HH:mm");
-                  const disabled = booked || isPast;
+                  const disabled = booked || inCart || isPast;
                   return (
                     <motion.button
                       key={time}
