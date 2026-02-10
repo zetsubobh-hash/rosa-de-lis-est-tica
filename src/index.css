@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -45,8 +45,8 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --font-heading: 'Playfair Display', serif;
-    --font-body: 'Montserrat', sans-serif;
+    --font-heading: 'Be Vietnam Pro', sans-serif;
+    --font-body: 'Be Vietnam Pro', sans-serif;
 
     --pink-vibrant: 340 80% 55%;
     --pink-light: 340 60% 92%;
