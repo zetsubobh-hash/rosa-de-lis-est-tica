@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 import AuthModal from "@/components/AuthModal";
@@ -115,20 +115,13 @@ const Header = () => {
               </a>
             ))}
             {user ? (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleAgendar}
-                  className="px-6 py-2.5 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
-                >
-                  Agendar
-                </button>
-                <button
-                  onClick={signOut}
-                  className="font-body text-xs text-primary-foreground/60 hover:text-primary-foreground transition-colors uppercase tracking-wider"
-                >
-                  Sair
-                </button>
-              </div>
+              <button
+                onClick={signOut}
+                className="flex items-center gap-2 font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors uppercase tracking-wider font-medium"
+              >
+                <LogOut className="w-4 h-4" />
+                Sair
+              </button>
             ) : (
               <button
                 onClick={handleAgendar}
@@ -166,18 +159,20 @@ const Header = () => {
                 {item.label}
               </a>
             ))}
-            <button
-              onClick={handleAgendar}
-              className="mt-4 block w-full text-center px-6 py-3 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full uppercase tracking-wider"
-            >
-              {user ? "Agendar" : "Login"}
-            </button>
-            {user && (
+            {user ? (
               <button
                 onClick={() => { setMenuOpen(false); signOut(); }}
-                className="mt-2 block w-full text-center font-body text-xs text-primary-foreground/60 hover:text-primary-foreground uppercase tracking-wider py-2"
+                className="mt-4 flex items-center justify-center gap-2 w-full py-3 font-body text-sm text-primary-foreground/80 hover:text-primary-foreground uppercase tracking-wider font-medium"
               >
-                Sair da conta
+                <LogOut className="w-4 h-4" />
+                Sair
+              </button>
+            ) : (
+              <button
+                onClick={handleAgendar}
+                className="mt-4 block w-full text-center px-6 py-3 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full uppercase tracking-wider"
+              >
+                Login
               </button>
             )}
           </motion.div>
