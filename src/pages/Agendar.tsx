@@ -45,6 +45,9 @@ const Agendar = () => {
   useEffect(() => {
     if (!selectedDate) return;
     const fetchBooked = async () => {
+      // Clean up stale pending appointments (>30 min old)
+      await supabase.rpc("cleanup_stale_pending_appointments");
+
       const dateStr = format(selectedDate, "yyyy-MM-dd");
       const { data } = await supabase
         .from("appointments")
