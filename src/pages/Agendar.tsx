@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck, ChevronRight, Clock, ArrowLeft, Check, CalendarPlus, Plus } from "lucide-react";
+import { CalendarCheck, ChevronRight, Clock, ArrowLeft, Check, CalendarPlus, Plus, Trash2 } from "lucide-react";
 import { getServiceBySlug } from "@/data/services";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,6 +27,7 @@ const Agendar = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { items, addItem, removeItem, clearCart } = useCart();
   const service = slug ? getServiceBySlug(slug) : undefined;
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -34,14 +36,12 @@ const Agendar = () => {
   const [loading, setLoading] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!user) {
       navigate(`/servico/${slug}`, { replace: true });
     }
   }, [user, slug, navigate]);
 
-  // Fetch booked slots for selected date
   useEffect(() => {
     if (!selectedDate) return;
     const fetchBooked = async () => {
@@ -65,26 +65,40 @@ const Agendar = () => {
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
+    // Add current service to cart and go to confirm
+    if (service && selectedDate) {
+      addItem({
+        serviceSlug: service.slug,
+        serviceTitle: service.title,
+        serviceDuration: service.duration,
+        date: format(selectedDate, "yyyy-MM-dd"),
+        dateFormatted: format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR }),
+        time,
+        iconName: service.slug,
+      });
+    }
     setStep("confirm");
   };
 
-  const handleConfirm = async () => {
-    if (!user || !selectedDate || !selectedTime || !service) return;
+  const handleConfirmAll = async () => {
+    if (!user || items.length === 0) return;
     setLoading(true);
     try {
-      const { error } = await supabase.from("appointments").insert({
+      const inserts = items.map((item) => ({
         user_id: user.id,
-        service_slug: service.slug,
-        service_title: service.title,
-        appointment_date: format(selectedDate, "yyyy-MM-dd"),
-        appointment_time: selectedTime,
-      });
+        service_slug: item.serviceSlug,
+        service_title: item.serviceTitle,
+        appointment_date: item.date,
+        appointment_time: item.time,
+      }));
+      const { error } = await supabase.from("appointments").insert(inserts);
       if (error) throw error;
       toast({
         title: "Agendamento confirmado! ✅",
-        description: `${service.title} em ${format(selectedDate, "dd/MM/yyyy")} às ${selectedTime}`,
+        description: `${items.length} procedimento(s) agendado(s) com sucesso.`,
       });
-      navigate(`/servico/${slug}`);
+      clearCart();
+      navigate("/");
     } catch {
       toast({
         title: "Erro ao agendar",
@@ -94,6 +108,11 @@ const Agendar = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddMore = () => {
+    // Navigate to services section to pick another
+    navigate("/#servicos");
   };
 
   const today = startOfDay(new Date());
@@ -212,7 +231,6 @@ const Agendar = () => {
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {TIME_SLOTS.map((time) => {
                   const booked = bookedSlots.includes(time);
-                  // Disable past times for today
                   const isPast = isSameDay(selectedDate, today) && time <= format(new Date(), "HH:mm");
                   const disabled = booked || isPast;
                   return (
@@ -225,8 +243,6 @@ const Agendar = () => {
                       className={`py-3 px-4 rounded-2xl font-body text-sm font-semibold transition-all border ${
                         disabled
                           ? "bg-muted text-muted-foreground border-border cursor-not-allowed opacity-50"
-                          : selectedTime === time
-                          ? "bg-primary text-primary-foreground border-primary"
                           : "bg-card text-foreground border-border hover:border-primary hover:text-primary"
                       }`}
                     >
@@ -239,54 +255,64 @@ const Agendar = () => {
             </motion.div>
           )}
 
-          {/* Step 3: Confirm */}
-          {step === "confirm" && selectedDate && selectedTime && (
+          {/* Step 3: Confirm — shows ALL cart items */}
+          {step === "confirm" && items.length > 0 && (
             <motion.div key="confirm" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-              <button onClick={() => setStep("time")} className="flex items-center gap-1 text-primary font-body text-sm font-semibold mb-6 hover:underline">
-                <ArrowLeft className="w-4 h-4" /> Voltar
-              </button>
-              <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-6 text-center">Confirme seu agendamento</h2>
-              <div className="bg-card rounded-3xl border border-border shadow-sm p-6 md:p-8 max-w-md mx-auto">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Icon className="w-6 h-6 text-primary" strokeWidth={1.5} />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-lg font-bold text-foreground">{service.title}</h3>
-                    <p className="font-body text-muted-foreground text-xs">{service.duration}</p>
-                  </div>
+              <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-6 text-center">
+                Confirme seu agendamento
+              </h2>
+              <div className="bg-card rounded-3xl border border-border shadow-sm p-6 md:p-8 max-w-lg mx-auto">
+                {/* Cart items */}
+                <div className="space-y-4 mb-6">
+                  {items.map((item, idx) => {
+                    const itemService = getServiceBySlug(item.serviceSlug);
+                    const ItemIcon = itemService?.icon;
+                    return (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        className="flex items-center gap-4 p-4 rounded-2xl bg-rose-soft"
+                      >
+                        {ItemIcon && (
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <ItemIcon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-heading text-sm font-bold text-foreground truncate">{item.serviceTitle}</h4>
+                          <p className="font-body text-xs text-muted-foreground capitalize">
+                            {item.dateFormatted} • {item.time}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removeItem(idx)}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          title="Remover"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-rose-soft">
-                    <CalendarCheck className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-body text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-semibold">Data</p>
-                      <p className="font-body text-sm font-semibold text-foreground capitalize">
-                        {format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-rose-soft">
-                    <Clock className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-body text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-semibold">Horário</p>
-                      <p className="font-body text-sm font-semibold text-foreground">{selectedTime}</p>
-                    </div>
-                  </div>
-                </div>
+                <p className="font-body text-xs text-muted-foreground text-center mb-6">
+                  {items.length} procedimento(s) selecionado(s)
+                </p>
 
-                <Link
-                  to="/#servicos"
+                <button
+                  onClick={handleAddMore}
                   className="flex items-center justify-center gap-2 w-full py-3.5 mb-3 border border-primary text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary/5 transition-all duration-300 uppercase tracking-wider"
                 >
                   <Plus className="w-4 h-4" />
                   Adicionar mais procedimentos
-                </Link>
+                </button>
 
                 <button
-                  onClick={handleConfirm}
-                  disabled={loading}
+                  onClick={handleConfirmAll}
+                  disabled={loading || items.length === 0}
                   className="flex items-center justify-center gap-2 w-full py-4 bg-primary text-primary-foreground font-body text-sm font-bold rounded-2xl hover:bg-primary/90 transition-all duration-300 uppercase tracking-wider disabled:opacity-50"
                 >
                   <CalendarPlus className="w-5 h-5" />
