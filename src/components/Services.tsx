@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, CalendarDays } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { services } from "@/data/services";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import { toast } from "@/hooks/use-toast";
 
 const Services = () => {
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const toggleService = (slug: string) => {
-    setSelected((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-    );
+    setSelected((prev) => (prev === slug ? null : slug));
   };
 
   const handleAgendar = () => {
@@ -22,13 +22,11 @@ const Services = () => {
       setAuthModalOpen(true);
       return;
     }
-    if (selected.length === 0) {
-      toast({ title: "Selecione pelo menos um serviço", variant: "destructive" });
+    if (!selected) {
+      toast({ title: "Selecione um serviço", variant: "destructive" });
       return;
     }
-    // TODO: navigate to scheduling page with selected services
-    const names = selected.map((s) => services.find((sv) => sv.slug === s)?.title).join(", ");
-    toast({ title: "Serviços selecionados", description: names });
+    navigate(`/servico/${selected}`);
   };
 
   return (
@@ -55,7 +53,7 @@ const Services = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
           {services.map((service, i) => {
-            const isSelected = selected.includes(service.slug);
+            const isSelected = selected === service.slug;
             return (
               <motion.div
                 key={service.slug}
@@ -123,7 +121,7 @@ const Services = () => {
 
         {/* Agendar button */}
         <AnimatePresence>
-          {selected.length > 0 && (
+          {selected && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -135,7 +133,7 @@ const Services = () => {
                 className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-primary-foreground font-body text-base font-semibold rounded-full hover:bg-primary/90 transition-all duration-300 uppercase tracking-wider shadow-lg hover:shadow-xl"
               >
                 <CalendarDays className="w-5 h-5" />
-                Agendar {selected.length} {selected.length === 1 ? "serviço" : "serviços"}
+                Agendar
               </button>
             </motion.div>
           )}
