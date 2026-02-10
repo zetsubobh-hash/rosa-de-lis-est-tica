@@ -315,8 +315,8 @@ const ServiceDetail = () => {
 
                 <motion.button
                   onClick={handleAgendar}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.92, boxShadow: "inset 0 2px 8px rgba(0,0,0,0.2)" }}
                   className={`flex items-center justify-center gap-2 w-full py-3.5 font-body text-sm font-bold rounded-2xl transition-all duration-300 uppercase tracking-wider ${
                     pkg.highlight
                       ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
@@ -348,7 +348,7 @@ const ServiceDetail = () => {
           <motion.button
             onClick={handleAgendar}
             whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.92, boxShadow: "inset 0 2px 8px rgba(0,0,0,0.2)" }}
             className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-primary-foreground text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
           >
             <CalendarPlus className="w-5 h-5" />

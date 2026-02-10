@@ -111,8 +111,12 @@ const Agendar = () => {
   };
 
   const handleAddMore = () => {
-    // Navigate to services section to pick another
-    navigate("/#servicos");
+    navigate("/");
+    // Wait for navigation, then scroll to services
+    setTimeout(() => {
+      const el = document.getElementById("servicos");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }, 300);
   };
 
   const today = startOfDay(new Date());
@@ -304,8 +308,8 @@ const Agendar = () => {
 
                 <motion.button
                   onClick={handleAddMore}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.92, boxShadow: "inset 0 2px 8px rgba(0,0,0,0.15)" }}
                   className="flex items-center justify-center gap-2 w-full py-3.5 mb-3 border border-primary text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary/5 transition-all duration-300 uppercase tracking-wider"
                 >
                   <Plus className="w-4 h-4" />
@@ -315,8 +319,8 @@ const Agendar = () => {
                 <motion.button
                   onClick={handleConfirmAll}
                   disabled={loading || items.length === 0}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.92, boxShadow: "inset 0 2px 8px rgba(0,0,0,0.2)" }}
                   className="flex items-center justify-center gap-2 w-full py-4 bg-primary text-primary-foreground font-body text-sm font-bold rounded-2xl hover:bg-primary/90 transition-all duration-300 uppercase tracking-wider disabled:opacity-50"
                 >
                   <CalendarPlus className="w-5 h-5" />
