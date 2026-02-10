@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { LogIn, UserPlus, Loader2, Search } from "lucide-react";
+import { LogIn, UserPlus, Loader2 } from "lucide-react";
 
 interface AuthModalProps {
   open: boolean;
@@ -26,17 +26,23 @@ const formatCep = (value: string) => {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 };
 
+const generateFakeEmail = (username: string) => {
+  const sanitized = username.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return `${sanitized}@rosadelis.local`;
+};
+
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
 
   // Login fields
-  const [email, setEmail] = useState("");
+  const [loginUsername, setLoginUsername] = useState("");
   const [password, setPassword] = useState("");
 
   // Register fields
   const [regName, setRegName] = useState("");
+  const [regUsername, setRegUsername] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regSex, setRegSex] = useState("");
@@ -49,9 +55,10 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [regEstado, setRegEstado] = useState("");
 
   const resetFields = () => {
-    setEmail("");
+    setLoginUsername("");
     setPassword("");
     setRegName("");
+    setRegUsername("");
     setRegEmail("");
     setRegPassword("");
     setRegSex("");
@@ -101,15 +108,16 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
+    if (!loginUsername.trim() || !password.trim()) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const fakeEmail = generateFakeEmail(loginUsername.trim());
+    const { error } = await supabase.auth.signInWithPassword({ email: fakeEmail, password });
     setLoading(false);
     if (error) {
-      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao entrar", description: "Usuário ou senha incorretos.", variant: "destructive" });
     } else {
       toast({ title: "Login realizado com sucesso!" });
       resetFields();
@@ -120,45 +128,59 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullAddress = buildFullAddress();
-    if (!regName.trim() || !regEmail.trim() || !regPassword.trim() || !regSex || !regPhone.trim() || !fullAddress.trim()) {
-      toast({ title: "Preencha todos os campos", variant: "destructive" });
+    if (!regName.trim() || !regUsername.trim() || !regPassword.trim() || !regSex || !regPhone.trim() || !fullAddress.trim()) {
+      toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
+      return;
+    }
+    if (regPassword.length < 6) {
+      toast({ title: "A senha deve ter no mínimo 6 caracteres", variant: "destructive" });
       return;
     }
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email: regEmail.trim(),
-      password: regPassword,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { full_name: regName.trim() },
-      },
-    });
-
-    if (error) {
-      setLoading(false);
-      toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").insert({
-        user_id: data.user.id,
-        full_name: regName.trim(),
-        sex: regSex,
-        phone: regPhone.trim(),
-        address: fullAddress.trim(),
+    try {
+      const res = await fetch(`https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: regUsername.trim(),
+          password: regPassword,
+          full_name: regName.trim(),
+          sex: regSex,
+          phone: regPhone.trim(),
+          address: fullAddress.trim(),
+          email: regEmail.trim() || null,
+        }),
       });
 
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
+      const result = await res.json();
+
+      if (!res.ok) {
+        toast({ title: "Erro no cadastro", description: result.error, variant: "destructive" });
+        setLoading(false);
+        return;
       }
+
+      // Auto-login after registration
+      const fakeEmail = `${regUsername.trim().toLowerCase().replace(/[^a-z0-9]/g, "")}@rosadelis.local`;
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: fakeEmail,
+        password: regPassword,
+      });
+
+      if (loginError) {
+        toast({ title: "Cadastro realizado!", description: "Faça login com seu nome de usuário." });
+        setMode("login");
+      } else {
+        toast({ title: "Cadastro realizado com sucesso!" });
+        onOpenChange(false);
+      }
+    } catch {
+      toast({ title: "Erro de conexão", variant: "destructive" });
     }
 
     setLoading(false);
-    toast({ title: "Cadastro realizado!", description: "Verifique seu e-mail para confirmar a conta." });
     resetFields();
-    setMode("login");
   };
 
   return (
@@ -173,14 +195,13 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         {mode === "login" ? (
           <form onSubmit={handleLogin} className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="login-email" className="font-body text-sm">E-mail</Label>
+              <Label htmlFor="login-username" className="font-body text-sm">Nome de usuário</Label>
               <Input
-                id="login-email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                id="login-username"
+                placeholder="seunome"
+                value={loginUsername}
+                onChange={(e) => setLoginUsername(e.target.value)}
+                autoComplete="username"
               />
             </div>
             <div className="space-y-2">
@@ -212,7 +233,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         ) : (
           <form onSubmit={handleRegister} className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="reg-name" className="font-body text-sm">Nome completo</Label>
+              <Label htmlFor="reg-name" className="font-body text-sm">Nome completo *</Label>
               <Input
                 id="reg-name"
                 placeholder="Maria Silva"
@@ -222,7 +243,29 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-sex" className="font-body text-sm">Sexo</Label>
+              <Label htmlFor="reg-username" className="font-body text-sm">Nome de usuário *</Label>
+              <Input
+                id="reg-username"
+                placeholder="mariasilva"
+                value={regUsername}
+                onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
+                autoComplete="username"
+              />
+              <p className="text-xs text-muted-foreground">Usado para fazer login. Apenas letras, números, . _ -</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reg-email" className="font-body text-sm">E-mail (opcional)</Label>
+              <Input
+                id="reg-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reg-sex" className="font-body text-sm">Sexo *</Label>
               <Select value={regSex} onValueChange={setRegSex}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
@@ -234,18 +277,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-email" className="font-body text-sm">E-mail</Label>
-              <Input
-                id="reg-email"
-                type="email"
-                placeholder="seu@email.com"
-                value={regEmail}
-                onChange={(e) => setRegEmail(e.target.value)}
-                autoComplete="email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reg-password" className="font-body text-sm">Senha</Label>
+              <Label htmlFor="reg-password" className="font-body text-sm">Senha *</Label>
               <Input
                 id="reg-password"
                 type="password"
@@ -256,7 +288,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-phone" className="font-body text-sm">Telefone</Label>
+              <Label htmlFor="reg-phone" className="font-body text-sm">Telefone *</Label>
               <Input
                 id="reg-phone"
                 type="tel"
@@ -269,7 +301,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
             {/* CEP + Address */}
             <div className="space-y-2">
-              <Label htmlFor="reg-cep" className="font-body text-sm">CEP</Label>
+              <Label htmlFor="reg-cep" className="font-body text-sm">CEP *</Label>
               <div className="relative">
                 <Input
                   id="reg-cep"
