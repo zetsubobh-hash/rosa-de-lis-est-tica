@@ -111,7 +111,7 @@ const Services = () => {
             Tratamentos{" "}
             <span className="text-pink-vibrant">Estéticos Completos</span>
           </h2>
-          <p className="font-body text-muted-foreground mt-4 max-w-2xl mx-auto text-base md:text-lg">
+          <p className="font-body text-muted-foreground mt-4 max-w-2xl mx-auto text-sm md:text-lg leading-relaxed">
             Oferecemos uma linha completa de procedimentos estéticos faciais e corporais, sempre com foco no seu bem-estar e nos melhores resultados.
           </p>
         </motion.div>
