@@ -126,6 +126,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       toast({ title: "Login realizado com sucesso!" });
       resetFields();
       onOpenChange(false);
+      setTimeout(() => {
+        document.getElementById("servicos")?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
     }
   };
 
@@ -180,6 +183,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       } else {
         toast({ title: "Cadastro realizado com sucesso!" });
         onOpenChange(false);
+        setTimeout(() => {
+          document.getElementById("servicos")?.scrollIntoView({ behavior: "smooth" });
+        }, 300);
       }
     } catch {
       toast({ title: "Erro de conexão", variant: "destructive" });
