@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Clock, CreditCard, CalendarCheck, CalendarPlus, ArrowRight, ChevronRight, Check, Star } from "lucide-react";
 import { getServiceBySlug, services } from "@/data/services";
@@ -8,7 +9,12 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 
 const ServiceDetail = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { pathname } = useLocation();
   const service = slug ? getServiceBySlug(slug) : undefined;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   // Get related services (exclude current, pick 3)
   const related = services.filter((s) => s.slug !== slug).slice(0, 3);
