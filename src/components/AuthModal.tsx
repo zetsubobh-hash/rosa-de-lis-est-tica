@@ -26,6 +26,10 @@ const formatCep = (value: string) => {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 };
 
+const capitalizeWords = (value: string) => {
+  return value.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const generateFakeEmail = (username: string) => {
   const sanitized = username.toLowerCase().replace(/[^a-z0-9]/g, "");
   return `${sanitized}@rosadelis.local`;
@@ -238,7 +242,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 id="reg-name"
                 placeholder="Maria Silva"
                 value={regName}
-                onChange={(e) => setRegName(e.target.value)}
+                onChange={(e) => setRegName(capitalizeWords(e.target.value))}
                 autoComplete="name"
               />
             </div>
