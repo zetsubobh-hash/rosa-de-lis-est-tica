@@ -207,7 +207,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 placeholder="Maria Silva"
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(capitalizeWords(e.target.value))}
-                autoComplete="name"
+                autoComplete="off"
               />
             </div>
             <div className="space-y-2">
