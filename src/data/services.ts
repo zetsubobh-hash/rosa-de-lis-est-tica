@@ -119,6 +119,7 @@ export const services: ServiceData[] = [
     duration: "40 a 60 minutos por área",
     price: "A partir de R$ 500,00",
     sessions: "1 a 3 sessões por área",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -178,6 +179,7 @@ export const services: ServiceData[] = [
     duration: "15 a 30 minutos",
     price: "A partir de R$ 800,00",
     sessions: "Manutenção a cada 4-6 meses",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -237,6 +239,7 @@ export const services: ServiceData[] = [
     duration: "20 a 40 minutos",
     price: "A partir de R$ 200,00",
     sessions: "Pacote de 10 a 20 sessões",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -298,6 +301,7 @@ export const services: ServiceData[] = [
     duration: "30 a 45 minutos",
     price: "A partir de R$ 180,00",
     sessions: "Pacote de 4 a 6 sessões",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -359,6 +363,7 @@ export const services: ServiceData[] = [
     duration: "30 a 45 minutos",
     price: "A partir de R$ 180,00",
     sessions: "Pacote de 4 a 6 sessões",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -420,6 +425,7 @@ export const services: ServiceData[] = [
     duration: "50 a 60 minutos",
     price: "A partir de R$ 130,00",
     sessions: "Pacote de 10 a 15 sessões",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -481,6 +487,7 @@ export const services: ServiceData[] = [
     duration: "50 a 60 minutos",
     price: "A partir de R$ 140,00",
     sessions: "Pacote de 10 sessões",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -542,6 +549,7 @@ export const services: ServiceData[] = [
     duration: "60 a 90 minutos",
     price: "A partir de R$ 120,00",
     sessions: "Manutenção mensal recomendada",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -603,6 +611,7 @@ export const services: ServiceData[] = [
     duration: "40 a 60 minutos",
     price: "A partir de R$ 350,00",
     sessions: "Pacote de 3 a 6 sessões",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -664,6 +673,7 @@ export const services: ServiceData[] = [
     duration: "30 a 50 minutos",
     price: "A partir de R$ 250,00",
     sessions: "Pacote de 6 a 10 sessões",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
@@ -725,6 +735,7 @@ export const services: ServiceData[] = [
     duration: "60 a 90 minutos",
     price: "A partir de R$ 200,00",
     sessions: "Conforme orientação médica",
+    image: drenagemImg,
     packages: [
       {
         name: "Essencial",
