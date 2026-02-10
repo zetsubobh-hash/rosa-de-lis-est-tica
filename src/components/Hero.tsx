@@ -33,7 +33,7 @@ const Hero = () => {
               Drenagem Linfática
             </h1>
 
-            <p className="font-body text-primary-foreground/80 text-base md:text-lg font-light max-w-lg mx-auto lg:mx-0 mb-10 leading-relaxed">
+            <p className="font-body text-primary-foreground/80 text-base md:text-lg font-normal max-w-lg mx-auto lg:mx-0 mb-10 leading-relaxed">
               O melhor tratamento para combater a retenção de líquidos.
             </p>
 
