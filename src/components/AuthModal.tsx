@@ -206,7 +206,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 id="login-username"
                 placeholder="Maria Silva"
                 value={loginUsername}
-                onChange={(e) => setLoginUsername(e.target.value)}
+                onChange={(e) => setLoginUsername(capitalizeWords(e.target.value))}
                 autoComplete="name"
               />
             </div>
