@@ -12,11 +12,10 @@ import { useAuth } from "@/contexts/AuthContext";
 const ServiceDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const service = slug ? getServiceBySlug(slug) : undefined;
-
-  const navigate = useNavigate();
 
   const handleAgendar = () => {
     if (!user) {
