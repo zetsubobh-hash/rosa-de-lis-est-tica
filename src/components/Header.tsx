@@ -117,7 +117,7 @@ const Header = () => {
             {user ? (
               <button
                 onClick={signOut}
-                className="flex items-center gap-2 font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors uppercase tracking-wider font-medium"
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
               >
                 <LogOut className="w-4 h-4" />
                 Sair
@@ -162,7 +162,7 @@ const Header = () => {
             {user ? (
               <button
                 onClick={() => { setMenuOpen(false); signOut(); }}
-                className="mt-4 flex items-center justify-center gap-2 w-full py-3 font-body text-sm text-primary-foreground/80 hover:text-primary-foreground uppercase tracking-wider font-medium"
+                className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full uppercase tracking-wider"
               >
                 <LogOut className="w-4 h-4" />
                 Sair
