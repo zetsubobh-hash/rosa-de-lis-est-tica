@@ -1,32 +1,26 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, CalendarDays } from "lucide-react";
+import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { services } from "@/data/services";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
-import { toast } from "@/hooks/use-toast";
 
 const Services = () => {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [clicked, setClicked] = useState<string | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const toggleService = (slug: string) => {
-    setSelected((prev) => (prev === slug ? null : slug));
-  };
-
-  const handleAgendar = () => {
+  const handleClick = (slug: string) => {
     if (!user) {
       setAuthModalOpen(true);
       return;
     }
-    if (!selected) {
-      toast({ title: "Selecione um serviço", variant: "destructive" });
-      return;
-    }
-    navigate(`/servico/${selected}`);
+    setClicked(slug);
+    setTimeout(() => {
+      navigate(`/servico/${slug}`);
+    }, 400);
   };
 
   return (
@@ -53,7 +47,7 @@ const Services = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
           {services.map((service, i) => {
-            const isSelected = selected === service.slug;
+            const isSelected = clicked === service.slug;
             return (
               <motion.div
                 key={service.slug}
@@ -61,7 +55,7 @@ const Services = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
-                onClick={() => toggleService(service.slug)}
+                onClick={() => handleClick(service.slug)}
                 className={`group relative rounded-2xl p-5 md:p-6 cursor-pointer overflow-hidden border-2 transition-all duration-300 h-full select-none ${
                   isSelected
                     ? "bg-primary/10 border-primary shadow-inner scale-[0.97]"
@@ -119,25 +113,6 @@ const Services = () => {
           })}
         </div>
 
-        {/* Agendar button */}
-        <AnimatePresence>
-          {selected && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="mt-10 text-center"
-            >
-              <button
-                onClick={handleAgendar}
-                className="inline-flex items-center gap-3 px-10 py-4 bg-primary text-primary-foreground font-body text-base font-semibold rounded-full hover:bg-primary/90 transition-all duration-300 uppercase tracking-wider shadow-lg hover:shadow-xl"
-              >
-                <CalendarDays className="w-5 h-5" />
-                Agendar
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
