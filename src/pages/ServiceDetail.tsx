@@ -221,29 +221,6 @@ const ServiceDetail = () => {
                   ))}
                 </div>
               </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] rounded-3xl p-6 md:p-8 text-primary-foreground"
-              >
-                <h3 className="font-heading text-lg font-bold mb-2">Agende seu horário</h3>
-                <p className="font-body text-primary-foreground/70 text-sm mb-6 leading-relaxed">
-                  Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
-                </p>
-                <button
-                  onClick={() => {/* TODO: navigate to scheduling page */}}
-                  className="flex items-center justify-center gap-2 w-full py-4 bg-primary-foreground text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
-                >
-                  <CalendarPlus className="w-5 h-5" />
-                  Agendar Agora
-                </button>
-                <p className="font-body text-[11px] text-primary-foreground/50 text-center mt-4 leading-relaxed">
-                  Valores podem variar conforme avaliação personalizada.
-                </p>
-              </motion.div>
             </div>
           </div>
         </div>
@@ -339,6 +316,32 @@ const ServiceDetail = () => {
           </div>
         </section>
       )}
+
+      {/* CTA Agende */}
+      <section className="max-w-3xl mx-auto px-6 pb-16 md:pb-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] rounded-3xl p-8 md:p-10 text-primary-foreground text-center"
+        >
+          <h3 className="font-heading text-xl md:text-2xl font-bold mb-3">Agende seu horário</h3>
+          <p className="font-body text-primary-foreground/70 text-sm md:text-base mb-8 leading-relaxed max-w-lg mx-auto">
+            Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
+          </p>
+          <button
+            onClick={() => {/* TODO: navigate to scheduling page */}}
+            className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-primary-foreground text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
+          >
+            <CalendarPlus className="w-5 h-5" />
+            Agendar Agora
+          </button>
+          <p className="font-body text-[11px] text-primary-foreground/50 mt-5 leading-relaxed">
+            Valores podem variar conforme avaliação personalizada.
+          </p>
+        </motion.div>
+      </section>
 
       <section className="bg-rose-soft py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-6">
