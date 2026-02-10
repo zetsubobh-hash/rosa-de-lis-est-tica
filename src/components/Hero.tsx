@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import referenceHero from "@/assets/reference-hero.webp";
-
+import AuthModal from "@/components/AuthModal";
+import { useAuth } from "@/contexts/AuthContext";
 const slides = [
   {
     title: "Drenagem Linfática",
@@ -39,6 +40,16 @@ const slides = [
 
 const Hero = () => {
   const [current, setCurrent] = useState(0);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { user } = useAuth();
+
+  const handleAgendar = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+    } else {
+      // TODO: navigate to scheduling page
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -100,10 +111,8 @@ const Hero = () => {
             ))}
           </div>
 
-          <motion.a
-            href="https://wa.me/5511999999999"
-            target="_blank"
-            rel="noopener noreferrer"
+          <motion.button
+            onClick={handleAgendar}
             className="inline-block px-8 md:px-10 py-3.5 md:py-4 border-2 border-primary-foreground text-primary-foreground font-body text-xs md:text-sm font-semibold tracking-[0.15em] md:tracking-[0.2em] uppercase rounded-full hover:bg-primary-foreground hover:text-primary transition-all duration-500"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -112,7 +121,7 @@ const Hero = () => {
             whileTap={{ scale: 0.98 }}
           >
             Quero agora mesmo
-          </motion.a>
+          </motion.button>
         </div>
       </div>
 
@@ -127,6 +136,8 @@ const Hero = () => {
           transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
         />
       </div>
+
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </section>
   );
 };
