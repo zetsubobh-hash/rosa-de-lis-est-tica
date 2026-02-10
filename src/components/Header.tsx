@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -20,6 +22,25 @@ const Header = () => {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setProfileName(null);
+      return;
+    }
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, sex")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        const greeting = data.sex === "masculino" ? "Seja bem-vindo" : "Seja bem-vinda";
+        setProfileName(`${greeting}, ${data.full_name}, à Rosa de Lis Estética!`);
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
   const navItems = [
     { label: "Início", href: "#" },
@@ -162,6 +183,22 @@ const Header = () => {
           </motion.div>
         )}
       </motion.header>
+
+      <AnimatePresence>
+        {profileName && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="fixed top-[72px] left-0 right-0 z-40 bg-accent/90 backdrop-blur-sm border-b border-accent-foreground/10"
+          >
+            <p className="text-center font-body text-sm text-accent-foreground py-2 px-4">
+              ✨ {profileName}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </>
