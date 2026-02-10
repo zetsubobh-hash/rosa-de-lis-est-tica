@@ -106,53 +106,58 @@ const ServiceDetail = () => {
         {/* Straight separator */}
       </section>
 
-      {/* Content */}
+      {/* About: image left + description right */}
       <section className="max-w-6xl mx-auto px-6 py-12 md:py-20">
-        {/* Service image */}
-        {service.image && (
+        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-14">
+          {service.image && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex-shrink-0"
+            >
+              <img
+                src={service.image}
+                alt={service.title}
+                className="max-w-[260px] md:max-w-[320px]"
+              />
+            </motion.div>
+          )}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="mb-12 md:mb-16"
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="flex-1"
           >
-            <img
-              src={service.image}
-              alt={service.title}
-              className="max-w-xs md:max-w-sm mx-auto"
-            />
+            <p className="font-body text-primary text-xs tracking-[0.3em] uppercase font-semibold mb-2">
+              Sobre o tratamento
+            </p>
+            <h2 className="font-heading text-2xl md:text-3xl font-bold text-foreground mb-5">
+              {service.title}
+            </h2>
+            <p className="font-body text-muted-foreground text-sm md:text-base leading-[1.9]">
+              {service.fullDescription}
+            </p>
           </motion.div>
-        )}
+        </div>
+      </section>
 
+      {/* Benefits + Sidebar */}
+      <section className="max-w-6xl mx-auto px-6 pb-12 md:pb-20">
         <div className="grid lg:grid-cols-5 gap-10 md:gap-16">
-          {/* Main content - 3 cols */}
-          <div className="lg:col-span-3 space-y-12">
-            {/* Description */}
+          <div className="lg:col-span-3">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-5 flex items-center gap-3">
-                <span className="w-8 h-[2px] bg-primary rounded-full" />
-                Sobre o tratamento
-              </h2>
-              <p className="font-body text-muted-foreground text-sm md:text-base leading-[1.9]">
-                {service.fullDescription}
+              <p className="font-body text-primary text-xs tracking-[0.3em] uppercase font-semibold mb-2">
+                Vantagens
               </p>
-            </motion.div>
-
-            {/* Benefits */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
-              <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-6 flex items-center gap-3">
-                <span className="w-8 h-[2px] bg-primary rounded-full" />
+              <h2 className="font-heading text-2xl md:text-3xl font-bold text-foreground mb-6">
                 Benefícios
               </h2>
               <div className="grid sm:grid-cols-2 gap-3">
@@ -175,11 +180,8 @@ const ServiceDetail = () => {
             </motion.div>
           </div>
 
-          {/* Sidebar - 2 cols */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Sticky wrapper */}
             <div className="lg:sticky lg:top-28 space-y-6">
-              {/* Info card */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -187,10 +189,7 @@ const ServiceDetail = () => {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="bg-card rounded-3xl p-6 md:p-8 border border-border shadow-sm"
               >
-                <h3 className="font-heading text-lg font-bold text-foreground mb-6">
-                  Informações
-                </h3>
-
+                <h3 className="font-heading text-lg font-bold text-foreground mb-6">Informações</h3>
                 <div className="space-y-5">
                   {[
                     { icon: Clock, label: "Duração", value: service.duration },
@@ -209,19 +208,14 @@ const ServiceDetail = () => {
                         <InfoIcon className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-body text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-semibold">
-                          {label}
-                        </p>
-                        <p className="font-body text-sm font-semibold text-foreground">
-                          {value}
-                        </p>
+                        <p className="font-body text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-semibold">{label}</p>
+                        <p className="font-body text-sm font-semibold text-foreground">{value}</p>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               </motion.div>
 
-              {/* CTA card */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -229,13 +223,10 @@ const ServiceDetail = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] rounded-3xl p-6 md:p-8 text-primary-foreground"
               >
-                <h3 className="font-heading text-lg font-bold mb-2">
-                  Agende seu horário
-                </h3>
+                <h3 className="font-heading text-lg font-bold mb-2">Agende seu horário</h3>
                 <p className="font-body text-primary-foreground/70 text-sm mb-6 leading-relaxed">
                   Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
                 </p>
-
                 <button
                   onClick={() => {/* TODO: navigate to scheduling page */}}
                   className="flex items-center justify-center gap-2 w-full py-4 bg-primary-foreground text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
@@ -243,7 +234,6 @@ const ServiceDetail = () => {
                   <CalendarPlus className="w-5 h-5" />
                   Agendar Agora
                 </button>
-
                 <p className="font-body text-[11px] text-primary-foreground/50 text-center mt-4 leading-relaxed">
                   Valores podem variar conforme avaliação personalizada.
                 </p>
