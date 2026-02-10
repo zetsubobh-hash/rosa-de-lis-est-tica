@@ -29,7 +29,7 @@ const Hero = () => {
               Estética especializada em tratamentos corporais e faciais
             </p>
 
-            <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl font-bold text-primary-foreground leading-tight mb-6">
+            <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-6">
               Drenagem Linfática
             </h1>
 
