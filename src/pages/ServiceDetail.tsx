@@ -313,8 +313,10 @@ const ServiceDetail = () => {
                   ))}
                 </ul>
 
-                <button
+                <motion.button
                   onClick={handleAgendar}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.95 }}
                   className={`flex items-center justify-center gap-2 w-full py-3.5 font-body text-sm font-bold rounded-2xl transition-all duration-300 uppercase tracking-wider ${
                     pkg.highlight
                       ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
@@ -323,7 +325,7 @@ const ServiceDetail = () => {
                 >
                   <CalendarPlus className="w-4 h-4" />
                   Agendar Agora
-                </button>
+                </motion.button>
               </motion.div>
             ))}
           </div>
@@ -343,13 +345,15 @@ const ServiceDetail = () => {
           <p className="font-body text-primary-foreground/70 text-sm md:text-base mb-8 leading-relaxed max-w-lg mx-auto">
             Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
           </p>
-          <button
+          <motion.button
             onClick={handleAgendar}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-primary-foreground text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
           >
             <CalendarPlus className="w-5 h-5" />
             Agendar Agora
-          </button>
+          </motion.button>
           <p className="font-body text-[11px] text-primary-foreground/50 mt-5 leading-relaxed">
             Valores podem variar conforme avaliação personalizada.
           </p>
