@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Clock, CreditCard, CalendarCheck, CalendarPlus, ArrowRight, ChevronRight } from "lucide-react";
+import { Clock, CreditCard, CalendarCheck, CalendarPlus, ArrowRight, ChevronRight, Check, Star } from "lucide-react";
 import { getServiceBySlug, services } from "@/data/services";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -243,7 +243,96 @@ const ServiceDetail = () => {
         </div>
       </section>
 
-      {/* Related services */}
+      {/* Packages */}
+      {service.packages && service.packages.length > 0 && (
+        <section className="max-w-6xl mx-auto px-6 pb-16 md:pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-10"
+          >
+            <p className="font-body text-primary text-xs tracking-[0.3em] uppercase font-semibold mb-2">
+              Pacotes
+            </p>
+            <h2 className="font-heading text-2xl md:text-4xl font-bold text-foreground">
+              Escolha o seu <span className="text-pink-vibrant">Plano</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {service.packages.map((pkg, i) => (
+              <motion.div
+                key={pkg.name}
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.12 }}
+                className={`relative rounded-3xl p-6 md:p-8 border transition-all duration-500 ${
+                  pkg.highlight
+                    ? "bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] text-primary-foreground border-transparent shadow-xl scale-[1.02]"
+                    : "bg-card text-foreground border-border hover:border-primary/20 hover:shadow-lg"
+                }`}
+              >
+                {pkg.highlight && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary-foreground text-primary font-body text-[10px] font-bold uppercase tracking-[0.2em] rounded-full flex items-center gap-1">
+                    <Star className="w-3 h-3" />
+                    Mais popular
+                  </div>
+                )}
+
+                <h3 className="font-heading text-lg md:text-xl font-bold mb-1">
+                  {pkg.name}
+                </h3>
+                <p className={`font-body text-xs mb-4 ${pkg.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                  {pkg.sessions} sessões
+                </p>
+
+                <div className="mb-1">
+                  <span className="font-heading text-3xl md:text-4xl font-bold">
+                    {pkg.pricePerSession}
+                  </span>
+                  <span className={`font-body text-sm ml-1 ${pkg.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                    /sessão
+                  </span>
+                </div>
+                <p className={`font-body text-xs mb-6 ${pkg.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
+                  Total: {pkg.totalPrice}
+                </p>
+
+                <ul className="space-y-3 mb-8">
+                  {pkg.perks.map((perk, j) => (
+                    <li key={j} className="flex items-start gap-2.5">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        pkg.highlight ? "bg-primary-foreground/20" : "bg-primary/10"
+                      }`}>
+                        <Check className={`w-3 h-3 ${pkg.highlight ? "text-primary-foreground" : "text-primary"}`} />
+                      </div>
+                      <span className={`font-body text-sm leading-relaxed ${pkg.highlight ? "text-primary-foreground/90" : "text-foreground"}`}>
+                        {perk}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => {/* TODO: navigate to scheduling page */}}
+                  className={`flex items-center justify-center gap-2 w-full py-3.5 font-body text-sm font-bold rounded-2xl transition-all duration-300 uppercase tracking-wider ${
+                    pkg.highlight
+                      ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
+                  }`}
+                >
+                  <CalendarPlus className="w-4 h-4" />
+                  Agendar Agora
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="bg-rose-soft py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div

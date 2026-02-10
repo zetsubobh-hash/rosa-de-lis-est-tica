@@ -14,6 +14,15 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+export interface ServicePackage {
+  name: string;
+  sessions: number;
+  pricePerSession: string;
+  totalPrice: string;
+  highlight?: boolean;
+  perks: string[];
+}
+
 export interface ServiceData {
   slug: string;
   icon: typeof Droplets;
@@ -25,6 +34,7 @@ export interface ServiceData {
   price: string;
   sessions: string;
   image?: string;
+  packages?: ServicePackage[];
 }
 
 export const services: ServiceData[] = [
@@ -48,6 +58,47 @@ export const services: ServiceData[] = [
     price: "A partir de R$ 150,00",
     sessions: "Recomendamos pacotes de 10 sessões",
     image: drenagemImg,
+    packages: [
+      {
+        name: "Essencial",
+        sessions: 5,
+        pricePerSession: "R$ 150,00",
+        totalPrice: "R$ 750,00",
+        perks: [
+          "5 sessões de 60 minutos",
+          "Avaliação corporal inicial",
+          "Técnica manual clássica",
+        ],
+      },
+      {
+        name: "Premium",
+        sessions: 10,
+        pricePerSession: "R$ 130,00",
+        totalPrice: "R$ 1.300,00",
+        highlight: true,
+        perks: [
+          "10 sessões de 60 minutos",
+          "Avaliação corporal completa",
+          "Técnica manual + bambuterapia",
+          "Aromaterapia inclusa",
+          "13% de desconto por sessão",
+        ],
+      },
+      {
+        name: "VIP",
+        sessions: 20,
+        pricePerSession: "R$ 110,00",
+        totalPrice: "R$ 2.200,00",
+        perks: [
+          "20 sessões de 60 minutos",
+          "Avaliação corporal completa",
+          "Técnica manual + bambuterapia",
+          "Aromaterapia + crioterapia",
+          "Acompanhamento nutricional",
+          "27% de desconto por sessão",
+        ],
+      },
+    ],
   },
   {
     slug: "criolipólise",
