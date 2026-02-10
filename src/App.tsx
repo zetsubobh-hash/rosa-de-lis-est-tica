@@ -8,6 +8,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
 import ServiceDetail from "./pages/ServiceDetail";
 import Agendar from "./pages/Agendar";
+import Checkout from "./pages/Checkout";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/servico/:slug" element={<ServiceDetail />} />
             <Route path="/agendar/:slug" element={<Agendar />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
