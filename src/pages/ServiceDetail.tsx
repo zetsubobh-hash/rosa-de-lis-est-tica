@@ -269,11 +269,11 @@ const ServiceDetail = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 whileHover={{ scale: 1.05 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.12 }}
-                className={`relative rounded-3xl p-6 md:p-8 border cursor-pointer transition-all duration-500 ${
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className={`relative rounded-3xl p-6 md:p-8 border cursor-pointer ${
                   pkg.highlight
                     ? "bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] text-primary-foreground border-transparent shadow-xl"
-                    : "bg-card text-foreground border-border hover:border-primary/20 hover:shadow-lg"
+                    : "bg-card text-foreground border-border shadow-sm"
                 }`}
               >
                 {pkg.highlight && (
