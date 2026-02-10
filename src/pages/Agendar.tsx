@@ -50,7 +50,6 @@ const Agendar = () => {
         .from("appointments")
         .select("appointment_time")
         .eq("appointment_date", dateStr)
-        .eq("service_slug", slug || "")
         .eq("status", "confirmed");
       setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
     };
