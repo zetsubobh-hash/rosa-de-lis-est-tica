@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Clock, CreditCard, CalendarCheck, MessageCircle, ArrowRight, ChevronRight } from "lucide-react";
+import { Clock, CreditCard, CalendarCheck, CalendarPlus, ArrowRight, ChevronRight } from "lucide-react";
 import { getServiceBySlug, services } from "@/data/services";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -33,9 +33,7 @@ const ServiceDetail = () => {
 
   const Icon = service.icon;
 
-  const whatsappMessage = encodeURIComponent(
-    `Olá! Gostaria de agendar o tratamento de ${service.title}. Poderia me informar os horários disponíveis?`
-  );
+  // TODO: Link to scheduling system when ready
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,20 +103,7 @@ const ServiceDetail = () => {
           </div>
         </div>
 
-        {/* Wave separator */}
-        <div className="relative h-12 md:h-16">
-          <svg
-            viewBox="0 0 1440 60"
-            fill="none"
-            className="absolute bottom-0 w-full h-full"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M0 60V20C240 0 480 0 720 20C960 40 1200 40 1440 20V60H0Z"
-              fill="hsl(var(--background))"
-            />
-          </svg>
-        </div>
+        {/* Straight separator */}
       </section>
 
       {/* Content */}
@@ -231,18 +216,16 @@ const ServiceDetail = () => {
                   Agende seu horário
                 </h3>
                 <p className="font-body text-primary-foreground/70 text-sm mb-6 leading-relaxed">
-                  Entre em contato pelo WhatsApp e garanta o melhor horário para o seu tratamento.
+                  Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
                 </p>
 
-                <a
-                  href={`https://wa.me/5511999999999?text=${whatsappMessage}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => {/* TODO: navigate to scheduling page */}}
                   className="flex items-center justify-center gap-2 w-full py-4 bg-primary-foreground text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
                 >
-                  <MessageCircle className="w-5 h-5" />
-                  Agendar pelo WhatsApp
-                </a>
+                  <CalendarPlus className="w-5 h-5" />
+                  Agendar Agora
+                </button>
 
                 <p className="font-body text-[11px] text-primary-foreground/50 text-center mt-4 leading-relaxed">
                   Valores podem variar conforme avaliação personalizada.
