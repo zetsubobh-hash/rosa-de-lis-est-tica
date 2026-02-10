@@ -1,7 +1,52 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import referenceHero from "@/assets/reference-hero.webp";
 
+const slides = [
+  {
+    title: "Drenagem Linfática",
+    subtitle: "O melhor tratamento para combater a retenção de líquidos.",
+  },
+  {
+    title: "Criolipólise",
+    subtitle: "Elimine gordura localizada sem cirurgia, com resultados visíveis.",
+  },
+  {
+    title: "Botox",
+    subtitle: "Suavize rugas e linhas de expressão com aspecto natural.",
+  },
+  {
+    title: "Carboxiterapia",
+    subtitle: "Melhore circulação e trate celulite com tecnologia avançada.",
+  },
+  {
+    title: "Massagem Modeladora",
+    subtitle: "Esculpa o corpo e defina suas curvas de forma natural.",
+  },
+  {
+    title: "Peeling de Diamante",
+    subtitle: "Renove sua pele e conquiste uma aparência luminosa e uniforme.",
+  },
+  {
+    title: "Radiofrequência",
+    subtitle: "Combata a flacidez e estimule colágeno para rejuvenescer.",
+  },
+  {
+    title: "Microagulhamento",
+    subtitle: "Estimule colágeno e trate cicatrizes com precisão.",
+  },
+];
+
 const Hero = () => {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-primary">
       {/* Decorative circles */}
@@ -10,34 +55,67 @@ const Hero = () => {
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 w-full text-center lg:text-left">
         <div className="max-w-2xl mx-auto lg:mx-0">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 1 }}
+            className="font-body text-primary-foreground/70 text-sm tracking-[0.3em] uppercase mb-6 font-medium"
           >
-            <p className="font-body text-primary-foreground/70 text-sm tracking-[0.3em] uppercase mb-6 font-medium">
-              Estética especializada em tratamentos corporais e faciais
-            </p>
+            Estética especializada em tratamentos corporais e faciais
+          </motion.p>
 
-            <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-6">
-              Drenagem Linfática
-            </h1>
+          {/* Rotating text area */}
+          <div className="h-[180px] md:h-[200px] relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              >
+                <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-6">
+                  {slides[current].title}
+                </h1>
+                <p
+                  className="font-body text-primary-foreground/80 font-normal max-w-lg mx-auto lg:mx-0"
+                  style={{ fontSize: "25px", lineHeight: "35px" }}
+                >
+                  {slides[current].subtitle}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-            <p className="font-body text-primary-foreground/80 font-normal max-w-lg mx-auto lg:mx-0 mb-10" style={{ fontSize: '25px', lineHeight: '35px' }}>
-              O melhor tratamento para combater a retenção de líquidos.
-            </p>
+          {/* Slide indicators */}
+          <div className="flex gap-2 mb-8 justify-center lg:justify-start">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  i === current
+                    ? "w-8 bg-primary-foreground"
+                    : "w-3 bg-primary-foreground/30 hover:bg-primary-foreground/50"
+                }`}
+                aria-label={`Ir para slide ${i + 1}`}
+              />
+            ))}
+          </div>
 
-            <motion.a
-              href="https://wa.me/5511999999999"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block px-10 py-4 border-2 border-primary-foreground text-primary-foreground font-body text-sm font-semibold tracking-[0.2em] uppercase rounded-full hover:bg-primary-foreground hover:text-primary transition-all duration-500"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Quero agora mesmo
-            </motion.a>
-          </motion.div>
+          <motion.a
+            href="https://wa.me/5511999999999"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-10 py-4 border-2 border-primary-foreground text-primary-foreground font-body text-sm font-semibold tracking-[0.2em] uppercase rounded-full hover:bg-primary-foreground hover:text-primary transition-all duration-500"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.3 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Quero agora mesmo
+          </motion.a>
         </div>
       </div>
 
