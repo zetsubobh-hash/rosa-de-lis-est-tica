@@ -116,28 +116,36 @@ const Services = () => {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
           {services.map((service, i) => (
             <motion.div
               key={service.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.07 }}
-              className="bg-background rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-500 group border border-border hover:border-primary/30"
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+              className="group relative bg-background rounded-2xl p-5 md:p-6 cursor-pointer overflow-hidden border border-transparent hover:border-primary/20 transition-all duration-500 hover:shadow-lg"
             >
-              <div className="w-14 h-14 mb-5 flex items-center justify-center bg-primary/10 rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
-                <service.icon
-                  className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors duration-500"
-                  strokeWidth={1.5}
-                />
+              {/* Decorative gradient on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-pink-vibrant/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
+
+              <div className="relative z-10">
+                <div className="w-10 h-10 md:w-11 md:h-11 mb-4 flex items-center justify-center rounded-full bg-primary/10 group-hover:bg-primary transition-all duration-500">
+                  <service.icon
+                    className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors duration-500"
+                    strokeWidth={1.8}
+                  />
+                </div>
+                <h3 className="font-heading text-sm md:text-base font-semibold text-foreground mb-2 leading-tight">
+                  {service.title}
+                </h3>
+                <p className="font-body text-muted-foreground text-xs md:text-[13px] leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-300">
+                  {service.description}
+                </p>
               </div>
-              <h3 className="font-heading text-xl font-semibold text-foreground mb-3">
-                {service.title}
-              </h3>
-              <p className="font-body text-muted-foreground text-sm leading-relaxed">
-                {service.description}
-              </p>
+
+              {/* Bottom accent line */}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-gradient-to-r from-primary to-pink-vibrant group-hover:w-3/4 transition-all duration-500 rounded-full" />
             </motion.div>
           ))}
         </div>
