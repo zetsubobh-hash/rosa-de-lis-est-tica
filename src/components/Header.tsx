@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("#");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileName, setProfileName] = useState<string | null>(null);
   const { user, signOut } = useAuth();
@@ -18,10 +19,24 @@ const Header = () => {
   const isHome = location.pathname === "/";
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    const sectionIds = ["contato", "beneficios", "servicos", "sobre"];
+    const onScroll = () => {
+      setScrolled(window.scrollY > 50);
+      if (!isHome) return;
+      // Check which section is in view
+      const scrollPos = window.scrollY + 120;
+      let found = "#";
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= scrollPos) {
+          found = `#${id}`;
+        }
+      }
+      setActiveSection(found);
+    };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [isHome]);
 
   useEffect(() => {
     if (!user) {
@@ -53,6 +68,7 @@ const Header = () => {
   const handleNavClick = (e: React.MouseEvent, href: string) => {
     e.preventDefault();
     setMenuOpen(false);
+    setActiveSection(href);
 
     if (isHome) {
       if (href === "#") {
@@ -109,7 +125,11 @@ const Header = () => {
                 key={item.label}
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item.href)}
-                className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground tracking-wide transition-colors duration-300 uppercase font-medium"
+                className={`font-body text-sm tracking-wide transition-colors duration-300 uppercase font-medium ${
+                  activeSection === item.href
+                    ? "text-primary-foreground border-b-2 border-primary-foreground pb-1"
+                    : "text-primary-foreground/80 hover:text-primary-foreground"
+                }`}
               >
                 {item.label}
               </a>
@@ -154,7 +174,11 @@ const Header = () => {
                 key={item.label}
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item.href)}
-                className="block py-3 font-body text-sm text-primary-foreground/90 hover:text-primary-foreground uppercase tracking-wide font-medium border-b border-primary-foreground/10"
+                className={`block py-3 font-body text-sm uppercase tracking-wide font-medium border-b border-primary-foreground/10 ${
+                  activeSection === item.href
+                    ? "text-primary-foreground"
+                    : "text-primary-foreground/60 hover:text-primary-foreground"
+                }`}
               >
                 {item.label}
               </a>
