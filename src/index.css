@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Raleway:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,35 +6,35 @@
 
 @layer base {
   :root {
-    --background: 30 25% 97%;
-    --foreground: 350 20% 15%;
+    --background: 0 0% 100%;
+    --foreground: 340 20% 15%;
 
-    --card: 30 20% 95%;
-    --card-foreground: 350 20% 15%;
+    --card: 340 30% 97%;
+    --card-foreground: 340 20% 15%;
 
-    --popover: 30 25% 97%;
-    --popover-foreground: 350 20% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 340 20% 15%;
 
-    --primary: 345 30% 45%;
-    --primary-foreground: 30 25% 97%;
+    --primary: 340 80% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 20% 90%;
-    --secondary-foreground: 350 20% 20%;
+    --secondary: 340 30% 95%;
+    --secondary-foreground: 340 20% 20%;
 
-    --muted: 30 15% 92%;
-    --muted-foreground: 350 10% 45%;
+    --muted: 340 15% 94%;
+    --muted-foreground: 340 10% 45%;
 
-    --accent: 38 60% 55%;
-    --accent-foreground: 350 20% 12%;
+    --accent: 340 80% 55%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 30 15% 88%;
-    --input: 30 15% 88%;
-    --ring: 345 30% 45%;
+    --border: 340 15% 90%;
+    --input: 340 15% 90%;
+    --ring: 340 80% 55%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -45,34 +45,35 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --font-heading: 'Cormorant Garamond', serif;
-    --font-body: 'Raleway', sans-serif;
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Montserrat', sans-serif;
 
-    --rose-light: 345 40% 92%;
-    --rose-medium: 345 30% 70%;
+    --pink-vibrant: 340 80% 55%;
+    --pink-light: 340 60% 92%;
+    --pink-dark: 340 70% 40%;
+    --rose-soft: 340 40% 96%;
     --gold: 38 60% 55%;
     --gold-light: 38 50% 85%;
-    --cream: 30 25% 97%;
   }
 
   .dark {
-    --background: 350 20% 8%;
-    --foreground: 30 20% 92%;
-    --card: 350 18% 12%;
-    --card-foreground: 30 20% 92%;
-    --popover: 350 20% 8%;
-    --popover-foreground: 30 20% 92%;
-    --primary: 345 35% 55%;
-    --primary-foreground: 30 25% 97%;
-    --secondary: 350 15% 18%;
-    --secondary-foreground: 30 20% 90%;
-    --muted: 350 12% 20%;
-    --muted-foreground: 30 10% 60%;
-    --accent: 38 55% 50%;
-    --accent-foreground: 30 20% 95%;
-    --border: 350 12% 22%;
-    --input: 350 12% 22%;
-    --ring: 345 35% 55%;
+    --background: 340 20% 6%;
+    --foreground: 0 0% 95%;
+    --card: 340 18% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 340 20% 6%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 340 75% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 340 15% 15%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 340 12% 18%;
+    --muted-foreground: 340 10% 60%;
+    --accent: 340 75% 60%;
+    --accent-foreground: 0 0% 100%;
+    --border: 340 12% 20%;
+    --input: 340 12% 20%;
+    --ring: 340 75% 60%;
   }
 }
 
@@ -92,19 +93,28 @@
 }
 
 @layer utilities {
+  .text-pink-vibrant {
+    color: hsl(var(--pink-vibrant));
+  }
+  .bg-pink-vibrant {
+    background-color: hsl(var(--pink-vibrant));
+  }
+  .bg-pink-light {
+    background-color: hsl(var(--pink-light));
+  }
+  .bg-rose-soft {
+    background-color: hsl(var(--rose-soft));
+  }
+  .border-pink-vibrant {
+    border-color: hsl(var(--pink-vibrant));
+  }
   .text-gold {
     color: hsl(var(--gold));
-  }
-  .bg-rose-light {
-    background-color: hsl(var(--rose-light));
   }
   .bg-gold-light {
     background-color: hsl(var(--gold-light));
   }
   .border-gold {
     border-color: hsl(var(--gold));
-  }
-  .gradient-hero {
-    background: linear-gradient(135deg, hsl(var(--rose-light)) 0%, hsl(var(--cream)) 50%, hsl(var(--gold-light)) 100%);
   }
 }

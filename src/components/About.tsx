@@ -1,56 +1,68 @@
 import { motion } from "framer-motion";
+import womanPointing from "@/assets/woman-pointing.jpg";
 
 const About = () => {
   return (
-    <section id="sobre" className="py-24 md:py-32 bg-rose-light">
-      <div className="max-w-5xl mx-auto px-6">
+    <section id="sobre" className="py-20 md:py-28 bg-background">
+      <div className="max-w-6xl mx-auto px-6">
         <div className="grid md:grid-cols-2 gap-16 items-center">
+          {/* Image with decorative circle */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
+            className="relative flex justify-center"
           >
-            <p className="text-gold font-body text-sm tracking-[0.35em] uppercase mb-3">
-              Sobre nós
-            </p>
-            <h2 className="font-heading text-4xl md:text-5xl font-light text-foreground mb-6">
-              Beleza que Transforma
-            </h2>
-            <div className="w-16 h-px bg-gold mb-8" />
-            <p className="font-body text-muted-foreground leading-relaxed mb-6">
-              Na Rosa de Lis, acreditamos que cada pessoa possui uma beleza única que merece ser
-              celebrada. Nosso espaço foi cuidadosamente pensado para proporcionar uma experiência
-              de bem-estar completa.
-            </p>
-            <p className="font-body text-muted-foreground leading-relaxed">
-              Com profissionais qualificados e tecnologia de ponta, oferecemos tratamentos
-              personalizados que unem ciência e sofisticação para resultados que encantam.
-            </p>
+            <div className="relative w-80 h-80">
+              {/* Pink decorative circle behind */}
+              <div className="absolute -top-4 -left-4 w-80 h-80 rounded-full bg-primary/20" />
+              <img
+                src={womanPointing}
+                alt="Rosa de Lis - tratamentos estéticos"
+                className="relative w-80 h-80 rounded-full object-cover shadow-xl"
+              />
+            </div>
           </motion.div>
 
+          {/* Content */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-col gap-6"
+            transition={{ duration: 0.8 }}
           >
-            {[
-              { number: "10+", label: "Anos de experiência" },
-              { number: "5.000+", label: "Clientes atendidos" },
-              { number: "20+", label: "Tratamentos disponíveis" },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="flex items-center gap-6 p-6 bg-background/60 backdrop-blur-sm rounded-sm border border-border"
-              >
-                <span className="font-heading text-3xl text-gold">{stat.number}</span>
-                <span className="font-body text-muted-foreground text-sm tracking-wide">
-                  {stat.label}
-                </span>
-              </div>
-            ))}
+            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-foreground mb-6 leading-tight">
+              O que é{" "}
+              <span className="text-pink-vibrant font-bold">Drenagem Linfática</span>?
+            </h2>
+
+            <div className="space-y-4 font-body text-muted-foreground leading-relaxed">
+              <p>
+                A drenagem linfática é uma técnica de massagem suave que estimula o sistema
+                linfático — responsável por eliminar toxinas e líquidos em excesso do corpo.
+              </p>
+              <p>
+                Ela ajuda a reduzir o inchaço, melhora a circulação, combate a retenção de
+                líquidos e proporciona uma sensação profunda de bem-estar e leveza.
+              </p>
+              <p>
+                Muito procurada também no pós-operatório e por quem deseja cuidar da saúde
+                e da estética com delicadeza e eficácia.
+              </p>
+            </div>
+
+            <motion.p
+              className="mt-6 font-body text-primary font-semibold italic leading-relaxed"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+            >
+              Na Rosa de Lis, cada sessão de drenagem linfática é um convite para você se
+              reconectar com seu corpo, aliviar o inchaço e sentir-se mais leve, mais bonita,
+              mais você.
+            </motion.p>
           </motion.div>
         </div>
       </div>
