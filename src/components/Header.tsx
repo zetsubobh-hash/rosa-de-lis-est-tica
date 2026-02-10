@@ -3,10 +3,14 @@ import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
+import AuthModal from "@/components/AuthModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === "/";
@@ -37,7 +41,6 @@ const Header = () => {
         el?.scrollIntoView({ behavior: "smooth" });
       }
     } else {
-      // Navigate to home, then scroll
       navigate("/");
       if (href !== "#") {
         setTimeout(() => {
@@ -48,86 +51,120 @@ const Header = () => {
     }
   };
 
+  const handleAgendar = () => {
+    setMenuOpen(false);
+    if (!user) {
+      setAuthModalOpen(true);
+    } else {
+      // TODO: navigate to scheduling page
+    }
+  };
+
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled || !isHome
-          ? "bg-primary/95 backdrop-blur-md shadow-lg"
-          : "bg-transparent"
-      }`}
-    >
-      <nav className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <a
-          href="/"
-          onClick={(e) => handleNavClick(e, "#")}
-          className="flex items-center gap-2"
-        >
-          <img src={logo} alt="Rosa de Lis" className="h-12 w-auto" />
-        </a>
-
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-8">
-          {navItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              onClick={(e) => handleNavClick(e, item.href)}
-              className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground tracking-wide transition-colors duration-300 uppercase font-medium"
-            >
-              {item.label}
-            </a>
-          ))}
+    <>
+      <motion.header
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          scrolled || !isHome
+            ? "bg-primary/95 backdrop-blur-md shadow-lg"
+            : "bg-transparent"
+        }`}
+      >
+        <nav className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <a
-            href="https://wa.me/5511999999999"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-6 py-2.5 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
+            href="/"
+            onClick={(e) => handleNavClick(e, "#")}
+            className="flex items-center gap-2"
           >
-            Agendar
+            <img src={logo} alt="Rosa de Lis" className="h-12 w-auto" />
           </a>
-        </div>
 
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden text-primary-foreground"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Menu"
-        >
-          {menuOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
-      </nav>
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-8">
+            {navItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={(e) => handleNavClick(e, item.href)}
+                className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground tracking-wide transition-colors duration-300 uppercase font-medium"
+              >
+                {item.label}
+              </a>
+            ))}
+            {user ? (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleAgendar}
+                  className="px-6 py-2.5 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
+                >
+                  Agendar
+                </button>
+                <button
+                  onClick={signOut}
+                  className="font-body text-xs text-primary-foreground/60 hover:text-primary-foreground transition-colors uppercase tracking-wider"
+                >
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAgendar}
+                className="px-6 py-2.5 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
+              >
+                Agendar
+              </button>
+            )}
+          </div>
 
-      {/* Mobile menu */}
-      {menuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="md:hidden bg-primary/95 backdrop-blur-md px-6 pb-6"
-        >
-          {navItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              onClick={(e) => handleNavClick(e, item.href)}
-              className="block py-3 font-body text-sm text-primary-foreground/90 hover:text-primary-foreground uppercase tracking-wide font-medium border-b border-primary-foreground/10"
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden text-primary-foreground"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Menu"
+          >
+            {menuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </nav>
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="md:hidden bg-primary/95 backdrop-blur-md px-6 pb-6"
+          >
+            {navItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={(e) => handleNavClick(e, item.href)}
+                className="block py-3 font-body text-sm text-primary-foreground/90 hover:text-primary-foreground uppercase tracking-wide font-medium border-b border-primary-foreground/10"
+              >
+                {item.label}
+              </a>
+            ))}
+            <button
+              onClick={handleAgendar}
+              className="mt-4 block w-full text-center px-6 py-3 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full uppercase tracking-wider"
             >
-              {item.label}
-            </a>
-          ))}
-          <a
-            href="https://wa.me/5511999999999"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 block text-center px-6 py-3 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full uppercase tracking-wider"
-          >
-            Agendar
-          </a>
-        </motion.div>
-      )}
-    </motion.header>
+              Agendar
+            </button>
+            {user && (
+              <button
+                onClick={() => { setMenuOpen(false); signOut(); }}
+                className="mt-2 block w-full text-center font-body text-xs text-primary-foreground/60 hover:text-primary-foreground uppercase tracking-wider py-2"
+              >
+                Sair da conta
+              </button>
+            )}
+          </motion.div>
+        )}
+      </motion.header>
+
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+    </>
   );
 };
 
