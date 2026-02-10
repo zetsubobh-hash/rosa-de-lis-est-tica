@@ -48,24 +48,24 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-primary">
+    <section className="relative min-h-[85vh] md:min-h-screen flex items-center overflow-hidden bg-primary pt-20 md:pt-0">
       {/* Decorative circles */}
       <div className="absolute top-20 right-20 w-72 h-72 rounded-full border border-primary-foreground/10 hidden lg:block" />
       <div className="absolute bottom-20 right-40 w-48 h-48 rounded-full border border-primary-foreground/10 hidden lg:block" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 w-full text-center lg:text-left">
+      <div className="relative z-10 max-w-6xl mx-auto px-5 md:px-6 w-full text-center lg:text-left">
         <div className="max-w-2xl mx-auto lg:mx-0">
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
-            className="font-body text-primary-foreground/70 text-sm tracking-[0.3em] uppercase mb-6 font-medium"
+            className="font-body text-primary-foreground/70 text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase mb-4 md:mb-6 font-medium"
           >
             Estética especializada em tratamentos corporais e faciais
           </motion.p>
 
           {/* Rotating text area */}
-          <div className="h-[180px] md:h-[200px] relative">
+          <div className="h-[140px] md:h-[200px] relative">
             <AnimatePresence mode="wait">
               <motion.div
                 key={current}
@@ -74,13 +74,10 @@ const Hero = () => {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.6, ease: "easeInOut" }}
               >
-                <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-6">
+                <h1 className="font-heading text-3xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-4 md:mb-6">
                   {slides[current].title}
                 </h1>
-                <p
-                  className="font-body text-primary-foreground/80 font-normal max-w-lg mx-auto lg:mx-0"
-                  style={{ fontSize: "25px", lineHeight: "35px" }}
-                >
+                <p className="font-body text-primary-foreground/80 font-normal max-w-lg mx-auto lg:mx-0 text-base md:text-[25px] md:leading-[35px] leading-relaxed">
                   {slides[current].subtitle}
                 </p>
               </motion.div>
@@ -88,15 +85,15 @@ const Hero = () => {
           </div>
 
           {/* Slide indicators */}
-          <div className="flex gap-2 mb-8 justify-center lg:justify-start">
+          <div className="flex gap-1.5 md:gap-2 mb-6 md:mb-8 justify-center lg:justify-start flex-wrap">
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
                 className={`h-1.5 rounded-full transition-all duration-500 ${
                   i === current
-                    ? "w-8 bg-primary-foreground"
-                    : "w-3 bg-primary-foreground/30 hover:bg-primary-foreground/50"
+                    ? "w-6 md:w-8 bg-primary-foreground"
+                    : "w-2.5 md:w-3 bg-primary-foreground/30 hover:bg-primary-foreground/50"
                 }`}
                 aria-label={`Ir para slide ${i + 1}`}
               />
@@ -107,7 +104,7 @@ const Hero = () => {
             href="https://wa.me/5511999999999"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-10 py-4 border-2 border-primary-foreground text-primary-foreground font-body text-sm font-semibold tracking-[0.2em] uppercase rounded-full hover:bg-primary-foreground hover:text-primary transition-all duration-500"
+            className="inline-block px-8 md:px-10 py-3.5 md:py-4 border-2 border-primary-foreground text-primary-foreground font-body text-xs md:text-sm font-semibold tracking-[0.15em] md:tracking-[0.2em] uppercase rounded-full hover:bg-primary-foreground hover:text-primary transition-all duration-500"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.3 }}
