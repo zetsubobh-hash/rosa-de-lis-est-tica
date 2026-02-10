@@ -46,7 +46,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   // Register fields
   const [regName, setRegName] = useState("");
-  const [regUsername, setRegUsername] = useState("");
+  
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regSex, setRegSex] = useState("");
@@ -62,7 +62,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     setLoginUsername("");
     setPassword("");
     setRegName("");
-    setRegUsername("");
+    
     setRegEmail("");
     setRegPassword("");
     setRegSex("");
@@ -132,7 +132,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullAddress = buildFullAddress();
-    if (!regName.trim() || !regUsername.trim() || !regPassword.trim() || !regSex || !regPhone.trim() || !fullAddress.trim()) {
+    if (!regName.trim() || !regPassword.trim() || !regSex || !regPhone.trim() || !fullAddress.trim()) {
       toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
       return;
     }
@@ -142,12 +142,14 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     }
     setLoading(true);
 
+    const generatedUsername = regName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+
     try {
       const res = await fetch(`https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: regUsername.trim(),
+          username: generatedUsername,
           password: regPassword,
           full_name: regName.trim(),
           sex: regSex,
@@ -166,7 +168,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       }
 
       // Auto-login after registration
-      const fakeEmail = `${regUsername.trim().toLowerCase().replace(/[^a-z0-9]/g, "")}@rosadelis.local`;
+      const fakeEmail = `${generatedUsername}@rosadelis.local`;
       const { error: loginError } = await supabase.auth.signInWithPassword({
         email: fakeEmail,
         password: regPassword,
@@ -199,13 +201,13 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         {mode === "login" ? (
           <form onSubmit={handleLogin} className="space-y-4 mt-2">
             <div className="space-y-2">
-              <Label htmlFor="login-username" className="font-body text-sm">Nome de usuário</Label>
+              <Label htmlFor="login-username" className="font-body text-sm">Nome completo</Label>
               <Input
                 id="login-username"
-                placeholder="seunome"
+                placeholder="Maria Silva"
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
-                autoComplete="username"
+                autoComplete="name"
               />
             </div>
             <div className="space-y-2">
@@ -245,17 +247,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 onChange={(e) => setRegName(capitalizeWords(e.target.value))}
                 autoComplete="name"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="reg-username" className="font-body text-sm">Nome de usuário *</Label>
-              <Input
-                id="reg-username"
-                placeholder="mariasilva"
-                value={regUsername}
-                onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
-                autoComplete="username"
-              />
-              <p className="text-xs text-muted-foreground">Usado para fazer login. Apenas letras, números, . _ -</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="reg-email" className="font-body text-sm">E-mail (opcional)</Label>
