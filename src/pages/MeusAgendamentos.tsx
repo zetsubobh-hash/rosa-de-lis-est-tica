@@ -200,11 +200,10 @@ const MeusAgendamentos = () => {
                                   {Array.from({ length: plan.total_sessions }).map((_, i) => {
                                     const sessionNum = i + 1;
                                     const isCompleted = i < plan.completed_sessions;
-                                    const isNext = sessionNum === plan.completed_sessions + 1 && !isComplete;
                                     const scheduledApt = appointments.find(
                                       (a) => a.plan_id === plan.id && a.session_number === sessionNum && a.status !== "cancelled"
                                     );
-                                    const canSchedule = isNext && !scheduledApt;
+                                    const canSchedule = !isCompleted && !scheduledApt && !isComplete;
 
                                     return (
                                       <button
