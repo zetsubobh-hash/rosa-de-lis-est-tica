@@ -187,6 +187,7 @@ export type Database = {
           id: string
           is_active: boolean
           phone: string
+          salary_cents: number
           updated_at: string
           user_id: string
           work_days: string[]
@@ -201,6 +202,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           phone?: string
+          salary_cents?: number
           updated_at?: string
           user_id: string
           work_days?: string[]
@@ -215,6 +217,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           phone?: string
+          salary_cents?: number
           updated_at?: string
           user_id?: string
           work_days?: string[]

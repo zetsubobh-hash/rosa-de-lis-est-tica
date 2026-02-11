@@ -17,12 +17,16 @@ interface Partner {
   phone: string;
   avatar_url: string | null;
   commission_pct: number;
+  salary_cents: number;
   work_days: string[];
   work_start: string;
   work_end: string;
   is_active: boolean;
   specialties?: string[];
 }
+
+const capitalizeWords = (value: string) =>
+  value.replace(/\b\w/g, (char) => char.toUpperCase());
 
 const WEEK_DAYS = [
   { key: "seg", label: "Seg" },
@@ -85,6 +89,7 @@ const AdminPartners = () => {
       phone: "",
       avatar_url: null,
       commission_pct: 0,
+      salary_cents: 0,
       work_days: ["seg", "ter", "qua", "qui", "sex"],
       work_start: "08:00",
       work_end: "18:00",
@@ -138,6 +143,7 @@ const AdminPartners = () => {
           phone: editing.phone,
           avatar_url: editing.avatar_url,
           commission_pct: editing.commission_pct,
+          salary_cents: editing.salary_cents,
           work_days: editing.work_days,
           work_start: editing.work_start,
           work_end: editing.work_end,
@@ -168,6 +174,7 @@ const AdminPartners = () => {
           phone: editing.phone,
           avatar_url: editing.avatar_url,
           commission_pct: editing.commission_pct,
+          salary_cents: editing.salary_cents,
           work_days: editing.work_days,
           work_start: editing.work_start,
           work_end: editing.work_end,
@@ -418,7 +425,7 @@ const AdminPartners = () => {
                   <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Nome completo *</label>
                   <Input
                     value={editing.full_name}
-                    onChange={(e) => setEditing({ ...editing, full_name: e.target.value })}
+                    onChange={(e) => setEditing({ ...editing, full_name: capitalizeWords(e.target.value) })}
                     placeholder="Nome do parceiro(a)"
                     className="font-body"
                   />
@@ -440,18 +447,32 @@ const AdminPartners = () => {
                   />
                 </div>
 
-                {/* Commission */}
-                <div>
-                  <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Comissão (%)</label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    value={editing.commission_pct}
-                    onChange={(e) => setEditing({ ...editing, commission_pct: parseFloat(e.target.value) || 0 })}
-                    className="font-body w-28"
-                  />
+                {/* Commission & Salary */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Comissão (%)</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={editing.commission_pct}
+                      onChange={(e) => setEditing({ ...editing, commission_pct: parseFloat(e.target.value) || 0 })}
+                      className="font-body"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Salário (R$)</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={(editing.salary_cents / 100).toFixed(2)}
+                      onChange={(e) => setEditing({ ...editing, salary_cents: Math.round(parseFloat(e.target.value || "0") * 100) })}
+                      placeholder="0.00"
+                      className="font-body"
+                    />
+                  </div>
                 </div>
 
                 {/* Work days */}
