@@ -12,6 +12,7 @@ import ServiceDetail from "./pages/ServiceDetail";
 import Agendar from "./pages/Agendar";
 import Checkout from "./pages/Checkout";
 import MeusAgendamentos from "./pages/MeusAgendamentos";
+import MeuPerfil from "./pages/MeuPerfil";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/agendar/:slug" element={<Agendar />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/meus-agendamentos" element={<MeusAgendamentos />} />
+              <Route path="/meu-perfil" element={<MeuPerfil />} />
               <Route path="/admin" element={<Admin />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

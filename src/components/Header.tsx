@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, CalendarCheck, ShieldCheck } from "lucide-react";
+import { Menu, X, LogOut, CalendarCheck, ShieldCheck, UserCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 import AuthModal from "@/components/AuthModal";
@@ -154,6 +154,13 @@ const Header = () => {
                   </button>
                 )}
                 <button
+                  onClick={() => navigate("/meu-perfil")}
+                  className="flex items-center gap-2 px-5 py-2.5 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
+                >
+                  <UserCircle className="w-4 h-4" />
+                  Perfil
+                </button>
+                <button
                   onClick={() => navigate("/meus-agendamentos")}
                   className="flex items-center gap-2 px-5 py-2.5 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
                 >
@@ -220,6 +227,13 @@ const Header = () => {
                     Painel Admin
                   </button>
                 )}
+                <button
+                  onClick={() => { setMenuOpen(false); navigate("/meu-perfil"); }}
+                  className="flex items-center justify-center gap-2 w-full py-3 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full uppercase tracking-wider"
+                >
+                  <UserCircle className="w-4 h-4" />
+                  Meu Perfil
+                </button>
                 <button
                   onClick={() => { setMenuOpen(false); navigate("/meus-agendamentos"); }}
                   className="flex items-center justify-center gap-2 w-full py-3 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full uppercase tracking-wider"
