@@ -47,7 +47,11 @@ const AdminAgenda = () => {
   useEffect(() => { fetchAppointments(); }, []);
 
   const handleCancel = async (id: string) => {
-    const { error } = await supabase.from("appointments").update({ status: "cancelled" }).eq("id", id);
+    const { error, count } = await supabase
+      .from("appointments")
+      .update({ status: "cancelled" })
+      .eq("id", id)
+      .select("id");
     if (error) {
       toast({ title: "Erro ao cancelar", variant: "destructive" });
     } else {
