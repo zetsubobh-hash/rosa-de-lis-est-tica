@@ -456,11 +456,14 @@ const AdminPartners = () => {
                   <div>
                     <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Salário (R$)</label>
                     <Input
-                      type="number"
-                      min={0}
-                      step={0.01}
-                      value={(editing.salary_cents / 100).toFixed(2)}
-                      onChange={(e) => setEditing({ ...editing, salary_cents: Math.round(parseFloat(e.target.value || "0") * 100) })}
+                      type="text"
+                      inputMode="decimal"
+                      value={editing.salary_cents === 0 ? "" : String(editing.salary_cents / 100)}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9.,]/g, "").replace(",", ".");
+                        const num = parseFloat(raw || "0");
+                        setEditing({ ...editing, salary_cents: isNaN(num) ? 0 : Math.round(num * 100) });
+                      }}
                       placeholder="0.00"
                       className="font-body"
                     />
