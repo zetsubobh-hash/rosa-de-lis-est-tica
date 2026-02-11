@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import SessionScheduleModal from "@/components/SessionScheduleModal";
 
 interface Appointment {
   id: string;
@@ -20,6 +21,8 @@ interface Appointment {
   status: string;
   created_at: string;
   notes: string | null;
+  plan_id: string | null;
+  session_number: number | null;
 }
 
 const isRescheduled = (apt: Appointment): boolean => {
@@ -47,7 +50,8 @@ const MeusAgendamentos = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
-  const { plans, loading: plansLoading } = useClientPlans(user?.id);
+  const [scheduleModal, setScheduleModal] = useState<{ planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string } | null>(null);
+  const { plans, loading: plansLoading, refetch: refetchPlans } = useClientPlans(user?.id);
 
   useEffect(() => {
     if (authLoading) return;
@@ -59,7 +63,7 @@ const MeusAgendamentos = () => {
     const fetchAppointments = async () => {
       const { data } = await supabase
         .from("appointments")
-        .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, notes")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, notes, plan_id, session_number")
         .eq("user_id", user.id)
         .order("appointment_date", { ascending: false })
         .order("appointment_time", { ascending: false });
@@ -70,6 +74,18 @@ const MeusAgendamentos = () => {
 
     fetchAppointments();
   }, [user, authLoading]);
+
+  const refetchAll = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("appointments")
+      .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, notes, plan_id, session_number")
+      .eq("user_id", user.id)
+      .order("appointment_date", { ascending: false })
+      .order("appointment_time", { ascending: false });
+    setAppointments(data || []);
+    refetchPlans();
+  };
 
   if (loading || authLoading || plansLoading) {
     return (
@@ -181,19 +197,56 @@ const MeusAgendamentos = () => {
                                   Progresso das sessões
                                 </p>
                                 <div className="flex gap-1.5 flex-wrap">
-                                  {Array.from({ length: plan.total_sessions }).map((_, i) => (
-                                    <div
-                                      key={i}
-                                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
-                                        i < plan.completed_sessions
-                                          ? "bg-primary text-primary-foreground"
-                                          : "bg-muted text-muted-foreground"
-                                      }`}
-                                    >
-                                      {i + 1}
-                                    </div>
-                                  ))}
+                                  {Array.from({ length: plan.total_sessions }).map((_, i) => {
+                                    const sessionNum = i + 1;
+                                    const isCompleted = i < plan.completed_sessions;
+                                    const isNext = sessionNum === plan.completed_sessions + 1 && !isComplete;
+                                    // Check if this session already has a scheduled appointment
+                                    const scheduledApt = appointments.find(
+                                      (a) => a.plan_id === plan.id && a.session_number === sessionNum && a.status !== "cancelled"
+                                    );
+                                    const canSchedule = isNext && !scheduledApt;
+
+                                    return (
+                                      <button
+                                        key={i}
+                                        disabled={!canSchedule}
+                                        onClick={() => {
+                                          if (canSchedule) {
+                                            setScheduleModal({
+                                              planId: plan.id,
+                                              sessionNumber: sessionNum,
+                                              serviceSlug: plan.service_slug,
+                                              serviceTitle: plan.service_title,
+                                            });
+                                          }
+                                        }}
+                                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
+                                          isCompleted
+                                            ? "bg-primary text-primary-foreground"
+                                            : scheduledApt
+                                            ? "bg-primary/30 text-primary ring-2 ring-primary/40"
+                                            : canSchedule
+                                            ? "bg-muted text-muted-foreground ring-2 ring-primary/50 cursor-pointer hover:bg-primary/10 hover:text-primary"
+                                            : "bg-muted text-muted-foreground"
+                                        }`}
+                                        title={
+                                          isCompleted ? `Sessão ${sessionNum} realizada` :
+                                          scheduledApt ? `Sessão ${sessionNum} agendada - ${formatDateBR(scheduledApt.appointment_date)}` :
+                                          canSchedule ? `Agendar sessão ${sessionNum}` :
+                                          `Sessão ${sessionNum}`
+                                        }
+                                      >
+                                        {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
+                                {!isComplete && (
+                                  <p className="font-body text-[10px] text-muted-foreground mt-1.5">
+                                    Clique na próxima sessão para agendar
+                                  </p>
+                                )}
                               </div>
 
                               {/* Related appointments */}
@@ -320,6 +373,20 @@ const MeusAgendamentos = () => {
 
       <Footer />
       <WhatsAppButton />
+
+      {/* Session Schedule Modal */}
+      {user && scheduleModal && (
+        <SessionScheduleModal
+          open={!!scheduleModal}
+          onClose={() => setScheduleModal(null)}
+          onScheduled={refetchAll}
+          planId={scheduleModal.planId}
+          sessionNumber={scheduleModal.sessionNumber}
+          serviceSlug={scheduleModal.serviceSlug}
+          serviceTitle={scheduleModal.serviceTitle}
+          userId={user.id}
+        />
+      )}
     </div>
   );
 };

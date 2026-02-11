@@ -22,8 +22,10 @@ export type Database = {
           id: string
           notes: string | null
           partner_id: string | null
+          plan_id: string | null
           service_slug: string
           service_title: string
+          session_number: number | null
           status: string
           updated_at: string
           user_id: string
@@ -35,8 +37,10 @@ export type Database = {
           id?: string
           notes?: string | null
           partner_id?: string | null
+          plan_id?: string | null
           service_slug: string
           service_title: string
+          session_number?: number | null
           status?: string
           updated_at?: string
           user_id: string
@@ -48,8 +52,10 @@ export type Database = {
           id?: string
           notes?: string | null
           partner_id?: string | null
+          plan_id?: string | null
           service_slug?: string
           service_title?: string
+          session_number?: number | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -60,6 +66,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "client_plans"
             referencedColumns: ["id"]
           },
         ]
