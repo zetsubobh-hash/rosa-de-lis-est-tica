@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon } from "lucide-react";
+import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -318,6 +318,26 @@ const AdminAgenda = () => {
                       </p>
                     )}
                   </div>
+                  {profile?.phone && (
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <a
+                        href={`tel:${profile.phone.replace(/\D/g, "")}`}
+                        className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                        title={`Ligar para ${profile.full_name}`}
+                      >
+                        <Phone className="w-4 h-4" />
+                      </a>
+                      <a
+                        href={`https://wa.me/55${profile.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all"
+                        title={`WhatsApp de ${profile.full_name}`}
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* Services list */}
