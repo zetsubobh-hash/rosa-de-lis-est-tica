@@ -126,9 +126,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       toast({ title: "Login realizado com sucesso!" });
       resetFields();
       onOpenChange(false);
-      setTimeout(() => {
-        document.getElementById("servicos")?.scrollIntoView({ behavior: "smooth" });
-      }, 300);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
