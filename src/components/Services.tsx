@@ -15,10 +15,6 @@ const Services = () => {
   const { services, loading } = useServices();
 
   const handleClick = (slug: string) => {
-    if (!user) {
-      setAuthModalOpen(true);
-      return;
-    }
     setClicked(slug);
     setTimeout(() => {
       navigate(`/servico/${slug}`);
