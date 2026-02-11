@@ -103,6 +103,37 @@ const Checkout = () => {
         .in("id", appointmentIds);
       if (error) throw error;
 
+      // Auto-create client plans based on purchased sessions
+      for (const apt of appointments) {
+        let planName = "Essencial";
+        let sessions = 1;
+        if (apt.notes) {
+          try {
+            const noteData = JSON.parse(apt.notes);
+            if (noteData.plan) planName = noteData.plan;
+            if (noteData.sessions) sessions = noteData.sessions;
+          } catch { /* ignore */ }
+        }
+        // Try to get sessions from service_prices if not in notes
+        if (sessions <= 1 && allPrices.length > 0) {
+          const dbPrice = allPrices.find(
+            (p) => p.service_slug === apt.service_slug && p.plan_name === planName
+          );
+          if (dbPrice) sessions = dbPrice.sessions;
+        }
+        await supabase.from("client_plans").insert({
+          user_id: user!.id,
+          service_slug: apt.service_slug,
+          service_title: apt.service_title,
+          plan_name: planName,
+          total_sessions: sessions,
+          completed_sessions: 0,
+          status: "active",
+          created_by: "auto",
+          appointment_id: apt.id,
+        });
+      }
+
       // Fire WhatsApp notification (fire-and-forget, don't block UI)
       const { data: { session } } = await supabase.auth.getSession();
       fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-notify`, {
