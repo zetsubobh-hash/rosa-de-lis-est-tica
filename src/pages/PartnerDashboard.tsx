@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar, Clock, Bell, LogOut, Home, CalendarCheck, Phone,
-  MessageCircle, Users, History, ClipboardList, CheckCircle2
+  Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
+  Users, History, ClipboardList, CheckCircle2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,7 +22,6 @@ interface Appointment {
   total_sessions?: number | null;
   profile?: {
     full_name: string;
-    phone: string;
     avatar_url: string | null;
   } | null;
 }
@@ -35,8 +34,9 @@ interface ClientPlan {
   total_sessions: number;
   completed_sessions: number;
   status: string;
-  profile?: { full_name: string; phone: string; avatar_url: string | null } | null;
+  profile?: { full_name: string; avatar_url: string | null } | null;
   nextAppointment?: { date: string; time: string } | null;
+  scheduledSessions?: { date: string; time: string; session_number: number; status: string }[];
 }
 
 type Tab = "agenda" | "clientes" | "historico";
@@ -110,12 +110,15 @@ const PartnerDashboard = () => {
       const userIds = [...new Set(allApts.map((a) => a.user_id))];
       const planIds = [...new Set(allApts.filter((a) => a.plan_id).map((a) => a.plan_id!))];
 
-      const [{ data: profiles }, planResult] = await Promise.all([
+      const [{ data: profiles }, planResult, allPlanAptsResult] = await Promise.all([
         userIds.length > 0
-          ? supabase.from("profiles").select("user_id, full_name, phone, avatar_url").in("user_id", userIds)
+          ? supabase.from("profiles").select("user_id, full_name, avatar_url").in("user_id", userIds)
           : Promise.resolve({ data: [] as any[] }),
         planIds.length > 0
           ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("id", planIds)
+          : Promise.resolve({ data: [] as any[] }),
+        planIds.length > 0
+          ? supabase.from("appointments").select("plan_id, session_number, appointment_date, appointment_time, status").in("plan_id", planIds).order("session_number")
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
@@ -124,6 +127,13 @@ const PartnerDashboard = () => {
 
       const planMap: Record<string, any> = {};
       planResult?.data?.forEach((p: any) => { planMap[p.id] = p; });
+
+      const planAptsMap: Record<string, { date: string; time: string; session_number: number; status: string }[]> = {};
+      allPlanAptsResult?.data?.forEach((a: any) => {
+        if (!a.plan_id) return;
+        if (!planAptsMap[a.plan_id]) planAptsMap[a.plan_id] = [];
+        planAptsMap[a.plan_id].push({ date: a.appointment_date, time: a.appointment_time, session_number: a.session_number || 0, status: a.status });
+      });
 
       const enrichApt = (a: any): Appointment => ({
         ...a,
@@ -144,6 +154,7 @@ const PartnerDashboard = () => {
               ...p,
               profile: profileMap[p.user_id] || null,
               nextAppointment: nextApt ? { date: nextApt.appointment_date, time: nextApt.appointment_time } : null,
+              scheduledSessions: planAptsMap[p.id] || [],
             };
           });
         setClientPlans(plans);
@@ -260,24 +271,6 @@ const PartnerDashboard = () => {
             )}
           </div>
         </div>
-        {apt.profile?.phone && (
-          <div className="flex gap-1 shrink-0">
-            <a
-              href={`tel:${apt.profile.phone.replace(/\D/g, "")}`}
-              className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-            >
-              <Phone className="w-3.5 h-3.5" />
-            </a>
-            <a
-              href={`https://wa.me/55${apt.profile.phone.replace(/\D/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        )}
       </div>
     </motion.div>
   );
@@ -453,20 +446,37 @@ const PartnerDashboard = () => {
                             <span>Sem agendamento próximo</span>
                           </div>
                         )}
-                      </div>
-                      {plan.profile?.phone && (
-                        <div className="flex gap-1 shrink-0">
-                          <a
-                            href={`https://wa.me/55${plan.profile.phone.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all"
-                          >
-                            <MessageCircle className="w-3.5 h-3.5" />
-                          </a>
+
+                          {/* Session details */}
+                          {plan.scheduledSessions && plan.scheduledSessions.length > 0 && (
+                            <div className="mt-3 space-y-1">
+                              <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Sessões agendadas:</p>
+                              {plan.scheduledSessions.map((s, i) => (
+                                <div key={i} className="flex items-center gap-2 text-xs font-body">
+                                  {s.status === "completed" ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                  ) : (
+                                    <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                  )}
+                                  <span className={s.status === "completed" ? "text-muted-foreground line-through" : "text-foreground"}>
+                                    Sessão {s.session_number} — {formatDate(s.date)} às {s.time}
+                                  </span>
+                                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                                    s.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                      : s.status === "confirmed" ? "bg-primary/10 text-primary"
+                                      : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                                  }`}>
+                                    {s.status === "completed" ? "Feita" : s.status === "confirmed" ? "Confirmada" : "Pendente"}
+                                  </span>
+                                </div>
+                              ))}
+                              <p className="font-body text-[10px] text-muted-foreground mt-1">
+                                Restam <span className="font-semibold text-foreground">{plan.total_sessions - plan.completed_sessions}</span> sessão(ões)
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
                   </motion.div>
                 );
               })
