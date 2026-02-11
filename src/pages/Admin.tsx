@@ -25,6 +25,8 @@ const Admin = () => {
   const [settingsMap, setSettingsMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adminName, setAdminName] = useState<string | null>(null);
+  const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
@@ -39,11 +41,18 @@ const Admin = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const { data } = await supabase.from("payment_settings").select("key, value");
-      if (data) {
+      const [settingsRes, profileRes] = await Promise.all([
+        supabase.from("payment_settings").select("key, value"),
+        supabase.from("profiles").select("full_name, avatar_url").eq("user_id", user!.id).maybeSingle(),
+      ]);
+      if (settingsRes.data) {
         const map: Record<string, string> = {};
-        data.forEach((row: any) => { map[row.key] = row.value; });
+        settingsRes.data.forEach((row: any) => { map[row.key] = row.value; });
         setSettingsMap(map);
+      }
+      if (profileRes.data) {
+        setAdminName(profileRes.data.full_name);
+        setAdminAvatar(profileRes.data.avatar_url || null);
       }
       setLoading(false);
     };
@@ -76,7 +85,9 @@ const Admin = () => {
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-primary to-[hsl(var(--pink-dark))] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img src={logo} alt="Rosa de Lis" className="h-8 w-auto" />
-          <span className="font-body text-xs text-primary-foreground/70 uppercase tracking-widest font-semibold">Admin</span>
+          {adminName && (
+            <span className="font-body text-xs text-primary-foreground font-semibold truncate max-w-[140px]">{adminName}</span>
+          )}
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -142,6 +153,21 @@ const Admin = () => {
         <div className="px-6 py-6 flex items-center gap-3">
           <img src={logo} alt="Rosa de Lis" className="h-10 w-auto" />
         </div>
+        {adminName && (
+          <div className="px-6 mb-3 flex items-center gap-2.5">
+            {adminAvatar ? (
+              <img src={adminAvatar} alt={adminName} className="w-8 h-8 rounded-full object-cover border-2 border-primary-foreground/20" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-primary-foreground font-heading text-xs font-bold">
+                {adminName.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="font-body text-xs text-primary-foreground font-semibold truncate">{adminName}</p>
+              <p className="font-body text-[10px] text-primary-foreground/50 uppercase tracking-wider">Administrador</p>
+            </div>
+          </div>
+        )}
         <div className="px-6 mb-6">
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-foreground/10 border border-primary-foreground/10">
             <Shield className="w-4 h-4 text-primary-foreground/70" />
