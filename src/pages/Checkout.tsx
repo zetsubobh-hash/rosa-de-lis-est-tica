@@ -36,26 +36,34 @@ const Checkout = () => {
   const appointmentIds = searchParams.get("ids")?.split(",") || [];
 
   useEffect(() => {
+    console.log("[Checkout] useEffect - user:", user?.id, "appointmentIds:", appointmentIds);
+    
     if (!user) {
+      console.log("[Checkout] No user, redirecting to home");
       navigate("/", { replace: true });
       return;
     }
 
     const fetchAppointments = async () => {
       if (appointmentIds.length === 0) {
+        console.log("[Checkout] No appointment IDs, redirecting to home");
         navigate("/", { replace: true });
         return;
       }
-      const { data } = await supabase
+      console.log("[Checkout] Fetching appointments for IDs:", appointmentIds);
+      const { data, error } = await supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time")
         .in("id", appointmentIds)
         .eq("user_id", user.id)
         .eq("status", "pending");
 
+      console.log("[Checkout] Query result - data:", JSON.stringify(data), "error:", JSON.stringify(error));
+      
       if (data && data.length > 0) {
         setAppointments(data);
       } else {
+        console.log("[Checkout] No matching appointments found, redirecting to home");
         navigate("/", { replace: true });
       }
       setLoading(false);
