@@ -1,0 +1,1 @@
+UPDATE public.appointments SET notes = '{"rescheduled":true}' WHERE id = 'b96252ae-8b3a-4b59-815c-7436f5cadf1e';
