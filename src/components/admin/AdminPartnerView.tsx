@@ -11,6 +11,9 @@ interface Appointment {
   status: string;
   user_id: string;
   partner_id: string | null;
+  plan_id: string | null;
+  session_number: number | null;
+  total_sessions?: number | null;
   profile?: {
     full_name: string;
     phone: string;
@@ -40,7 +43,7 @@ const AdminPartnerView = () => {
       const [{ data: apts }, { data: partnersList }] = await Promise.all([
         supabase
           .from("appointments")
-          .select("id, service_title, appointment_date, appointment_time, status, user_id, partner_id")
+          .select("id, service_title, appointment_date, appointment_time, status, user_id, partner_id, plan_id, session_number")
           .gte("appointment_date", today)
           .in("status", ["confirmed", "pending"])
           .not("partner_id", "is", null)
@@ -53,10 +56,14 @@ const AdminPartnerView = () => {
 
       if (apts && apts.length > 0) {
         const userIds = [...new Set(apts.map((a) => a.user_id))];
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name, phone, avatar_url")
-          .in("user_id", userIds);
+        const planIds = [...new Set(apts.filter((a) => a.plan_id).map((a) => a.plan_id!))];
+
+        const [{ data: profiles }, planResult] = await Promise.all([
+          supabase.from("profiles").select("user_id, full_name, phone, avatar_url").in("user_id", userIds),
+          planIds.length > 0
+            ? supabase.from("client_plans").select("id, total_sessions, completed_sessions").in("id", planIds)
+            : Promise.resolve({ data: [] as any[] }),
+        ]);
 
         const profileMap: Record<string, any> = {};
         profiles?.forEach((p: any) => { profileMap[p.user_id] = p; });
@@ -64,11 +71,15 @@ const AdminPartnerView = () => {
         const partnerMap: Record<string, string> = {};
         partnersList?.forEach((p) => { partnerMap[p.id] = p.full_name; });
 
+        const planMap: Record<string, any> = {};
+        planResult?.data?.forEach((p: any) => { planMap[p.id] = p; });
+
         setAppointments(
           apts.map((a) => ({
             ...a,
             profile: profileMap[a.user_id] || null,
             partner_name: a.partner_id ? partnerMap[a.partner_id] || "—" : "—",
+            total_sessions: a.plan_id ? planMap[a.plan_id]?.total_sessions || null : null,
           }))
         );
       }
@@ -185,6 +196,11 @@ const AdminPartnerView = () => {
                         }`}>
                           {apt.status === "confirmed" ? "Confirmado" : "Pendente"}
                         </span>
+                        {apt.session_number && apt.total_sessions && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-accent-foreground">
+                            Sessão {apt.session_number}/{apt.total_sessions}
+                          </span>
+                        )}
                       </div>
                     </div>
                     {apt.profile?.phone && (
