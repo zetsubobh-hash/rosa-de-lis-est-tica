@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useServicePrices, formatCents } from "@/hooks/useServicePrices";
 
 const ServiceDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -16,12 +17,14 @@ const ServiceDetail = () => {
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const service = slug ? getServiceBySlug(slug) : undefined;
+  const { prices } = useServicePrices(slug);
 
-  const handleAgendar = () => {
+  const handleAgendar = (planName?: string, priceCents?: number) => {
     if (!user) {
       setAuthModalOpen(true);
     } else {
-      setTimeout(() => navigate(`/agendar/${slug}`), 250);
+      const planQuery = planName && priceCents ? `?plan=${encodeURIComponent(planName)}&price=${priceCents}` : "";
+      setTimeout(() => navigate(`/agendar/${slug}${planQuery}`), 250);
     }
   };
 
@@ -258,7 +261,15 @@ const ServiceDetail = () => {
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {service.packages.map((pkg, i) => (
+            {service.packages.map((pkg) => {
+              // Use DB price if available, else fallback to hardcoded
+              const dbPrice = prices.find((p) => p.plan_name === pkg.name);
+              const displayPerSession = dbPrice ? formatCents(dbPrice.price_per_session_cents) : pkg.pricePerSession;
+              const displayTotal = dbPrice ? formatCents(dbPrice.total_price_cents) : pkg.totalPrice;
+              const displaySessions = dbPrice ? dbPrice.sessions : pkg.sessions;
+              const totalCents = dbPrice?.total_price_cents ?? 0;
+
+              return (
               <motion.div
                 key={pkg.name}
                 initial={{ opacity: 0, y: 25 }}
@@ -283,19 +294,19 @@ const ServiceDetail = () => {
                   {pkg.name}
                 </h3>
                 <p className={`font-body text-xs mb-4 ${pkg.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                  {pkg.sessions} sessões
+                  {displaySessions} sessões
                 </p>
 
                 <div className="mb-1">
                   <span className="font-heading text-3xl md:text-4xl font-bold">
-                    {pkg.pricePerSession}
+                    {displayPerSession}
                   </span>
                   <span className={`font-body text-sm ml-1 ${pkg.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                     /sessão
                   </span>
                 </div>
                 <p className={`font-body text-xs mb-6 ${pkg.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
-                  Total: {pkg.totalPrice}
+                  Total: {displayTotal}
                 </p>
 
                 <ul className="space-y-3 mb-8">
@@ -314,7 +325,7 @@ const ServiceDetail = () => {
                 </ul>
 
                 <motion.button
-                  onClick={handleAgendar}
+                  onClick={() => handleAgendar(pkg.name, totalCents)}
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.92, boxShadow: "inset 0 2px 8px rgba(0,0,0,0.2)" }}
                   className={`flex items-center justify-center gap-2 w-full py-3.5 font-body text-sm font-bold rounded-2xl transition-all duration-300 uppercase tracking-wider ${
@@ -327,7 +338,8 @@ const ServiceDetail = () => {
                   Agendar Agora
                 </motion.button>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -346,7 +358,7 @@ const ServiceDetail = () => {
             Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
           </p>
           <motion.button
-            onClick={handleAgendar}
+            onClick={() => handleAgendar()}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.92, boxShadow: "inset 0 2px 8px rgba(0,0,0,0.2)" }}
             className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-primary-foreground text-primary font-body text-sm font-bold rounded-2xl hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"

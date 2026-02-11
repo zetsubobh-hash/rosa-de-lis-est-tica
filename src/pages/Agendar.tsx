@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";
@@ -29,6 +29,9 @@ const Agendar = () => {
   const { toast } = useToast();
   const { items, addItem, removeItem, clearCart } = useCart();
   const service = slug ? getServiceBySlug(slug) : undefined;
+  const [searchParams] = useSearchParams();
+  const planName = searchParams.get("plan") || "";
+  const planPrice = parseInt(searchParams.get("price") || "0");
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
@@ -99,6 +102,7 @@ const Agendar = () => {
         appointment_date: item.date,
         appointment_time: item.time,
         status: "pending",
+        notes: planPrice > 0 ? JSON.stringify({ plan: planName, price_cents: planPrice }) : null,
       }));
       console.log("[Agendar] Inserting appointments:", JSON.stringify(inserts));
       const { data, error } = await supabase.from("appointments").insert(inserts).select("id");

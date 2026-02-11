@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { services } from "@/data/services";
+import { useAllServicePrices, formatCents } from "@/hooks/useServicePrices";
 import { Input } from "@/components/ui/input";
 
 interface Profile {
@@ -24,12 +24,22 @@ interface Appointment {
   status: string;
   created_at: string;
   user_id: string;
+  notes: string | null;
   profiles?: Profile | null;
 }
 
-const getServicePrice = (slug: string) => {
-  const svc = services.find((s) => s.slug === slug);
-  return svc?.price || "—";
+const getAppointmentPrice = (apt: Appointment, allPrices: any[]): string => {
+  // First check notes for plan-specific price
+  if (apt.notes) {
+    try {
+      const noteData = JSON.parse(apt.notes);
+      if (noteData.price_cents) return formatCents(noteData.price_cents);
+    } catch { /* ignore */ }
+  }
+  // Fallback: find Essencial price from DB
+  const dbPrice = allPrices.find((p: any) => p.service_slug === apt.service_slug && p.plan_name === "Essencial");
+  if (dbPrice) return formatCents(dbPrice.price_per_session_cents);
+  return "—";
 };
 
 const formatDate = (dateStr: string) => {
@@ -53,6 +63,7 @@ const HOURS = Array.from({ length: 11 }, (_, i) => {
 
 const AdminAgenda = () => {
   const { toast } = useToast();
+  const { prices: allPrices } = useAllServicePrices();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -67,7 +78,7 @@ const AdminAgenda = () => {
     setLoading(true);
     const { data } = await supabase
       .from("appointments")
-      .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id")
+      .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes")
       .in("status", ["confirmed", "pending"])
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
@@ -299,7 +310,7 @@ const AdminAgenda = () => {
                           {apt.appointment_time}
                         </span>
                         <span className="font-heading font-bold text-primary">
-                          {getServicePrice(apt.service_slug)}
+                          {getAppointmentPrice(apt, allPrices)}
                         </span>
                       </div>
                       <div className="flex gap-2">
