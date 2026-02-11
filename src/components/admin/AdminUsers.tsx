@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { User, ShieldCheck, ShieldOff, Search, Users, Crown } from "lucide-react";
+import { ShieldCheck, ShieldOff, Search, Users, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,18 @@ interface UserProfile {
   phone: string;
   email: string | null;
   avatar_url: string | null;
+  last_seen: string | null;
   isAdmin: boolean;
 }
 
 const getInitials = (name: string) =>
   name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+
+const isOnline = (lastSeen: string | null) => {
+  if (!lastSeen) return false;
+  const diff = Date.now() - new Date(lastSeen).getTime();
+  return diff < 5 * 60 * 1000; // 5 minutes
+};
 
 const AdminUsers = () => {
   const { toast } = useToast();
@@ -30,7 +37,7 @@ const AdminUsers = () => {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, full_name, phone, email, avatar_url")
+      .select("user_id, full_name, phone, email, avatar_url, last_seen")
       .order("full_name");
 
     const { data: roles } = await supabase
@@ -131,7 +138,7 @@ const AdminUsers = () => {
               className="bg-card rounded-2xl border border-border p-5 hover:shadow-md transition-shadow"
             >
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden relative">
                   {u.avatar_url ? (
                     <img src={u.avatar_url} alt={u.full_name} className="w-full h-full object-cover" />
                   ) : (
@@ -139,6 +146,12 @@ const AdminUsers = () => {
                       {getInitials(u.full_name)}
                     </span>
                   )}
+                  <span
+                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card ${
+                      isOnline(u.last_seen) ? "bg-emerald-500" : "bg-muted-foreground/30"
+                    }`}
+                    title={isOnline(u.last_seen) ? "Online" : u.last_seen ? `Visto por último: ${new Date(u.last_seen).toLocaleString("pt-BR")}` : "Nunca acessou"}
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

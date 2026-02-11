@@ -23,16 +23,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const updateLastSeen = (userId: string) => {
+      supabase.from("profiles").update({ last_seen: new Date().toISOString() }).eq("user_id", userId).then();
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setLoading(false);
+        if (session?.user) updateLastSeen(session.user.id);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
+      if (session?.user) updateLastSeen(session.user.id);
     });
 
     return () => subscription.unsubscribe();
