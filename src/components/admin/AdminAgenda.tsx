@@ -33,6 +33,8 @@ interface Appointment {
   user_id: string;
   notes: string | null;
   partner_id: string | null;
+  plan_id: string | null;
+  session_number: number | null;
   profiles?: Profile | null;
 }
 
@@ -139,7 +141,7 @@ const AdminAgenda = () => {
     setLoading(true);
     const { data } = await supabase
       .from("appointments")
-      .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id")
+      .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
       .in("status", ["confirmed", "pending"])
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
@@ -468,19 +470,50 @@ const AdminAgenda = () => {
                                     <Hash className="w-3.5 h-3.5 text-primary" />
                                     Progresso — {plan.plan_name}
                                   </p>
-                                  <div className="flex gap-1.5 flex-wrap mb-3">
-                                    {Array.from({ length: plan.total_sessions }).map((_, i) => (
-                                      <div
-                                        key={i}
-                                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
-                                          i < plan.completed_sessions
-                                            ? "bg-primary text-primary-foreground"
-                                            : "bg-muted text-muted-foreground"
-                                        }`}
-                                      >
-                                        {i + 1}
-                                      </div>
-                                    ))}
+                                  <div className="space-y-1.5 mb-3">
+                                    {Array.from({ length: plan.total_sessions }).map((_, i) => {
+                                      const sessionNum = i + 1;
+                                      const sessionApt = appointments.find(
+                                        (a) => a.plan_id === plan.id && a.session_number === sessionNum && a.status !== "cancelled"
+                                      );
+                                      const isSessionCompleted = i < plan.completed_sessions;
+                                      
+                                      return (
+                                        <div key={i} className="flex items-center gap-2">
+                                          <div
+                                            className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                                              isSessionCompleted
+                                                ? "bg-primary text-primary-foreground"
+                                                : "bg-muted text-muted-foreground"
+                                            }`}
+                                          >
+                                            {sessionNum}
+                                          </div>
+                                          {sessionApt ? (
+                                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                              <span className="font-body text-[11px] text-foreground">
+                                                {formatDate(sessionApt.appointment_date)} • {sessionApt.appointment_time}
+                                              </span>
+                                              {isRescheduled(sessionApt) && (
+                                                <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase">
+                                                  Remarcado
+                                                </span>
+                                              )}
+                                              <button
+                                                onClick={(e) => { e.stopPropagation(); openReschedule(sessionApt); }}
+                                                className="ml-auto px-2 py-1 rounded-lg text-[10px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-colors shrink-0"
+                                              >
+                                                <CalendarClock className="w-3 h-3" />
+                                              </button>
+                                            </div>
+                                          ) : (
+                                            <span className="font-body text-[11px] text-muted-foreground italic">
+                                              {isSessionCompleted ? "Realizada" : "Não agendada"}
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                   {/* Admin controls */}
                                   <div className="flex items-center gap-2">
