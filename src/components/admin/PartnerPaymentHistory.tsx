@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Calendar, DollarSign, FileText, ChevronLeft, ChevronRight, Trash2, Save, Loader2 } from "lucide-react";
+import { X, Plus, Calendar as CalendarIcon, DollarSign, FileText, ChevronLeft, ChevronRight, Trash2, Save, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface PartnerPayment {
   id: string;
@@ -48,6 +53,7 @@ const PartnerPaymentHistory = ({ partnerId, partnerName, salaryCents, commission
   const [newType, setNewType] = useState("salary");
   const [newDesc, setNewDesc] = useState("");
   const [newAmount, setNewAmount] = useState("");
+  const [newDate, setNewDate] = useState<Date>(new Date());
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -75,6 +81,7 @@ const PartnerPaymentHistory = ({ partnerId, partnerName, salaryCents, commission
       description: newDesc || TYPES.find((t) => t.key === newType)?.label || "",
       amount_cents: amountCents,
       reference_month: month,
+      paid_at: newDate.toISOString(),
     });
 
     if (error) {
@@ -85,6 +92,7 @@ const PartnerPaymentHistory = ({ partnerId, partnerName, salaryCents, commission
       setNewType("salary");
       setNewDesc("");
       setNewAmount("");
+      setNewDate(new Date());
       fetchPayments();
     }
     setSaving(false);
@@ -265,14 +273,40 @@ const PartnerPaymentHistory = ({ partnerId, partnerName, salaryCents, commission
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="font-body text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">Descrição</label>
-                  <Input
-                    value={newDesc}
-                    onChange={(e) => setNewDesc(e.target.value)}
-                    placeholder="Ex: Pagamento mensal, Adiantamento..."
-                    className="h-9 text-sm"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="font-body text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">Data</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn("w-full h-9 justify-start text-left font-normal text-sm", !newDate && "text-muted-foreground")}
+                        >
+                          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                          {newDate ? format(newDate, "dd/MM/yyyy") : "Selecionar"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[80]" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={newDate}
+                          onSelect={(d) => d && setNewDate(d)}
+                          locale={ptBR}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <label className="font-body text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block">Descrição</label>
+                    <Input
+                      value={newDesc}
+                      onChange={(e) => setNewDesc(e.target.value)}
+                      placeholder="Ex: Adiantamento..."
+                      className="h-9 text-sm"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => setShowAdd(false)} className="flex-1">Cancelar</Button>
