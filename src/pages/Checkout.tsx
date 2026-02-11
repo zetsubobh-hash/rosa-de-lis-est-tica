@@ -7,6 +7,7 @@ import { usePaymentSettings } from "@/hooks/usePaymentSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getServiceBySlug } from "@/data/services";
+import { useAllServicePrices, formatCents } from "@/hooks/useServicePrices";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -17,6 +18,7 @@ interface AppointmentInfo {
   service_slug: string;
   appointment_date: string;
   appointment_time: string;
+  notes: string | null;
 }
 
 const Checkout = () => {
@@ -25,6 +27,7 @@ const Checkout = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const { settings, loading: settingsLoading } = usePaymentSettings();
+  const { prices: allPrices } = useAllServicePrices();
 
   const [appointments, setAppointments] = useState<AppointmentInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +56,7 @@ const Checkout = () => {
       console.log("[Checkout] Fetching appointments for IDs:", appointmentIds);
       const { data, error } = await supabase
         .from("appointments")
-        .select("id, service_title, service_slug, appointment_date, appointment_time")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, notes")
         .in("id", appointmentIds)
         .eq("user_id", user.id)
         .eq("status", "pending");
@@ -163,6 +166,21 @@ const Checkout = () => {
             {appointments.map((apt) => {
               const svc = getServiceBySlug(apt.service_slug);
               const Icon = svc?.icon;
+              // Get price from notes (plan info) or fallback
+              let priceCents = 0;
+              let planName = "";
+              if (apt.notes) {
+                try {
+                  const noteData = JSON.parse(apt.notes);
+                  priceCents = noteData.price_cents || 0;
+                  planName = noteData.plan || "";
+                } catch { /* ignore */ }
+              }
+              // If no price in notes, try to find from DB prices
+              if (!priceCents && allPrices.length > 0) {
+                const dbPrice = allPrices.find((p) => p.service_slug === apt.service_slug && p.plan_name === "Essencial");
+                if (dbPrice) priceCents = dbPrice.total_price_cents;
+              }
               return (
                 <div key={apt.id} className="flex items-center gap-3 p-3 rounded-2xl bg-rose-soft">
                   {Icon && (
@@ -174,15 +192,36 @@ const Checkout = () => {
                     <h4 className="font-heading text-sm font-bold text-foreground truncate">{apt.service_title}</h4>
                     <p className="font-body text-xs text-muted-foreground">
                       {apt.appointment_date} • {apt.appointment_time}
+                      {planName && ` • ${planName}`}
                     </p>
                   </div>
+                  {priceCents > 0 && (
+                    <span className="font-heading text-sm font-bold text-primary shrink-0">
+                      {formatCents(priceCents)}
+                    </span>
+                  )}
                 </div>
               );
             })}
           </div>
-          <p className="font-body text-xs text-muted-foreground text-center mt-4">
-            Valores conforme avaliação personalizada.
-          </p>
+          {(() => {
+            const total = appointments.reduce((sum, apt) => {
+              if (apt.notes) {
+                try { return sum + (JSON.parse(apt.notes).price_cents || 0); } catch { return sum; }
+              }
+              return sum;
+            }, 0);
+            return total > 0 ? (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                <span className="font-body text-sm font-semibold text-foreground">Total</span>
+                <span className="font-heading text-lg font-bold text-primary">{formatCents(total)}</span>
+              </div>
+            ) : (
+              <p className="font-body text-xs text-muted-foreground text-center mt-4">
+                Valores conforme avaliação personalizada.
+              </p>
+            );
+          })()}
         </motion.div>
 
         {/* Payment methods */}

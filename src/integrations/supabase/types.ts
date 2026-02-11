@@ -190,6 +190,36 @@ export type Database = {
         }
         Relationships: []
       }
+      service_prices: {
+        Row: {
+          id: string
+          plan_name: string
+          price_per_session_cents: number
+          service_slug: string
+          sessions: number
+          total_price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          plan_name: string
+          price_per_session_cents?: number
+          service_slug: string
+          sessions?: number
+          total_price_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          plan_name?: string
+          price_per_session_cents?: number
+          service_slug?: string
+          sessions?: number
+          total_price_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

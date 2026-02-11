@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,8 +10,9 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminAgenda from "@/components/admin/AdminAgenda";
 import AdminPaymentSettings from "@/components/admin/AdminPaymentSettings";
 import AdminBranding from "@/components/admin/AdminBranding";
+import AdminPricing from "@/components/admin/AdminPricing";
 
-type Tab = "dashboard" | "agenda" | "payments" | "branding";
+type Tab = "dashboard" | "agenda" | "pricing" | "payments" | "branding";
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -54,6 +55,7 @@ const Admin = () => {
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: "dashboard", label: "Dashboard", icon: BarChart3 },
     { key: "agenda", label: "Agenda", icon: CalendarCheck },
+    { key: "pricing", label: "Preços", icon: DollarSign },
     { key: "payments", label: "Pagamento", icon: CreditCard },
     { key: "branding", label: "Identidade Visual", icon: Palette },
   ];
@@ -128,6 +130,7 @@ const Admin = () => {
         <div className="p-8">
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "agenda" && <AdminAgenda />}
+          {activeTab === "pricing" && <AdminPricing />}
           {activeTab === "payments" && <AdminPaymentSettings initialSettings={settingsMap} />}
           {activeTab === "branding" && <AdminBranding />}
         </div>
