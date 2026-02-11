@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, CalendarCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 import AuthModal from "@/components/AuthModal";
@@ -135,13 +135,22 @@ const Header = () => {
               </a>
             ))}
             {user ? (
-              <button
-                onClick={signOut}
-                className="flex items-center gap-2 px-6 py-2.5 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
-              >
-                <LogOut className="w-4 h-4" />
-                Sair
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate("/meus-agendamentos")}
+                  className="flex items-center gap-2 px-5 py-2.5 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
+                >
+                  <CalendarCheck className="w-4 h-4" />
+                  Agendamentos
+                </button>
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleAgendar}
@@ -184,13 +193,22 @@ const Header = () => {
               </a>
             ))}
             {user ? (
-              <button
-                onClick={() => { setMenuOpen(false); signOut(); }}
-                className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full uppercase tracking-wider"
-              >
-                <LogOut className="w-4 h-4" />
-                Sair
-              </button>
+              <div className="space-y-2 mt-4">
+                <button
+                  onClick={() => { setMenuOpen(false); navigate("/meus-agendamentos"); }}
+                  className="flex items-center justify-center gap-2 w-full py-3 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full uppercase tracking-wider"
+                >
+                  <CalendarCheck className="w-4 h-4" />
+                  Meus Agendamentos
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); signOut(); }}
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full uppercase tracking-wider"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleAgendar}
