@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,11 +28,6 @@ const formatCep = (value: string) => {
 
 const capitalizeWords = (value: string) => {
   return value.replace(/\b\w/g, (char) => char.toUpperCase());
-};
-
-const generateFakeEmail = (username: string) => {
-  const sanitized = username.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return `${sanitized}@rosadelis.local`;
 };
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
@@ -119,17 +114,44 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       return;
     }
     setLoading(true);
-    const fakeEmail = generateFakeEmail(loginUsername.trim());
-    const { error } = await supabase.auth.signInWithPassword({ email: fakeEmail, password });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erro ao entrar", description: "Usuário ou senha incorretos.", variant: "destructive" });
-    } else {
-      toast({ title: "Login realizado com sucesso!" });
-      resetFields();
-      onOpenChange(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+
+    try {
+      const res = await fetch(`https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginUsername.trim(),
+          password,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        toast({ title: "Erro ao entrar", description: result.error, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // Set the session using the tokens from the edge function
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: result.access_token,
+        refresh_token: result.refresh_token,
+      });
+
+      if (sessionError) {
+        toast({ title: "Erro ao entrar", description: "Tente novamente.", variant: "destructive" });
+      } else {
+        toast({ title: "Login realizado com sucesso!" });
+        resetFields();
+        onOpenChange(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } catch {
+      toast({ title: "Erro de conexão", variant: "destructive" });
     }
+
+    setLoading(false);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -170,22 +192,37 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         return;
       }
 
-      // Auto-login after registration
-      const fakeEmail = `${generatedUsername}@rosadelis.local`;
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: fakeEmail,
-        password: regPassword,
+      // Auto-login after registration via edge function
+      const loginRes = await fetch(`https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: generatedUsername,
+          password: regPassword,
+        }),
       });
 
-      if (loginError) {
+      const loginResult = await loginRes.json();
+
+      if (!loginRes.ok) {
         toast({ title: "Cadastro realizado!", description: "Faça login com seu nome de usuário." });
         setMode("login");
       } else {
-        toast({ title: "Cadastro realizado com sucesso!" });
-        onOpenChange(false);
-        setTimeout(() => {
-          document.getElementById("servicos")?.scrollIntoView({ behavior: "smooth" });
-        }, 300);
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: loginResult.access_token,
+          refresh_token: loginResult.refresh_token,
+        });
+
+        if (sessionError) {
+          toast({ title: "Cadastro realizado!", description: "Faça login com seu nome de usuário." });
+          setMode("login");
+        } else {
+          toast({ title: "Cadastro realizado com sucesso!" });
+          onOpenChange(false);
+          setTimeout(() => {
+            document.getElementById("servicos")?.scrollIntoView({ behavior: "smooth" });
+          }, 300);
+        }
       }
     } catch {
       toast({ title: "Erro de conexão", variant: "destructive" });
@@ -212,7 +249,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 id="login-username"
                 placeholder="Maria Silva"
                 value={loginUsername}
-                onChange={(e) => setLoginUsername(capitalizeWords(e.target.value))}
+                onChange={(e) => setLoginUsername(e.target.value)}
                 autoComplete="off"
               />
             </div>

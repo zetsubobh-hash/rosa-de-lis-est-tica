@@ -37,8 +37,6 @@ serve(async (req) => {
       );
     }
 
-    const fakeEmail = `${sanitizedUsername}@rosadelis.local`;
-
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -58,12 +56,15 @@ serve(async (req) => {
       );
     }
 
+    // Generate a unique internal email using UUID — never based on the username
+    const internalEmail = `${crypto.randomUUID()}@rosadelis.internal`;
+
     // Create user with admin API (auto-confirms email)
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: fakeEmail,
+      email: internalEmail,
       password,
       email_confirm: true,
-      user_metadata: { full_name: full_name.trim() },
+      user_metadata: { full_name: full_name.trim(), username: sanitizedUsername },
     });
 
     if (createError) {
