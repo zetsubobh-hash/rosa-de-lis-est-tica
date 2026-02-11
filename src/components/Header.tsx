@@ -7,7 +7,7 @@ import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useBranding } from "@/hooks/useBranding";
+
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -17,7 +17,7 @@ const Header = () => {
   const [profileName, setProfileName] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
-  const { logoUrl } = useBranding();
+  
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === "/";
@@ -119,7 +119,7 @@ const Header = () => {
             onClick={(e) => handleNavClick(e, "#")}
             className="flex items-center gap-2"
           >
-            <img src={logoUrl || logo} alt="Rosa de Lis" className="h-12 w-auto" />
+            <img src={logo} alt="Rosa de Lis" className="h-12 w-auto" />
           </a>
 
           {/* Desktop nav */}

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { useBranding } from "@/hooks/useBranding";
 import Index from "./pages/Index";
 import ServiceDetail from "./pages/ServiceDetail";
 import Agendar from "./pages/Agendar";
@@ -16,8 +17,9 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const PageTracker = ({ children }: { children: React.ReactNode }) => {
+const AppInit = ({ children }: { children: React.ReactNode }) => {
   usePageTracking();
+  useBranding(); // applies favicon dynamically
   return <>{children}</>;
 };
 
@@ -29,7 +31,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <PageTracker>
+          <AppInit>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/servico/:slug" element={<ServiceDetail />} />
@@ -40,7 +42,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </PageTracker>
+          </AppInit>
         </BrowserRouter>
       </TooltipProvider>
       </CartProvider>
