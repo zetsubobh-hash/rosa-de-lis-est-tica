@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,8 +9,9 @@ import logo from "@/assets/logo-branca.png";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminAgenda from "@/components/admin/AdminAgenda";
 import AdminPaymentSettings from "@/components/admin/AdminPaymentSettings";
+import AdminBranding from "@/components/admin/AdminBranding";
 
-type Tab = "dashboard" | "agenda" | "payments";
+type Tab = "dashboard" | "agenda" | "payments" | "branding";
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -54,6 +55,7 @@ const Admin = () => {
     { key: "dashboard", label: "Dashboard", icon: BarChart3 },
     { key: "agenda", label: "Agenda", icon: CalendarCheck },
     { key: "payments", label: "Pagamento", icon: CreditCard },
+    { key: "branding", label: "Identidade Visual", icon: Palette },
   ];
 
   return (
@@ -127,6 +129,7 @@ const Admin = () => {
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "agenda" && <AdminAgenda />}
           {activeTab === "payments" && <AdminPaymentSettings initialSettings={settingsMap} />}
+          {activeTab === "branding" && <AdminBranding />}
         </div>
       </main>
     </div>
