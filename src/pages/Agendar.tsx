@@ -37,6 +37,10 @@ const Agendar = () => {
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     if (!user) {
       navigate(`/servico/${slug}`, { replace: true });
     }
