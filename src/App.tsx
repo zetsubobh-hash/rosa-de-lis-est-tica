@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { useBranding } from "@/hooks/useBranding";
+import CookieConsent from "@/components/CookieConsent";
 import Index from "./pages/Index";
 import ServiceDetail from "./pages/ServiceDetail";
 import Agendar from "./pages/Agendar";
@@ -15,6 +16,7 @@ import MeusAgendamentos from "./pages/MeusAgendamentos";
 import MeuPerfil from "./pages/MeuPerfil";
 import Admin from "./pages/Admin";
 import PartnerDashboard from "./pages/PartnerDashboard";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,9 +45,11 @@ const App = () => (
               <Route path="/meu-perfil" element={<MeuPerfil />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/parceiro" element={<PartnerDashboard />} />
+              <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <CookieConsent />
           </AppInit>
         </BrowserRouter>
       </TooltipProvider>
