@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2 } from "lucide-react";
+import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, BellOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 
-const KEYS = ["evolution_api_url", "evolution_api_key", "evolution_instance_name", "evolution_enabled"];
+const KEYS = ["evolution_api_url", "evolution_api_key", "evolution_instance_name", "evolution_enabled", "evolution_notifications_enabled"];
 
 const AdminWhatsApp = () => {
   const { toast } = useToast();
@@ -175,7 +175,39 @@ const AdminWhatsApp = () => {
         </div>
       </motion.div>
 
-      {/* Configuration Fields */}
+      {/* Notifications Toggle */}
+      {isEnabled && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl border border-border p-5"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {settings.evolution_notifications_enabled === "true" ? (
+                <Bell className="w-5 h-5 text-primary" />
+              ) : (
+                <BellOff className="w-5 h-5 text-muted-foreground" />
+              )}
+              <div>
+                <p className="font-heading text-sm font-bold text-foreground">
+                  Notificações de Agendamento
+                </p>
+                <p className="font-body text-xs text-muted-foreground">
+                  {settings.evolution_notifications_enabled === "true"
+                    ? "Admins e parceiros recebem WhatsApp a cada novo agendamento"
+                    : "Desativado — nenhuma notificação será enviada"}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={settings.evolution_notifications_enabled === "true"}
+              onCheckedChange={(checked) => updateField("evolution_notifications_enabled", checked ? "true" : "false")}
+            />
+          </div>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
