@@ -171,7 +171,10 @@ const AdminPartners = () => {
     let userId = editing.user_id;
 
     if (isNew) {
-      // Try to find existing user by name, otherwise generate a placeholder UUID
+      // Generate a placeholder UUID for partners without accounts
+      userId = crypto.randomUUID();
+
+      // Try to find existing user by name to link
       const { data: profile } = await supabase
         .from("profiles")
         .select("user_id")
@@ -184,10 +187,9 @@ const AdminPartners = () => {
         await supabase.from("user_roles").upsert(
           { user_id: userId, role: "partner" as any },
           { onConflict: "user_id,role" }
-        );
-      } else {
-        // Create partner without a linked user account
-        userId = crypto.randomUUID();
+        ).then(({ error }) => {
+          if (error) console.warn("Role upsert warning:", error.message);
+        });
       }
 
       const { data: newPartner, error } = await supabase
@@ -208,6 +210,7 @@ const AdminPartners = () => {
         .single();
 
       if (error) {
+        console.error("Partner create error:", error);
         toast({ title: "Erro ao criar parceiro", description: error.message, variant: "destructive" });
         setSaving(false);
         return;
