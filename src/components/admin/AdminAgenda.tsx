@@ -149,25 +149,26 @@ const AdminAgenda = () => {
   const handleReschedule = async () => {
     if (!rescheduleId || !newDate || !newTime) return;
     setSaving(true);
+
+    // Build notes with rescheduled flag
+    const apt = appointments.find((a) => a.id === rescheduleId);
+    let noteData: any = {};
+    try { if (apt?.notes) noteData = JSON.parse(apt.notes); } catch { /* ignore */ }
+    noteData.rescheduled = true;
+    const updatedNotes = JSON.stringify(noteData);
+
     const { error } = await supabase
       .from("appointments")
-      .update({ appointment_date: newDate, appointment_time: newTime })
+      .update({ appointment_date: newDate, appointment_time: newTime, notes: updatedNotes })
       .eq("id", rescheduleId);
 
     if (error) {
       toast({ title: "Erro ao remarcar", variant: "destructive" });
     } else {
-      // Mark as rescheduled in notes
-      const apt = appointments.find((a) => a.id === rescheduleId);
-      let noteData: any = {};
-      try { if (apt?.notes) noteData = JSON.parse(apt.notes); } catch { /* ignore */ }
-      noteData.rescheduled = true;
-      await supabase.from("appointments").update({ notes: JSON.stringify(noteData) }).eq("id", rescheduleId);
-
       toast({ title: "Agendamento remarcado ✅" });
       setAppointments((prev) =>
         prev.map((a) =>
-          a.id === rescheduleId ? { ...a, appointment_date: newDate, appointment_time: newTime, notes: JSON.stringify(noteData) } : a
+          a.id === rescheduleId ? { ...a, appointment_date: newDate, appointment_time: newTime, notes: updatedNotes } : a
         )
       );
       setRescheduleId(null);
