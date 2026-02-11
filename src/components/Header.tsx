@@ -4,6 +4,7 @@ import { Menu, X, LogOut, CalendarCheck, ShieldCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 import AuthModal from "@/components/AuthModal";
+import AvatarUpload from "@/components/AvatarUpload";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -15,6 +16,7 @@ const Header = () => {
   const [activeSection, setActiveSection] = useState("#");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   
@@ -45,17 +47,19 @@ const Header = () => {
   useEffect(() => {
     if (!user) {
       setProfileName(null);
+      setAvatarUrl(null);
       return;
     }
     const fetchProfile = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, sex")
+        .select("full_name, sex, avatar_url")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
         const greeting = data.sex === "masculino" ? "Seja bem-vindo" : "Seja bem-vinda";
         setProfileName(`${greeting}, ${data.full_name}, à Rosa de Lis Estética!`);
+        setAvatarUrl(data.avatar_url || null);
       }
     };
     fetchProfile();
@@ -252,9 +256,16 @@ const Header = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="fixed top-[72px] left-0 right-0 z-40 bg-accent/90 backdrop-blur-sm border-b border-accent-foreground/10"
           >
-            <p className="text-center font-body text-sm text-accent-foreground py-2 px-4">
-              ✨ {profileName}
-            </p>
+            <div className="flex items-center justify-center gap-3 py-2 px-4">
+              <AvatarUpload
+                avatarUrl={avatarUrl}
+                onAvatarChange={setAvatarUrl}
+                size={36}
+              />
+              <p className="font-body text-sm text-accent-foreground">
+                ✨ {profileName}
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
