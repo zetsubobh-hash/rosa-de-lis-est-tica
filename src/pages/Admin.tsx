@@ -124,7 +124,7 @@ const Admin = () => {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="md:hidden fixed top-0 left-0 h-full w-[280px] bg-gradient-to-b from-primary via-primary to-[hsl(var(--pink-dark))] flex flex-col z-50 pt-16"
       >
-        <nav className="flex-1 px-3 pt-4 space-y-1">
+        <nav className="flex-1 px-3 pt-4 space-y-1 overflow-y-auto">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -184,7 +184,7 @@ const Admin = () => {
             <span className="font-body text-xs text-primary-foreground/70 uppercase tracking-widest font-semibold">Painel Admin</span>
           </div>
         </div>
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           {tabs.map((tab) => (
             <button
               key={tab.key}
