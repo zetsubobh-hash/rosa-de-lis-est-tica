@@ -1,4 +1,5 @@
 import { Instagram, Phone, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 
 const Footer = () => {
@@ -39,10 +40,16 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-background/10 text-center">
+        <div className="mt-10 pt-6 border-t border-background/10 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="font-body text-background/40 text-xs tracking-wider">
             © {new Date().getFullYear()} Rosa de Lis Estética. Todos os direitos reservados.
           </p>
+          <Link
+            to="/politica-de-privacidade"
+            className="font-body text-background/40 text-xs tracking-wider hover:text-background/70 transition-colors"
+          >
+            Política de Privacidade
+          </Link>
         </div>
       </div>
     </footer>
