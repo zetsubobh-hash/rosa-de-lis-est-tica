@@ -103,6 +103,18 @@ const Checkout = () => {
         .in("id", appointmentIds);
       if (error) throw error;
 
+      // Fire WhatsApp notification (fire-and-forget, don't block UI)
+      const { data: { session } } = await supabase.auth.getSession();
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-notify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ appointment_ids: appointmentIds }),
+      }).catch((e) => console.warn("WhatsApp notification failed:", e));
+
       toast({
         title: "Agendamento confirmado! ✅",
         description: "Realize o PIX e seu agendamento será validado.",

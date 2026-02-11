@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.evolution]
 verify_jwt = false
+
+[functions.evolution-notify]
+verify_jwt = false
