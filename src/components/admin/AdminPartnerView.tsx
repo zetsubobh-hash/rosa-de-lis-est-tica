@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar, Clock, CalendarCheck,
-  Users, History, ClipboardList, CheckCircle2
+  Users, History, ClipboardList, CheckCircle2, Home, LogOut
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/logo-branca.png";
 
 interface SessionInfo {
   date: string;
@@ -61,7 +62,6 @@ const AdminPartnerView = () => {
   const [dataLoading, setDataLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("agenda");
 
-  // Load partners list
   useEffect(() => {
     const fetchPartners = async () => {
       const { data } = await supabase
@@ -70,13 +70,12 @@ const AdminPartnerView = () => {
         .eq("is_active", true)
         .order("full_name");
       setPartners(data || []);
-      setSelectedPartner("all");
+      setSelectedPartner(data && data.length > 0 ? data[0].id : "");
       setLoading(false);
     };
     fetchPartners();
   }, []);
 
-  // Load partner data when selection changes
   useEffect(() => {
     if (!selectedPartner) return;
 
@@ -84,31 +83,24 @@ const AdminPartnerView = () => {
       setDataLoading(true);
       const today = new Date().toISOString().split("T")[0];
 
-      let upcomingQuery = supabase
-        .from("appointments")
-        .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
-        .gte("appointment_date", today)
-        .in("status", ["confirmed", "pending"])
-        .order("appointment_date")
-        .order("appointment_time");
-
-      let pastQuery = supabase
-        .from("appointments")
-        .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
-        .in("status", ["completed", "confirmed"])
-        .lt("appointment_date", today)
-        .order("appointment_date", { ascending: false })
-        .order("appointment_time", { ascending: false })
-        .limit(50);
-
-      if (selectedPartner !== "all") {
-        upcomingQuery = upcomingQuery.eq("partner_id", selectedPartner);
-        pastQuery = pastQuery.eq("partner_id", selectedPartner);
-      }
-
       const [{ data: upcoming }, { data: past }] = await Promise.all([
-        upcomingQuery,
-        pastQuery,
+        supabase
+          .from("appointments")
+          .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
+          .eq("partner_id", selectedPartner)
+          .gte("appointment_date", today)
+          .in("status", ["confirmed", "pending"])
+          .order("appointment_date")
+          .order("appointment_time"),
+        supabase
+          .from("appointments")
+          .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
+          .eq("partner_id", selectedPartner)
+          .in("status", ["completed", "confirmed"])
+          .lt("appointment_date", today)
+          .order("appointment_date", { ascending: false })
+          .order("appointment_time", { ascending: false })
+          .limit(50),
       ]);
 
       const allApts = [...(upcoming || []), ...(past || [])];
@@ -133,7 +125,6 @@ const AdminPartnerView = () => {
       const planMap: Record<string, any> = {};
       planResult?.data?.forEach((p: any) => { planMap[p.id] = p; });
 
-      // Group all appointments by plan_id for session detail
       const planAptsMap: Record<string, { date: string; time: string; session_number: number; status: string }[]> = {};
       allPlanAptsResult?.data?.forEach((a: any) => {
         if (!a.plan_id) return;
@@ -152,7 +143,6 @@ const AdminPartnerView = () => {
       setAppointments((upcoming || []).map(enrichApt));
       setPastAppointments((past || []).map(enrichApt));
 
-      // Build client plans
       if (planResult?.data && planResult.data.length > 0) {
         const plans: ClientPlan[] = planResult.data
           .filter((p: any) => p.status === "active")
@@ -190,6 +180,7 @@ const AdminPartnerView = () => {
 
   const today = new Date().toISOString().split("T")[0];
   const todayCount = appointments.filter((a) => a.appointment_date === today).length;
+  const selectedPartnerName = partners.find((p) => p.id === selectedPartner)?.full_name || "";
 
   const tabs: { key: Tab; label: string; icon: typeof Calendar; count?: number }[] = [
     { key: "agenda", label: "Agenda", icon: CalendarCheck, count: appointments.length },
@@ -253,7 +244,6 @@ const AdminPartnerView = () => {
             )}
           </div>
 
-          {/* Session tracker for plan appointments */}
           {apt.plan_id && apt.total_sessions && apt.planSessions && apt.planSessions.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border">
               <div className="flex items-center gap-2 mb-2">
@@ -270,10 +260,7 @@ const AdminPartnerView = () => {
                   const isCurrent = apt.session_number === sessionNum;
 
                   return (
-                    <div
-                      key={sessionNum}
-                      className={`relative group flex flex-col items-center`}
-                    >
+                    <div key={sessionNum} className="flex flex-col items-center">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all ${
                         isCurrent
                           ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
@@ -304,10 +291,9 @@ const AdminPartnerView = () => {
     </motion.div>
   );
 
-
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Partner selector */}
+    <div className="space-y-6">
+      {/* Partner selector - admin only */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <label className="font-body text-sm text-muted-foreground">Visualizar como:</label>
         <select
@@ -315,7 +301,6 @@ const AdminPartnerView = () => {
           onChange={(e) => { setSelectedPartner(e.target.value); setActiveTab("agenda"); }}
           className="h-9 rounded-xl border border-border bg-card px-3 font-body text-sm text-foreground font-semibold"
         >
-          <option value="all">Todos (visão geral)</option>
           {partners.map((p) => (
             <option key={p.id} value={p.id}>{p.full_name}</option>
           ))}
@@ -327,232 +312,255 @@ const AdminPartnerView = () => {
           <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
         </div>
       ) : (
-        <>
-          {/* KPIs */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-card rounded-2xl border border-border p-4">
-              <CalendarCheck className="w-5 h-5 text-primary mb-2" />
-              <p className="font-heading text-2xl font-bold text-foreground">{todayCount}</p>
-              <p className="font-body text-xs text-muted-foreground">Hoje</p>
-            </div>
-            <div className="bg-card rounded-2xl border border-border p-4">
-              <Calendar className="w-5 h-5 text-primary mb-2" />
-              <p className="font-heading text-2xl font-bold text-foreground">{appointments.length}</p>
-              <p className="font-body text-xs text-muted-foreground">Próximos</p>
-            </div>
-            <div className="bg-card rounded-2xl border border-border p-4">
-              <Users className="w-5 h-5 text-primary mb-2" />
-              <p className="font-heading text-2xl font-bold text-foreground">{clientPlans.length}</p>
-              <p className="font-body text-xs text-muted-foreground">Planos Ativos</p>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-1 bg-muted/50 rounded-xl p-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-body text-xs font-medium transition-all ${
-                  activeTab === tab.key
-                    ? "bg-card shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-                {tab.count !== undefined && tab.count > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">{tab.count}</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Agenda tab */}
-          {activeTab === "agenda" && (
-            <div className="space-y-6">
-              {appointments.length === 0 ? (
-                <div className="bg-card rounded-2xl border border-border p-12 text-center">
-                  <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="font-body text-muted-foreground">Nenhum agendamento próximo.</p>
+        /* Simulated partner dashboard - faithful replica */
+        <div className="rounded-2xl border border-border overflow-hidden bg-background">
+          {/* Partner header - replica of /parceiro */}
+          <header className="bg-gradient-to-r from-primary to-[hsl(var(--pink-dark))] px-6 py-4">
+            <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src={logo} alt="Rosa de Lis" className="h-10 w-auto" />
+                <div>
+                  <p className="font-body text-xs text-primary-foreground/60 uppercase tracking-widest font-semibold">Painel do Parceiro</p>
+                  <p className="font-heading text-sm font-bold text-primary-foreground">{selectedPartnerName}</p>
                 </div>
-              ) : (
-                Object.entries(grouped).map(([date, apts]) => (
-                  <div key={date}>
-                    <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      {formatDate(date)}
-                      {date === today && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">Hoje</span>
-                      )}
-                    </h3>
-                    <div className="space-y-3">
-                      {apts.map(renderAppointmentCard)}
-                    </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg text-primary-foreground/30 cursor-default">
+                  <Home className="w-5 h-5" />
+                </div>
+                <div className="p-2 rounded-lg text-primary-foreground/30 cursor-default">
+                  <LogOut className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+            {/* KPIs */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-card rounded-2xl border border-border p-4">
+                <CalendarCheck className="w-5 h-5 text-primary mb-2" />
+                <p className="font-heading text-2xl font-bold text-foreground">{todayCount}</p>
+                <p className="font-body text-xs text-muted-foreground">Hoje</p>
+              </div>
+              <div className="bg-card rounded-2xl border border-border p-4">
+                <Calendar className="w-5 h-5 text-primary mb-2" />
+                <p className="font-heading text-2xl font-bold text-foreground">{appointments.length}</p>
+                <p className="font-body text-xs text-muted-foreground">Próximos</p>
+              </div>
+              <div className="bg-card rounded-2xl border border-border p-4">
+                <Users className="w-5 h-5 text-primary mb-2" />
+                <p className="font-heading text-2xl font-bold text-foreground">{clientPlans.length}</p>
+                <p className="font-body text-xs text-muted-foreground">Planos Ativos</p>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 bg-muted/50 rounded-xl p-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-body text-xs font-medium transition-all ${
+                    activeTab === tab.key
+                      ? "bg-card shadow-sm text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                  {tab.count !== undefined && tab.count > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">{tab.count}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Agenda tab */}
+            {activeTab === "agenda" && (
+              <div className="space-y-6">
+                {appointments.length === 0 ? (
+                  <div className="bg-card rounded-2xl border border-border p-12 text-center">
+                    <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="font-body text-muted-foreground">Nenhum agendamento próximo.</p>
                   </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* Clientes tab */}
-          {activeTab === "clientes" && (
-            <div className="space-y-3">
-              {clientPlans.length === 0 ? (
-                <div className="bg-card rounded-2xl border border-border p-12 text-center">
-                  <ClipboardList className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="font-body text-muted-foreground">Nenhum plano de tratamento em andamento.</p>
-                </div>
-              ) : (
-                clientPlans.map((plan) => {
-                  const progress = plan.total_sessions > 0
-                    ? Math.round((plan.completed_sessions / plan.total_sessions) * 100)
-                    : 0;
-
-                  return (
-                    <motion.div
-                      key={plan.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-card rounded-2xl border border-border p-4"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                          {plan.profile?.avatar_url ? (
-                            <img src={plan.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="font-heading text-xs font-bold text-primary">
-                              {plan.profile ? getInitials(plan.profile.full_name) : "?"}
-                            </span>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-heading text-sm font-bold text-foreground">{plan.profile?.full_name || "Cliente"}</p>
-                          <p className="font-body text-xs text-muted-foreground mt-0.5">{plan.service_title} · {plan.plan_name}</p>
-
-                          <div className="mt-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-body text-[10px] text-muted-foreground">
-                                {plan.completed_sessions}/{plan.total_sessions} sessões
-                              </span>
-                              <span className="font-body text-[10px] font-semibold text-primary">{progress}%</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
-                            </div>
-                          </div>
-
-                          {plan.nextAppointment ? (
-                            <div className="mt-2 flex items-center gap-1.5 text-xs font-body text-muted-foreground">
-                              <Calendar className="w-3 h-3 text-primary" />
-                              <span>Próxima: <span className="font-semibold text-foreground">{formatDate(plan.nextAppointment.date)}</span> às {plan.nextAppointment.time}</span>
-                            </div>
-                          ) : (
-                            <div className="mt-2 flex items-center gap-1.5 text-xs font-body text-amber-600">
-                              <Calendar className="w-3 h-3" />
-                              <span>Sem agendamento próximo</span>
-                            </div>
-                          )}
-
-                          {/* Session details */}
-                          {plan.scheduledSessions && plan.scheduledSessions.length > 0 && (
-                            <div className="mt-3 space-y-1">
-                              <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Sessões agendadas:</p>
-                              {plan.scheduledSessions.map((s, i) => (
-                                <div key={i} className="flex items-center gap-2 text-xs font-body">
-                                  {s.status === "completed" ? (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                                  ) : (
-                                    <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                  )}
-                                  <span className={s.status === "completed" ? "text-muted-foreground line-through" : "text-foreground"}>
-                                    Sessão {s.session_number} — {formatDate(s.date)} às {s.time}
-                                  </span>
-                                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                                    s.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
-                                      : s.status === "confirmed" ? "bg-primary/10 text-primary"
-                                      : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
-                                  }`}>
-                                    {s.status === "completed" ? "Feita" : s.status === "confirmed" ? "Confirmada" : "Pendente"}
-                                  </span>
-                                </div>
-                              ))}
-                              <p className="font-body text-[10px] text-muted-foreground mt-1">
-                                Restam <span className="font-semibold text-foreground">{plan.total_sessions - plan.completed_sessions}</span> sessão(ões)
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                ) : (
+                  Object.entries(grouped).map(([date, apts]) => (
+                    <div key={date}>
+                      <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        {formatDate(date)}
+                        {date === today && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">Hoje</span>
+                        )}
+                      </h3>
+                      <div className="space-y-3">
+                        {apts.map(renderAppointmentCard)}
                       </div>
-                    </motion.div>
-                  );
-                })
-              )}
-            </div>
-          )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
 
-          {/* Histórico tab */}
-          {activeTab === "historico" && (
-            <div className="space-y-6">
-              {pastAppointments.length === 0 ? (
-                <div className="bg-card rounded-2xl border border-border p-12 text-center">
-                  <History className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="font-body text-muted-foreground">Nenhum atendimento anterior encontrado.</p>
-                </div>
-              ) : (
-                Object.entries(pastGrouped).map(([date, apts]) => (
-                  <div key={date}>
-                    <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      {formatDate(date)}
-                    </h3>
-                    <div className="space-y-3">
-                      {apts.map((apt) => (
-                        <motion.div
-                          key={apt.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-card rounded-2xl border border-border p-4 opacity-80"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                              {apt.profile?.avatar_url ? (
-                                <img src={apt.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <span className="font-heading text-xs font-bold text-muted-foreground">
-                                  {apt.profile ? getInitials(apt.profile.full_name) : "?"}
+            {/* Clientes tab */}
+            {activeTab === "clientes" && (
+              <div className="space-y-3">
+                {clientPlans.length === 0 ? (
+                  <div className="bg-card rounded-2xl border border-border p-12 text-center">
+                    <ClipboardList className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="font-body text-muted-foreground">Nenhum plano de tratamento em andamento.</p>
+                  </div>
+                ) : (
+                  clientPlans.map((plan) => {
+                    const progress = plan.total_sessions > 0
+                      ? Math.round((plan.completed_sessions / plan.total_sessions) * 100)
+                      : 0;
+
+                    return (
+                      <motion.div
+                        key={plan.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-card rounded-2xl border border-border p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                            {plan.profile?.avatar_url ? (
+                              <img src={plan.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="font-heading text-xs font-bold text-primary">
+                                {plan.profile ? getInitials(plan.profile.full_name) : "?"}
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-heading text-sm font-bold text-foreground">{plan.profile?.full_name || "Cliente"}</p>
+                            <p className="font-body text-xs text-muted-foreground mt-0.5">{plan.service_title} · {plan.plan_name}</p>
+
+                            <div className="mt-2">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-body text-[10px] text-muted-foreground">
+                                  {plan.completed_sessions}/{plan.total_sessions} sessões
                                 </span>
-                              )}
+                                <span className="font-body text-[10px] font-semibold text-primary">{progress}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+                              </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-heading text-sm font-bold text-foreground">{apt.service_title}</p>
-                              <p className="font-body text-xs text-muted-foreground mt-0.5">{apt.profile?.full_name || "Cliente"}</p>
-                              <div className="flex items-center gap-2 mt-1.5 text-xs font-body text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  {apt.appointment_time}
-                                </span>
-                                <span className="flex items-center gap-1 text-emerald-600">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  Realizado
-                                </span>
-                                {apt.session_number && apt.total_sessions && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-accent-foreground">
-                                    Sessão {apt.session_number}/{apt.total_sessions}
+
+                            {plan.nextAppointment ? (
+                              <div className="mt-2 flex items-center gap-1.5 text-xs font-body text-muted-foreground">
+                                <Calendar className="w-3 h-3 text-primary" />
+                                <span>Próxima: <span className="font-semibold text-foreground">{formatDate(plan.nextAppointment.date)}</span> às {plan.nextAppointment.time}</span>
+                              </div>
+                            ) : (
+                              <div className="mt-2 flex items-center gap-1.5 text-xs font-body text-amber-600">
+                                <Calendar className="w-3 h-3" />
+                                <span>Sem agendamento próximo</span>
+                              </div>
+                            )}
+
+                            {plan.scheduledSessions && plan.scheduledSessions.length > 0 && (
+                              <div className="mt-3 space-y-1">
+                                <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Sessões agendadas:</p>
+                                {plan.scheduledSessions.map((s, i) => (
+                                  <div key={i} className="flex items-center gap-2 text-xs font-body">
+                                    {s.status === "completed" ? (
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                    ) : (
+                                      <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                    )}
+                                    <span className={s.status === "completed" ? "text-muted-foreground line-through" : "text-foreground"}>
+                                      Sessão {s.session_number} — {formatDate(s.date)} às {s.time}
+                                    </span>
+                                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                                      s.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                        : s.status === "confirmed" ? "bg-primary/10 text-primary"
+                                        : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                                    }`}>
+                                      {s.status === "completed" ? "Feita" : s.status === "confirmed" ? "Confirmada" : "Pendente"}
+                                    </span>
+                                  </div>
+                                ))}
+                                <p className="font-body text-[10px] text-muted-foreground mt-1">
+                                  Restam <span className="font-semibold text-foreground">{plan.total_sessions - plan.completed_sessions}</span> sessão(ões)
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* Histórico tab */}
+            {activeTab === "historico" && (
+              <div className="space-y-6">
+                {pastAppointments.length === 0 ? (
+                  <div className="bg-card rounded-2xl border border-border p-12 text-center">
+                    <History className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="font-body text-muted-foreground">Nenhum atendimento anterior encontrado.</p>
+                  </div>
+                ) : (
+                  Object.entries(pastGrouped).map(([date, apts]) => (
+                    <div key={date}>
+                      <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        {formatDate(date)}
+                      </h3>
+                      <div className="space-y-3">
+                        {apts.map((apt) => (
+                          <motion.div
+                            key={apt.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-card rounded-2xl border border-border p-4 opacity-80"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                                {apt.profile?.avatar_url ? (
+                                  <img src={apt.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="font-heading text-xs font-bold text-muted-foreground">
+                                    {apt.profile ? getInitials(apt.profile.full_name) : "?"}
                                   </span>
                                 )}
                               </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-heading text-sm font-bold text-foreground">{apt.service_title}</p>
+                                <p className="font-body text-xs text-muted-foreground mt-0.5">{apt.profile?.full_name || "Cliente"}</p>
+                                <div className="flex items-center gap-2 mt-1.5 text-xs font-body text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {apt.appointment_time}
+                                  </span>
+                                  <span className="flex items-center gap-1 text-emerald-600">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    Realizado
+                                  </span>
+                                  {apt.session_number && apt.total_sessions && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-accent-foreground">
+                                      Sessão {apt.session_number}/{apt.total_sessions}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      ))}
+                          </motion.div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
