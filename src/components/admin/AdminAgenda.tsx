@@ -105,6 +105,7 @@ const AdminAgenda = () => {
   const [expandedApt, setExpandedApt] = useState<string | null>(null);
   const [updatingPlan, setUpdatingPlan] = useState<string | null>(null);
   const [cancelAllPlanId, setCancelAllPlanId] = useState<string | null>(null);
+  const [activeSession, setActiveSession] = useState<{ planId: string; sessionNum: number } | null>(null);
 
   // Schedule modal state (for admin scheduling sessions)
   const [scheduleModal, setScheduleModal] = useState<{
@@ -189,15 +190,6 @@ const AdminAgenda = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("appointments").delete().eq("id", id);
-    if (error) {
-      toast({ title: "Erro ao excluir", variant: "destructive" });
-    } else {
-      toast({ title: "Agendamento excluído ✅" });
-      setAppointments((prev) => prev.filter((a) => a.id !== id));
-    }
-  };
 
   const openReschedule = (apt: Appointment) => {
     setRescheduleId(apt.id);
@@ -485,73 +477,87 @@ const AdminAgenda = () => {
                                         (a) => a.plan_id === plan.id && a.session_number === sessionNum && a.status !== "cancelled"
                                       );
                                       const isSessionCompleted = i < plan.completed_sessions;
-                                      const canSchedule = !isSessionCompleted && !sessionApt && !isComplete;
+                                      const isSelected = activeSession?.planId === plan.id && activeSession?.sessionNum === sessionNum;
 
                                       return (
-                                        <Popover key={i}>
-                                          <PopoverTrigger asChild>
-                                            <button
-                                              onClick={(e) => e.stopPropagation()}
-                                              className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
-                                                isSessionCompleted
-                                                  ? "bg-primary text-primary-foreground"
-                                                  : sessionApt
-                                                  ? "bg-primary/30 text-primary ring-2 ring-primary/40"
-                                                  : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                                              }`}
-                                              title={
-                                                isSessionCompleted ? `Sessão ${sessionNum} realizada` :
-                                                sessionApt ? `Sessão ${sessionNum} agendada` :
-                                                `Sessão ${sessionNum}`
-                                              }
-                                            >
-                                              {isSessionCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
-                                            </button>
-                                          </PopoverTrigger>
-                                          <PopoverContent className="w-40 p-1.5" align="center" side="top" onClick={(e) => e.stopPropagation()}>
-                                            <p className="font-heading text-[11px] font-bold text-foreground px-2 py-1">Sessão {sessionNum}</p>
-                                            {sessionApt && (
-                                              <p className="font-body text-[10px] text-muted-foreground px-2 pb-1">
-                                                {formatDate(sessionApt.appointment_date)} • {sessionApt.appointment_time}
-                                              </p>
-                                            )}
-                                            <div className="space-y-0.5">
-                                              {canSchedule && (
-                                                <button
-                                                  onClick={() => setScheduleModal({ planId: plan.id, sessionNumber: sessionNum, serviceSlug: apt.service_slug, serviceTitle: apt.service_title, userId: apt.user_id })}
-                                                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                                                >
-                                                  <CalendarPlus className="w-3 h-3" /> Agendar
-                                                </button>
-                                              )}
-                                              {sessionApt && (
-                                                <>
-                                                  <button
-                                                    onClick={() => openReschedule(sessionApt)}
-                                                    className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                                                  >
-                                                    <CalendarClock className="w-3 h-3" /> Reagendar
-                                                  </button>
-                                                  <button
-                                                    onClick={() => handleCancel(sessionApt.id)}
-                                                    className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-foreground hover:bg-amber-50 hover:text-amber-600 transition-colors"
-                                                  >
-                                                    <CalendarX className="w-3 h-3" /> Cancelar
-                                                  </button>
-                                                  <button
-                                                    onClick={() => handleDelete(sessionApt.id)}
-                                                    className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                                  >
-                                                    <Trash2 className="w-3 h-3" /> Excluir
-                                                  </button>
-                                                </>
-                                              )}
-                                            </div>
-                                          </PopoverContent>
-                                        </Popover>
+                                        <button
+                                          key={i}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveSession(isSelected ? null : { planId: plan.id, sessionNum: sessionNum });
+                                          }}
+                                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
+                                            isSessionCompleted
+                                              ? "bg-primary text-primary-foreground"
+                                              : sessionApt
+                                              ? "bg-primary/30 text-primary ring-2 ring-primary/40"
+                                              : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
+                                          } ${isSelected ? "ring-2 ring-primary scale-110" : ""}`}
+                                        >
+                                          {isSessionCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
+                                        </button>
                                       );
                                     })}
                                   </div>
+
+                                  {/* Inline session detail */}
+                                  {activeSession?.planId === plan.id && (() => {
+                                    const sNum = activeSession.sessionNum;
+                                    const sApt = appointments.find(
+                                      (a) => a.plan_id === plan.id && a.session_number === sNum && a.status !== "cancelled"
+                                    );
+                                    const sCompleted = (sNum - 1) < plan.completed_sessions;
+                                    const canSched = !sCompleted && !sApt && !isComplete;
+
+                                    return (
+                                      <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        className="rounded-xl border border-border bg-background p-3 mb-3 space-y-2"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <p className="font-heading text-xs font-bold text-foreground">
+                                          Sessão {sNum} {sCompleted ? "— Realizada ✅" : ""}
+                                        </p>
+                                        {sApt && (
+                                          <p className="font-body text-[11px] text-muted-foreground flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {formatDate(sApt.appointment_date)} • {sApt.appointment_time}
+                                            {isRescheduled(sApt) && (
+                                              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase">Remarcado</span>
+                                            )}
+                                          </p>
+                                        )}
+                                        <div className="flex gap-2 flex-wrap">
+                                          {canSched && (
+                                            <button
+                                              onClick={() => setScheduleModal({ planId: plan.id, sessionNumber: sNum, serviceSlug: apt.service_slug, serviceTitle: apt.service_title, userId: apt.user_id })}
+                                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all"
+                                            >
+                                              <CalendarPlus className="w-3.5 h-3.5" /> Agendar
+                                            </button>
+                                          )}
+                                          {sApt && (
+                                            <>
+                                              <button
+                                                onClick={() => openReschedule(sApt)}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all"
+                                              >
+                                                <CalendarClock className="w-3.5 h-3.5" /> Reagendar
+                                              </button>
+                                              <button
+                                                onClick={() => { handleCancel(sApt.id); setActiveSession(null); }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition-all"
+                                              >
+                                                <CalendarX className="w-3.5 h-3.5" /> Cancelar
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
+                                      </motion.div>
+                                    );
+                                  })()}
+
                                   {/* Admin controls */}
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <button
@@ -603,31 +609,6 @@ const AdminAgenda = () => {
                                     <option key={p.id} value={p.id}>{p.full_name}</option>
                                   ))}
                                 </select>
-                              </div>
-
-                              {/* Actions */}
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); openReschedule(apt); }}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-colors"
-                                >
-                                  <CalendarClock className="w-3 h-3" />
-                                  Remarcar
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleCancel(apt.id); }}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition-colors"
-                                >
-                                  <CalendarX className="w-3 h-3" />
-                                  Cancelar
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleDelete(apt.id); }}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-colors"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  Excluir
-                                </button>
                               </div>
                             </div>
                           </motion.div>
