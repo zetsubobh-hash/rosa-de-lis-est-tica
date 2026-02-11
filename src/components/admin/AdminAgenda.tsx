@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, Search } from "lucide-react";
+import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAllServicePrices, formatCents } from "@/hooks/useServicePrices";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface Profile {
   full_name: string;
@@ -78,7 +84,7 @@ const AdminAgenda = () => {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [saving, setSaving] = useState(false);
-  const [filterDate, setFilterDate] = useState("");
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -186,8 +192,9 @@ const AdminAgenda = () => {
     );
   }
 
-  const filtered = filterDate
-    ? appointments.filter((a) => a.appointment_date === filterDate)
+  const filterDateStr = filterDate ? format(filterDate, "yyyy-MM-dd") : "";
+  const filtered = filterDateStr
+    ? appointments.filter((a) => a.appointment_date === filterDateStr)
     : appointments;
 
   // Group by user_id + appointment_date
@@ -210,19 +217,32 @@ const AdminAgenda = () => {
           Agendamentos ({filtered.length})
         </h2>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="pl-9 h-9 text-xs font-body w-40"
-              placeholder="Filtrar por data"
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "h-9 px-3 text-xs font-body justify-start",
+                  !filterDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
+                {filterDate ? format(filterDate, "dd/MM/yyyy") : "Filtrar por data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <CalendarComponent
+                mode="single"
+                selected={filterDate}
+                onSelect={setFilterDate}
+                locale={ptBR}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
           {filterDate && (
             <button
-              onClick={() => setFilterDate("")}
+              onClick={() => setFilterDate(undefined)}
               className="h-9 px-3 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               Limpar
@@ -248,7 +268,7 @@ const AdminAgenda = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-md transition-shadow"
+              className="bg-muted rounded-2xl border border-border overflow-hidden hover:shadow-md transition-shadow"
             >
               {/* Header with date */}
               <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30">
