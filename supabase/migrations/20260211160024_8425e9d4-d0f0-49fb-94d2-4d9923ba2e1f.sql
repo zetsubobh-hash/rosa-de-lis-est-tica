@@ -1,0 +1,1 @@
+ALTER TABLE public.partners ADD COLUMN salary_cents integer NOT NULL DEFAULT 0;
