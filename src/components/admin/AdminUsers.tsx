@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { User, ShieldCheck, ShieldOff, Search, Users } from "lucide-react";
+import { User, ShieldCheck, ShieldOff, Search, Users, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+
+const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
 interface UserProfile {
   user_id: string;
@@ -52,6 +54,10 @@ const AdminUsers = () => {
   }, []);
 
   const toggleAdmin = async (userId: string, currentlyAdmin: boolean) => {
+    if (userId === MASTER_ADMIN_ID) {
+      toast({ title: "O Admin Master não pode ser alterado", variant: "destructive" });
+      return;
+    }
     setToggling(userId);
     if (currentlyAdmin) {
       const { error } = await supabase
@@ -139,7 +145,13 @@ const AdminUsers = () => {
                     <p className="font-heading text-sm font-semibold text-foreground truncate">
                       {u.full_name}
                     </p>
-                    {u.isAdmin && (
+                    {u.isAdmin && u.user_id === MASTER_ADMIN_ID && (
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 flex items-center gap-1">
+                        <Crown className="w-3 h-3" />
+                        Master
+                      </span>
+                    )}
+                    {u.isAdmin && u.user_id !== MASTER_ADMIN_ID && (
                       <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
                         Admin
                       </span>
@@ -152,27 +164,33 @@ const AdminUsers = () => {
                     <p className="font-body text-xs text-muted-foreground truncate mt-0.5">{u.email}</p>
                   )}
                 </div>
-                <button
-                  onClick={() => toggleAdmin(u.user_id, u.isAdmin)}
-                  disabled={toggling === u.user_id}
-                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all disabled:opacity-50 ${
-                    u.isAdmin
-                      ? "border-destructive/20 text-destructive hover:bg-destructive/5"
-                      : "border-primary/20 text-primary hover:bg-primary/5"
-                  }`}
-                >
-                  {u.isAdmin ? (
-                    <>
-                      <ShieldOff className="w-3.5 h-3.5" />
-                      Remover
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Promover
-                    </>
-                  )}
-                </button>
+                {u.user_id === MASTER_ADMIN_ID ? (
+                  <span className="shrink-0 px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground/50">
+                    Protegido
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => toggleAdmin(u.user_id, u.isAdmin)}
+                    disabled={toggling === u.user_id}
+                    className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all disabled:opacity-50 ${
+                      u.isAdmin
+                        ? "border-destructive/20 text-destructive hover:bg-destructive/5"
+                        : "border-primary/20 text-primary hover:bg-primary/5"
+                    }`}
+                  >
+                    {u.isAdmin ? (
+                      <>
+                        <ShieldOff className="w-3.5 h-3.5" />
+                        Remover
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Promover
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}
