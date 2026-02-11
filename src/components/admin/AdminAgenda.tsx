@@ -142,6 +142,20 @@ const AdminAgenda = () => {
     } else {
       setClientPlans((prev) => prev.map((p) => p.id === planId ? { ...p, completed_sessions: newCompleted, status: newStatus } : p));
       toast({ title: customToast || (newCompleted >= plan.total_sessions ? "Plano concluído! ✅" : "Sessão atualizada ✅") });
+
+      // When plan is completed, mark related appointments as completed and remove from agenda
+      if (newStatus === "completed") {
+        // Mark appointments linked by plan_id
+        await supabase.from("appointments").update({ status: "completed" }).eq("plan_id", planId).in("status", ["confirmed", "pending"]);
+        // Mark appointments linked by user_id + service_slug (avulsos)
+        await supabase.from("appointments").update({ status: "completed" }).eq("user_id", plan.user_id).eq("service_slug", plan.service_slug).in("status", ["confirmed", "pending"]);
+        // Remove from local state
+        setAppointments((prev) => prev.filter((a) => {
+          if (a.plan_id === planId) return false;
+          if (a.user_id === plan.user_id && a.service_slug === plan.service_slug) return false;
+          return true;
+        }));
+      }
     }
     setUpdatingPlan(null);
   };
@@ -245,9 +259,16 @@ const AdminAgenda = () => {
   }
 
   const filterDateStr = filterDate ? format(filterDate, "yyyy-MM-dd") : "";
-  const filtered = filterDateStr
+  const filtered = (filterDateStr
     ? appointments.filter((a) => a.appointment_date === filterDateStr)
-    : appointments;
+    : appointments
+  ).filter((a) => {
+    // Hide appointments whose corresponding plan is completed
+    const completedPlan = clientPlans.find(
+      (p) => p.status === "completed" && p.user_id === a.user_id && p.service_slug === a.service_slug
+    );
+    return !completedPlan;
+  });
 
   // Group by user_id + appointment_date
   const grouped = filtered.reduce<Record<string, Appointment[]>>((acc, apt) => {
