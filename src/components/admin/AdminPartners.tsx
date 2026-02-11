@@ -74,7 +74,7 @@ const AdminPartners = () => {
   const [editing, setEditing] = useState<Partner | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+  const [earnings, setEarnings] = useState<Record<string, { sessions: number; commissionCents: number }>>({});
 
   const fetchPartners = async () => {
     setLoading(true);
@@ -86,6 +86,42 @@ const AdminPartners = () => {
     const { data: specialtiesData } = await supabase
       .from("partner_services")
       .select("partner_id, service_slug");
+
+    const { data: appointmentsData } = await supabase
+      .from("appointments")
+      .select("partner_id, service_slug, status")
+      .not("partner_id", "is", null)
+      .in("status", ["confirmed", "completed"]);
+
+    const { data: pricesData } = await supabase
+      .from("service_prices")
+      .select("service_slug, plan_name, price_per_session_cents");
+
+    // Build price lookup (use lowest price_per_session as default)
+    const priceMap: Record<string, number> = {};
+    pricesData?.forEach((sp: any) => {
+      if (!priceMap[sp.service_slug] || sp.price_per_session_cents < priceMap[sp.service_slug]) {
+        priceMap[sp.service_slug] = sp.price_per_session_cents;
+      }
+    });
+
+    // Calculate earnings per partner
+    const earningsMap: Record<string, { sessions: number; commissionCents: number }> = {};
+    const partnerCommMap: Record<string, number> = {};
+    partnersData?.forEach((p: any) => {
+      partnerCommMap[p.id] = Number(p.commission_pct);
+    });
+
+    appointmentsData?.forEach((a: any) => {
+      if (!a.partner_id) return;
+      if (!earningsMap[a.partner_id]) earningsMap[a.partner_id] = { sessions: 0, commissionCents: 0 };
+      earningsMap[a.partner_id].sessions += 1;
+      const sessionPrice = priceMap[a.service_slug] || 0;
+      const commPct = partnerCommMap[a.partner_id] || 0;
+      earningsMap[a.partner_id].commissionCents += Math.round(sessionPrice * commPct / 100);
+    });
+
+    setEarnings(earningsMap);
 
     const specMap: Record<string, string[]> = {};
     specialtiesData?.forEach((s: any) => {
@@ -380,6 +416,33 @@ const AdminPartners = () => {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                </div>
+              </div>
+
+              {/* Financial Summary */}
+              <div className="mt-3 pt-3 border-t border-border">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Salário</p>
+                    <p className="font-heading text-sm font-bold text-foreground">
+                      {(p.salary_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Comissões</p>
+                    <p className="font-heading text-sm font-bold text-primary">
+                      {((earnings[p.id]?.commissionCents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </p>
+                    <p className="font-body text-[10px] text-muted-foreground">
+                      {earnings[p.id]?.sessions || 0} sessões
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
+                    <p className="font-heading text-sm font-bold text-foreground">
+                      {((p.salary_cents + (earnings[p.id]?.commissionCents || 0)) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </p>
+                  </div>
                 </div>
               </div>
             </motion.div>
