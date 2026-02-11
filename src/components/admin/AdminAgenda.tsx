@@ -498,7 +498,7 @@ const AdminAgenda = () => {
                                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all disabled:opacity-30"
                                     >
                                       <PlusCircle className="w-3.5 h-3.5" />
-                                      Marcar Sessão
+                                      Sessão Realizada
                                     </button>
                                   </div>
                                 </div>
