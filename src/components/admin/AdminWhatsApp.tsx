@@ -123,7 +123,7 @@ const AdminWhatsApp = () => {
   };
 
   const isEnabled = settings.evolution_enabled === "true";
-  const isConfigured = !!(settings.evolution_api_url && settings.evolution_api_key && settings.evolution_instance_name);
+  const _isConfigured = !!(settings.evolution_api_url && settings.evolution_api_key && settings.evolution_instance_name);
 
   if (loading) {
     return (
@@ -262,7 +262,7 @@ const AdminWhatsApp = () => {
       </motion.div>
 
       {/* QR Code & Connection */}
-      {isConfigured && (
+      {(
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
