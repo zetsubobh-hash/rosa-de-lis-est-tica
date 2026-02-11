@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, X, Save, Search, Users, Phone,
-  Clock, Eye, EyeOff, Upload, Loader2, MessageCircle
+  Clock, Eye, EyeOff, Loader2, MessageCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useServices } from "@/hooks/useServices";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import PartnerAvatarUpload from "@/components/admin/PartnerAvatarUpload";
 
 interface Partner {
   id: string;
@@ -50,7 +51,7 @@ const AdminPartners = () => {
   const [editing, setEditing] = useState<Partner | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  
 
   const fetchPartners = async () => {
     setLoading(true);
@@ -212,19 +213,6 @@ const AdminPartners = () => {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !editing) return;
-    setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `partner-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (!error) {
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-      setEditing({ ...editing, avatar_url: urlData.publicUrl });
-    }
-    setUploading(false);
-  };
 
   const toggleSpecialty = (slug: string) => {
     if (!editing) return;
@@ -403,21 +391,13 @@ const AdminPartners = () => {
               </div>
               <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
                 {/* Avatar */}
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
-                    {editing.avatar_url ? (
-                      <img src={editing.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="font-heading text-lg font-bold text-primary">
-                        {editing.full_name ? getInitials(editing.full_name) : "?"}
-                      </span>
-                    )}
-                  </div>
-                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs font-body text-muted-foreground cursor-pointer hover:border-primary/30 hover:text-primary transition-colors">
-                    <Upload className="w-4 h-4" />
-                    {uploading ? "Enviando..." : "Foto"}
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                  </label>
+                <div className="flex justify-center">
+                  <PartnerAvatarUpload
+                    avatarUrl={editing.avatar_url}
+                    fallbackInitials={editing.full_name ? getInitials(editing.full_name) : "?"}
+                    onAvatarChange={(url) => setEditing({ ...editing!, avatar_url: url })}
+                    size={80}
+                  />
                 </div>
 
                 {/* Name */}
