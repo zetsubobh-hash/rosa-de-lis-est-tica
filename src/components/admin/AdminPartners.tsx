@@ -168,13 +168,10 @@ const AdminPartners = () => {
     if (!editing || !editing.full_name) return;
     setSaving(true);
 
-    // For new partners, we need to find or create a user
-    // For simplicity, we'll create the partner record with a placeholder user_id
-    // The admin will later link it to an existing user
     let userId = editing.user_id;
 
     if (isNew) {
-      // Look up user by name in profiles
+      // Try to find existing user by name, otherwise generate a placeholder UUID
       const { data: profile } = await supabase
         .from("profiles")
         .select("user_id")
@@ -183,17 +180,15 @@ const AdminPartners = () => {
 
       if (profile) {
         userId = profile.user_id;
+        // Give partner role to existing user
+        await supabase.from("user_roles").upsert(
+          { user_id: userId, role: "partner" as any },
+          { onConflict: "user_id,role" }
+        );
       } else {
-        toast({ title: "Usuário não encontrado. O parceiro precisa ter uma conta cadastrada.", variant: "destructive" });
-        setSaving(false);
-        return;
+        // Create partner without a linked user account
+        userId = crypto.randomUUID();
       }
-
-      // Give partner role
-      await supabase.from("user_roles").upsert(
-        { user_id: userId, role: "partner" as any },
-        { onConflict: "user_id,role" }
-      );
 
       const { data: newPartner, error } = await supabase
         .from("partners")
@@ -495,11 +490,6 @@ const AdminPartners = () => {
                     placeholder="Nome do parceiro(a)"
                     className="font-body"
                   />
-                  {isNew && (
-                    <p className="font-body text-[11px] text-muted-foreground mt-1">
-                      O nome deve ser exatamente igual ao cadastro do usuário no sistema.
-                    </p>
-                  )}
                 </div>
 
                 {/* Phone */}
