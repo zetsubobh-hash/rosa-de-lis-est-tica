@@ -19,7 +19,21 @@ interface Appointment {
   appointment_time: string;
   status: string;
   created_at: string;
+  notes: string | null;
 }
+
+const isRescheduled = (apt: Appointment): boolean => {
+  if (!apt.notes) return false;
+  try {
+    const noteData = JSON.parse(apt.notes);
+    return !!noteData.rescheduled;
+  } catch { return false; }
+};
+
+const formatDateBR = (dateStr: string) => {
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
+};
 
 const statusConfig: Record<string, { label: string; icon: typeof CheckCircle2; className: string }> = {
   confirmed: { label: "Confirmado", icon: CheckCircle2, className: "bg-primary/10 text-primary" },
@@ -45,7 +59,7 @@ const MeusAgendamentos = () => {
     const fetchAppointments = async () => {
       const { data } = await supabase
         .from("appointments")
-        .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, notes")
         .eq("user_id", user.id)
         .order("appointment_date", { ascending: false })
         .order("appointment_time", { ascending: false });
@@ -193,9 +207,14 @@ const MeusAgendamentos = () => {
                                     {relatedAppointments.map((a) => (
                                       <div key={a.id} className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-muted/50">
                                         <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
-                                        <p className="font-body text-xs text-muted-foreground">
-                                          {a.appointment_date} • {a.appointment_time}
+                                      <p className="font-body text-xs text-muted-foreground">
+                                          {formatDateBR(a.appointment_date)} • {a.appointment_time}
                                         </p>
+                                        {isRescheduled(a) && (
+                                          <span className="ml-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wider">
+                                            Remarcado
+                                          </span>
+                                        )}
                                         <CheckCircle2 className="w-3 h-3 text-primary ml-auto shrink-0" />
                                       </div>
                                     ))}
@@ -270,11 +289,16 @@ const MeusAgendamentos = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-heading text-sm font-bold text-foreground truncate">{apt.service_title}</h4>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <Clock className="w-3 h-3 text-muted-foreground" />
                         <p className="font-body text-xs text-muted-foreground">
-                          {apt.appointment_date} • {apt.appointment_time}
+                          {formatDateBR(apt.appointment_date)} • {apt.appointment_time}
                         </p>
+                        {isRescheduled(apt) && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wider">
+                            Remarcado
+                          </span>
+                        )}
                       </div>
                     </div>
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${status.className}`}>
