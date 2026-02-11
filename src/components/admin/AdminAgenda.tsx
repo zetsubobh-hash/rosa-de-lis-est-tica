@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle, Handshake, ChevronDown, Hash, MinusCircle, PlusCircle } from "lucide-react";
+import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle, Handshake, ChevronDown, Hash, MinusCircle, PlusCircle, CheckCircle2, CalendarPlus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import SessionScheduleModal from "@/components/SessionScheduleModal";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -102,6 +104,12 @@ const AdminAgenda = () => {
   const [clientPlans, setClientPlans] = useState<ClientPlan[]>([]);
   const [expandedApt, setExpandedApt] = useState<string | null>(null);
   const [updatingPlan, setUpdatingPlan] = useState<string | null>(null);
+  const [cancelAllPlanId, setCancelAllPlanId] = useState<string | null>(null);
+
+  // Schedule modal state (for admin scheduling sessions)
+  const [scheduleModal, setScheduleModal] = useState<{
+    planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string;
+  } | null>(null);
 
   // Reschedule state
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
@@ -470,53 +478,82 @@ const AdminAgenda = () => {
                                     <Hash className="w-3.5 h-3.5 text-primary" />
                                     Progresso — {plan.plan_name}
                                   </p>
-                                  <div className="space-y-1.5 mb-3">
+                                  <div className="flex gap-1.5 flex-wrap mb-3">
                                     {Array.from({ length: plan.total_sessions }).map((_, i) => {
                                       const sessionNum = i + 1;
                                       const sessionApt = appointments.find(
                                         (a) => a.plan_id === plan.id && a.session_number === sessionNum && a.status !== "cancelled"
                                       );
                                       const isSessionCompleted = i < plan.completed_sessions;
-                                      
+                                      const canSchedule = !isSessionCompleted && !sessionApt && !isComplete;
+
                                       return (
-                                        <div key={i} className="flex items-center gap-2">
-                                          <div
-                                            className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 ${
-                                              isSessionCompleted
-                                                ? "bg-primary text-primary-foreground"
-                                                : "bg-muted text-muted-foreground"
-                                            }`}
-                                          >
-                                            {sessionNum}
-                                          </div>
-                                          {sessionApt ? (
-                                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                              <span className="font-body text-[11px] text-foreground">
+                                        <Popover key={i}>
+                                          <PopoverTrigger asChild>
+                                            <button
+                                              onClick={(e) => e.stopPropagation()}
+                                              className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
+                                                isSessionCompleted
+                                                  ? "bg-primary text-primary-foreground"
+                                                  : sessionApt
+                                                  ? "bg-primary/30 text-primary ring-2 ring-primary/40"
+                                                  : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
+                                              }`}
+                                              title={
+                                                isSessionCompleted ? `Sessão ${sessionNum} realizada` :
+                                                sessionApt ? `Sessão ${sessionNum} agendada` :
+                                                `Sessão ${sessionNum}`
+                                              }
+                                            >
+                                              {isSessionCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
+                                            </button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-40 p-1.5" align="center" side="top" onClick={(e) => e.stopPropagation()}>
+                                            <p className="font-heading text-[11px] font-bold text-foreground px-2 py-1">Sessão {sessionNum}</p>
+                                            {sessionApt && (
+                                              <p className="font-body text-[10px] text-muted-foreground px-2 pb-1">
                                                 {formatDate(sessionApt.appointment_date)} • {sessionApt.appointment_time}
-                                              </span>
-                                              {isRescheduled(sessionApt) && (
-                                                <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase">
-                                                  Remarcado
-                                                </span>
+                                              </p>
+                                            )}
+                                            <div className="space-y-0.5">
+                                              {canSchedule && (
+                                                <button
+                                                  onClick={() => setScheduleModal({ planId: plan.id, sessionNumber: sessionNum, serviceSlug: apt.service_slug, serviceTitle: apt.service_title, userId: apt.user_id })}
+                                                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                                >
+                                                  <CalendarPlus className="w-3 h-3" /> Agendar
+                                                </button>
                                               )}
-                                              <button
-                                                onClick={(e) => { e.stopPropagation(); openReschedule(sessionApt); }}
-                                                className="ml-auto px-2 py-1 rounded-lg text-[10px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-colors shrink-0"
-                                              >
-                                                <CalendarClock className="w-3 h-3" />
-                                              </button>
+                                              {sessionApt && (
+                                                <>
+                                                  <button
+                                                    onClick={() => openReschedule(sessionApt)}
+                                                    className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                                  >
+                                                    <CalendarClock className="w-3 h-3" /> Reagendar
+                                                  </button>
+                                                  <button
+                                                    onClick={() => handleCancel(sessionApt.id)}
+                                                    className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-foreground hover:bg-amber-50 hover:text-amber-600 transition-colors"
+                                                  >
+                                                    <CalendarX className="w-3 h-3" /> Cancelar
+                                                  </button>
+                                                  <button
+                                                    onClick={() => handleDelete(sessionApt.id)}
+                                                    className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                                  >
+                                                    <Trash2 className="w-3 h-3" /> Excluir
+                                                  </button>
+                                                </>
+                                              )}
                                             </div>
-                                          ) : (
-                                            <span className="font-body text-[11px] text-muted-foreground italic">
-                                              {isSessionCompleted ? "Realizada" : "Não agendada"}
-                                            </span>
-                                          )}
-                                        </div>
+                                          </PopoverContent>
+                                        </Popover>
                                       );
                                     })}
                                   </div>
                                   {/* Admin controls */}
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <button
                                       onClick={(e) => { e.stopPropagation(); updateSessions(plan.id, -1); }}
                                       disabled={updatingPlan === plan.id || plan.completed_sessions === 0}
@@ -532,6 +569,13 @@ const AdminAgenda = () => {
                                     >
                                       <PlusCircle className="w-3.5 h-3.5" />
                                       Sessão Realizada
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setCancelAllPlanId(plan.id); }}
+                                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                      Cancelar Tudo
                                     </button>
                                   </div>
                                 </div>
@@ -664,6 +708,50 @@ const AdminAgenda = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Cancel All Confirmation Dialog */}
+      <AlertDialog open={!!cancelAllPlanId} onOpenChange={(open) => !open && setCancelAllPlanId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar todos os agendamentos?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os agendamentos vinculados a este plano serão cancelados. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!cancelAllPlanId) return;
+                const planApts = appointments.filter((a) => a.plan_id === cancelAllPlanId && a.status !== "cancelled");
+                for (const apt of planApts) {
+                  await supabase.from("appointments").update({ status: "cancelled" }).eq("id", apt.id);
+                }
+                setAppointments((prev) => prev.filter((a) => a.plan_id !== cancelAllPlanId || a.status === "cancelled"));
+                toast({ title: `${planApts.length} agendamento(s) cancelado(s) ✅` });
+                setCancelAllPlanId(null);
+              }}
+            >
+              Cancelar Tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Session Schedule Modal (admin) */}
+      {scheduleModal && (
+        <SessionScheduleModal
+          open={!!scheduleModal}
+          onClose={() => setScheduleModal(null)}
+          onScheduled={() => { fetchAppointments(); fetchClientPlans(); }}
+          planId={scheduleModal.planId}
+          sessionNumber={scheduleModal.sessionNumber}
+          serviceSlug={scheduleModal.serviceSlug}
+          serviceTitle={scheduleModal.serviceTitle}
+          userId={scheduleModal.userId}
+        />
+      )}
     </motion.div>
   );
 };
