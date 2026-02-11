@@ -277,7 +277,7 @@ const AdminPartnerView = () => {
             )}
           </div>
 
-          {apt.plan_id && apt.total_sessions && apt.planSessions && apt.planSessions.length > 0 && (
+          {apt.plan_id && apt.total_sessions && apt.total_sessions > 0 && (
             <div className="mt-3 pt-3 border-t border-border">
               <div className="flex items-center gap-2 mb-2">
                 <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -287,8 +287,10 @@ const AdminPartnerView = () => {
               <div className="flex flex-wrap gap-1.5">
                 {Array.from({ length: apt.total_sessions }, (_, i) => {
                   const sessionNum = i + 1;
-                  const sessionApt = apt.planSessions!.find((s) => s.session_number === sessionNum);
-                  const isDone = sessionApt?.status === "completed";
+                  const sessionApt = apt.planSessions?.find((s) => s.session_number === sessionNum);
+                  const isDoneByRecord = sessionApt?.status === "completed";
+                  const isDoneByCounter = !sessionApt && sessionNum <= (apt.completed_sessions || 0);
+                  const isDone = isDoneByRecord || isDoneByCounter;
                   const isScheduled = sessionApt && sessionApt.status !== "completed";
                   const isCurrent = apt.session_number === sessionNum;
 
@@ -308,6 +310,11 @@ const AdminPartnerView = () => {
                       {sessionApt && (
                         <span className="font-body text-[8px] text-muted-foreground mt-0.5 text-center leading-tight">
                           {formatDate(sessionApt.date)}
+                        </span>
+                      )}
+                      {isDoneByCounter && !sessionApt && (
+                        <span className="font-body text-[8px] text-muted-foreground mt-0.5 text-center leading-tight">
+                          Realizada
                         </span>
                       )}
                     </div>
