@@ -60,7 +60,8 @@ const AdminPartnerView = () => {
         .eq("is_active", true)
         .order("full_name");
       setPartners(data || []);
-      if (data && data.length > 0) setSelectedPartner(data[0].id);
+      setSelectedPartner("all");
+      setLoading(false);
       setLoading(false);
     };
     fetchPartners();
@@ -74,24 +75,31 @@ const AdminPartnerView = () => {
       setDataLoading(true);
       const today = new Date().toISOString().split("T")[0];
 
+      let upcomingQuery = supabase
+        .from("appointments")
+        .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
+        .gte("appointment_date", today)
+        .in("status", ["confirmed", "pending"])
+        .order("appointment_date")
+        .order("appointment_time");
+
+      let pastQuery = supabase
+        .from("appointments")
+        .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
+        .in("status", ["completed", "confirmed"])
+        .lt("appointment_date", today)
+        .order("appointment_date", { ascending: false })
+        .order("appointment_time", { ascending: false })
+        .limit(50);
+
+      if (selectedPartner !== "all") {
+        upcomingQuery = upcomingQuery.eq("partner_id", selectedPartner);
+        pastQuery = pastQuery.eq("partner_id", selectedPartner);
+      }
+
       const [{ data: upcoming }, { data: past }] = await Promise.all([
-        supabase
-          .from("appointments")
-          .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number")
-          .eq("partner_id", selectedPartner)
-          .gte("appointment_date", today)
-          .in("status", ["confirmed", "pending"])
-          .order("appointment_date")
-          .order("appointment_time"),
-        supabase
-          .from("appointments")
-          .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number")
-          .eq("partner_id", selectedPartner)
-          .in("status", ["completed", "confirmed"])
-          .lt("appointment_date", today)
-          .order("appointment_date", { ascending: false })
-          .order("appointment_time", { ascending: false })
-          .limit(50),
+        upcomingQuery,
+        pastQuery,
       ]);
 
       const allApts = [...(upcoming || []), ...(past || [])];
@@ -254,6 +262,7 @@ const AdminPartnerView = () => {
           onChange={(e) => { setSelectedPartner(e.target.value); setActiveTab("agenda"); }}
           className="h-9 rounded-xl border border-border bg-card px-3 font-body text-sm text-foreground font-semibold"
         >
+          <option value="all">Todos (visão geral)</option>
           {partners.map((p) => (
             <option key={p.id} value={p.id}>{p.full_name}</option>
           ))}
