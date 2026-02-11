@@ -153,7 +153,7 @@ const Header = () => {
                     Admin
                   </button>
                 )}
-                {isPartner && !isAdmin && (
+                {isPartner && (
                   <button
                     onClick={() => navigate("/parceiro")}
                     className="flex items-center gap-1.5 px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
@@ -236,7 +236,7 @@ const Header = () => {
                     Painel Admin
                   </button>
                 )}
-                {isPartner && !isAdmin && (
+                {isPartner && (
                   <button
                     onClick={() => { setMenuOpen(false); navigate("/parceiro"); }}
                     className="flex items-center justify-center gap-2 w-full py-3 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full uppercase tracking-wider"
