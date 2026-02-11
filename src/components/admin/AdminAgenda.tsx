@@ -28,15 +28,21 @@ interface Appointment {
   profiles?: Profile | null;
 }
 
+const isRescheduled = (apt: Appointment): boolean => {
+  if (!apt.notes) return false;
+  try {
+    const noteData = JSON.parse(apt.notes);
+    return !!noteData.rescheduled;
+  } catch { return false; }
+};
+
 const getAppointmentPrice = (apt: Appointment, allPrices: any[]): string => {
-  // First check notes for plan-specific price
   if (apt.notes) {
     try {
       const noteData = JSON.parse(apt.notes);
       if (noteData.price_cents) return formatCents(noteData.price_cents);
     } catch { /* ignore */ }
   }
-  // Fallback: find Essencial price from DB
   const dbPrice = allPrices.find((p: any) => p.service_slug === apt.service_slug && p.plan_name === "Essencial");
   if (dbPrice) return formatCents(dbPrice.price_per_session_cents);
   return "—";
@@ -145,10 +151,17 @@ const AdminAgenda = () => {
     if (error) {
       toast({ title: "Erro ao remarcar", variant: "destructive" });
     } else {
+      // Mark as rescheduled in notes
+      const apt = appointments.find((a) => a.id === rescheduleId);
+      let noteData: any = {};
+      try { if (apt?.notes) noteData = JSON.parse(apt.notes); } catch { /* ignore */ }
+      noteData.rescheduled = true;
+      await supabase.from("appointments").update({ notes: JSON.stringify(noteData) }).eq("id", rescheduleId);
+
       toast({ title: "Agendamento remarcado ✅" });
       setAppointments((prev) =>
         prev.map((a) =>
-          a.id === rescheduleId ? { ...a, appointment_date: newDate, appointment_time: newTime } : a
+          a.id === rescheduleId ? { ...a, appointment_date: newDate, appointment_time: newTime, notes: JSON.stringify(noteData) } : a
         )
       );
       setRescheduleId(null);
@@ -294,8 +307,14 @@ const AdminAgenda = () => {
                         <span className="font-heading text-sm font-bold text-foreground truncate">
                           {apt.service_title}
                         </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isRescheduled(apt) && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700">
+                            Remarcado
+                          </span>
+                        )}
                         <span
-                          className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             apt.status === "confirmed"
                               ? "bg-primary/10 text-primary"
                               : "bg-amber-100 text-amber-700"
@@ -303,6 +322,7 @@ const AdminAgenda = () => {
                         >
                           {apt.status === "confirmed" ? "Confirmado" : "Pendente"}
                         </span>
+                      </div>
                       </div>
                       <div className="flex items-center gap-4 text-xs font-body text-muted-foreground mb-2">
                         <span className="flex items-center gap-1">
