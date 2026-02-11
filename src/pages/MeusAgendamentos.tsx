@@ -220,56 +220,73 @@ const MeusAgendamentos = () => {
             </div>
           </div>
         )}
-        {appointments.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center p-12 bg-card rounded-3xl border border-border">
-            <CalendarCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="font-heading text-lg font-bold text-foreground mb-2">Nenhum agendamento</h2>
-            <p className="font-body text-sm text-muted-foreground mb-6">Você ainda não realizou nenhum agendamento.</p>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-body text-sm font-bold rounded-2xl hover:bg-primary/90 transition-all uppercase tracking-wider"
-            >
-              Ver serviços
-            </Link>
-          </motion.div>
-        ) : (
-          <div className="space-y-3">
-            {appointments.map((apt, idx) => {
-              const Icon = getIconByName("Sparkles");
-              const status = statusConfig[apt.status] || statusConfig.pending;
-              const StatusIcon = status.icon;
+        {(() => {
+          const activePlanSlugs = plans
+            .filter((p) => p.status === "active" || p.status === "completed")
+            .map((p) => p.service_slug);
+          const filteredAppointments = appointments.filter(
+            (a) => !activePlanSlugs.includes(a.service_slug)
+          );
 
-              return (
-                <motion.div
-                  key={apt.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="bg-card rounded-2xl border border-border p-5 flex items-center gap-4"
+          if (filteredAppointments.length === 0 && activePlanSlugs.length > 0) {
+            return null;
+          }
+
+          if (filteredAppointments.length === 0) {
+            return (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center p-12 bg-card rounded-3xl border border-border">
+                <CalendarCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="font-heading text-lg font-bold text-foreground mb-2">Nenhum agendamento</h2>
+                <p className="font-body text-sm text-muted-foreground mb-6">Você ainda não realizou nenhum agendamento.</p>
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-body text-sm font-bold rounded-2xl hover:bg-primary/90 transition-all uppercase tracking-wider"
                 >
-                  {Icon && (
-                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                  Ver serviços
+                </Link>
+              </motion.div>
+            );
+          }
+
+          return (
+            <div className="space-y-3">
+              {filteredAppointments.map((apt, idx) => {
+                const Icon = getIconByName("Sparkles");
+                const status = statusConfig[apt.status] || statusConfig.pending;
+                const StatusIcon = status.icon;
+
+                return (
+                  <motion.div
+                    key={apt.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-card rounded-2xl border border-border p-5 flex items-center gap-4"
+                  >
+                    {Icon && (
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-heading text-sm font-bold text-foreground truncate">{apt.service_title}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                        <p className="font-body text-xs text-muted-foreground">
+                          {apt.appointment_date} • {apt.appointment_time}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-heading text-sm font-bold text-foreground truncate">{apt.service_title}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Clock className="w-3 h-3 text-muted-foreground" />
-                      <p className="font-body text-xs text-muted-foreground">
-                        {apt.appointment_date} • {apt.appointment_time}
-                      </p>
-                    </div>
-                  </div>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${status.className}`}>
-                    <StatusIcon className="w-3 h-3" />
-                    {status.label}
-                  </span>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${status.className}`}>
+                      <StatusIcon className="w-3 h-3" />
+                      {status.label}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         <Link to="/" className="flex items-center justify-center gap-1 mt-8 font-body text-sm text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="w-4 h-4" />
