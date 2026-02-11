@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X } from "lucide-react";
+import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { services } from "@/data/services";
@@ -60,6 +60,7 @@ const AdminAgenda = () => {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [saving, setSaving] = useState(false);
+  const [filterDate, setFilterDate] = useState("");
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -160,16 +161,46 @@ const AdminAgenda = () => {
     );
   }
 
+  const filtered = filterDate
+    ? appointments.filter((a) => a.appointment_date === filterDate)
+    : appointments;
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h2 className="font-heading text-lg font-bold text-foreground">
-          Agendamentos ({appointments.length})
+          Agendamentos ({filtered.length})
         </h2>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="pl-9 h-9 text-xs font-body w-40"
+              placeholder="Filtrar por data"
+            />
+          </div>
+          {filterDate && (
+            <button
+              onClick={() => setFilterDate("")}
+              className="h-9 px-3 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
       </div>
 
+      {filtered.length === 0 ? (
+        <div className="bg-card rounded-2xl border border-border p-12 text-center">
+          <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="font-body text-muted-foreground">Nenhum agendamento para esta data.</p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {appointments.map((apt, i) => {
+        {filtered.map((apt, i) => {
           const profile = apt.profiles;
           const price = getServicePrice(apt.service_slug);
 
@@ -278,6 +309,7 @@ const AdminAgenda = () => {
           );
         })}
       </div>
+      )}
 
       {/* Reschedule Modal */}
       <AnimatePresence>
