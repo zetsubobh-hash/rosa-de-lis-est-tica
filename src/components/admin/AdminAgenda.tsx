@@ -130,7 +130,7 @@ const AdminAgenda = () => {
     fetchClientPlans();
   }, []);
 
-  const updateSessions = async (planId: string, delta: number) => {
+  const updateSessions = async (planId: string, delta: number, customToast?: string) => {
     const plan = clientPlans.find((p) => p.id === planId);
     if (!plan) return;
     const newCompleted = Math.max(0, Math.min(plan.total_sessions, plan.completed_sessions + delta));
@@ -141,7 +141,7 @@ const AdminAgenda = () => {
       toast({ title: "Erro ao atualizar sessões", variant: "destructive" });
     } else {
       setClientPlans((prev) => prev.map((p) => p.id === planId ? { ...p, completed_sessions: newCompleted, status: newStatus } : p));
-      toast({ title: newCompleted >= plan.total_sessions ? "Plano concluído! ✅" : "Sessão atualizada ✅" });
+      toast({ title: customToast || (newCompleted >= plan.total_sessions ? "Plano concluído! ✅" : "Sessão atualizada ✅") });
     }
     setUpdatingPlan(null);
   };
@@ -575,6 +575,14 @@ const AdminAgenda = () => {
                                     >
                                       <PlusCircle className="w-3.5 h-3.5" />
                                       Sessão Realizada
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); updateSessions(plan.id, 1, "Sessão cancelada (cliente faltou) ⚠️"); }}
+                                      disabled={updatingPlan === plan.id || isComplete}
+                                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition-all disabled:opacity-30"
+                                    >
+                                      <CalendarX className="w-3.5 h-3.5" />
+                                      Cancelar Sessão
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setCancelAllPlanId(plan.id); }}
