@@ -370,6 +370,20 @@ const AdminPartners = () => {
                     </span>
                     <span className="font-semibold text-primary">{p.commission_pct}%</span>
                   </div>
+                  <div className="flex gap-1 mt-1.5">
+                    {WEEK_DAYS.map((d) => (
+                      <span
+                        key={d.key}
+                        className={`w-7 h-5 flex items-center justify-center rounded text-[9px] font-bold uppercase tracking-wide ${
+                          p.work_days.includes(d.key)
+                            ? "bg-primary/15 text-primary"
+                            : "bg-muted text-muted-foreground/40"
+                        }`}
+                      >
+                        {d.label.slice(0, 1)}
+                      </span>
+                    ))}
+                  </div>
                   {p.specialties && p.specialties.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {p.specialties.map((slug) => {
