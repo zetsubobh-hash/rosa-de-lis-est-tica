@@ -76,6 +76,7 @@ const AdminPartners = () => {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [earnings, setEarnings] = useState<Record<string, { sessions: number; commissionCents: number }>>({});
+  const [paidMap, setPaidMap] = useState<Record<string, number>>({});
   const [paymentPartnerId, setPaymentPartnerId] = useState<string | null>(null);
 
   const fetchPartners = async () => {
@@ -95,9 +96,12 @@ const AdminPartners = () => {
       .not("partner_id", "is", null)
       .in("status", ["confirmed", "completed"]);
 
-    const { data: pricesData } = await supabase
-      .from("service_prices")
-      .select("service_slug, plan_name, price_per_session_cents");
+    const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+
+    const [{ data: pricesData }, { data: paymentsData }] = await Promise.all([
+      supabase.from("service_prices").select("service_slug, plan_name, price_per_session_cents"),
+      supabase.from("partner_payments").select("partner_id, type, amount_cents").eq("reference_month", currentMonth),
+    ]);
 
     // Build price lookup (use lowest price_per_session as default)
     const priceMap: Record<string, number> = {};
@@ -124,6 +128,14 @@ const AdminPartners = () => {
     });
 
     setEarnings(earningsMap);
+
+    // Calculate paid amounts for current month
+    const paidPerPartner: Record<string, number> = {};
+    paymentsData?.forEach((pp: any) => {
+      if (!paidPerPartner[pp.partner_id]) paidPerPartner[pp.partner_id] = 0;
+      paidPerPartner[pp.partner_id] += pp.type === "deduction" ? -pp.amount_cents : pp.amount_cents;
+    });
+    setPaidMap(paidPerPartner);
 
     const specMap: Record<string, string[]> = {};
     specialtiesData?.forEach((s: any) => {
@@ -435,27 +447,46 @@ const AdminPartners = () => {
 
               {/* Financial Summary */}
               <div className="mt-3 pt-3 border-t border-border">
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-5 gap-1.5 text-center">
                   <div>
-                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Salário</p>
-                    <p className="font-heading text-sm font-bold text-foreground">
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Salário</p>
+                    <p className="font-heading text-xs font-bold text-foreground">
                       {(p.salary_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
                   </div>
                   <div>
-                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Comissões</p>
-                    <p className="font-heading text-sm font-bold text-primary">
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Comissões</p>
+                    <p className="font-heading text-xs font-bold text-primary">
                       {((earnings[p.id]?.commissionCents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
-                    <p className="font-body text-[10px] text-muted-foreground">
-                      {earnings[p.id]?.sessions || 0} sessões
+                    <p className="font-body text-[9px] text-muted-foreground">
+                      {earnings[p.id]?.sessions || 0} sess.
                     </p>
                   </div>
                   <div>
-                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
-                    <p className="font-heading text-sm font-bold text-foreground">
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Total</p>
+                    <p className="font-heading text-xs font-bold text-foreground">
                       {((p.salary_cents + (earnings[p.id]?.commissionCents || 0)) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
+                  </div>
+                  <div>
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Pago</p>
+                    <p className="font-heading text-xs font-bold text-foreground">
+                      {((paidMap[p.id] || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Saldo</p>
+                    {(() => {
+                      const total = p.salary_cents + (earnings[p.id]?.commissionCents || 0);
+                      const paid = paidMap[p.id] || 0;
+                      const balance = total - paid;
+                      return (
+                        <p className={`font-heading text-xs font-bold ${balance > 0 ? "text-amber-600" : balance < 0 ? "text-destructive" : "text-emerald-600"}`}>
+                          {(Math.abs(balance) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
                 <button
