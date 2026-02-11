@@ -23,6 +23,7 @@ export type Database = {
           notes: string | null
           partner_id: string | null
           plan_id: string | null
+          reminder_sent: boolean
           service_slug: string
           service_title: string
           session_number: number | null
@@ -38,6 +39,7 @@ export type Database = {
           notes?: string | null
           partner_id?: string | null
           plan_id?: string | null
+          reminder_sent?: boolean
           service_slug: string
           service_title: string
           session_number?: number | null
@@ -53,6 +55,7 @@ export type Database = {
           notes?: string | null
           partner_id?: string | null
           plan_id?: string | null
+          reminder_sent?: boolean
           service_slug?: string
           service_title?: string
           session_number?: number | null
