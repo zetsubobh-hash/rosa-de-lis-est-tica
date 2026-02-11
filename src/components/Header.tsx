@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, CalendarCheck, ShieldCheck, UserCircle, Handshake } from "lucide-react";
+import { Menu, X, LogOut, CalendarCheck, ShieldCheck, UserCircle, Handshake, History } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 import AuthModal from "@/components/AuthModal";
@@ -177,6 +177,13 @@ const Header = () => {
                   Agendamentos
                 </button>
                 <button
+                  onClick={() => navigate("/meu-historico")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
+                >
+                  <History className="w-3.5 h-3.5" />
+                  Histórico
+                </button>
+                <button
                   onClick={signOut}
                   className="flex items-center gap-1.5 px-4 py-1.5 bg-primary-foreground text-primary font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
                 >
@@ -258,6 +265,13 @@ const Header = () => {
                 >
                   <CalendarCheck className="w-4 h-4" />
                   Meus Agendamentos
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); navigate("/meu-historico"); }}
+                  className="flex items-center justify-center gap-2 w-full py-3 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full uppercase tracking-wider"
+                >
+                  <History className="w-4 h-4" />
+                  Meu Histórico
                 </button>
                 <button
                   onClick={() => { setMenuOpen(false); signOut(); }}

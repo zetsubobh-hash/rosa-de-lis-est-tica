@@ -13,6 +13,7 @@ import ServiceDetail from "./pages/ServiceDetail";
 import Agendar from "./pages/Agendar";
 import Checkout from "./pages/Checkout";
 import MeusAgendamentos from "./pages/MeusAgendamentos";
+import MeuHistorico from "./pages/MeuHistorico";
 import MeuPerfil from "./pages/MeuPerfil";
 import Admin from "./pages/Admin";
 import PartnerDashboard from "./pages/PartnerDashboard";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/agendar/:slug" element={<Agendar />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/meus-agendamentos" element={<MeusAgendamentos />} />
+              <Route path="/meu-historico" element={<MeuHistorico />} />
               <Route path="/meu-perfil" element={<MeuPerfil />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/parceiro" element={<PartnerDashboard />} />
