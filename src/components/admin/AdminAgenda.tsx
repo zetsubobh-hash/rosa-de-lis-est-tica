@@ -324,16 +324,10 @@ const AdminAgenda = () => {
                 <div className="space-y-3 mb-4">
                   {group.map((apt) => (
                     <div key={apt.id} className="rounded-xl border border-border p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-heading text-sm font-bold text-foreground truncate">
-                          {apt.service_title}
-                        </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {isRescheduled(apt) && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700">
-                            Remarcado
-                          </span>
-                        )}
+                      <p className="font-heading text-sm font-bold text-foreground mb-1.5">
+                        {apt.service_title}
+                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap mb-2">
                         <span
                           className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             apt.status === "confirmed"
@@ -343,7 +337,11 @@ const AdminAgenda = () => {
                         >
                           {apt.status === "confirmed" ? "Confirmado" : "Pendente"}
                         </span>
-                      </div>
+                        {isRescheduled(apt) && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700">
+                            Remarcado
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 text-xs font-body text-muted-foreground mb-2">
                         <span className="flex items-center gap-1">
