@@ -36,6 +36,22 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
+const formatCurrency = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 9);
+  if (!digits) return "";
+  const cents = parseInt(digits, 10);
+  const formatted = (cents / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return formatted;
+};
+
+const parseCurrency = (formatted: string): number => {
+  const digits = formatted.replace(/\D/g, "");
+  return digits ? parseInt(digits, 10) : 0;
+};
+
 const WEEK_DAYS = [
   { key: "seg", label: "Seg" },
   { key: "ter", label: "Ter" },
@@ -457,14 +473,13 @@ const AdminPartners = () => {
                     <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Salário (R$)</label>
                     <Input
                       type="text"
-                      inputMode="decimal"
-                      value={editing.salary_cents === 0 ? "" : String(editing.salary_cents / 100)}
+                      inputMode="numeric"
+                      value={editing.salary_cents === 0 ? "" : formatCurrency(String(editing.salary_cents))}
                       onChange={(e) => {
-                        const raw = e.target.value.replace(/[^0-9.,]/g, "").replace(",", ".");
-                        const num = parseFloat(raw || "0");
-                        setEditing({ ...editing, salary_cents: isNaN(num) ? 0 : Math.round(num * 100) });
+                        const cents = parseCurrency(e.target.value);
+                        setEditing({ ...editing, salary_cents: cents });
                       }}
-                      placeholder="0.00"
+                      placeholder="0,00"
                       className="font-body"
                     />
                   </div>
