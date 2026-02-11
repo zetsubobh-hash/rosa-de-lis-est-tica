@@ -62,6 +62,7 @@ const MeuPerfil = () => {
         phone: profile.phone,
         address: profile.address,
         sex: profile.sex,
+        email: profile.email?.trim() || null,
       })
       .eq("user_id", user.id);
 
@@ -187,16 +188,16 @@ const MeuPerfil = () => {
           </div>
 
           <div>
-            <label className="font-body text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
+            <label className="font-body text-xs font-medium text-muted-foreground mb-1 block">E-mail (opcional)</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                value={user?.email || profile.email || ""}
-                disabled
-                className="font-body pl-10 bg-muted"
+                value={profile.email || ""}
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                placeholder="seu@email.com"
+                className="font-body pl-10"
               />
             </div>
-            <p className="font-body text-[11px] text-muted-foreground mt-1">O e-mail não pode ser alterado.</p>
           </div>
 
           <button
