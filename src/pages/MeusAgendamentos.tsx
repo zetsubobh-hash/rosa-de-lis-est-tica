@@ -196,7 +196,7 @@ const MeusAgendamentos = () => {
                                   <Hash className="w-3.5 h-3.5 text-primary" />
                                   Progresso das sessões
                                 </p>
-                                <div className="space-y-1.5">
+                                <div className="flex gap-1.5 flex-wrap">
                                   {Array.from({ length: plan.total_sessions }).map((_, i) => {
                                     const sessionNum = i + 1;
                                     const isCompleted = i < plan.completed_sessions;
@@ -207,55 +207,37 @@ const MeusAgendamentos = () => {
                                     const canSchedule = isNext && !scheduledApt;
 
                                     return (
-                                      <div key={i} className="flex items-center gap-2">
-                                        <button
-                                          disabled={!canSchedule}
-                                          onClick={() => {
-                                            if (canSchedule) {
-                                              setScheduleModal({
-                                                planId: plan.id,
-                                                sessionNumber: sessionNum,
-                                                serviceSlug: plan.service_slug,
-                                                serviceTitle: plan.service_title,
-                                              });
-                                            }
-                                          }}
-                                          className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all shrink-0 ${
-                                            isCompleted
-                                              ? "bg-primary text-primary-foreground"
-                                              : scheduledApt
-                                              ? "bg-primary/30 text-primary ring-2 ring-primary/40"
-                                              : canSchedule
-                                              ? "bg-muted text-muted-foreground ring-2 ring-primary/50 cursor-pointer hover:bg-primary/10 hover:text-primary"
-                                              : "bg-muted text-muted-foreground"
-                                          }`}
-                                          title={canSchedule ? `Agendar sessão ${sessionNum}` : undefined}
-                                        >
-                                          {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
-                                        </button>
-                                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                          {scheduledApt ? (
-                                            <>
-                                              <span className="font-body text-[11px] text-foreground">
-                                                {formatDateBR(scheduledApt.appointment_date)} • {scheduledApt.appointment_time}
-                                              </span>
-                                              {isRescheduled(scheduledApt) && (
-                                                <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase">
-                                                  Remarcado
-                                                </span>
-                                              )}
-                                            </>
-                                          ) : isCompleted ? (
-                                            <span className="font-body text-[11px] text-muted-foreground">Realizada</span>
-                                          ) : canSchedule ? (
-                                            <span className="font-body text-[11px] text-primary cursor-pointer" onClick={() => setScheduleModal({ planId: plan.id, sessionNumber: sessionNum, serviceSlug: plan.service_slug, serviceTitle: plan.service_title })}>
-                                              Toque para agendar
-                                            </span>
-                                          ) : (
-                                            <span className="font-body text-[11px] text-muted-foreground italic">Aguardando</span>
-                                          )}
-                                        </div>
-                                      </div>
+                                      <button
+                                        key={i}
+                                        disabled={!canSchedule}
+                                        onClick={() => {
+                                          if (canSchedule) {
+                                            setScheduleModal({
+                                              planId: plan.id,
+                                              sessionNumber: sessionNum,
+                                              serviceSlug: plan.service_slug,
+                                              serviceTitle: plan.service_title,
+                                            });
+                                          }
+                                        }}
+                                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
+                                          isCompleted
+                                            ? "bg-primary text-primary-foreground"
+                                            : scheduledApt
+                                            ? "bg-primary/30 text-primary ring-2 ring-primary/40"
+                                            : canSchedule
+                                            ? "bg-muted text-muted-foreground ring-2 ring-primary/50 cursor-pointer hover:bg-primary/10 hover:text-primary"
+                                            : "bg-muted text-muted-foreground"
+                                        }`}
+                                        title={
+                                          isCompleted ? `Sessão ${sessionNum} realizada` :
+                                          scheduledApt ? `Sessão ${sessionNum} agendada - ${formatDateBR(scheduledApt.appointment_date)}` :
+                                          canSchedule ? `Agendar sessão ${sessionNum}` :
+                                          `Sessão ${sessionNum}`
+                                        }
+                                      >
+                                        {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
+                                      </button>
                                     );
                                   })}
                                 </div>
