@@ -9,6 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo-branca.png";
 
+interface SessionInfo {
+  date: string;
+  time: string;
+  session_number: number;
+  status: string;
+}
+
 interface Appointment {
   id: string;
   service_title: string;
@@ -20,6 +27,8 @@ interface Appointment {
   plan_id: string | null;
   session_number: number | null;
   total_sessions?: number | null;
+  completed_sessions?: number | null;
+  planSessions?: SessionInfo[];
   profile?: {
     full_name: string;
     avatar_url: string | null;
@@ -139,6 +148,8 @@ const PartnerDashboard = () => {
         ...a,
         profile: profileMap[a.user_id] || null,
         total_sessions: a.plan_id ? planMap[a.plan_id]?.total_sessions || null : null,
+        completed_sessions: a.plan_id ? planMap[a.plan_id]?.completed_sessions || null : null,
+        planSessions: a.plan_id ? planAptsMap[a.plan_id] || [] : [],
       });
 
       setAppointments((upcoming || []).map(enrichApt));
@@ -270,6 +281,50 @@ const PartnerDashboard = () => {
               </span>
             )}
           </div>
+
+          {/* Session tracker for plan appointments */}
+          {apt.plan_id && apt.total_sessions && apt.planSessions && apt.planSessions.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                  Progresso do plano — {apt.completed_sessions || 0}/{apt.total_sessions} sessões
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {Array.from({ length: apt.total_sessions }, (_, i) => {
+                  const sessionNum = i + 1;
+                  const sessionApt = apt.planSessions!.find((s) => s.session_number === sessionNum);
+                  const isDone = sessionApt?.status === "completed";
+                  const isScheduled = sessionApt && sessionApt.status !== "completed";
+                  const isCurrent = apt.session_number === sessionNum;
+
+                  return (
+                    <div key={sessionNum} className="flex flex-col items-center">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all ${
+                        isCurrent
+                          ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
+                          : isDone
+                          ? "border-emerald-500 bg-emerald-500 text-white"
+                          : isScheduled
+                          ? "border-primary/50 bg-primary/10 text-primary"
+                          : "border-muted-foreground/20 bg-muted text-muted-foreground"
+                      }`}>
+                        {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
+                      </div>
+                      {sessionApt && (
+                        <span className="font-body text-[8px] text-muted-foreground mt-0.5 text-center leading-tight">
+                          {formatDate(sessionApt.date)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="font-body text-[10px] text-muted-foreground mt-2">
+                Restam <span className="font-semibold text-foreground">{(apt.total_sessions || 0) - (apt.completed_sessions || 0)}</span> sessão(ões)
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
