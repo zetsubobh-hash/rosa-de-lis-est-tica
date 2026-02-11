@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { services } from "@/data/services";
+import { Input } from "@/components/ui/input";
 
 interface Profile {
   full_name: string;
@@ -44,10 +45,21 @@ const getInitials = (name: string) => {
     .toUpperCase();
 };
 
+const HOURS = Array.from({ length: 11 }, (_, i) => {
+  const h = 8 + i;
+  return `${String(h).padStart(2, "0")}:00`;
+});
+
 const AdminAgenda = () => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Reschedule state
+  const [rescheduleId, setRescheduleId] = useState<string | null>(null);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -101,6 +113,34 @@ const AdminAgenda = () => {
       toast({ title: "Agendamento excluído ✅" });
       setAppointments((prev) => prev.filter((a) => a.id !== id));
     }
+  };
+
+  const openReschedule = (apt: Appointment) => {
+    setRescheduleId(apt.id);
+    setNewDate(apt.appointment_date);
+    setNewTime(apt.appointment_time);
+  };
+
+  const handleReschedule = async () => {
+    if (!rescheduleId || !newDate || !newTime) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("appointments")
+      .update({ appointment_date: newDate, appointment_time: newTime })
+      .eq("id", rescheduleId);
+
+    if (error) {
+      toast({ title: "Erro ao remarcar", variant: "destructive" });
+    } else {
+      toast({ title: "Agendamento remarcado ✅" });
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.id === rescheduleId ? { ...a, appointment_date: newDate, appointment_time: newTime } : a
+        )
+      );
+      setRescheduleId(null);
+    }
+    setSaving(false);
   };
 
   if (loading) {
@@ -160,7 +200,6 @@ const AdminAgenda = () => {
               <div className="p-5">
                 {/* Client info */}
                 <div className="flex items-start gap-3 mb-4">
-                  {/* Avatar */}
                   <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     {profile ? (
                       <span className="font-heading text-sm font-bold text-primary">
@@ -206,13 +245,19 @@ const AdminAgenda = () => {
                   </span>
                 </div>
 
-                {/* Price */}
                 <div className="mb-4">
                   <span className="font-heading text-sm font-bold text-primary">{price}</span>
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => openReschedule(apt)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-colors"
+                  >
+                    <CalendarClock className="w-3.5 h-3.5" />
+                    Remarcar
+                  </button>
                   <button
                     onClick={() => handleCancel(apt.id)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition-colors"
@@ -233,6 +278,71 @@ const AdminAgenda = () => {
           );
         })}
       </div>
+
+      {/* Reschedule Modal */}
+      <AnimatePresence>
+        {rescheduleId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setRescheduleId(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card rounded-2xl border border-border shadow-xl w-full max-w-sm overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <h3 className="font-heading text-base font-bold text-foreground">Remarcar Agendamento</h3>
+                <button onClick={() => setRescheduleId(null)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Nova Data</label>
+                  <Input
+                    type="date"
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    className="font-body"
+                  />
+                </div>
+                <div>
+                  <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Novo Horário</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {HOURS.map((h) => (
+                      <button
+                        key={h}
+                        onClick={() => setNewTime(h)}
+                        className={`py-2 rounded-lg text-xs font-medium transition-all ${
+                          newTime === h
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        }`}
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={handleReschedule}
+                  disabled={saving || !newDate || !newTime}
+                  className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {saving ? "Salvando..." : "Confirmar Remarcação"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
