@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePaymentSettings } from "@/hooks/usePaymentSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getServiceBySlug } from "@/data/services";
+import { getIconByName } from "@/lib/iconMap";
 import { useAllServicePrices, formatCents } from "@/hooks/useServicePrices";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -164,8 +164,7 @@ const Checkout = () => {
           <h2 className="font-heading text-lg font-bold text-foreground mb-4">Resumo</h2>
           <div className="space-y-3">
             {appointments.map((apt) => {
-              const svc = getServiceBySlug(apt.service_slug);
-              const Icon = svc?.icon;
+              const Icon = getIconByName("Sparkles");
               // Get price from notes (plan info) or fallback
               let priceCents = 0;
               let planName = "";

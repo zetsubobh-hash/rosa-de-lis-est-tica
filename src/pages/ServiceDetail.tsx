@@ -2,13 +2,14 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, CreditCard, CalendarCheck, CalendarPlus, ArrowRight, ChevronRight, Check, Star } from "lucide-react";
-import { getServiceBySlug, services } from "@/data/services";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServicePrices, formatCents } from "@/hooks/useServicePrices";
+import { useServices, DBService } from "@/hooks/useServices";
+import { getIconByName } from "@/lib/iconMap";
 
 const ServiceDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -16,8 +17,11 @@ const ServiceDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const service = slug ? getServiceBySlug(slug) : undefined;
+  const { services, loading } = useServices();
   const { prices } = useServicePrices(slug);
+
+  const service = services.find((s) => s.slug === slug);
+  const related = services.filter((s) => s.slug !== slug).slice(0, 3);
 
   const handleAgendar = (planName?: string, priceCents?: number) => {
     if (!user) {
@@ -32,8 +36,16 @@ const ServiceDetail = () => {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  // Get related services (exclude current, pick 3)
-  const related = services.filter((s) => s.slug !== slug).slice(0, 3);
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-background flex items-center justify-center pt-20">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      </>
+    );
+  }
 
   if (!service) {
     return (
@@ -53,9 +65,20 @@ const ServiceDetail = () => {
     );
   }
 
-  const Icon = service.icon;
+  const Icon = getIconByName(service.icon_name);
 
-  // TODO: Link to scheduling system when ready
+  // Build plan cards from service_prices
+  const planOrder = ["Essencial", "Premium", "VIP"];
+  const planCards = prices
+    .sort((a, b) => planOrder.indexOf(a.plan_name) - planOrder.indexOf(b.plan_name))
+    .map((p) => ({
+      name: p.plan_name,
+      sessions: p.sessions,
+      pricePerSession: formatCents(p.price_per_session_cents),
+      totalPrice: formatCents(p.total_price_cents),
+      totalCents: p.total_price_cents,
+      highlight: p.plan_name === "Premium",
+    }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,11 +86,9 @@ const ServiceDetail = () => {
 
       {/* Hero banner */}
       <section className="relative pt-20 overflow-hidden">
-        {/* Background */}
         <div className="absolute inset-0 bg-primary" />
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(var(--pink-dark))]" />
 
-        {/* Decorative elements */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 0.08, scale: 1 }}
@@ -82,20 +103,15 @@ const ServiceDetail = () => {
         />
 
         <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-24">
-          {/* Breadcrumb */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="flex items-center gap-2 mb-8 font-body text-sm text-primary-foreground/60"
           >
-            <Link to="/" className="hover:text-primary-foreground transition-colors">
-              Início
-            </Link>
+            <Link to="/" className="hover:text-primary-foreground transition-colors">Início</Link>
             <ChevronRight className="w-3 h-3" />
-            <Link to="/#servicos" className="hover:text-primary-foreground transition-colors">
-              Serviços
-            </Link>
+            <Link to="/#servicos" className="hover:text-primary-foreground transition-colors">Serviços</Link>
             <ChevronRight className="w-3 h-3" />
             <span className="text-primary-foreground">{service.title}</span>
           </motion.div>
@@ -124,14 +140,12 @@ const ServiceDetail = () => {
             </motion.div>
           </div>
         </div>
-
-        {/* Straight separator */}
       </section>
 
       {/* About: image left + description right */}
       <section className="max-w-6xl mx-auto px-6 py-12 md:py-20">
         <div className="flex flex-col md:flex-row items-center gap-8 md:gap-14">
-          {service.image && (
+          {service.image_url && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -140,7 +154,7 @@ const ServiceDetail = () => {
               className="flex-shrink-0"
             >
               <img
-                src={service.image}
+                src={service.image_url}
                 alt={service.title}
                 className="max-w-[260px] md:max-w-[320px]"
               />
@@ -160,7 +174,7 @@ const ServiceDetail = () => {
               {service.title}
             </h2>
             <p className="font-body text-muted-foreground text-sm md:text-base leading-[1.9]">
-              {service.fullDescription}
+              {service.full_description}
             </p>
           </motion.div>
         </div>
@@ -215,8 +229,8 @@ const ServiceDetail = () => {
                 <div className="space-y-5">
                   {[
                     { icon: Clock, label: "Duração", value: service.duration },
-                    { icon: CreditCard, label: "Investimento", value: service.price },
-                    { icon: CalendarCheck, label: "Sessões", value: service.sessions },
+                    { icon: CreditCard, label: "Investimento", value: service.price_label },
+                    { icon: CalendarCheck, label: "Sessões", value: service.sessions_label },
                   ].map(({ icon: InfoIcon, label, value }, i) => (
                     <motion.div
                       key={label}
@@ -242,8 +256,8 @@ const ServiceDetail = () => {
         </div>
       </section>
 
-      {/* Packages */}
-      {service.packages && service.packages.length > 0 && (
+      {/* Packages from DB prices */}
+      {planCards.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 pb-16 md:pb-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -261,15 +275,7 @@ const ServiceDetail = () => {
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {service.packages.map((pkg) => {
-              // Use DB price if available, else fallback to hardcoded
-              const dbPrice = prices.find((p) => p.plan_name === pkg.name);
-              const displayPerSession = dbPrice ? formatCents(dbPrice.price_per_session_cents) : pkg.pricePerSession;
-              const displayTotal = dbPrice ? formatCents(dbPrice.total_price_cents) : pkg.totalPrice;
-              const displaySessions = dbPrice ? dbPrice.sessions : pkg.sessions;
-              const totalCents = dbPrice?.total_price_cents ?? 0;
-
-              return (
+            {planCards.map((pkg) => (
               <motion.div
                 key={pkg.name}
                 initial={{ opacity: 0, y: 25 }}
@@ -294,38 +300,23 @@ const ServiceDetail = () => {
                   {pkg.name}
                 </h3>
                 <p className={`font-body text-xs mb-4 ${pkg.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                  {displaySessions} sessões
+                  {pkg.sessions} sessões
                 </p>
 
                 <div className="mb-1">
                   <span className="font-heading text-3xl md:text-4xl font-bold">
-                    {displayPerSession}
+                    {pkg.pricePerSession}
                   </span>
                   <span className={`font-body text-sm ml-1 ${pkg.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                     /sessão
                   </span>
                 </div>
                 <p className={`font-body text-xs mb-6 ${pkg.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
-                  Total: {displayTotal}
+                  Total: {pkg.totalPrice}
                 </p>
 
-                <ul className="space-y-3 mb-8">
-                  {pkg.perks.map((perk, j) => (
-                    <li key={j} className="flex items-start gap-2.5">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        pkg.highlight ? "bg-primary-foreground/20" : "bg-primary/10"
-                      }`}>
-                        <Check className={`w-3 h-3 ${pkg.highlight ? "text-primary-foreground" : "text-primary"}`} />
-                      </div>
-                      <span className={`font-body text-sm leading-relaxed ${pkg.highlight ? "text-primary-foreground/90" : "text-foreground"}`}>
-                        {perk}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
                 <motion.button
-                  onClick={() => handleAgendar(pkg.name, totalCents)}
+                  onClick={() => handleAgendar(pkg.name, pkg.totalCents)}
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.92, boxShadow: "inset 0 2px 8px rgba(0,0,0,0.2)" }}
                   className={`flex items-center justify-center gap-2 w-full py-3.5 font-body text-sm font-bold rounded-2xl transition-all duration-300 uppercase tracking-wider ${
@@ -338,8 +329,7 @@ const ServiceDetail = () => {
                   Agendar Agora
                 </motion.button>
               </motion.div>
-              );
-            })}
+            ))}
           </div>
         </section>
       )}
@@ -372,6 +362,8 @@ const ServiceDetail = () => {
         </motion.div>
       </section>
 
+      {/* Related services */}
+      {related.length > 0 && (
       <section className="bg-rose-soft py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
@@ -390,7 +382,9 @@ const ServiceDetail = () => {
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {related.map((s, i) => (
+            {related.map((s, i) => {
+              const RelIcon = getIconByName(s.icon_name);
+              return (
               <Link key={s.slug} to={`/servico/${s.slug}`}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -400,7 +394,7 @@ const ServiceDetail = () => {
                   className="group bg-background rounded-2xl p-6 border border-transparent hover:border-primary/20 hover:shadow-lg transition-all duration-500 cursor-pointer h-full"
                 >
                   <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-xl bg-primary/10 group-hover:bg-primary transition-all duration-500">
-                    <s.icon
+                    <RelIcon
                       className="w-6 h-6 text-primary group-hover:text-primary-foreground transition-colors duration-500"
                       strokeWidth={1.8}
                     />
@@ -409,17 +403,19 @@ const ServiceDetail = () => {
                     {s.title}
                   </h3>
                   <p className="font-body text-muted-foreground text-xs leading-relaxed line-clamp-2 mb-3">
-                    {s.shortDescription}
+                    {s.short_description}
                   </p>
                   <div className="flex items-center gap-1 text-primary text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     Ver detalhes <ArrowRight className="w-3 h-3" />
                   </div>
                 </motion.div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
+      )}
 
       <Footer />
       <WhatsAppButton />
