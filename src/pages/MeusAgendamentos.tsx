@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle } from "lucide-react";
+import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getIconByName } from "@/lib/iconMap";
+import { useClientPlans } from "@/hooks/useClientPlans";
+import { Progress } from "@/components/ui/progress";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -30,6 +32,7 @@ const MeusAgendamentos = () => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const { plans, loading: plansLoading } = useClientPlans(user?.id);
 
   useEffect(() => {
     if (authLoading) return;
@@ -53,7 +56,7 @@ const MeusAgendamentos = () => {
     fetchAppointments();
   }, [user, authLoading]);
 
-  if (loading || authLoading) {
+  if (loading || authLoading || plansLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -85,6 +88,58 @@ const MeusAgendamentos = () => {
       </section>
 
       <div className="max-w-2xl mx-auto px-6 py-10">
+        {/* Active Plans / Session Progress */}
+        {plans.filter((p) => p.status === "active").length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Layers className="w-5 h-5 text-primary" />
+              <h2 className="font-heading text-lg font-bold text-foreground">Meus Planos</h2>
+            </div>
+            <div className="space-y-3">
+              {plans
+                .filter((p) => p.status === "active")
+                .map((plan, idx) => {
+                  const Icon = getIconByName("Sparkles");
+                  const progress = plan.total_sessions > 0 ? (plan.completed_sessions / plan.total_sessions) * 100 : 0;
+                  const isComplete = plan.completed_sessions >= plan.total_sessions;
+                  return (
+                    <motion.div
+                      key={plan.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="bg-card rounded-2xl border border-border p-5"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        {Icon && (
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-heading text-sm font-bold text-foreground truncate">{plan.service_title}</h4>
+                          <p className="font-body text-xs text-muted-foreground">{plan.plan_name}</p>
+                        </div>
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${
+                          isComplete ? "bg-primary/10 text-primary" : "bg-gold/10 text-gold"
+                        }`}>
+                          {isComplete ? (
+                            <><CheckCircle2 className="w-3 h-3" /> Completo</>
+                          ) : (
+                            <>{plan.completed_sessions}/{plan.total_sessions} sessões</>
+                          )}
+                        </span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                      <p className="font-body text-[11px] text-muted-foreground mt-2">
+                        {plan.completed_sessions} de {plan.total_sessions} sessões realizadas
+                      </p>
+                    </motion.div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
         {appointments.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center p-12 bg-card rounded-3xl border border-border">
             <CalendarCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
