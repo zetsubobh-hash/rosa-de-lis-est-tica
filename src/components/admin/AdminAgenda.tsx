@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle } from "lucide-react";
+import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle, Handshake } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +31,13 @@ interface Appointment {
   created_at: string;
   user_id: string;
   notes: string | null;
+  partner_id: string | null;
   profiles?: Profile | null;
+}
+
+interface PartnerOption {
+  id: string;
+  full_name: string;
 }
 
 const isRescheduled = (apt: Appointment): boolean => {
@@ -78,6 +84,7 @@ const AdminAgenda = () => {
   const { prices: allPrices } = useAllServicePrices();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [partnerOptions, setPartnerOptions] = useState<PartnerOption[]>([]);
 
   // Reschedule state
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
@@ -86,11 +93,16 @@ const AdminAgenda = () => {
   const [saving, setSaving] = useState(false);
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
 
+  useEffect(() => {
+    supabase.from("partners").select("id, full_name").eq("is_active", true).order("full_name")
+      .then(({ data }) => { if (data) setPartnerOptions(data); });
+  }, []);
+
   const fetchAppointments = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("appointments")
-      .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes")
+      .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id")
       .in("status", ["confirmed", "pending"])
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
@@ -371,6 +383,27 @@ const AdminAgenda = () => {
                         <span className="font-heading font-bold text-primary">
                           {getAppointmentPrice(apt, allPrices)}
                         </span>
+                      </div>
+                      {/* Partner assignment */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Handshake className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <select
+                          value={apt.partner_id || ""}
+                          onChange={async (e) => {
+                            const partnerId = e.target.value || null;
+                            const { error } = await supabase.from("appointments").update({ partner_id: partnerId }).eq("id", apt.id);
+                            if (!error) {
+                              setAppointments((prev) => prev.map((a) => a.id === apt.id ? { ...a, partner_id: partnerId } : a));
+                              toast({ title: partnerId ? "Parceiro atribuído ✅" : "Parceiro removido" });
+                            }
+                          }}
+                          className="flex-1 h-7 rounded-lg border border-border bg-background px-2 text-[11px] font-body text-foreground focus:ring-1 focus:ring-primary"
+                        >
+                          <option value="">Sem parceiro</option>
+                          {partnerOptions.map((p) => (
+                            <option key={p.id} value={p.id}>{p.full_name}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="flex gap-2">
                         <button
