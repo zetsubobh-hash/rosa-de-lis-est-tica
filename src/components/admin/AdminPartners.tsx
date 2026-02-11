@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, X, Save, Search, Users, Phone,
-  Clock, Eye, EyeOff, Loader2, MessageCircle
+  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText
 } from "lucide-react";
+import PartnerPaymentHistory from "@/components/admin/PartnerPaymentHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useServices } from "@/hooks/useServices";
@@ -75,6 +76,7 @@ const AdminPartners = () => {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [earnings, setEarnings] = useState<Record<string, { sessions: number; commissionCents: number }>>({});
+  const [paymentPartnerId, setPaymentPartnerId] = useState<string | null>(null);
 
   const fetchPartners = async () => {
     setLoading(true);
@@ -456,6 +458,13 @@ const AdminPartners = () => {
                     </p>
                   </div>
                 </div>
+                <button
+                  onClick={() => setPaymentPartnerId(p.id)}
+                  className="mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-body font-medium text-primary hover:bg-primary/5 transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Ver Histórico Financeiro
+                </button>
               </div>
             </motion.div>
           ))}
@@ -641,6 +650,24 @@ const AdminPartners = () => {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* Payment History Modal */}
+      <AnimatePresence>
+        {paymentPartnerId && (() => {
+          const p = partners.find((x) => x.id === paymentPartnerId);
+          if (!p) return null;
+          return (
+            <PartnerPaymentHistory
+              partnerId={p.id}
+              partnerName={p.full_name}
+              salaryCents={p.salary_cents}
+              commissionCents={earnings[p.id]?.commissionCents || 0}
+              sessions={earnings[p.id]?.sessions || 0}
+              onClose={() => setPaymentPartnerId(null)}
+            />
+          );
+        })()}
       </AnimatePresence>
     </motion.div>
   );

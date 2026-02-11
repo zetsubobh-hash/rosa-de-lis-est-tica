@@ -155,6 +155,50 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          paid_at: string
+          partner_id: string
+          reference_month: string
+          type: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          paid_at?: string
+          partner_id: string
+          reference_month: string
+          type?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          paid_at?: string
+          partner_id?: string
+          reference_month?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_services: {
         Row: {
           id: string
