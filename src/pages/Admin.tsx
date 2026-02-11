@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,8 +12,9 @@ import AdminPaymentSettings from "@/components/admin/AdminPaymentSettings";
 import AdminBranding from "@/components/admin/AdminBranding";
 import AdminPricing from "@/components/admin/AdminPricing";
 import AdminUsers from "@/components/admin/AdminUsers";
+import AdminServices from "@/components/admin/AdminServices";
 
-type Tab = "dashboard" | "agenda" | "pricing" | "payments" | "branding" | "users";
+type Tab = "dashboard" | "agenda" | "services" | "pricing" | "payments" | "branding" | "users";
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -62,6 +63,7 @@ const Admin = () => {
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: "dashboard", label: "Dashboard", icon: BarChart3 },
     { key: "agenda", label: "Agenda", icon: CalendarCheck },
+    { key: "services", label: "Serviços", icon: Briefcase },
     { key: "pricing", label: "Preços", icon: DollarSign },
     { key: "payments", label: "Pagamento", icon: CreditCard },
     { key: "branding", label: "Identidade Visual", icon: Palette },
@@ -196,6 +198,7 @@ const Admin = () => {
         <div className="p-4 md:p-8">
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "agenda" && <AdminAgenda />}
+          {activeTab === "services" && <AdminServices />}
           {activeTab === "pricing" && <AdminPricing />}
           {activeTab === "payments" && <AdminPaymentSettings initialSettings={settingsMap} />}
           {activeTab === "branding" && <AdminBranding />}

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { getServiceBySlug } from "@/data/services";
+import { getIconByName } from "@/lib/iconMap";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -100,8 +100,7 @@ const MeusAgendamentos = () => {
         ) : (
           <div className="space-y-3">
             {appointments.map((apt, idx) => {
-              const svc = getServiceBySlug(apt.service_slug);
-              const Icon = svc?.icon;
+              const Icon = getIconByName("Sparkles");
               const status = statusConfig[apt.status] || statusConfig.pending;
               const StatusIcon = status.icon;
 

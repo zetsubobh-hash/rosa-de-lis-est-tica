@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { services } from "@/data/services";
+import { useServices } from "@/hooks/useServices";
+import { getIconByName } from "@/lib/iconMap";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 
@@ -11,6 +12,7 @@ const Services = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { services, loading } = useServices();
 
   const handleClick = (slug: string) => {
     if (!user) {
@@ -53,9 +55,15 @@ const Services = () => {
           </motion.p>
         </motion.div>
 
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
           {services.map((service, i) => {
             const isSelected = clicked === service.slug;
+            const IconComponent = getIconByName(service.icon_name);
             return (
               <motion.div
                 key={service.slug}
@@ -70,7 +78,6 @@ const Services = () => {
                     : "bg-background border-transparent hover:border-primary/20 hover:shadow-lg"
                 }`}
               >
-                {/* Selected checkmark */}
                 <AnimatePresence>
                   {isSelected && (
                     <motion.div
@@ -84,7 +91,6 @@ const Services = () => {
                   )}
                 </AnimatePresence>
 
-                {/* Decorative gradient */}
                 <div className={`absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-pink-vibrant/5 transition-opacity duration-500 rounded-2xl ${
                   isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                 }`} />
@@ -95,7 +101,7 @@ const Services = () => {
                       ? "bg-primary"
                       : "bg-primary/10 group-hover:bg-primary"
                   }`}>
-                    <service.icon
+                    <IconComponent
                       className={`w-5 h-5 transition-colors duration-500 ${
                         isSelected
                           ? "text-primary-foreground"
@@ -108,11 +114,10 @@ const Services = () => {
                     {service.title}
                   </h3>
                   <p className="font-body text-muted-foreground text-xs md:text-[13px] leading-relaxed line-clamp-3">
-                    {service.shortDescription}
+                    {service.short_description}
                   </p>
                 </div>
 
-                {/* Bottom accent line */}
                 <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-gradient-to-r from-primary to-pink-vibrant transition-all duration-500 rounded-full ${
                   isSelected ? "w-3/4" : "w-0 group-hover:w-3/4"
                 }`} />
@@ -120,6 +125,7 @@ const Services = () => {
             );
           })}
         </div>
+        )}
 
       </div>
 

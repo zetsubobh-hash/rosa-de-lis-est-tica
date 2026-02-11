@@ -5,6 +5,7 @@ import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarCheck, ChevronRight, Clock, ArrowLeft, Check, CalendarPlus, Plus, Trash2 } from "lucide-react";
 import { getServiceBySlug } from "@/data/services";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
