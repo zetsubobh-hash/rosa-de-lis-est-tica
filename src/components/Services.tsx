@@ -47,8 +47,8 @@ const Services = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mt-6 max-w-xl mx-auto"
           >
-            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 font-body text-sm md:text-base font-medium text-foreground">
-              👆 Toque em um serviço abaixo para <span className="text-pink-vibrant font-semibold">agendar</span>
+            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary font-body text-sm md:text-base font-medium text-primary-foreground">
+              Toque em um serviço abaixo para <span className="font-semibold">agendar</span>
             </span>
           </motion.p>
         </motion.div>
