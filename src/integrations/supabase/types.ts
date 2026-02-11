@@ -64,6 +64,57 @@ export type Database = {
           },
         ]
       }
+      client_plans: {
+        Row: {
+          appointment_id: string | null
+          completed_sessions: number
+          created_at: string
+          created_by: string
+          created_by_user_id: string | null
+          id: string
+          notes: string | null
+          plan_name: string
+          service_slug: string
+          service_title: string
+          status: string
+          total_sessions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          completed_sessions?: number
+          created_at?: string
+          created_by?: string
+          created_by_user_id?: string | null
+          id?: string
+          notes?: string | null
+          plan_name: string
+          service_slug: string
+          service_title: string
+          status?: string
+          total_sessions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          completed_sessions?: number
+          created_at?: string
+          created_by?: string
+          created_by_user_id?: string | null
+          id?: string
+          notes?: string | null
+          plan_name?: string
+          service_slug?: string
+          service_title?: string
+          status?: string
+          total_sessions?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       page_views: {
         Row: {
           created_at: string
