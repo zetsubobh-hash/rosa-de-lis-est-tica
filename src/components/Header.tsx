@@ -143,35 +143,35 @@ const Header = () => {
               </a>
             ))}
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {isAdmin && (
                   <button
                     onClick={() => navigate("/admin")}
-                    className="flex items-center gap-2 px-5 py-2.5 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
                   >
-                    <ShieldCheck className="w-4 h-4" />
+                    <ShieldCheck className="w-3.5 h-3.5" />
                     Admin
                   </button>
                 )}
                 <button
                   onClick={() => navigate("/meu-perfil")}
-                  className="flex items-center gap-2 px-5 py-2.5 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
                 >
-                  <UserCircle className="w-4 h-4" />
+                  <UserCircle className="w-3.5 h-3.5" />
                   Perfil
                 </button>
                 <button
                   onClick={() => navigate("/meus-agendamentos")}
-                  className="flex items-center gap-2 px-5 py-2.5 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
                 >
-                  <CalendarCheck className="w-4 h-4" />
+                  <CalendarCheck className="w-3.5 h-3.5" />
                   Agendamentos
                 </button>
                 <button
                   onClick={signOut}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-primary-foreground text-primary font-body text-sm font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-primary-foreground text-primary font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/90 transition-all duration-300 uppercase tracking-wider"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5" />
                   Sair
                 </button>
               </div>
