@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, BarChart3, CalendarCheck, CreditCard } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import logo from "@/assets/logo-branca.png";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminAgenda from "@/components/admin/AdminAgenda";
 import AdminPaymentSettings from "@/components/admin/AdminPaymentSettings";
@@ -14,7 +13,7 @@ import AdminPaymentSettings from "@/components/admin/AdminPaymentSettings";
 type Tab = "dashboard" | "agenda" | "payments";
 
 const Admin = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
@@ -43,11 +42,8 @@ const Admin = () => {
 
   if (roleLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center pt-32">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -61,49 +57,78 @@ const Admin = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <section className="relative pt-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(var(--pink-dark))]" />
-        <div className="relative max-w-4xl mx-auto px-6 py-12">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
-            <div className="w-14 h-14 flex items-center justify-center rounded-2xl bg-primary-foreground/15 backdrop-blur-sm border border-primary-foreground/10">
-              <Shield className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="font-body text-primary-foreground/60 text-xs tracking-[0.3em] uppercase font-semibold mb-1">Painel</p>
-              <h1 className="font-heading text-2xl md:text-4xl font-bold text-primary-foreground">Administração</h1>
-            </div>
-          </motion.div>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <aside className="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-primary via-primary to-[hsl(var(--pink-dark))] flex flex-col z-50">
+        {/* Logo */}
+        <div className="px-6 py-6 flex items-center gap-3">
+          <img src={logo} alt="Rosa de Lis" className="h-10 w-auto" />
         </div>
-      </section>
 
-      {/* Tabs */}
-      <div className="max-w-4xl mx-auto px-6 pt-8">
-        <div className="flex gap-1 bg-muted rounded-2xl p-1">
+        {/* Admin badge */}
+        <div className="px-6 mb-6">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-foreground/10 border border-primary-foreground/10">
+            <Shield className="w-4 h-4 text-primary-foreground/70" />
+            <span className="font-body text-xs text-primary-foreground/70 uppercase tracking-widest font-semibold">Painel Admin</span>
+          </div>
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 px-3 space-y-1">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 py-2.5 rounded-xl font-body text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm font-medium transition-all duration-200 ${
+                activeTab === tab.key
+                  ? "bg-primary-foreground/20 text-primary-foreground shadow-sm"
+                  : "text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10"
               }`}
             >
-              <tab.icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
+              <tab.icon className="w-5 h-5" />
+              {tab.label}
             </button>
           ))}
+        </nav>
+
+        {/* Bottom actions */}
+        <div className="px-3 pb-6 space-y-1">
+          <button
+            onClick={() => navigate("/")}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm font-medium text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-all duration-200"
+          >
+            <Home className="w-5 h-5" />
+            Voltar ao Site
+          </button>
+          <button
+            onClick={signOut}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm font-medium text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-all duration-200"
+          >
+            <LogOut className="w-5 h-5" />
+            Sair
+          </button>
         </div>
-      </div>
+      </aside>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        {activeTab === "dashboard" && <AdminDashboard />}
-        {activeTab === "agenda" && <AdminAgenda />}
-        {activeTab === "payments" && <AdminPaymentSettings initialSettings={settingsMap} />}
-      </div>
+      {/* Main content */}
+      <main className="flex-1 ml-64">
+        {/* Top bar */}
+        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-8 py-4">
+          <motion.h1
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="font-heading text-xl font-bold text-foreground"
+          >
+            {tabs.find((t) => t.key === activeTab)?.label}
+          </motion.h1>
+        </div>
 
-      <Footer />
+        <div className="p-8">
+          {activeTab === "dashboard" && <AdminDashboard />}
+          {activeTab === "agenda" && <AdminAgenda />}
+          {activeTab === "payments" && <AdminPaymentSettings initialSettings={settingsMap} />}
+        </div>
+      </main>
     </div>
   );
 };
