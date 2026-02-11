@@ -100,12 +100,16 @@ const Agendar = () => {
         appointment_time: item.time,
         status: "pending",
       }));
+      console.log("[Agendar] Inserting appointments:", JSON.stringify(inserts));
       const { data, error } = await supabase.from("appointments").insert(inserts).select("id");
+      console.log("[Agendar] Insert result - data:", JSON.stringify(data), "error:", JSON.stringify(error));
       if (error) throw error;
       const ids = data?.map((d: any) => d.id).join(",") || "";
+      console.log("[Agendar] Navigating to checkout with ids:", ids);
       clearCart();
       navigate(`/checkout?ids=${ids}`);
-    } catch {
+    } catch (err) {
+      console.error("[Agendar] Error:", err);
       toast({
         title: "Erro ao agendar",
         description: "Tente novamente em instantes.",
