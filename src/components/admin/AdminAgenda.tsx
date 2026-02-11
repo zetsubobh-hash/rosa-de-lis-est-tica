@@ -12,6 +12,7 @@ interface Profile {
   email: string | null;
   sex: string;
   address: string;
+  avatar_url: string | null;
 }
 
 interface Appointment {
@@ -75,7 +76,7 @@ const AdminAgenda = () => {
       const userIds = [...new Set(data.map((a) => a.user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone, email, sex, address")
+        .select("user_id, full_name, phone, email, sex, address, avatar_url")
         .in("user_id", userIds);
 
       const profileMap: Record<string, Profile> = {};
@@ -231,8 +232,10 @@ const AdminAgenda = () => {
               <div className="p-5">
                 {/* Client info */}
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    {profile ? (
+                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
+                    ) : profile ? (
                       <span className="font-heading text-sm font-bold text-primary">
                         {getInitials(profile.full_name)}
                       </span>
