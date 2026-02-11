@@ -1,9 +1,19 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, ShieldOff, Search, Users, Crown } from "lucide-react";
+import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -32,6 +42,8 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [toggling, setToggling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -59,6 +71,36 @@ const AdminUsers = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const deleteUser = async () => {
+    if (!userToDelete || userToDelete.user_id === MASTER_ADMIN_ID) return;
+    setDeleting(userToDelete.user_id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/delete-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ user_id: userToDelete.user_id }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) {
+        toast({ title: result.error || "Erro ao excluir", variant: "destructive" });
+      } else {
+        toast({ title: "Usuário excluído com sucesso ✅" });
+        setUsers((prev) => prev.filter((u) => u.user_id !== userToDelete.user_id));
+      }
+    } catch {
+      toast({ title: "Erro ao excluir usuário", variant: "destructive" });
+    }
+    setDeleting(null);
+    setUserToDelete(null);
+  };
 
   const toggleAdmin = async (userId: string, currentlyAdmin: boolean) => {
     if (userId === MASTER_ADMIN_ID) {
@@ -182,33 +224,66 @@ const AdminUsers = () => {
                     Protegido
                   </span>
                 ) : (
-                  <button
-                    onClick={() => toggleAdmin(u.user_id, u.isAdmin)}
-                    disabled={toggling === u.user_id}
-                    className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all disabled:opacity-50 ${
-                      u.isAdmin
-                        ? "border-destructive/20 text-destructive hover:bg-destructive/5"
-                        : "border-primary/20 text-primary hover:bg-primary/5"
-                    }`}
-                  >
-                    {u.isAdmin ? (
-                      <>
-                        <ShieldOff className="w-3.5 h-3.5" />
-                        Remover
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        Promover
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => toggleAdmin(u.user_id, u.isAdmin)}
+                      disabled={toggling === u.user_id}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all disabled:opacity-50 ${
+                        u.isAdmin
+                          ? "border-destructive/20 text-destructive hover:bg-destructive/5"
+                          : "border-primary/20 text-primary hover:bg-primary/5"
+                      }`}
+                    >
+                      {u.isAdmin ? (
+                        <>
+                          <ShieldOff className="w-3.5 h-3.5" />
+                          Remover
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          Promover
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setUserToDelete(u)}
+                      disabled={deleting === u.user_id}
+                      className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 border border-transparent hover:border-destructive/20 transition-all disabled:opacity-50"
+                      title="Excluir usuário"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 )}
               </div>
             </motion.div>
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{userToDelete?.full_name}</strong>? 
+              Todos os dados deste usuário (agendamentos, pagamentos e perfil) serão removidos permanentemente. 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteUser}
+              disabled={!!deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Excluindo..." : "Sim, excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 };

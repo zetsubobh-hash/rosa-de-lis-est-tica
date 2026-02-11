@@ -3,6 +3,12 @@ project_id = "sxzmtnsfsyifujdnqyzr"
 [functions.register]
 verify_jwt = false
 
+[functions.delete-user]
+verify_jwt = false
+
+[functions.login]
+verify_jwt = false
+
 [functions.evolution]
 verify_jwt = false
 
