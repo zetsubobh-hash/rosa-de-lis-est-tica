@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Users, CalendarCheck, TrendingUp, Eye } from "lucide-react";
+import { BarChart3, Users, CalendarCheck, TrendingUp, Eye, Wifi } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -30,6 +30,7 @@ const AdminDashboard = () => {
   const [views, setViews] = useState<PageView[]>([]);
   const [appointments, setAppointments] = useState<AppointmentStat[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [onlineCount, setOnlineCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"7" | "14" | "30">("7");
 
@@ -38,7 +39,9 @@ const AdminDashboard = () => {
       setLoading(true);
       const daysAgo = subDays(new Date(), parseInt(period));
 
-      const [viewsRes, appointmentsRes, usersRes] = await Promise.all([
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+      const [viewsRes, appointmentsRes, usersRes, onlineRes] = await Promise.all([
         supabase
           .from("page_views")
           .select("path, created_at")
@@ -51,11 +54,16 @@ const AdminDashboard = () => {
         supabase
           .from("profiles")
           .select("id", { count: "exact", head: true }),
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .gte("last_seen", fiveMinAgo),
       ]);
 
       setViews(viewsRes.data || []);
       setAppointments(appointmentsRes.data || []);
       setTotalUsers(usersRes.count || 0);
+      setOnlineCount(onlineRes.count || 0);
       setLoading(false);
     };
     fetchData();
@@ -140,12 +148,13 @@ const AdminDashboard = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           { icon: Eye, label: "Visitas Hoje", value: todayViews, color: "text-primary" },
           { icon: BarChart3, label: `Total (${period}d)`, value: views.length, color: "text-primary" },
           { icon: CalendarCheck, label: "Confirmados", value: confirmedCount, color: "text-primary" },
           { icon: Users, label: "Clientes", value: totalUsers, color: "text-gold" },
+          { icon: Wifi, label: "Online Agora", value: onlineCount, color: "text-emerald-500" },
         ].map((kpi, i) => (
           <motion.div
             key={i}

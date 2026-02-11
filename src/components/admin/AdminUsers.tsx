@@ -138,7 +138,7 @@ const AdminUsers = () => {
               className="bg-card rounded-2xl border border-border p-5 hover:shadow-md transition-shadow"
             >
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden relative">
+                <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                   {u.avatar_url ? (
                     <img src={u.avatar_url} alt={u.full_name} className="w-full h-full object-cover" />
                   ) : (
@@ -146,15 +146,15 @@ const AdminUsers = () => {
                       {getInitials(u.full_name)}
                     </span>
                   )}
-                  <span
-                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card ${
-                      isOnline(u.last_seen) ? "bg-emerald-500" : "bg-muted-foreground/30"
-                    }`}
-                    title={isOnline(u.last_seen) ? "Online" : u.last_seen ? `Visto por último: ${new Date(u.last_seen).toLocaleString("pt-BR")}` : "Nunca acessou"}
-                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
+                    <span
+                      className={`shrink-0 w-2.5 h-2.5 rounded-full ${
+                        isOnline(u.last_seen) ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-muted-foreground/30"
+                      }`}
+                      title={isOnline(u.last_seen) ? "Online agora" : u.last_seen ? `Visto: ${new Date(u.last_seen).toLocaleString("pt-BR")}` : "Nunca acessou"}
+                    />
                     <p className="font-heading text-sm font-semibold text-foreground truncate">
                       {u.full_name}
                     </p>
