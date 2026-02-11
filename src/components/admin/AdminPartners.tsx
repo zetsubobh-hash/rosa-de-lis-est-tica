@@ -29,6 +29,13 @@ interface Partner {
 const capitalizeWords = (value: string) =>
   value.replace(/\b\w/g, (char) => char.toUpperCase());
 
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
 const WEEK_DAYS = [
   { key: "seg", label: "Seg" },
   { key: "ter", label: "Ter" },
@@ -421,8 +428,9 @@ const AdminPartners = () => {
                   <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Telefone</label>
                   <Input
                     value={editing.phone}
-                    onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                    onChange={(e) => setEditing({ ...editing, phone: formatPhone(e.target.value) })}
                     placeholder="(00) 00000-0000"
+                    maxLength={15}
                     className="font-body"
                   />
                 </div>
