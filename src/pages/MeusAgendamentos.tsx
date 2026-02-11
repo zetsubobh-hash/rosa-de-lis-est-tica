@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers, ChevronDown, Calendar, Hash } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getIconByName } from "@/lib/iconMap";
@@ -32,6 +32,7 @@ const MeusAgendamentos = () => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const { plans, loading: plansLoading } = useClientPlans(user?.id);
 
   useEffect(() => {
@@ -97,43 +98,122 @@ const MeusAgendamentos = () => {
             </div>
             <div className="space-y-3">
               {plans
-                .filter((p) => p.status === "active")
+                .filter((p) => p.status === "active" || p.status === "completed")
                 .map((plan, idx) => {
                   const Icon = getIconByName("Sparkles");
                   const progress = plan.total_sessions > 0 ? (plan.completed_sessions / plan.total_sessions) * 100 : 0;
                   const isComplete = plan.completed_sessions >= plan.total_sessions;
+                  const isExpanded = expandedPlan === plan.id;
+                  // Filter appointments related to this plan's service
+                  const relatedAppointments = appointments.filter(
+                    (a) => a.service_slug === plan.service_slug && a.status === "confirmed"
+                  );
+
                   return (
                     <motion.div
                       key={plan.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      className="bg-card rounded-2xl border border-border p-5"
+                      className="bg-card rounded-2xl border border-border overflow-hidden"
                     >
-                      <div className="flex items-center gap-3 mb-3">
-                        {Icon && (
-                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-heading text-sm font-bold text-foreground truncate">{plan.service_title}</h4>
-                          <p className="font-body text-xs text-muted-foreground">{plan.plan_name}</p>
-                        </div>
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${
-                          isComplete ? "bg-primary/10 text-primary" : "bg-gold/10 text-gold"
-                        }`}>
-                          {isComplete ? (
-                            <><CheckCircle2 className="w-3 h-3" /> Completo</>
-                          ) : (
-                            <>{plan.completed_sessions}/{plan.total_sessions} sessões</>
+                      {/* Clickable header */}
+                      <button
+                        onClick={() => setExpandedPlan(isExpanded ? null : plan.id)}
+                        className="w-full text-left p-5 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          {Icon && (
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                            </div>
                           )}
-                        </span>
-                      </div>
-                      <Progress value={progress} className="h-2" />
-                      <p className="font-body text-[11px] text-muted-foreground mt-2">
-                        {plan.completed_sessions} de {plan.total_sessions} sessões realizadas
-                      </p>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-heading text-sm font-bold text-foreground truncate">{plan.service_title}</h4>
+                            <p className="font-body text-xs text-muted-foreground">{plan.plan_name}</p>
+                          </div>
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${
+                            isComplete ? "bg-primary/10 text-primary" : "bg-gold/10 text-gold"
+                          }`}>
+                            {isComplete ? (
+                              <><CheckCircle2 className="w-3 h-3" /> Completo</>
+                            ) : (
+                              <>{plan.completed_sessions}/{plan.total_sessions} sessões</>
+                            )}
+                          </span>
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0 ${isExpanded ? "rotate-180" : ""}`} />
+                        </div>
+                        <Progress value={progress} className="h-2" />
+                        <p className="font-body text-[11px] text-muted-foreground mt-2">
+                          {plan.completed_sessions} de {plan.total_sessions} sessões realizadas
+                        </p>
+                      </button>
+
+                      {/* Expandable details */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-5 pb-5 pt-2 border-t border-border space-y-4">
+                              {/* Session visual tracker */}
+                              <div>
+                                <p className="font-body text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                                  <Hash className="w-3.5 h-3.5 text-primary" />
+                                  Progresso das sessões
+                                </p>
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {Array.from({ length: plan.total_sessions }).map((_, i) => (
+                                    <div
+                                      key={i}
+                                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
+                                        i < plan.completed_sessions
+                                          ? "bg-primary text-primary-foreground"
+                                          : "bg-muted text-muted-foreground"
+                                      }`}
+                                    >
+                                      {i + 1}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Related appointments */}
+                              {relatedAppointments.length > 0 && (
+                                <div>
+                                  <p className="font-body text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                                    Agendamentos deste serviço
+                                  </p>
+                                  <div className="space-y-1.5">
+                                    {relatedAppointments.map((a) => (
+                                      <div key={a.id} className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-muted/50">
+                                        <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+                                        <p className="font-body text-xs text-muted-foreground">
+                                          {a.appointment_date} • {a.appointment_time}
+                                        </p>
+                                        <CheckCircle2 className="w-3 h-3 text-primary ml-auto shrink-0" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Plan info */}
+                              <div className="flex items-center gap-4 text-[11px] font-body text-muted-foreground">
+                                <span>Criado em {new Date(plan.created_at).toLocaleDateString("pt-BR")}</span>
+                                <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-wider font-semibold">
+                                  {plan.created_by === "auto" ? "Automático" : "Manual"}
+                                </span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   );
                 })}
