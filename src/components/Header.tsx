@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogOut, CalendarCheck, ShieldCheck, UserCircle } from "lucide-react";
+import { Menu, X, LogOut, CalendarCheck, ShieldCheck, UserCircle, Handshake } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-branca.png";
 import AuthModal from "@/components/AuthModal";
@@ -18,7 +18,7 @@ const Header = () => {
   const [profileName, setProfileName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { user, signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isPartner } = useUserRole();
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -153,6 +153,15 @@ const Header = () => {
                     Admin
                   </button>
                 )}
+                {isPartner && !isAdmin && (
+                  <button
+                    onClick={() => navigate("/parceiro")}
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
+                  >
+                    <Handshake className="w-3.5 h-3.5" />
+                    Parceiro
+                  </button>
+                )}
                 <button
                   onClick={() => navigate("/meu-perfil")}
                   className="flex items-center gap-1.5 px-3 py-1.5 border border-primary-foreground/30 text-primary-foreground font-body text-xs font-semibold rounded-full hover:bg-primary-foreground/10 transition-all duration-300 uppercase tracking-wider"
@@ -225,6 +234,15 @@ const Header = () => {
                   >
                     <ShieldCheck className="w-4 h-4" />
                     Painel Admin
+                  </button>
+                )}
+                {isPartner && !isAdmin && (
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate("/parceiro"); }}
+                    className="flex items-center justify-center gap-2 w-full py-3 border border-primary-foreground/30 text-primary-foreground font-body text-sm font-semibold rounded-full uppercase tracking-wider"
+                  >
+                    <Handshake className="w-4 h-4" />
+                    Painel Parceiro
                   </button>
                 )}
                 <button

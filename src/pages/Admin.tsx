@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,8 +13,9 @@ import AdminBranding from "@/components/admin/AdminBranding";
 import AdminPricing from "@/components/admin/AdminPricing";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminServices from "@/components/admin/AdminServices";
+import AdminPartners from "@/components/admin/AdminPartners";
 
-type Tab = "dashboard" | "agenda" | "services" | "pricing" | "payments" | "branding" | "users";
+type Tab = "dashboard" | "agenda" | "services" | "pricing" | "payments" | "branding" | "users" | "partners";
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -76,6 +77,7 @@ const Admin = () => {
     { key: "pricing", label: "Preços", icon: DollarSign },
     { key: "payments", label: "Pagamento", icon: CreditCard },
     { key: "branding", label: "Identidade Visual", icon: Palette },
+    { key: "partners", label: "Parceiros", icon: Handshake },
     { key: "users", label: "Usuários", icon: Users },
   ];
 
@@ -228,6 +230,7 @@ const Admin = () => {
           {activeTab === "pricing" && <AdminPricing />}
           {activeTab === "payments" && <AdminPaymentSettings initialSettings={settingsMap} />}
           {activeTab === "branding" && <AdminBranding />}
+          {activeTab === "partners" && <AdminPartners />}
           {activeTab === "users" && <AdminUsers />}
         </div>
       </main>

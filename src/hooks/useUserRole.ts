@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const useUserRole = () => {
   const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPartner, setIsPartner] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -13,6 +14,7 @@ export const useUserRole = () => {
     }
     if (!user) {
       setIsAdmin(false);
+      setIsPartner(false);
       setLoading(false);
       return;
     }
@@ -21,15 +23,16 @@ export const useUserRole = () => {
       const { data } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      setIsAdmin(!!data);
+        .eq("user_id", user.id);
+      
+      const roles = data?.map((r: any) => r.role) || [];
+      setIsAdmin(roles.includes("admin"));
+      setIsPartner(roles.includes("partner"));
       setLoading(false);
     };
 
     checkRole();
   }, [user, authLoading]);
 
-  return { isAdmin, loading };
+  return { isAdmin, isPartner, loading };
 };

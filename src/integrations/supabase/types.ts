@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          partner_id: string | null
           service_slug: string
           service_title: string
           status: string
@@ -33,6 +34,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          partner_id?: string | null
           service_slug: string
           service_title: string
           status?: string
@@ -45,13 +47,22 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          partner_id?: string | null
           service_slug?: string
           service_title?: string
           status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "appointments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       page_views: {
         Row: {
@@ -74,6 +85,77 @@ export type Database = {
           path?: string
           referrer?: string | null
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      partner_services: {
+        Row: {
+          id: string
+          partner_id: string
+          service_slug: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          service_slug: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          service_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_services_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          avatar_url: string | null
+          commission_pct: number
+          created_at: string
+          full_name: string
+          id: string
+          is_active: boolean
+          phone: string
+          updated_at: string
+          user_id: string
+          work_days: string[]
+          work_end: string
+          work_start: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          commission_pct?: number
+          created_at?: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          phone?: string
+          updated_at?: string
+          user_id: string
+          work_days?: string[]
+          work_end?: string
+          work_start?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          commission_pct?: number
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          phone?: string
+          updated_at?: string
+          user_id?: string
+          work_days?: string[]
+          work_end?: string
+          work_start?: string
         }
         Relationships: []
       }
@@ -310,7 +392,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "partner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -438,7 +520,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "partner"],
     },
   },
 } as const
