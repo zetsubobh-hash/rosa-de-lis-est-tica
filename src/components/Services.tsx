@@ -40,9 +40,17 @@ const Services = () => {
             Tratamentos{" "}
             <span className="text-pink-vibrant">Estéticos Completos</span>
           </h2>
-          <p className="font-body text-muted-foreground mt-4 max-w-2xl mx-auto text-sm md:text-lg leading-relaxed">
-            Selecione os serviços desejados e clique em agendar.
-          </p>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mt-6 max-w-xl mx-auto"
+          >
+            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 font-body text-sm md:text-base font-medium text-foreground">
+              👆 Toque em um serviço abaixo para <span className="text-pink-vibrant font-semibold">agendar</span>
+            </span>
+          </motion.p>
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
