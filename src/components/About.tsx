@@ -31,7 +31,6 @@ const About = () => {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-
   const handleInstall = async () => {
     if (deferredPrompt) {
       setInstalling(true);
