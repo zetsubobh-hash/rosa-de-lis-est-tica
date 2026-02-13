@@ -206,34 +206,37 @@ const AdminAgenda = () => {
 
 
   const handlePartnerAssign = async (aptId: string, partnerId: string | null) => {
-    // Refresh session to ensure auth token is valid
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData?.session) {
       toast({ title: "Sessão expirada", description: "Faça login novamente para continuar.", variant: "destructive" });
       return;
     }
 
-    console.log("[PartnerAssign] Updating appointment", aptId, "with partner_id", partnerId);
-    console.log("[PartnerAssign] Auth user:", sessionData.session.user.id);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL || "https://sxzmtnsfsyifujdnqyzr.supabase.co"}/functions/v1/admin-update-appointment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${sessionData.session.access_token}`,
+          },
+          body: JSON.stringify({ appointment_id: aptId, partner_id: partnerId }),
+        }
+      );
 
-    const { data, error, count } = await supabase
-      .from("appointments")
-      .update({ partner_id: partnerId })
-      .eq("id", aptId)
-      .select("id, partner_id");
+      const result = await response.json();
 
-    console.log("[PartnerAssign] Result:", { data, error, count });
-
-    if (error) {
-      console.error("[PartnerAssign] Error:", error);
-      toast({ title: "Erro ao atribuir parceiro", description: error.message, variant: "destructive" });
-    } else if (!data || data.length === 0) {
-      console.error("[PartnerAssign] No rows updated - RLS may be blocking");
-      toast({ title: "Erro ao atribuir parceiro", description: "Nenhuma linha atualizada. Verifique se sua sessão está ativa e tente novamente.", variant: "destructive" });
-    } else {
-      console.log("[PartnerAssign] Success:", data);
-      setAppointments((prev) => prev.map((a) => a.id === aptId ? { ...a, partner_id: partnerId } : a));
-      toast({ title: partnerId ? "Parceiro atribuído ✅" : "Parceiro removido" });
+      if (!response.ok || result.error) {
+        console.error("[PartnerAssign] Error:", result);
+        toast({ title: "Erro ao atribuir parceiro", description: result.error || "Erro desconhecido", variant: "destructive" });
+      } else {
+        setAppointments((prev) => prev.map((a) => a.id === aptId ? { ...a, partner_id: partnerId } : a));
+        toast({ title: partnerId ? "Parceiro atribuído ✅" : "Parceiro removido" });
+      }
+    } catch (err) {
+      console.error("[PartnerAssign] Fetch error:", err);
+      toast({ title: "Erro de conexão", description: "Não foi possível conectar ao servidor.", variant: "destructive" });
     }
   };
 
