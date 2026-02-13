@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers, ChevronDown, Calendar, Hash } from "lucide-react";
+import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers, ChevronDown, Calendar, Hash, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getIconByName } from "@/lib/iconMap";
@@ -357,6 +357,33 @@ const MeusAgendamentos = () => {
             </div>
           );
         })()}
+
+        {/* Google Review CTA - show if user has any confirmed appointments */}
+        {appointments.some((a) => a.status === "confirmed") && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-8 bg-card rounded-2xl border border-border p-6 text-center"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-[hsl(45,93%,47%)]/10 flex items-center justify-center mx-auto mb-3">
+              <Star className="w-6 h-6 text-[hsl(45,93%,47%)]" fill="hsl(45,93%,47%)" />
+            </div>
+            <h3 className="font-heading text-base font-bold text-foreground mb-1">Gostou do atendimento?</h3>
+            <p className="font-body text-sm text-muted-foreground mb-4">
+              Sua avaliação no Google nos ajuda muito! Compartilhe sua experiência.
+            </p>
+            <a
+              href="https://search.google.com/local/writereview?placeid=ChIJRRYRyBUezpQRfAB59bHNFMo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-body text-sm font-bold rounded-2xl hover:bg-primary/90 transition-all uppercase tracking-wider"
+            >
+              <Star className="w-4 h-4" />
+              Avaliar no Google
+            </a>
+          </motion.div>
+        )}
 
         <Link to="/" className="flex items-center justify-center gap-1 mt-8 font-body text-sm text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="w-4 h-4" />
