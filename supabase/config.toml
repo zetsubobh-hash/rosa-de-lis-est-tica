@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.appointment-reminder]
 verify_jwt = false
+
+[functions.admin-update-appointment]
+verify_jwt = false
