@@ -58,9 +58,10 @@ const AdminInstallApp = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // QR Code URL
-  const [appUrl, setAppUrl] = useState(window.location.origin);
+  const defaultInstallUrl = window.location.origin + "/instalar";
+  const [appUrl, setAppUrl] = useState(defaultInstallUrl);
   const [editingUrl, setEditingUrl] = useState(false);
-  const [urlDraft, setUrlDraft] = useState(window.location.origin);
+  const [urlDraft, setUrlDraft] = useState(defaultInstallUrl);
   const [qrKey, setQrKey] = useState(Date.now());
   const [savingUrl, setSavingUrl] = useState(false);
 
