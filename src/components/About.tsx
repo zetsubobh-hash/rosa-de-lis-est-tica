@@ -1,7 +1,51 @@
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 import womanAbout from "@/assets/woman-about.webp";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 const About = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+
+  useEffect(() => {
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+    }
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    });
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      setInstalling(true);
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") setIsInstalled(true);
+      setDeferredPrompt(null);
+      setInstalling(false);
+    } else if (isIOS) {
+      toast.info('No iPhone/iPad, toque no ícone de compartilhar do Safari e depois em "Adicionar à Tela de Início".');
+    } else {
+      toast.info("Abra este site no navegador Chrome do seu celular para instalar o app.");
+    }
+  };
+
   return (
     <section id="sobre" className="py-16 md:py-28 bg-background">
       <div className="max-w-6xl mx-auto px-5 md:px-6">
@@ -52,26 +96,27 @@ const About = () => {
               </p>
             </div>
 
-            <motion.div
-              className="mt-8 flex flex-col sm:flex-row gap-4"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-            >
-              <a
-                href="#servicos"
-                className="inline-block text-center px-8 py-3 bg-primary text-primary-foreground font-body text-sm font-semibold tracking-wider uppercase rounded-full hover:bg-primary/90 transition-all duration-300"
+            {!isInstalled && (
+              <motion.div
+                className="mt-8"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
               >
-                Nossos serviços
-              </a>
-              <a
-                href="#contato"
-                className="inline-block text-center px-8 py-3 border-2 border-primary text-primary font-body text-sm font-semibold tracking-wider uppercase rounded-full hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-              >
-                Fale conosco
-              </a>
-            </motion.div>
+                <button
+                  onClick={handleInstall}
+                  disabled={installing}
+                  className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-primary text-primary-foreground font-body text-sm font-semibold tracking-wider uppercase rounded-full hover:bg-primary/90 transition-all duration-300 disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4" />
+                  {installing ? "Instalando..." : "Baixe nosso app grátis"}
+                </button>
+                <p className="font-body text-xs text-muted-foreground mt-2.5">
+                  Acesse seus agendamentos direto da tela inicial do celular
+                </p>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </div>
