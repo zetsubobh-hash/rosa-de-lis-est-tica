@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import womanAbout from "@/assets/woman-about.webp";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -14,7 +13,6 @@ const About = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
-  const [iconUrl, setIconUrl] = useState<string>("/pwa-512x512.png");
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
   useEffect(() => {
@@ -33,16 +31,6 @@ const About = () => {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  // Load custom icon from branding bucket
-  useEffect(() => {
-    const { data } = supabase.storage.from("branding").getPublicUrl("pwa-icon.png");
-    if (data?.publicUrl) {
-      const img = new Image();
-      img.onload = () => setIconUrl(data.publicUrl + "?t=" + Date.now());
-      img.onerror = () => {};
-      img.src = data.publicUrl;
-    }
-  }, []);
 
   const handleInstall = async () => {
     if (deferredPrompt) {
@@ -111,28 +99,23 @@ const About = () => {
 
             {!isInstalled && (
               <motion.div
-                className="mt-8 flex items-center gap-5"
+                className="mt-8"
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.4 }}
               >
-                <div className="w-16 h-16 rounded-[14px] bg-white shadow-md border border-border overflow-hidden shrink-0">
-                  <img src={iconUrl} alt="Rosa de Lis App" className="w-full h-full object-contain p-1" />
-                </div>
-                <div>
-                  <button
-                    onClick={handleInstall}
-                    disabled={installing}
-                    className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-primary text-primary-foreground font-body text-sm font-semibold tracking-wider uppercase rounded-full hover:bg-primary/90 transition-all duration-300 disabled:opacity-50"
-                  >
-                    <Download className="w-4 h-4" />
-                    {installing ? "Instalando..." : "Baixe nosso app grátis"}
-                  </button>
-                  <p className="font-body text-xs text-muted-foreground mt-2">
-                    Acesse seus agendamentos direto da tela inicial do celular
-                  </p>
-                </div>
+                <button
+                  onClick={handleInstall}
+                  disabled={installing}
+                  className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-primary text-primary-foreground font-body text-sm font-semibold tracking-wider uppercase rounded-full hover:bg-primary/90 transition-all duration-300 disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4" />
+                  {installing ? "Instalando..." : "Baixe nosso app grátis"}
+                </button>
+                <p className="font-body text-xs text-muted-foreground mt-2.5">
+                  Acesse seus agendamentos direto da tela inicial do celular
+                </p>
               </motion.div>
             )}
           </motion.div>
