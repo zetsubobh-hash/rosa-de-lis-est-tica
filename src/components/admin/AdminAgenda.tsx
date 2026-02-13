@@ -205,6 +205,20 @@ const AdminAgenda = () => {
   };
 
 
+  const handlePartnerAssign = async (aptId: string, partnerId: string | null) => {
+    const { data, error } = await supabase
+      .from("appointments")
+      .update({ partner_id: partnerId })
+      .eq("id", aptId)
+      .select("id");
+    if (error || !data || data.length === 0) {
+      toast({ title: "Erro ao atribuir parceiro", description: "A alteração não foi salva. Tente novamente.", variant: "destructive" });
+    } else {
+      setAppointments((prev) => prev.map((a) => a.id === aptId ? { ...a, partner_id: partnerId } : a));
+      toast({ title: partnerId ? "Parceiro atribuído ✅" : "Parceiro removido" });
+    }
+  };
+
   const openReschedule = (apt: Appointment) => {
     setRescheduleId(apt.id);
     setNewDate(apt.appointment_date);
@@ -471,6 +485,20 @@ const AdminAgenda = () => {
                             {getAppointmentPrice(apt, allPrices)}
                           </span>
                         </div>
+                        {/* Partner assignment - always visible */}
+                        <div className="flex items-center gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                          <Handshake className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <select
+                            value={apt.partner_id || ""}
+                            onChange={(e) => handlePartnerAssign(apt.id, e.target.value || null)}
+                            className="flex-1 h-7 rounded-lg border border-border bg-background px-2 text-[11px] font-body text-foreground focus:ring-1 focus:ring-primary"
+                          >
+                            <option value="">Sem parceiro</option>
+                            {partnerOptions.map((p) => (
+                              <option key={p.id} value={p.id}>{p.full_name}</option>
+                            ))}
+                          </select>
+                        </div>
                         {/* Remarcar button - always visible */}
                         <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
                           <button
@@ -640,14 +668,7 @@ const AdminAgenda = () => {
                                 <Handshake className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                 <select
                                   value={apt.partner_id || ""}
-                                  onChange={async (e) => {
-                                    const partnerId = e.target.value || null;
-                                    const { error } = await supabase.from("appointments").update({ partner_id: partnerId }).eq("id", apt.id);
-                                    if (!error) {
-                                      setAppointments((prev) => prev.map((a) => a.id === apt.id ? { ...a, partner_id: partnerId } : a));
-                                      toast({ title: partnerId ? "Parceiro atribuído ✅" : "Parceiro removido" });
-                                    }
-                                  }}
+                                  onChange={(e) => handlePartnerAssign(apt.id, e.target.value || null)}
                                   className="flex-1 h-7 rounded-lg border border-border bg-background px-2 text-[11px] font-body text-foreground focus:ring-1 focus:ring-primary"
                                 >
                                   <option value="">Sem parceiro</option>
