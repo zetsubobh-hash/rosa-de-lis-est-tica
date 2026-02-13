@@ -471,6 +471,23 @@ const AdminAgenda = () => {
                             {getAppointmentPrice(apt, allPrices)}
                           </span>
                         </div>
+                        {/* Remarcar button - always visible */}
+                        <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => openReschedule(apt)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all"
+                          >
+                            <CalendarClock className="w-3.5 h-3.5" />
+                            Remarcar
+                          </button>
+                          <button
+                            onClick={() => handleCancel(apt.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all"
+                          >
+                            <CalendarX className="w-3.5 h-3.5" />
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
 
                       {/* Expandable section */}
