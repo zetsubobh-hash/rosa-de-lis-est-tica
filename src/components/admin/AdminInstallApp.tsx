@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, CheckCircle2, Camera, X, Check, Loader2 } from "lucide-react";
+import { Download, CheckCircle2, Camera, X, Check, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -57,6 +57,13 @@ const AdminInstallApp = () => {
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // QR Code URL
+  const [appUrl, setAppUrl] = useState(window.location.origin);
+  const [editingUrl, setEditingUrl] = useState(false);
+  const [urlDraft, setUrlDraft] = useState(window.location.origin);
+  const [qrKey, setQrKey] = useState(Date.now());
+  const [savingUrl, setSavingUrl] = useState(false);
+
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
@@ -80,9 +87,22 @@ const AdminInstallApp = () => {
     if (data?.publicUrl) {
       const img = new Image();
       img.onload = () => setIconUrl(data.publicUrl + "?t=" + Date.now());
-      img.onerror = () => {}; // fallback stays
+      img.onerror = () => {};
       img.src = data.publicUrl;
     }
+
+    // Load saved app URL
+    supabase
+      .from("payment_settings")
+      .select("value")
+      .eq("key", "app_install_url")
+      .maybeSingle()
+      .then(({ data: row }) => {
+        if (row?.value) {
+          setAppUrl(row.value);
+          setUrlDraft(row.value);
+        }
+      });
 
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
@@ -99,6 +119,34 @@ const AdminInstallApp = () => {
       toast.info("No iPhone/iPad, toque no ícone de compartilhar do Safari e depois em \"Adicionar à Tela de Início\".");
     } else {
       toast.info("Abra este site diretamente no navegador Chrome do seu celular para instalar o app.");
+    }
+  };
+
+  const handleSaveUrl = async () => {
+    const url = urlDraft.trim();
+    if (!url) return;
+    setSavingUrl(true);
+    try {
+      const { data: existing } = await supabase
+        .from("payment_settings")
+        .select("id")
+        .eq("key", "app_install_url")
+        .maybeSingle();
+
+      if (existing) {
+        await supabase.from("payment_settings").update({ value: url }).eq("key", "app_install_url");
+      } else {
+        await supabase.from("payment_settings").insert({ key: "app_install_url", value: url });
+      }
+
+      setAppUrl(url);
+      setEditingUrl(false);
+      setQrKey(Date.now());
+      toast.success("Endereço do app atualizado!");
+    } catch (err: any) {
+      toast.error("Erro: " + err.message);
+    } finally {
+      setSavingUrl(false);
     }
   };
 
@@ -228,7 +276,7 @@ const AdminInstallApp = () => {
           )}
 
           {/* QR Code for clients */}
-          <div className="pt-4 border-t border-border space-y-3">
+          <div className="pt-4 border-t border-border space-y-4">
             <p className="font-body text-sm font-semibold text-foreground">
               Mostre para seus clientes
             </p>
@@ -238,15 +286,62 @@ const AdminInstallApp = () => {
             <div className="flex justify-center">
               <div className="bg-white p-3 rounded-xl shadow-sm border border-border inline-block">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin)}&margin=8`}
+                  key={qrKey}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(appUrl)}&margin=8`}
                   alt="QR Code para instalar o app"
                   className="w-48 h-48"
                 />
               </div>
             </div>
-            <p className="font-body text-xs text-muted-foreground select-all break-all">
-              {window.location.origin}
-            </p>
+
+            {/* Editable URL */}
+            <div className="space-y-2">
+              <label className="font-body text-xs text-muted-foreground block">
+                Endereço do app (usado no QR Code)
+              </label>
+              {editingUrl ? (
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={urlDraft}
+                    onChange={(e) => setUrlDraft(e.target.value)}
+                    placeholder="https://seusite.com.br"
+                    className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveUrl}
+                    disabled={savingUrl || !urlDraft.trim()}
+                    className="gap-1.5"
+                  >
+                    {savingUrl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                    Salvar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setEditingUrl(false); setUrlDraft(appUrl); }}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="font-body text-sm font-semibold text-primary break-all select-all flex-1">
+                    {appUrl}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setEditingUrl(true); setUrlDraft(appUrl); }}
+                    className="gap-1.5 shrink-0"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Alterar
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
