@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Calendar, Clock, CalendarCheck,
+  Calendar, Clock, CalendarCheck, CalendarClock,
   Users, History, ClipboardList, CheckCircle2, Home, LogOut
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ interface Appointment {
   appointment_time: string;
   status: string;
   user_id: string;
+  notes: string | null;
   plan_id: string | null;
   session_number: number | null;
   total_sessions?: number | null;
@@ -47,6 +48,14 @@ type Tab = "agenda" | "clientes" | "historico";
 
 const getInitials = (name: string) =>
   name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+
+const isRescheduled = (apt: Appointment): boolean => {
+  if (!apt.notes) return false;
+  try {
+    const noteData = JSON.parse(apt.notes);
+    return !!noteData.rescheduled;
+  } catch { return false; }
+};
 
 const formatDate = (dateStr: string) => {
   const [y, m, d] = dateStr.split("-");
@@ -84,7 +93,7 @@ const AdminPartnerView = () => {
     const [{ data: upcoming }, { data: past }] = await Promise.all([
       supabase
         .from("appointments")
-        .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id, notes")
         .eq("partner_id", partnerId)
         .gte("appointment_date", today)
         .in("status", ["confirmed", "pending"])
@@ -92,7 +101,7 @@ const AdminPartnerView = () => {
         .order("appointment_time"),
       supabase
         .from("appointments")
-        .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id, notes")
         .eq("partner_id", partnerId)
         .in("status", ["completed", "confirmed"])
         .lt("appointment_date", today)
@@ -303,6 +312,12 @@ const AdminPartnerView = () => {
             {apt.session_number && apt.total_sessions && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-accent-foreground">
                 Sessão {apt.session_number}/{apt.total_sessions}
+              </span>
+            )}
+            {isRescheduled(apt) && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                <CalendarClock className="w-3 h-3" />
+                Remarcado
               </span>
             )}
           </div>
