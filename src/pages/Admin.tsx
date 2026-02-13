@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,8 +18,9 @@ import AdminPartnerView from "@/components/admin/AdminPartnerView";
 import AdminWhatsApp from "@/components/admin/AdminWhatsApp";
 import AdminClientPlans from "@/components/admin/AdminClientPlans";
 import AdminHistory from "@/components/admin/AdminHistory";
+import AdminInstallApp from "@/components/admin/AdminInstallApp";
 
-type Tab = "dashboard" | "agenda" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history";
+type Tab = "dashboard" | "agenda" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app";
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -87,6 +88,7 @@ const Admin = () => {
     { key: "history", label: "Finalizados", icon: History },
     { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
     { key: "users", label: "Usuários", icon: Users },
+    { key: "install-app", label: "Instalar App", icon: Smartphone },
   ];
 
   return (
@@ -244,6 +246,7 @@ const Admin = () => {
           {activeTab === "client-plans" && <AdminClientPlans />}
           {activeTab === "history" && <AdminHistory />}
           {activeTab === "users" && <AdminUsers />}
+          {activeTab === "install-app" && <AdminInstallApp />}
         </div>
       </main>
     </div>
