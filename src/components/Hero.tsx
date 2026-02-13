@@ -69,12 +69,12 @@ const Hero = () => {
       <div className="absolute top-20 right-20 w-72 h-72 rounded-full border border-primary-foreground/10 hidden lg:block" />
       <div className="absolute bottom-20 right-40 w-48 h-48 rounded-full border border-primary-foreground/10 hidden lg:block" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-5 md:px-6 w-full text-center lg:text-left">
+      <div className="relative z-10 max-w-6xl mx-auto px-5 md:px-6 w-full text-left">
         <div className="max-w-2xl mx-auto lg:mx-0">
           <motion.img
             src={logo}
             alt="Rosa de Lis"
-            className="h-16 md:h-20 w-auto mb-4 mx-auto lg:mx-0"
+            className="h-16 md:h-20 w-auto mb-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -102,7 +102,7 @@ const Hero = () => {
                 <h1 className="font-heading text-3xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-4 md:mb-6">
                   {slides[current].title}
                 </h1>
-                <p className="font-body text-primary-foreground/80 font-normal max-w-lg mx-auto lg:mx-0 text-base md:text-[25px] md:leading-[35px] leading-relaxed">
+                <p className="font-body text-primary-foreground/80 font-normal max-w-lg text-base md:text-[25px] md:leading-[35px] leading-relaxed">
                   {slides[current].subtitle}
                 </p>
               </motion.div>
@@ -110,7 +110,7 @@ const Hero = () => {
           </div>
 
           {/* Slide indicators */}
-          <div className="flex gap-1.5 md:gap-2 mb-6 md:mb-8 justify-center lg:justify-start flex-wrap">
+          <div className="flex gap-1.5 md:gap-2 mb-6 md:mb-8 justify-start flex-wrap">
             {slides.map((_, i) => (
               <button
                 key={i}
