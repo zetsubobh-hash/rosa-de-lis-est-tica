@@ -206,14 +206,32 @@ const AdminAgenda = () => {
 
 
   const handlePartnerAssign = async (aptId: string, partnerId: string | null) => {
-    const { data, error } = await supabase
+    // Refresh session to ensure auth token is valid
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session) {
+      toast({ title: "Sessão expirada", description: "Faça login novamente para continuar.", variant: "destructive" });
+      return;
+    }
+
+    console.log("[PartnerAssign] Updating appointment", aptId, "with partner_id", partnerId);
+    console.log("[PartnerAssign] Auth user:", sessionData.session.user.id);
+
+    const { data, error, count } = await supabase
       .from("appointments")
       .update({ partner_id: partnerId })
       .eq("id", aptId)
-      .select("id");
-    if (error || !data || data.length === 0) {
-      toast({ title: "Erro ao atribuir parceiro", description: "A alteração não foi salva. Tente novamente.", variant: "destructive" });
+      .select("id, partner_id");
+
+    console.log("[PartnerAssign] Result:", { data, error, count });
+
+    if (error) {
+      console.error("[PartnerAssign] Error:", error);
+      toast({ title: "Erro ao atribuir parceiro", description: error.message, variant: "destructive" });
+    } else if (!data || data.length === 0) {
+      console.error("[PartnerAssign] No rows updated - RLS may be blocking");
+      toast({ title: "Erro ao atribuir parceiro", description: "Nenhuma linha atualizada. Verifique se sua sessão está ativa e tente novamente.", variant: "destructive" });
     } else {
+      console.log("[PartnerAssign] Success:", data);
       setAppointments((prev) => prev.map((a) => a.id === aptId ? { ...a, partner_id: partnerId } : a));
       toast({ title: partnerId ? "Parceiro atribuído ✅" : "Parceiro removido" });
     }
