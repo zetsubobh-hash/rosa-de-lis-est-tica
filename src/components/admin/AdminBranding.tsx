@@ -155,10 +155,17 @@ const AdminBranding = () => {
 
       <div className="grid gap-4">
         <BrandingItem
-          label="Logomarca"
-          description="Imagem exibida no cabeçalho do site. Recomendado: PNG transparente, máx. 2MB."
+          label="Logomarca Principal"
+          description="Logo colorida exibida no cabeçalho e páginas internas. Recomendado: PNG transparente, máx. 2MB."
           icon={Image}
           fileName="logo.png"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        />
+        <BrandingItem
+          label="Logomarca Branca"
+          description="Logo clara usada no Hero, rodapé e painéis. Recomendado: PNG transparente com fundo claro, máx. 2MB."
+          icon={Image}
+          fileName="logo-white.png"
           accept="image/png,image/jpeg,image/webp,image/svg+xml"
         />
         <BrandingItem
