@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, X, Save, Search, Users, Phone,
-  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText
+  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText, KeyRound
 } from "lucide-react";
 import PartnerPaymentHistory from "@/components/admin/PartnerPaymentHistory";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +78,12 @@ const AdminPartners = () => {
   const [earnings, setEarnings] = useState<Record<string, { sessions: number; commissionCents: number }>>({});
   const [paidMap, setPaidMap] = useState<Record<string, number>>({});
   const [paymentPartnerId, setPaymentPartnerId] = useState<string | null>(null);
+
+  // Credential change state
+  const [credUsername, setCredUsername] = useState("");
+  const [credPassword, setCredPassword] = useState("");
+  const [credShowPassword, setCredShowPassword] = useState(false);
+  const [credSaving, setCredSaving] = useState(false);
 
   const fetchPartners = async () => {
     setLoading(true);
@@ -173,9 +179,18 @@ const AdminPartners = () => {
     setIsNew(true);
   };
 
-  const openEdit = (p: Partner) => {
+  const openEdit = async (p: Partner) => {
     setEditing({ ...p, specialties: [...(p.specialties || [])] });
     setIsNew(false);
+    setCredPassword("");
+    setCredShowPassword(false);
+    // Load current username
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("user_id", p.user_id)
+      .maybeSingle();
+    setCredUsername(profile?.username || "");
   };
 
   const handleSave = async () => {
@@ -302,6 +317,50 @@ const AdminPartners = () => {
         ? editing.work_days.filter((d) => d !== day)
         : [...editing.work_days, day],
     });
+  };
+
+  const handleCredentialsSave = async () => {
+    if (!editing || isNew) return;
+    if (!credUsername && !credPassword) return;
+    if (credPassword && credPassword.length < 6) {
+      toast({ title: "Senha deve ter no mínimo 6 caracteres", variant: "destructive" });
+      return;
+    }
+    setCredSaving(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        toast({ title: "Sessão expirada", variant: "destructive" });
+        setCredSaving(false);
+        return;
+      }
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL || "https://sxzmtnsfsyifujdnqyzr.supabase.co"}/functions/v1/admin-update-credentials`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${sessionData.session.access_token}`,
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4em10bnNmc3lpZnVqZG5xeXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NDc1OTcsImV4cCI6MjA4NjMyMzU5N30.WIaOFGFVrQ2eqroPSrujSC79gWdEz8UsIcrFbeL--X0",
+          },
+          body: JSON.stringify({
+            target_user_id: editing.user_id,
+            new_username: credUsername || undefined,
+            new_password: credPassword || undefined,
+          }),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        toast({ title: "Erro ao atualizar credenciais", description: result.error, variant: "destructive" });
+      } else {
+        toast({ title: "Credenciais atualizadas ✅" });
+        setCredPassword("");
+      }
+    } catch {
+      toast({ title: "Erro de conexão", variant: "destructive" });
+    }
+    setCredSaving(false);
   };
 
   const filtered = partners.filter((p) =>
@@ -656,6 +715,56 @@ const AdminPartners = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Credentials - only for existing partners */}
+                {!isNew && (
+                  <div className="pt-2 border-t border-border">
+                    <div className="flex items-center gap-2 mb-3">
+                      <KeyRound className="w-4 h-4 text-muted-foreground" />
+                      <label className="font-body text-xs font-semibold text-foreground uppercase tracking-wider">Login e Senha</label>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Username (login)</label>
+                        <Input
+                          value={credUsername}
+                          onChange={(e) => setCredUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
+                          placeholder="username"
+                          className="font-body"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Nova senha</label>
+                        <div className="relative">
+                          <Input
+                            type={credShowPassword ? "text" : "password"}
+                            value={credPassword}
+                            onChange={(e) => setCredPassword(e.target.value)}
+                            placeholder="Deixe vazio para manter a atual"
+                            className="font-body pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setCredShowPassword(!credShowPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {credShowPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCredentialsSave}
+                        disabled={credSaving || (!credUsername && !credPassword)}
+                        className="gap-1.5 w-full"
+                      >
+                        {credSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                        {credSaving ? "Salvando..." : "Atualizar Credenciais"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Active toggle */}
                 <div className="flex items-center gap-3">
