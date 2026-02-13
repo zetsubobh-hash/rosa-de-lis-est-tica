@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, CheckCircle2, Share, MoreVertical, Camera, X, Check, Loader2 } from "lucide-react";
+import { Download, CheckCircle2, Camera, X, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -199,56 +199,26 @@ const AdminInstallApp = () => {
                 Procure o ícone "Rosa de Lis" na tela inicial do seu celular
               </p>
             </div>
-          ) : deferredPrompt ? (
-            <Button onClick={handleInstall} disabled={installing} size="lg" className="w-full gap-2 text-base">
-              <Download className="w-5 h-5" />
-              {installing ? "Instalando..." : "Instalar agora"}
-            </Button>
-          ) : isIOS ? (
-            <div className="rounded-xl bg-muted/50 border border-border p-4 space-y-3">
-              <p className="font-body text-sm font-semibold text-foreground">Como instalar no iPhone / iPad:</p>
-              <div className="space-y-2 text-left">
-                <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading text-xs font-bold">1</span>
-                  <p className="font-body text-sm text-muted-foreground">
-                    Toque no ícone <Share className="w-4 h-4 inline text-primary" /> de compartilhar no Safari
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading text-xs font-bold">2</span>
-                  <p className="font-body text-sm text-muted-foreground">
-                    Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong>
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading text-xs font-bold">3</span>
-                  <p className="font-body text-sm text-muted-foreground">
-                    Confirme tocando em <strong>"Adicionar"</strong>
-                  </p>
-                </div>
-              </div>
-            </div>
           ) : (
-            <div className="rounded-xl bg-muted/50 border border-border p-4 space-y-3">
-              <p className="font-body text-sm font-semibold text-foreground">Como instalar no Android:</p>
-              <div className="space-y-2 text-left">
-                <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading text-xs font-bold">1</span>
-                  <p className="font-body text-sm text-muted-foreground">
-                    Toque no menu <MoreVertical className="w-4 h-4 inline text-primary" /> do navegador (3 pontinhos)
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading text-xs font-bold">2</span>
-                  <p className="font-body text-sm text-muted-foreground">
-                    Toque em <strong>"Instalar app"</strong> ou <strong>"Adicionar à tela inicial"</strong>
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-heading text-xs font-bold">3</span>
-                  <p className="font-body text-sm text-muted-foreground">Confirme a instalação</p>
-                </div>
-              </div>
+            <div className="space-y-4">
+              {/* Direct install button — always visible */}
+              <Button
+                onClick={handleInstall}
+                disabled={installing || !deferredPrompt}
+                size="lg"
+                className="w-full gap-2 text-base"
+              >
+                <Download className="w-5 h-5" />
+                {installing ? "Instalando..." : "Instalar agora"}
+              </Button>
+
+              {!deferredPrompt && (
+                <p className="font-body text-xs text-muted-foreground">
+                  {isIOS
+                    ? "No iOS, use o botão de compartilhar do Safari e toque em \"Adicionar à Tela de Início\"."
+                    : "Se o botão acima não funcionar, toque no menu ⋮ do navegador e selecione \"Instalar app\"."}
+                </p>
+              )}
             </div>
           )}
 
