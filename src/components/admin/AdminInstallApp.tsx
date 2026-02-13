@@ -88,13 +88,18 @@ const AdminInstallApp = () => {
   }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    setInstalling(true);
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") setIsInstalled(true);
-    setDeferredPrompt(null);
-    setInstalling(false);
+    if (deferredPrompt) {
+      setInstalling(true);
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") setIsInstalled(true);
+      setDeferredPrompt(null);
+      setInstalling(false);
+    } else if (isIOS) {
+      toast.info("No iPhone/iPad, toque no ícone de compartilhar do Safari e depois em \"Adicionar à Tela de Início\".");
+    } else {
+      toast.info("Abra este site diretamente no navegador Chrome do seu celular para instalar o app.");
+    }
   };
 
   const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
@@ -204,7 +209,7 @@ const AdminInstallApp = () => {
               {/* Direct install button — always visible */}
               <Button
                 onClick={handleInstall}
-                disabled={installing || !deferredPrompt}
+                disabled={installing}
                 size="lg"
                 className="w-full gap-2 text-base"
               >
