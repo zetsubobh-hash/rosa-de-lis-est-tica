@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useState, useCallback } from "react";
 import { Send, CheckCircle, AlertCircle } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 // Simple math captcha
 const generateCaptcha = () => {
@@ -10,6 +11,7 @@ const generateCaptcha = () => {
 };
 
 const Contact = () => {
+  const { settings } = useSiteSettings();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -59,6 +61,7 @@ const Contact = () => {
     setStatus("sending");
 
     // Build WhatsApp message as fallback (no Resend key configured yet)
+    const whatsappPhone = (settings.phone || "(31) 99588-2521").replace(/\D/g, "");
     const text = encodeURIComponent(
       `Olá! Meu nome é ${formData.name.trim()}.\n` +
       `E-mail: ${formData.email.trim()}\n` +
@@ -67,7 +70,7 @@ const Contact = () => {
       `\nMensagem: ${formData.message.trim()}`
     );
 
-    window.open(`https://wa.me/5511999999999?text=${text}`, "_blank");
+    window.open(`https://wa.me/55${whatsappPhone}?text=${text}`, "_blank");
     
     setStatus("success");
     setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
@@ -104,7 +107,7 @@ const Contact = () => {
             </p>
             <h2 className="font-heading text-2xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
               Fale com a{" "}
-              <span className="text-pink-vibrant">Rosa de Lis</span>
+              <span className="text-pink-vibrant">{settings.business_name || "Rosa de Lis"}</span>
             </h2>
             <p className="font-body text-muted-foreground text-sm md:text-base leading-relaxed mb-8">
               Tem dúvidas, quer trabalhar conosco ou ser nosso parceiro? 
@@ -112,7 +115,7 @@ const Contact = () => {
             </p>
 
             <motion.a
-              href="https://wa.me/5511999999999"
+              href={`https://wa.me/55${(settings.phone || "31995882521").replace(/\D/g, "")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#25D366] text-white font-body text-sm font-semibold tracking-wider uppercase rounded-full hover:bg-[#20bd5a] transition-all duration-300"
@@ -133,7 +136,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <p className="font-body text-foreground text-sm font-semibold">Endereço</p>
-                  <p className="font-body text-muted-foreground text-sm">Rua das Flores, 123 — Centro</p>
+                  <p className="font-body text-muted-foreground text-sm">{settings.address || "R. Francisco Castro Monteiro, 46 - Sala 704 - Buritis, Belo Horizonte - MG"}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -142,7 +145,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <p className="font-body text-foreground text-sm font-semibold">Telefone</p>
-                  <p className="font-body text-muted-foreground text-sm">(11) 99999-9999</p>
+                  <p className="font-body text-muted-foreground text-sm">{settings.phone || "(31) 99588-2521"}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -151,7 +154,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <p className="font-body text-foreground text-sm font-semibold">Horário</p>
-                  <p className="font-body text-muted-foreground text-sm">Seg a Sex: 8h às 20h | Sáb: 8h às 14h</p>
+                  <p className="font-body text-muted-foreground text-sm">{settings.business_hours || "Seg a Sex: 8h às 20h | Sáb: 8h às 14h"}</p>
                 </div>
               </div>
             </div>
