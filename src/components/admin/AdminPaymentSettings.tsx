@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Save, QrCode, CreditCard, Eye, EyeOff } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Save, QrCode, CreditCard, Eye, EyeOff, ChevronDown, RefreshCw, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   initialSettings: Record<string, string>;
@@ -22,6 +23,9 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
   const [mpEnabled, setMpEnabled] = useState(initialSettings.mercadopago_enabled === "true");
   const [mpPublicKey, setMpPublicKey] = useState(initialSettings.mercadopago_public_key || "");
   const [mpAccessToken, setMpAccessToken] = useState(initialSettings.mercadopago_access_token || "");
+
+  const [pixSettingsOpen, setPixSettingsOpen] = useState(false);
+  const [qrKey, setQrKey] = useState(Date.now());
 
   const handleSave = async () => {
     setSaving(true);
@@ -43,6 +47,7 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
         if (error) throw error;
       }
       toast({ title: "Configurações salvas! ✅" });
+      setQrKey(Date.now()); // regenera QR após salvar
     } catch {
       toast({ title: "Erro ao salvar", variant: "destructive" });
     } finally {
@@ -64,53 +69,100 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
             </button>
           </label>
         </div>
-        {pixEnabled && (
-          <div className="space-y-4">
-            <div>
-              <label className="font-body text-sm font-semibold text-foreground mb-1 block">Tipo da Chave</label>
-              <select value={pixKeyType} onChange={(e) => setPixKeyType(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                <option value="cpf">CPF</option>
-                <option value="cnpj">CNPJ</option>
-                <option value="email">E-mail</option>
-                <option value="phone">Telefone</option>
-                <option value="random">Chave aleatória</option>
-              </select>
-            </div>
-            <div>
-              <label className="font-body text-sm font-semibold text-foreground mb-1 block">Chave PIX</label>
-              <input type="text" value={pixKey} onChange={(e) => setPixKey(e.target.value)} placeholder="Digite a chave PIX" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-            </div>
-            <div>
-              <label className="font-body text-sm font-semibold text-foreground mb-1 block">Nome do Beneficiário</label>
-              <input type="text" value={pixBeneficiary} onChange={(e) => setPixBeneficiary(e.target.value)} placeholder="Nome que aparece no PIX" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-            </div>
 
-            {/* QR Code PIX para mostrar ao cliente */}
-            {pixKey && (
-              <div className="mt-6 pt-6 border-t border-border space-y-3">
+        {pixEnabled && (
+          <div className="space-y-5">
+            {/* QR Code — sempre visível */}
+            {pixKey ? (
+              <div className="space-y-4 text-center">
                 <p className="font-body text-sm font-semibold text-foreground">
-                  QR Code PIX — mostre ao cliente
-                </p>
-                <p className="font-body text-xs text-muted-foreground">
-                  O cliente escaneia com o app do banco para pagar via PIX
+                  Mostre ao cliente para pagar via PIX
                 </p>
                 <div className="flex justify-center">
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-border inline-block">
                     <img
+                      key={qrKey}
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pixKey)}&margin=8`}
                       alt="QR Code PIX"
                       className="w-52 h-52"
                     />
                   </div>
                 </div>
-                <div className="text-center space-y-1">
+                <div className="space-y-1">
                   <p className="font-body text-sm font-semibold text-foreground">{pixBeneficiary || "—"}</p>
                   <p className="font-body text-xs text-muted-foreground">
                     Chave: <span className="font-medium text-foreground select-all">{pixKey}</span>
                   </p>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQrKey(Date.now())}
+                  className="gap-2 mx-auto"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Regerar QR Code
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-muted/50 border border-border p-4 text-center">
+                <p className="font-body text-sm text-muted-foreground">
+                  Configure a chave PIX abaixo para gerar o QR Code
+                </p>
               </div>
             )}
+
+            {/* Accordion — Configurações PIX */}
+            <div className="border border-border rounded-xl overflow-hidden">
+              <button
+                onClick={() => setPixSettingsOpen(!pixSettingsOpen)}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+              >
+                <Settings className="w-4 h-4 text-muted-foreground" />
+                <span className="font-body text-sm font-semibold text-foreground flex-1 text-left">
+                  Configurações do PIX
+                </span>
+                <motion.div
+                  animate={{ rotate: pixSettingsOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </motion.div>
+              </button>
+
+              <AnimatePresence>
+                {pixSettingsOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-4 space-y-4 border-t border-border">
+                      <div>
+                        <label className="font-body text-sm font-semibold text-foreground mb-1 block">Tipo da Chave</label>
+                        <select value={pixKeyType} onChange={(e) => setPixKeyType(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                          <option value="cpf">CPF</option>
+                          <option value="cnpj">CNPJ</option>
+                          <option value="email">E-mail</option>
+                          <option value="phone">Telefone</option>
+                          <option value="random">Chave aleatória</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-body text-sm font-semibold text-foreground mb-1 block">Chave PIX</label>
+                        <input type="text" value={pixKey} onChange={(e) => setPixKey(e.target.value)} placeholder="Digite a chave PIX" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                      </div>
+                      <div>
+                        <label className="font-body text-sm font-semibold text-foreground mb-1 block">Nome do Beneficiário</label>
+                        <input type="text" value={pixBeneficiary} onChange={(e) => setPixBeneficiary(e.target.value)} placeholder="Nome que aparece no PIX" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         )}
       </motion.div>
