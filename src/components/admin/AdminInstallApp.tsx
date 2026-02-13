@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, CheckCircle2, Camera, X, Check, Loader2, Pencil } from "lucide-react";
+import { Download, CheckCircle2, Camera, X, Check, Loader2, Pencil, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -294,6 +294,15 @@ const AdminInstallApp = () => {
                 />
               </div>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setQrKey(Date.now())}
+              className="gap-2 mx-auto"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Regerar QR Code
+            </Button>
 
             {/* Editable URL */}
             <div className="space-y-2">
