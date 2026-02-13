@@ -20,7 +20,7 @@ const Hero = () => {
   const navigate = useNavigate();
 
   const handleAgendar = () => {
-    navigate(`/servicos/${slides[current].slug}`);
+    navigate(`/servico/${slides[current].slug}`);
   };
 
   useEffect(() => {
