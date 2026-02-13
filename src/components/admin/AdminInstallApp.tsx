@@ -227,17 +227,27 @@ const AdminInstallApp = () => {
             </div>
           )}
 
-          {/* Shared link */}
-          {!isInstalled && (
-            <div className="pt-2 border-t border-border">
-              <p className="font-body text-xs text-muted-foreground">
-                Compartilhe este link com seus clientes para que instalem o app:
-              </p>
-              <p className="font-body text-sm font-semibold text-primary mt-1 break-all select-all">
-                {window.location.origin}
-              </p>
+          {/* QR Code for clients */}
+          <div className="pt-4 border-t border-border space-y-3">
+            <p className="font-body text-sm font-semibold text-foreground">
+              Mostre para seus clientes
+            </p>
+            <p className="font-body text-xs text-muted-foreground">
+              Peça para escanear o QR Code abaixo com a câmera do celular para instalar o app
+            </p>
+            <div className="flex justify-center">
+              <div className="bg-white p-3 rounded-xl shadow-sm border border-border inline-block">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin)}&margin=8`}
+                  alt="QR Code para instalar o app"
+                  className="w-48 h-48"
+                />
+              </div>
             </div>
-          )}
+            <p className="font-body text-xs text-muted-foreground select-all break-all">
+              {window.location.origin}
+            </p>
+          </div>
         </div>
       </div>
 
