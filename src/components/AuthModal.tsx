@@ -36,6 +36,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [cepLoading, setCepLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const [loginError, setLoginError] = useState(false);
 
   // Login fields
   const [loginUsername, setLoginUsername] = useState("");
@@ -128,10 +129,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       const result = await res.json();
 
       if (!res.ok) {
-        toast({ title: "Erro ao entrar", description: result.error, variant: "destructive" });
+        setLoginError(true);
         setLoading(false);
         return;
       }
+
+      setLoginError(false);
 
       // Set the session using the tokens from the edge function
       const { error: sessionError } = await supabase.auth.setSession({
@@ -243,13 +246,30 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
         {mode === "login" ? (
           <form onSubmit={handleLogin} className="space-y-4 mt-2">
+            {loginError && (
+              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center space-y-2">
+                <p className="font-body text-sm text-destructive font-medium">
+                  Usuário ou senha incorretos
+                </p>
+                <p className="font-body text-xs text-muted-foreground">
+                  Não possui uma conta?{" "}
+                  <button
+                    type="button"
+                    onClick={() => { setMode("register"); setLoginError(false); }}
+                    className="text-primary font-semibold hover:underline"
+                  >
+                    Cadastre-se agora
+                  </button>
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="login-username" className="font-body text-sm">Nome completo</Label>
               <Input
                 id="login-username"
                 placeholder="Maria Silva"
                 value={loginUsername}
-                onChange={(e) => setLoginUsername(e.target.value)}
+                onChange={(e) => { setLoginUsername(e.target.value); setLoginError(false); }}
                 autoComplete="off"
               />
             </div>
@@ -261,7 +281,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   type={showLoginPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setLoginError(false); }}
                   autoComplete="current-password"
                   className="pr-10"
                 />
