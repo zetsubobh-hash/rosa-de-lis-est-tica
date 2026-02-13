@@ -47,6 +47,8 @@ const AdminSiteSettings = () => {
     { key: "address", label: "Endereço", icon: MapPin, placeholder: "Rua..., Nº - Bairro, Cidade - UF, CEP" },
     { key: "business_hours", label: "Horário de Funcionamento", icon: Clock, placeholder: "Seg a Sex: 8h às 20h | Sáb: 8h às 14h" },
     { key: "instagram_url", label: "Link do Instagram", icon: Instagram, placeholder: "https://instagram.com/rosadelis" },
+    { key: "google_place_id", label: "Google Place ID", icon: MapPin, placeholder: "ChIJ... (ID do Google Maps)" },
+    { key: "google_api_key", label: "Google Places API Key", icon: Building2, placeholder: "AIzaSy... (chave da API do Google)" },
   ];
 
   return (
@@ -62,11 +64,29 @@ const AdminSiteSettings = () => {
               <field.icon className="w-4 h-4 text-primary" />
               {field.label}
             </Label>
+            {field.key === "google_place_id" && (
+              <p className="font-body text-xs text-muted-foreground">
+                Encontre o Place ID do seu estabelecimento em{" "}
+                <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  Google Place ID Finder
+                </a>
+              </p>
+            )}
+            {field.key === "google_api_key" && (
+              <p className="font-body text-xs text-muted-foreground">
+                Crie uma chave na{" "}
+                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  Google Cloud Console
+                </a>
+                {" "}com a API "Places API" ativada.
+              </p>
+            )}
             <Input
               value={form[field.key] ?? ""}
               onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
               placeholder={field.placeholder}
               className="font-body"
+              type={field.key === "google_api_key" ? "password" : "text"}
             />
           </div>
         ))}
