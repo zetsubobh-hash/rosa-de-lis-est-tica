@@ -1,15 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Review {
   author: string;
   rating: number;
   text: string;
   timeAgo: string;
+  profilePhoto?: string;
 }
 
-const reviews: Review[] = [
+interface GoogleReviewsData {
+  rating: number;
+  totalReviews: number;
+  reviews: Review[];
+}
+
+const fallbackReviews: Review[] = [
   {
     author: "Ana Paula Silva",
     rating: 5,
@@ -63,6 +71,27 @@ const GoogleReviews = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>(fallbackReviews);
+  const [overallRating, setOverallRating] = useState(5);
+  const [totalReviews, setTotalReviews] = useState(28);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("google-reviews");
+        if (error) throw error;
+        const result = data as GoogleReviewsData;
+        if (result.reviews && result.reviews.length > 0) {
+          setReviews(result.reviews);
+          setOverallRating(result.rating);
+          setTotalReviews(result.totalReviews);
+        }
+      } catch (err) {
+        console.error("Failed to fetch Google reviews, using fallback:", err);
+      }
+    };
+    fetchReviews();
+  }, []);
 
   const checkScroll = () => {
     const el = scrollRef.current;
@@ -105,11 +134,22 @@ const GoogleReviews = () => {
           <div className="flex items-center justify-center gap-2 mt-4">
             <div className="flex items-center gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="w-5 h-5 text-[hsl(45,93%,47%)] fill-[hsl(45,93%,47%)]" />
+                <Star
+                  key={i}
+                  className={`w-5 h-5 ${
+                    i < Math.round(overallRating)
+                      ? "text-[hsl(45,93%,47%)] fill-[hsl(45,93%,47%)]"
+                      : "text-muted-foreground/30"
+                  }`}
+                />
               ))}
             </div>
-            <span className="font-heading text-xl font-bold text-foreground">5.0</span>
-            <span className="font-body text-sm text-muted-foreground">no Google</span>
+            <span className="font-heading text-xl font-bold text-foreground">
+              {overallRating.toFixed(1)}
+            </span>
+            <span className="font-body text-sm text-muted-foreground">
+              ({totalReviews} avaliações) no Google
+            </span>
             <svg className="w-5 h-5 ml-1" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -122,7 +162,6 @@ const GoogleReviews = () => {
 
       {/* Carousel */}
       <div className="relative max-w-7xl mx-auto px-6">
-        {/* Arrows */}
         {canScrollLeft && (
           <button
             onClick={() => scroll("left")}
@@ -140,7 +179,6 @@ const GoogleReviews = () => {
           </button>
         )}
 
-        {/* Cards */}
         <div
           ref={scrollRef}
           className="flex gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
@@ -158,9 +196,18 @@ const GoogleReviews = () => {
               <Quote className="w-8 h-8 text-primary/15 absolute top-4 right-4" />
 
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-heading text-sm font-bold text-primary">
-                  {review.author.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                </div>
+                {review.profilePhoto ? (
+                  <img
+                    src={review.profilePhoto}
+                    alt={review.author}
+                    className="w-10 h-10 rounded-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-heading text-sm font-bold text-primary">
+                    {review.author.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                  </div>
+                )}
                 <div>
                   <p className="font-heading text-sm font-bold text-foreground">{review.author}</p>
                   <p className="font-body text-[11px] text-muted-foreground">{review.timeAgo}</p>
