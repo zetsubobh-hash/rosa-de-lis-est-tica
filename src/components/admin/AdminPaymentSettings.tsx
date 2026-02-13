@@ -84,6 +84,33 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
               <label className="font-body text-sm font-semibold text-foreground mb-1 block">Nome do Beneficiário</label>
               <input type="text" value={pixBeneficiary} onChange={(e) => setPixBeneficiary(e.target.value)} placeholder="Nome que aparece no PIX" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
+
+            {/* QR Code PIX para mostrar ao cliente */}
+            {pixKey && (
+              <div className="mt-6 pt-6 border-t border-border space-y-3">
+                <p className="font-body text-sm font-semibold text-foreground">
+                  QR Code PIX — mostre ao cliente
+                </p>
+                <p className="font-body text-xs text-muted-foreground">
+                  O cliente escaneia com o app do banco para pagar via PIX
+                </p>
+                <div className="flex justify-center">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-border inline-block">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pixKey)}&margin=8`}
+                      alt="QR Code PIX"
+                      className="w-52 h-52"
+                    />
+                  </div>
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="font-body text-sm font-semibold text-foreground">{pixBeneficiary || "—"}</p>
+                  <p className="font-body text-xs text-muted-foreground">
+                    Chave: <span className="font-medium text-foreground select-all">{pixKey}</span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </motion.div>
