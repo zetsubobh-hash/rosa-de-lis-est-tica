@@ -220,6 +220,7 @@ const AdminAgenda = () => {
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${sessionData.session.access_token}`,
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4em10bnNmc3lpZnVqZG5xeXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NDc1OTcsImV4cCI6MjA4NjMyMzU5N30.WIaOFGFVrQ2eqroPSrujSC79gWdEz8UsIcrFbeL--X0",
           },
           body: JSON.stringify({ appointment_id: aptId, partner_id: partnerId }),
         }
