@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import referenceHero from "@/assets/reference-hero.webp";
 import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { BackgroundPaths } from "@/components/ui/background-paths";
 const slides = [
   {
     title: "Drenagem Linfática",
@@ -60,6 +61,9 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-[85vh] md:min-h-screen flex items-center overflow-hidden bg-primary pt-20 md:pt-0">
+      {/* Animated background paths */}
+      <BackgroundPaths />
+
       {/* Decorative circles */}
       <div className="absolute top-20 right-20 w-72 h-72 rounded-full border border-primary-foreground/10 hidden lg:block" />
       <div className="absolute bottom-20 right-40 w-48 h-48 rounded-full border border-primary-foreground/10 hidden lg:block" />
