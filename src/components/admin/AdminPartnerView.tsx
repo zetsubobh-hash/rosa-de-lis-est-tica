@@ -77,125 +77,142 @@ const AdminPartnerView = () => {
     fetchPartners();
   }, []);
 
+  const fetchData = async (partnerId: string) => {
+    setDataLoading(true);
+    const today = new Date().toISOString().split("T")[0];
+
+    const [{ data: upcoming }, { data: past }] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
+        .eq("partner_id", partnerId)
+        .gte("appointment_date", today)
+        .in("status", ["confirmed", "pending"])
+        .order("appointment_date")
+        .order("appointment_time"),
+      supabase
+        .from("appointments")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
+        .eq("partner_id", partnerId)
+        .in("status", ["completed", "confirmed"])
+        .lt("appointment_date", today)
+        .order("appointment_date", { ascending: false })
+        .order("appointment_time", { ascending: false })
+        .limit(50),
+    ]);
+
+    const allApts = [...(upcoming || []), ...(past || [])];
+    const userIds = [...new Set(allApts.map((a) => a.user_id))];
+    const planIds = [...new Set(allApts.filter((a) => a.plan_id).map((a) => a.plan_id!))];
+
+    const [{ data: profiles }, planByIdResult, clientPlansResult] = await Promise.all([
+      userIds.length > 0
+        ? supabase.from("profiles").select("user_id, full_name, avatar_url").in("user_id", userIds)
+        : Promise.resolve({ data: [] as any[] }),
+      planIds.length > 0
+        ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("id", planIds)
+        : Promise.resolve({ data: [] as any[] }),
+      userIds.length > 0
+        ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("user_id", userIds).eq("status", "active")
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const profileMap: Record<string, any> = {};
+    profiles?.forEach((p: any) => { profileMap[p.user_id] = p; });
+
+    const planMap: Record<string, any> = {};
+    planByIdResult?.data?.forEach((p: any) => { planMap[p.id] = p; });
+    clientPlansResult?.data?.forEach((p: any) => { if (!planMap[p.id]) planMap[p.id] = p; });
+
+    const userServicePlanMap: Record<string, any> = {};
+    clientPlansResult?.data?.forEach((p: any) => {
+      const key = `${p.user_id}::${p.service_slug}`;
+      if (!userServicePlanMap[key]) userServicePlanMap[key] = p;
+    });
+
+    const allPlanIds = [...new Set([
+      ...planIds,
+      ...(clientPlansResult?.data?.map((p: any) => p.id) || []),
+    ])];
+
+    const { data: allPlanAptsData } = allPlanIds.length > 0
+      ? await supabase.from("appointments").select("plan_id, session_number, appointment_date, appointment_time, status").in("plan_id", allPlanIds).order("session_number")
+      : { data: [] as any[] };
+
+    const planAptsMap: Record<string, { date: string; time: string; session_number: number; status: string }[]> = {};
+    allPlanAptsData?.forEach((a: any) => {
+      if (!a.plan_id) return;
+      if (!planAptsMap[a.plan_id]) planAptsMap[a.plan_id] = [];
+      planAptsMap[a.plan_id].push({ date: a.appointment_date, time: a.appointment_time, session_number: a.session_number || 0, status: a.status });
+    });
+
+    const enrichApt = (a: any): Appointment => {
+      let plan = a.plan_id ? planMap[a.plan_id] : null;
+      let resolvedPlanId = a.plan_id;
+      if (!plan && a.service_slug) {
+        const key = `${a.user_id}::${a.service_slug}`;
+        plan = userServicePlanMap[key] || null;
+        if (plan) resolvedPlanId = plan.id;
+      }
+      return {
+        ...a,
+        profile: profileMap[a.user_id] || null,
+        plan_id: resolvedPlanId || a.plan_id,
+        total_sessions: plan?.total_sessions || null,
+        completed_sessions: plan?.completed_sessions || null,
+        planSessions: resolvedPlanId ? planAptsMap[resolvedPlanId] || [] : [],
+      };
+    };
+
+    setAppointments((upcoming || []).map(enrichApt));
+    setPastAppointments((past || []).map(enrichApt));
+
+    const allPlansData = [
+      ...(planByIdResult?.data || []),
+      ...(clientPlansResult?.data || []),
+    ].filter((p: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.id === p.id) === i);
+
+    if (allPlansData.length > 0) {
+      const plans: ClientPlan[] = allPlansData
+        .filter((p: any) => p.status === "active")
+        .map((p: any) => {
+          const nextApt = (upcoming || []).find((a) => a.plan_id === p.id);
+          return {
+            ...p,
+            profile: profileMap[p.user_id] || null,
+            nextAppointment: nextApt ? { date: nextApt.appointment_date, time: nextApt.appointment_time } : null,
+            scheduledSessions: planAptsMap[p.id] || [],
+          };
+        });
+      setClientPlans(plans);
+    } else {
+      setClientPlans([]);
+    }
+
+    setDataLoading(false);
+  };
+
+  useEffect(() => {
+    if (!selectedPartner) return;
+    fetchData(selectedPartner);
+  }, [selectedPartner]);
+
+  // Realtime: refetch when appointments change
   useEffect(() => {
     if (!selectedPartner) return;
 
-    const fetchData = async () => {
-      setDataLoading(true);
-      const today = new Date().toISOString().split("T")[0];
-
-      const [{ data: upcoming }, { data: past }] = await Promise.all([
-        supabase
-          .from("appointments")
-          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
-          .eq("partner_id", selectedPartner)
-          .gte("appointment_date", today)
-          .in("status", ["confirmed", "pending"])
-          .order("appointment_date")
-          .order("appointment_time"),
-        supabase
-          .from("appointments")
-          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
-          .eq("partner_id", selectedPartner)
-          .in("status", ["completed", "confirmed"])
-          .lt("appointment_date", today)
-          .order("appointment_date", { ascending: false })
-          .order("appointment_time", { ascending: false })
-          .limit(50),
-      ]);
-
-      const allApts = [...(upcoming || []), ...(past || [])];
-      const userIds = [...new Set(allApts.map((a) => a.user_id))];
-      const planIds = [...new Set(allApts.filter((a) => a.plan_id).map((a) => a.plan_id!))];
-
-      const [{ data: profiles }, planByIdResult, clientPlansResult] = await Promise.all([
-        userIds.length > 0
-          ? supabase.from("profiles").select("user_id, full_name, avatar_url").in("user_id", userIds)
-          : Promise.resolve({ data: [] as any[] }),
-        planIds.length > 0
-          ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("id", planIds)
-          : Promise.resolve({ data: [] as any[] }),
-        userIds.length > 0
-          ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("user_id", userIds).eq("status", "active")
-          : Promise.resolve({ data: [] as any[] }),
-      ]);
-
-      const profileMap: Record<string, any> = {};
-      profiles?.forEach((p: any) => { profileMap[p.user_id] = p; });
-
-      const planMap: Record<string, any> = {};
-      planByIdResult?.data?.forEach((p: any) => { planMap[p.id] = p; });
-      clientPlansResult?.data?.forEach((p: any) => { if (!planMap[p.id]) planMap[p.id] = p; });
-
-      const userServicePlanMap: Record<string, any> = {};
-      clientPlansResult?.data?.forEach((p: any) => {
-        const key = `${p.user_id}::${p.service_slug}`;
-        if (!userServicePlanMap[key]) userServicePlanMap[key] = p;
-      });
-
-      const allPlanIds = [...new Set([
-        ...planIds,
-        ...(clientPlansResult?.data?.map((p: any) => p.id) || []),
-      ])];
-
-      const { data: allPlanAptsData } = allPlanIds.length > 0
-        ? await supabase.from("appointments").select("plan_id, session_number, appointment_date, appointment_time, status").in("plan_id", allPlanIds).order("session_number")
-        : { data: [] as any[] };
-
-      const planAptsMap: Record<string, { date: string; time: string; session_number: number; status: string }[]> = {};
-      allPlanAptsData?.forEach((a: any) => {
-        if (!a.plan_id) return;
-        if (!planAptsMap[a.plan_id]) planAptsMap[a.plan_id] = [];
-        planAptsMap[a.plan_id].push({ date: a.appointment_date, time: a.appointment_time, session_number: a.session_number || 0, status: a.status });
-      });
-
-      const enrichApt = (a: any): Appointment => {
-        let plan = a.plan_id ? planMap[a.plan_id] : null;
-        let resolvedPlanId = a.plan_id;
-        if (!plan && a.service_slug) {
-          const key = `${a.user_id}::${a.service_slug}`;
-          plan = userServicePlanMap[key] || null;
-          if (plan) resolvedPlanId = plan.id;
+    const channel = supabase
+      .channel("partner-view-appointments")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments" },
+        () => {
+          fetchData(selectedPartner);
         }
-        return {
-          ...a,
-          profile: profileMap[a.user_id] || null,
-          plan_id: resolvedPlanId || a.plan_id,
-          total_sessions: plan?.total_sessions || null,
-          completed_sessions: plan?.completed_sessions || null,
-          planSessions: resolvedPlanId ? planAptsMap[resolvedPlanId] || [] : [],
-        };
-      };
+      )
+      .subscribe();
 
-      setAppointments((upcoming || []).map(enrichApt));
-      setPastAppointments((past || []).map(enrichApt));
-
-      const allPlansData = [
-        ...(planByIdResult?.data || []),
-        ...(clientPlansResult?.data || []),
-      ].filter((p: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.id === p.id) === i);
-
-      if (allPlansData.length > 0) {
-        const plans: ClientPlan[] = allPlansData
-          .filter((p: any) => p.status === "active")
-          .map((p: any) => {
-            const nextApt = (upcoming || []).find((a) => a.plan_id === p.id);
-            return {
-              ...p,
-              profile: profileMap[p.user_id] || null,
-              nextAppointment: nextApt ? { date: nextApt.appointment_date, time: nextApt.appointment_time } : null,
-              scheduledSessions: planAptsMap[p.id] || [],
-            };
-          });
-        setClientPlans(plans);
-      } else {
-        setClientPlans([]);
-      }
-
-      setDataLoading(false);
-    };
-
-    fetchData();
+    return () => { supabase.removeChannel(channel); };
   }, [selectedPartner]);
 
   const grouped = appointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
