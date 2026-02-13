@@ -2,6 +2,7 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, CreditCard, CalendarCheck, CalendarPlus, ArrowRight, ChevronRight, Check, Star } from "lucide-react";
+import { Suspense, lazy } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -10,6 +11,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useServicePrices, formatCents } from "@/hooks/useServicePrices";
 import { useServices, DBService } from "@/hooks/useServices";
 import { getIconByName } from "@/lib/iconMap";
+
+const DotScreenShader = lazy(() =>
+  import("@/components/ui/dot-shader-background").then((m) => ({ default: m.DotScreenShader }))
+);
 
 const ServiceDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -86,21 +91,11 @@ const ServiceDetail = () => {
 
       {/* Hero banner */}
       <section className="relative pt-20 overflow-hidden">
-        <div className="absolute inset-0 bg-primary" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(var(--pink-dark))]" />
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 0.08, scale: 1 }}
-          transition={{ duration: 1.2 }}
-          className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-primary-foreground"
-        />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 0.05, scale: 1 }}
-          transition={{ duration: 1.2, delay: 0.3 }}
-          className="absolute bottom-0 -left-16 w-64 h-64 rounded-full bg-primary-foreground"
-        />
+        <div className="absolute inset-0">
+          <Suspense fallback={<div className="absolute inset-0 bg-primary" />}>
+            <DotScreenShader dotColor="#FFFFFF" bgColor="#E91E63" dotOpacity={0.06} />
+          </Suspense>
+        </div>
 
         <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-24">
           <motion.div
