@@ -18,6 +18,7 @@ import MeuPerfil from "./pages/MeuPerfil";
 import Admin from "./pages/Admin";
 import PartnerDashboard from "./pages/PartnerDashboard";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
+import Instalar from "./pages/Instalar";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/parceiro" element={<PartnerDashboard />} />
               <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+              <Route path="/instalar" element={<Instalar />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
