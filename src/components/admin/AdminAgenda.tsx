@@ -119,16 +119,46 @@ const AdminAgenda = () => {
   const [saving, setSaving] = useState(false);
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
 
-  const fetchClientPlans = () => {
-    supabase.from("client_plans").select("id, user_id, service_slug, service_title, plan_name, total_sessions, completed_sessions, status")
-      .in("status", ["active", "completed"]).then(({ data }) => { if (data) setClientPlans(data as ClientPlan[]); });
-  };
+  const fetchAll = async () => {
+    setLoading(true);
 
-  useEffect(() => {
-    supabase.from("partners").select("id, full_name").eq("is_active", true).order("full_name")
-      .then(({ data }) => { if (data) setPartnerOptions(data); });
-    fetchClientPlans();
-  }, []);
+    // Run ALL queries in parallel
+    const [appointmentsRes, profilesRes, partnersRes, plansRes] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
+        .in("status", ["confirmed", "pending"])
+        .order("appointment_date", { ascending: true })
+        .order("appointment_time", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, phone, email, sex, address, avatar_url"),
+      supabase
+        .from("partners")
+        .select("id, full_name")
+        .eq("is_active", true)
+        .order("full_name"),
+      supabase
+        .from("client_plans")
+        .select("id, user_id, service_slug, service_title, plan_name, total_sessions, completed_sessions, status")
+        .in("status", ["active", "completed"]),
+    ]);
+
+    if (partnersRes.data) setPartnerOptions(partnersRes.data);
+    if (plansRes.data) setClientPlans(plansRes.data as ClientPlan[]);
+
+    if (appointmentsRes.data) {
+      const profileMap: Record<string, Profile> = {};
+      profilesRes.data?.forEach((p: any) => {
+        profileMap[p.user_id] = p;
+      });
+      setAppointments(
+        appointmentsRes.data.map((a) => ({ ...a, profiles: profileMap[a.user_id] || null }))
+      );
+    }
+
+    setLoading(false);
+  };
 
   const updateSessions = async (planId: string, delta: number, customToast?: string) => {
     const plan = clientPlans.find((p) => p.id === planId);
@@ -143,13 +173,9 @@ const AdminAgenda = () => {
       setClientPlans((prev) => prev.map((p) => p.id === planId ? { ...p, completed_sessions: newCompleted, status: newStatus } : p));
       toast({ title: customToast || (newCompleted >= plan.total_sessions ? "Plano concluído! ✅" : "Sessão atualizada ✅") });
 
-      // When plan is completed, mark related appointments as completed and remove from agenda
       if (newStatus === "completed") {
-        // Mark appointments linked by plan_id
         await supabase.from("appointments").update({ status: "completed" }).eq("plan_id", planId).in("status", ["confirmed", "pending"]);
-        // Mark appointments linked by user_id + service_slug (avulsos)
         await supabase.from("appointments").update({ status: "completed" }).eq("user_id", plan.user_id).eq("service_slug", plan.service_slug).in("status", ["confirmed", "pending"]);
-        // Remove from local state
         setAppointments((prev) => prev.filter((a) => {
           if (a.plan_id === planId) return false;
           if (a.user_id === plan.user_id && a.service_slug === plan.service_slug) return false;
@@ -160,34 +186,8 @@ const AdminAgenda = () => {
     setUpdatingPlan(null);
   };
 
-  const fetchAppointments = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("appointments")
-      .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
-      .in("status", ["confirmed", "pending"])
-      .order("appointment_date", { ascending: true })
-      .order("appointment_time", { ascending: true });
-
-    if (data) {
-      const userIds = [...new Set(data.map((a) => a.user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, phone, email, sex, address, avatar_url")
-        .in("user_id", userIds);
-
-      const profileMap: Record<string, Profile> = {};
-      profiles?.forEach((p: any) => {
-        profileMap[p.user_id] = p;
-      });
-
-      setAppointments(data.map((a) => ({ ...a, profiles: profileMap[a.user_id] || null })));
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    fetchAppointments();
+    fetchAll();
   }, []);
 
   const handleCancel = async (id: string) => {
@@ -754,7 +754,7 @@ const AdminAgenda = () => {
         <SessionScheduleModal
           open={!!scheduleModal}
           onClose={() => setScheduleModal(null)}
-          onScheduled={() => { fetchAppointments(); fetchClientPlans(); }}
+          onScheduled={() => { fetchAll(); }}
           planId={scheduleModal.planId}
           sessionNumber={scheduleModal.sessionNumber}
           serviceSlug={scheduleModal.serviceSlug}
