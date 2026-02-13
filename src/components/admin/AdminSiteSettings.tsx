@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Save, MapPin, Phone, Instagram, Building2 } from "lucide-react";
+import { Save, MapPin, Phone, Instagram, Building2, Clock } from "lucide-react";
 
 const AdminSiteSettings = () => {
   const { settings, loading, updateSetting } = useSiteSettings();
@@ -45,6 +45,7 @@ const AdminSiteSettings = () => {
     { key: "business_name", label: "Nome do Negócio", icon: Building2, placeholder: "Rosa de Lis Estética" },
     { key: "phone", label: "Telefone", icon: Phone, placeholder: "(31) 99999-9999" },
     { key: "address", label: "Endereço", icon: MapPin, placeholder: "Rua..., Nº - Bairro, Cidade - UF, CEP" },
+    { key: "business_hours", label: "Horário de Funcionamento", icon: Clock, placeholder: "Seg a Sex: 8h às 20h | Sáb: 8h às 14h" },
     { key: "instagram_url", label: "Link do Instagram", icon: Instagram, placeholder: "https://instagram.com/rosadelis" },
   ];
 

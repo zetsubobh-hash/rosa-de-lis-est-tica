@@ -1,0 +1,1 @@
+INSERT INTO public.site_settings (key, value) VALUES ('business_hours', 'Seg a Sex: 8h às 20h | Sáb: 8h às 14h') ON CONFLICT (key) DO NOTHING;
