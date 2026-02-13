@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Smartphone, Download, CheckCircle2, Share, MoreVertical } from "lucide-react";
+import { Download, CheckCircle2, Share, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -58,11 +58,11 @@ const AdminInstallApp = () => {
       <div className="max-w-lg mx-auto">
         <div className="bg-card rounded-2xl border border-border p-6 md:p-8 text-center space-y-6">
           {/* Icon */}
-          <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+          <div className="w-24 h-24 rounded-[22px] bg-white shadow-lg border border-border flex items-center justify-center mx-auto overflow-hidden">
             {isInstalled ? (
               <CheckCircle2 className="w-10 h-10 text-emerald-500" />
             ) : (
-              <Smartphone className="w-10 h-10 text-primary" />
+              <img src="/pwa-512x512.png" alt="Rosa de Lis App" className="w-full h-full object-contain p-1" />
             )}
           </div>
 
