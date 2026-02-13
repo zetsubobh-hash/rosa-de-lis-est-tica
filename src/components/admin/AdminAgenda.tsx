@@ -232,8 +232,9 @@ const AdminAgenda = () => {
         console.error("[PartnerAssign] Error:", result);
         toast({ title: "Erro ao atribuir parceiro", description: result.error || "Erro desconhecido", variant: "destructive" });
       } else {
-        setAppointments((prev) => prev.map((a) => a.id === aptId ? { ...a, partner_id: partnerId } : a));
         toast({ title: partnerId ? "Parceiro atribuído ✅" : "Parceiro removido" });
+        // Refetch all data to ensure UI is fully synced with DB
+        await fetchAll();
       }
     } catch (err) {
       console.error("[PartnerAssign] Fetch error:", err);
