@@ -197,7 +197,7 @@ const AdminPartnerView = () => {
     fetchData(selectedPartner);
   }, [selectedPartner]);
 
-  // Realtime: refetch when appointments change
+  // Realtime: refetch when appointments change via postgres_changes
   useEffect(() => {
     if (!selectedPartner) return;
 
@@ -212,15 +212,21 @@ const AdminPartnerView = () => {
       )
       .subscribe();
 
-    // Polling fallback every 5s in case realtime doesn't fire (e.g. service_role updates)
-    const interval = setInterval(() => {
-      fetchData(selectedPartner);
-    }, 5000);
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedPartner]);
 
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
-    };
+  // Instant sync: listen for broadcast from AdminAgenda when partner is assigned/unassigned
+  useEffect(() => {
+    if (!selectedPartner) return;
+
+    const channel = supabase
+      .channel("partner-assign-sync")
+      .on("broadcast", { event: "partner-changed" }, () => {
+        fetchData(selectedPartner);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [selectedPartner]);
 
   const grouped = appointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
