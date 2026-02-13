@@ -1,56 +1,26 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import referenceHero from "@/assets/reference-hero.webp";
 import logo from "@/assets/logo-branca.png";
-import AuthModal from "@/components/AuthModal";
-import { useAuth } from "@/contexts/AuthContext";
 import { BackgroundPaths } from "@/components/ui/background-paths";
 const slides = [
-  {
-    title: "Drenagem Linfática",
-    subtitle: "O melhor tratamento para combater a retenção de líquidos.",
-  },
-  {
-    title: "Criolipólise",
-    subtitle: "Elimine gordura localizada sem cirurgia, com resultados visíveis.",
-  },
-  {
-    title: "Botox",
-    subtitle: "Suavize rugas e linhas de expressão com aspecto natural.",
-  },
-  {
-    title: "Carboxiterapia",
-    subtitle: "Melhore circulação e trate celulite com tecnologia avançada.",
-  },
-  {
-    title: "Massagem Modeladora",
-    subtitle: "Esculpa o corpo e defina suas curvas de forma natural.",
-  },
-  {
-    title: "Peeling de Diamante",
-    subtitle: "Renove sua pele e conquiste uma aparência luminosa e uniforme.",
-  },
-  {
-    title: "Radiofrequência",
-    subtitle: "Combata a flacidez e estimule colágeno para rejuvenescer.",
-  },
-  {
-    title: "Microagulhamento",
-    subtitle: "Estimule colágeno e trate cicatrizes com precisão.",
-  },
+  { title: "Drenagem Linfática", subtitle: "O melhor tratamento para combater a retenção de líquidos.", slug: "drenagem-linfatica" },
+  { title: "Criolipólise", subtitle: "Elimine gordura localizada sem cirurgia, com resultados visíveis.", slug: "criolipolise" },
+  { title: "Botox", subtitle: "Suavize rugas e linhas de expressão com aspecto natural.", slug: "botox" },
+  { title: "Carboxiterapia", subtitle: "Melhore circulação e trate celulite com tecnologia avançada.", slug: "carboxiterapia" },
+  { title: "Massagem Modeladora", subtitle: "Esculpa o corpo e defina suas curvas de forma natural.", slug: "massagem-modeladora" },
+  { title: "Peeling de Diamante", subtitle: "Renove sua pele e conquiste uma aparência luminosa e uniforme.", slug: "peeling-de-diamante" },
+  { title: "Radiofrequência", subtitle: "Combata a flacidez e estimule colágeno para rejuvenescer.", slug: "radiofrequencia" },
+  { title: "Microagulhamento", subtitle: "Estimule colágeno e trate cicatrizes com precisão.", slug: "microagulhamento" },
 ];
 
 const Hero = () => {
   const [current, setCurrent] = useState(0);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleAgendar = () => {
-    if (!user) {
-      setAuthModalOpen(true);
-    } else {
-      // TODO: navigate to scheduling page
-    }
+    navigate(`/servicos/${slides[current].slug}`);
   };
 
   useEffect(() => {
@@ -151,7 +121,7 @@ const Hero = () => {
         />
       </div>
 
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      
     </section>
   );
 };
