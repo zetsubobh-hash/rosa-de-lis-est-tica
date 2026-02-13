@@ -96,7 +96,6 @@ const AdminPartnerView = () => {
         supabase
           .from("appointments")
           .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
-          .select("id, service_title, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id")
           .eq("partner_id", selectedPartner)
           .in("status", ["completed", "confirmed"])
           .lt("appointment_date", today)
