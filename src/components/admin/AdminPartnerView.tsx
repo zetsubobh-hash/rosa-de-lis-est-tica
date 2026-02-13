@@ -212,7 +212,15 @@ const AdminPartnerView = () => {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Polling fallback every 5s in case realtime doesn't fire (e.g. service_role updates)
+    const interval = setInterval(() => {
+      fetchData(selectedPartner);
+    }, 5000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, [selectedPartner]);
 
   const grouped = appointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
