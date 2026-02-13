@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import logo from "@/assets/logo-branca.png";
+import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 
 interface SessionInfo {
   date: string;
@@ -60,6 +60,7 @@ const formatDate = (dateStr: string) => {
 
 const PartnerDashboard = () => {
   const { user, signOut } = useAuth();
+  const { logoWhite: logo } = useBrandingLogos();
   const navigate = useNavigate();
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState("");

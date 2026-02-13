@@ -5,7 +5,7 @@ import {
   Users, History, ClipboardList, CheckCircle2, Home, LogOut
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo-branca.png";
+import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 
 interface SessionInfo {
   date: string;
@@ -63,6 +63,7 @@ const formatDate = (dateStr: string) => {
 };
 
 const AdminPartnerView = () => {
+  const { logoWhite: logo } = useBrandingLogos();
   const [partners, setPartners] = useState<{ id: string; full_name: string }[]>([]);
   const [selectedPartner, setSelectedPartner] = useState<string>("");
   const [appointments, setAppointments] = useState<Appointment[]>([]);

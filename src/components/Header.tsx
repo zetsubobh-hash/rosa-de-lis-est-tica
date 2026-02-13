@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, LogOut, CalendarCheck, ShieldCheck, UserCircle, Handshake } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import logo from "@/assets/logo-branca.png";
+
 import AuthModal from "@/components/AuthModal";
 import AvatarUpload from "@/components/AvatarUpload";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 
 const Header = () => {
+  
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("#");

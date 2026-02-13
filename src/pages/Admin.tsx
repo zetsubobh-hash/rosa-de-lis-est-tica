@@ -5,7 +5,7 @@ import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, Do
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo-branca.png";
+import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminAgenda from "@/components/admin/AdminAgenda";
 import AdminPaymentSettings from "@/components/admin/AdminPaymentSettings";
@@ -25,6 +25,7 @@ type Tab = "dashboard" | "agenda" | "services" | "pricing" | "payments" | "brand
 
 const Admin = () => {
   const { user, signOut } = useAuth();
+  const { logoWhite: logo } = useBrandingLogos();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 

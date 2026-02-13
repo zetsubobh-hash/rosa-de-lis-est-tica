@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import referenceHero from "@/assets/reference-hero.webp";
-import logo from "@/assets/logo-branca.png";
+import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import { BackgroundPaths } from "@/components/ui/background-paths";
 const slides = [
   { title: "Drenagem Linfática", subtitle: "O melhor tratamento para combater a retenção de líquidos.", slug: "drenagem-linfatica" },
@@ -18,6 +18,7 @@ const slides = [
 const Hero = () => {
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
+  const { logoWhite } = useBrandingLogos();
 
   const handleAgendar = () => {
     navigate(`/servico/${slides[current].slug}`);
@@ -42,7 +43,7 @@ const Hero = () => {
       <div className="relative z-10 max-w-6xl mx-auto px-5 md:px-6 w-full text-left">
         <div className="max-w-2xl mx-auto lg:mx-0">
           <motion.img
-            src={logo}
+            src={logoWhite}
             alt="Rosa de Lis"
             className="h-16 md:h-20 w-auto mb-4"
             initial={{ opacity: 0, y: 20 }}

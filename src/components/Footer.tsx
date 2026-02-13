@@ -1,9 +1,10 @@
 import { Instagram, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo-branca.png";
+import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Footer = () => {
+  const { logoWhite } = useBrandingLogos();
   const { settings } = useSiteSettings();
 
   const phone = settings.phone || "(31) 99588-2521";
@@ -17,7 +18,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-3 gap-8 items-center">
           {/* Logo */}
           <div className="text-center md:text-left">
-            <img src={logo} alt={businessName} className="h-14 w-auto mx-auto md:mx-0 mb-3 brightness-200" />
+            <img src={logoWhite} alt={businessName} className="h-14 w-auto mx-auto md:mx-0 mb-3 brightness-200" />
             <p className="font-body text-background/50 text-xs tracking-wider">
               Estética e Beleza
             </p>
