@@ -123,7 +123,6 @@ const Header = () => {
             onClick={(e) => handleNavClick(e, "#")}
             className="flex items-center gap-2"
           >
-            <img src={logo} alt="Rosa de Lis" className="h-12 w-auto" />
           </a>
 
           {/* Desktop nav */}
