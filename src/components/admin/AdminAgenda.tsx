@@ -235,6 +235,12 @@ const AdminAgenda = () => {
         toast({ title: partnerId ? "Parceiro atribuído ✅" : "Parceiro removido" });
         // Refetch all data to ensure UI is fully synced with DB
         await fetchAll();
+        // Broadcast to other admin components (e.g. Partner View) for instant sync
+        supabase.channel("partner-assign-sync").send({
+          type: "broadcast",
+          event: "partner-changed",
+          payload: { appointment_id: aptId, partner_id: partnerId },
+        });
       }
     } catch (err) {
       console.error("[PartnerAssign] Fetch error:", err);
