@@ -159,29 +159,43 @@ serve(async (req) => {
       const vars = { nome: clientName, servico: apt.service_title, data: dateFormatted, hora: apt.appointment_time };
 
       if (notificationType === "reschedule") {
-        // Reschedule notifications — send to client, partner, and admins
+        // Reschedule notifications — each recipient gets their own message
         const rescheduleEnabled = cfg.whatsapp_msg_reschedule_enabled !== "false";
         if (!rescheduleEnabled) continue;
 
+        // Client message — personalized reschedule template
         const rescheduleTemplate = cfg.whatsapp_msg_reschedule_text || "";
-        const defaultMsg = `🔄 *Reagendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Nova Data:* ${dateFormatted}\n🕐 *Novo Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
-        const msg = rescheduleTemplate ? applyTemplate(rescheduleTemplate, vars) : defaultMsg;
+        const clientMsg = rescheduleTemplate
+          ? applyTemplate(rescheduleTemplate, vars)
+          : `Olá ${clientName}! 🔄 Seu agendamento de *${apt.service_title}* foi reagendado para o dia *${dateFormatted}* às *${apt.appointment_time}*. Nos vemos em breve! 💕`;
+
+        // Admin message — informational about the reschedule
+        const adminRescheduleMsg = adminTemplate
+          ? applyTemplate(adminTemplate.replace("Novo agendamento", "Reagendamento"), vars)
+          : `🔄 *Reagendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Nova Data:* ${dateFormatted}\n🕐 *Novo Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+
+        // Partner message — informational about the reschedule
+        const partnerRescheduleMsg = partnerTemplate
+          ? applyTemplate(partnerTemplate.replace("Novo agendamento", "Reagendamento"), vars)
+          : `🔄 *Reagendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Nova Data:* ${dateFormatted}\n🕐 *Novo Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
 
         // Send to client
         if (clientPhone) {
-          const r = await sendMessage(clientPhone, msg);
+          const r = await sendMessage(clientPhone, clientMsg);
           results.push({ ...r, type: "reschedule_client", appointment_id: apt.id });
         }
 
         // Send to admins
-        for (const phone of adminPhones) {
-          const r = await sendMessage(phone, msg);
-          results.push({ ...r, type: "reschedule_admin", appointment_id: apt.id });
+        if (adminEnabled) {
+          for (const phone of adminPhones) {
+            const r = await sendMessage(phone, adminRescheduleMsg);
+            results.push({ ...r, type: "reschedule_admin", appointment_id: apt.id });
+          }
         }
 
         // Send to partner
-        if (apt.partner_id && partnerPhones[apt.partner_id]) {
-          const r = await sendMessage(partnerPhones[apt.partner_id], msg);
+        if (partnerEnabled && apt.partner_id && partnerPhones[apt.partner_id]) {
+          const r = await sendMessage(partnerPhones[apt.partner_id], partnerRescheduleMsg);
           results.push({ ...r, type: "reschedule_partner", appointment_id: apt.id });
         }
       } else {
