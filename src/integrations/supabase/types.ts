@@ -44,6 +44,7 @@ export type Database = {
           medicamentos: string | null
           motivo_consulta: string | null
           nivel_estresse: string | null
+          observacoes: string | null
           partner_id: string | null
           problemas_pele: string[] | null
           problemas_pele_outros: string | null
@@ -84,6 +85,7 @@ export type Database = {
           medicamentos?: string | null
           motivo_consulta?: string | null
           nivel_estresse?: string | null
+          observacoes?: string | null
           partner_id?: string | null
           problemas_pele?: string[] | null
           problemas_pele_outros?: string | null
@@ -124,6 +126,7 @@ export type Database = {
           medicamentos?: string | null
           motivo_consulta?: string | null
           nivel_estresse?: string | null
+          observacoes?: string | null
           partner_id?: string | null
           problemas_pele?: string[] | null
           problemas_pele_outros?: string | null

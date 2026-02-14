@@ -86,6 +86,7 @@ interface FormData {
   assinatura_cliente: string;
   assinatura_profissional: string;
   data_assinatura: string;
+  observacoes: string;
 }
 
 const defaultForm: FormData = {
@@ -100,6 +101,7 @@ const defaultForm: FormData = {
   consentimento_informado: false, autorizacao_imagem: false,
   assinatura_cliente: "", assinatura_profissional: "",
   data_assinatura: new Date().toISOString().split("T")[0],
+  observacoes: "",
 };
 
 const IconChip = ({
@@ -155,10 +157,12 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
+  const [consultMode, setConsultMode] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setStep(0);
+    setConsultMode(false);
     loadExisting();
   }, [open, clientUserId, partnerId]);
 
@@ -208,9 +212,12 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         assinatura_cliente: d.assinatura_cliente || "",
         assinatura_profissional: d.assinatura_profissional || "",
         data_assinatura: d.data_assinatura || new Date().toISOString().split("T")[0],
+        observacoes: d.observacoes || "",
       });
+      setConsultMode(true);
     } else {
       setExistingId(null);
+      setConsultMode(false);
       setForm({ ...defaultForm });
     }
     setLoading(false);
@@ -272,30 +279,33 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
 
   if (!open) return null;
 
+  // eslint-disable-next-line no-var
+  const effectiveReadOnly = readOnly || consultMode;
+
   const renderStep0 = () => (
     <div className="space-y-4">
       <SectionTitle icon={FileText} title="Queixa Principal" />
       <div>
         <FieldLabel>Motivo da consulta</FieldLabel>
-        <textarea disabled={readOnly} value={form.motivo_consulta} onChange={(e) => setForm({ ...form, motivo_consulta: e.target.value })}
+        <textarea disabled={effectiveReadOnly} value={form.motivo_consulta} onChange={(e) => setForm({ ...form, motivo_consulta: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground resize-none focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" rows={2} placeholder="Descreva o motivo..." />
       </div>
       <div>
         <FieldLabel>Área a ser tratada</FieldLabel>
-        <textarea disabled={readOnly} value={form.area_tratada} onChange={(e) => setForm({ ...form, area_tratada: e.target.value })}
+        <textarea disabled={effectiveReadOnly} value={form.area_tratada} onChange={(e) => setForm({ ...form, area_tratada: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground resize-none focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" rows={2} placeholder="Ex: Face, abdômen..." />
       </div>
       <div>
         <FieldLabel>Há quanto tempo existe a queixa</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {TEMPO_QUEIXA_OPTIONS.map((opt) => (
-            <IconChip key={opt} label={opt} selected={form.tempo_queixa === opt} onClick={() => !readOnly && setForm({ ...form, tempo_queixa: opt })} disabled={readOnly} />
+            <IconChip key={opt} label={opt} selected={form.tempo_queixa === opt} onClick={() => !effectiveReadOnly && setForm({ ...form, tempo_queixa: opt })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
       <div>
         <FieldLabel>Tratamentos anteriores realizados</FieldLabel>
-        <textarea disabled={readOnly} value={form.tratamentos_anteriores} onChange={(e) => setForm({ ...form, tratamentos_anteriores: e.target.value })}
+        <textarea disabled={effectiveReadOnly} value={form.tratamentos_anteriores} onChange={(e) => setForm({ ...form, tratamentos_anteriores: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground resize-none focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" rows={2} placeholder="Descreva tratamentos anteriores..." />
       </div>
     </div>
@@ -308,40 +318,40 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Doenças atuais ou prévias</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DOENCAS_OPTIONS.map((d) => (
-            <ToggleChip key={d} label={d} selected={form.doencas.includes(d)} onClick={() => !readOnly && setForm({ ...form, doencas: toggleArray(form.doencas, d) })} disabled={readOnly} />
+            <ToggleChip key={d} label={d} selected={form.doencas.includes(d)} onClick={() => !effectiveReadOnly && setForm({ ...form, doencas: toggleArray(form.doencas, d) })} disabled={effectiveReadOnly} />
           ))}
         </div>
-        <input disabled={readOnly} value={form.doencas_outras} onChange={(e) => setForm({ ...form, doencas_outras: e.target.value })}
+        <input disabled={effectiveReadOnly} value={form.doencas_outras} onChange={(e) => setForm({ ...form, doencas_outras: e.target.value })}
           className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Outras doenças..." />
       </div>
       <div>
         <FieldLabel>Cirurgias realizadas</FieldLabel>
-        <input disabled={readOnly} value={form.cirurgias} onChange={(e) => setForm({ ...form, cirurgias: e.target.value })}
+        <input disabled={effectiveReadOnly} value={form.cirurgias} onChange={(e) => setForm({ ...form, cirurgias: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Descreva cirurgias..." />
       </div>
       <div>
         <FieldLabel>Alergias</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {ALERGIAS_OPTIONS.map((a) => (
-            <ToggleChip key={a} label={a} selected={form.alergias.includes(a)} onClick={() => !readOnly && setForm({ ...form, alergias: toggleArray(form.alergias, a) })} disabled={readOnly} />
+            <ToggleChip key={a} label={a} selected={form.alergias.includes(a)} onClick={() => !effectiveReadOnly && setForm({ ...form, alergias: toggleArray(form.alergias, a) })} disabled={effectiveReadOnly} />
           ))}
         </div>
-        <input disabled={readOnly} value={form.alergias_outras} onChange={(e) => setForm({ ...form, alergias_outras: e.target.value })}
+        <input disabled={effectiveReadOnly} value={form.alergias_outras} onChange={(e) => setForm({ ...form, alergias_outras: e.target.value })}
           className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Outras alergias..." />
       </div>
       <div>
         <FieldLabel>Medicamentos contínuos</FieldLabel>
-        <input disabled={readOnly} value={form.medicamentos} onChange={(e) => setForm({ ...form, medicamentos: e.target.value })}
+        <input disabled={effectiveReadOnly} value={form.medicamentos} onChange={(e) => setForm({ ...form, medicamentos: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Liste os medicamentos..." />
       </div>
       <div>
         <FieldLabel>Distúrbios hormonais</FieldLabel>
         <div className="flex gap-2">
-          <IconChip label="Sim" icon={AlertTriangle} selected={form.disturbios_hormonais} onClick={() => !readOnly && setForm({ ...form, disturbios_hormonais: true })} disabled={readOnly} />
-          <IconChip label="Não" icon={Shield} selected={!form.disturbios_hormonais} onClick={() => !readOnly && setForm({ ...form, disturbios_hormonais: false })} disabled={readOnly} />
+          <IconChip label="Sim" icon={AlertTriangle} selected={form.disturbios_hormonais} onClick={() => !effectiveReadOnly && setForm({ ...form, disturbios_hormonais: true })} disabled={effectiveReadOnly} />
+          <IconChip label="Não" icon={Shield} selected={!form.disturbios_hormonais} onClick={() => !effectiveReadOnly && setForm({ ...form, disturbios_hormonais: false })} disabled={effectiveReadOnly} />
         </div>
         {form.disturbios_hormonais && (
-          <input disabled={readOnly} value={form.disturbios_hormonais_detalhe} onChange={(e) => setForm({ ...form, disturbios_hormonais_detalhe: e.target.value })}
+          <input disabled={effectiveReadOnly} value={form.disturbios_hormonais_detalhe} onChange={(e) => setForm({ ...form, disturbios_hormonais_detalhe: e.target.value })}
             className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Quais distúrbios..." />
         )}
       </div>
@@ -349,17 +359,17 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Problemas de pele diagnosticados</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {PROBLEMAS_PELE_OPTIONS.map((p) => (
-            <ToggleChip key={p} label={p} selected={form.problemas_pele.includes(p)} onClick={() => !readOnly && setForm({ ...form, problemas_pele: toggleArray(form.problemas_pele, p) })} disabled={readOnly} />
+            <ToggleChip key={p} label={p} selected={form.problemas_pele.includes(p)} onClick={() => !effectiveReadOnly && setForm({ ...form, problemas_pele: toggleArray(form.problemas_pele, p) })} disabled={effectiveReadOnly} />
           ))}
         </div>
-        <input disabled={readOnly} value={form.problemas_pele_outros} onChange={(e) => setForm({ ...form, problemas_pele_outros: e.target.value })}
+        <input disabled={effectiveReadOnly} value={form.problemas_pele_outros} onChange={(e) => setForm({ ...form, problemas_pele_outros: e.target.value })}
           className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Outros problemas..." />
       </div>
       <div>
         <FieldLabel>Gestação ou amamentação</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {GESTANTE_OPTIONS.map((g) => (
-            <IconChip key={g.value} label={g.label} icon={g.value === "nao" ? Shield : Baby} selected={form.gestante_amamentando === g.value} onClick={() => !readOnly && setForm({ ...form, gestante_amamentando: g.value })} disabled={readOnly} />
+            <IconChip key={g.value} label={g.label} icon={g.value === "nao" ? Shield : Baby} selected={form.gestante_amamentando === g.value} onClick={() => !effectiveReadOnly && setForm({ ...form, gestante_amamentando: g.value })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
@@ -373,7 +383,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Consumo de água</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {AGUA_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Droplets} selected={form.consumo_agua === o} onClick={() => !readOnly && setForm({ ...form, consumo_agua: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Droplets} selected={form.consumo_agua === o} onClick={() => !effectiveReadOnly && setForm({ ...form, consumo_agua: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
@@ -381,7 +391,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Alimentação</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {ALIMENTACAO_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Apple} selected={form.alimentacao === o} onClick={() => !readOnly && setForm({ ...form, alimentacao: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Apple} selected={form.alimentacao === o} onClick={() => !effectiveReadOnly && setForm({ ...form, alimentacao: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
@@ -389,23 +399,23 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Prática de atividade física</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {ATIVIDADE_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Dumbbell} selected={form.atividade_fisica === o} onClick={() => !readOnly && setForm({ ...form, atividade_fisica: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Dumbbell} selected={form.atividade_fisica === o} onClick={() => !effectiveReadOnly && setForm({ ...form, atividade_fisica: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
       <div>
         <FieldLabel>Tabagismo</FieldLabel>
         <div className="flex gap-2">
-          <IconChip label="Não" icon={Shield} selected={form.tabagismo === "nao"} onClick={() => !readOnly && setForm({ ...form, tabagismo: "nao" })} disabled={readOnly} />
-          <IconChip label="Sim" icon={Cigarette} selected={form.tabagismo === "sim"} onClick={() => !readOnly && setForm({ ...form, tabagismo: "sim" })} disabled={readOnly} />
-          <IconChip label="Ex-fumante" icon={Cigarette} selected={form.tabagismo === "ex"} onClick={() => !readOnly && setForm({ ...form, tabagismo: "ex" })} disabled={readOnly} />
+          <IconChip label="Não" icon={Shield} selected={form.tabagismo === "nao"} onClick={() => !effectiveReadOnly && setForm({ ...form, tabagismo: "nao" })} disabled={effectiveReadOnly} />
+          <IconChip label="Sim" icon={Cigarette} selected={form.tabagismo === "sim"} onClick={() => !effectiveReadOnly && setForm({ ...form, tabagismo: "sim" })} disabled={effectiveReadOnly} />
+          <IconChip label="Ex-fumante" icon={Cigarette} selected={form.tabagismo === "ex"} onClick={() => !effectiveReadOnly && setForm({ ...form, tabagismo: "ex" })} disabled={effectiveReadOnly} />
         </div>
       </div>
       <div>
         <FieldLabel>Consumo de álcool</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {ALCOOL_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Wine} selected={form.consumo_alcool === o} onClick={() => !readOnly && setForm({ ...form, consumo_alcool: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Wine} selected={form.consumo_alcool === o} onClick={() => !effectiveReadOnly && setForm({ ...form, consumo_alcool: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
@@ -413,7 +423,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Qualidade do sono</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {SONO_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Moon} selected={form.qualidade_sono === o} onClick={() => !readOnly && setForm({ ...form, qualidade_sono: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Moon} selected={form.qualidade_sono === o} onClick={() => !effectiveReadOnly && setForm({ ...form, qualidade_sono: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
@@ -421,7 +431,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Nível de estresse</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {ESTRESSE_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Brain} selected={form.nivel_estresse === o} onClick={() => !readOnly && setForm({ ...form, nivel_estresse: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Brain} selected={form.nivel_estresse === o} onClick={() => !effectiveReadOnly && setForm({ ...form, nivel_estresse: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
@@ -435,7 +445,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Tipo de pele</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {TIPO_PELE_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Sparkles} selected={form.tipo_pele === o} onClick={() => !readOnly && setForm({ ...form, tipo_pele: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Sparkles} selected={form.tipo_pele === o} onClick={() => !effectiveReadOnly && setForm({ ...form, tipo_pele: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
@@ -443,7 +453,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Fototipo (Escala de Fitzpatrick)</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {FOTOTIPO_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Sun} selected={form.fototipo === o} onClick={() => !readOnly && setForm({ ...form, fototipo: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Sun} selected={form.fototipo === o} onClick={() => !effectiveReadOnly && setForm({ ...form, fototipo: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
@@ -451,23 +461,23 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         <FieldLabel>Condições estéticas presentes</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {CONDICOES_ESTETICAS_OPTIONS.map((c) => (
-            <ToggleChip key={c} label={c} selected={form.condicoes_esteticas.includes(c)} onClick={() => !readOnly && setForm({ ...form, condicoes_esteticas: toggleArray(form.condicoes_esteticas, c) })} disabled={readOnly} />
+            <ToggleChip key={c} label={c} selected={form.condicoes_esteticas.includes(c)} onClick={() => !effectiveReadOnly && setForm({ ...form, condicoes_esteticas: toggleArray(form.condicoes_esteticas, c) })} disabled={effectiveReadOnly} />
           ))}
         </div>
-        <input disabled={readOnly} value={form.condicoes_esteticas_outras} onChange={(e) => setForm({ ...form, condicoes_esteticas_outras: e.target.value })}
+        <input disabled={effectiveReadOnly} value={form.condicoes_esteticas_outras} onChange={(e) => setForm({ ...form, condicoes_esteticas_outras: e.target.value })}
           className="mt-2 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Outras condições..." />
       </div>
       <div>
         <FieldLabel>Grau de sensibilidade</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {SENSIBILIDADE_OPTIONS.map((o) => (
-            <IconChip key={o} label={o} icon={Shield} selected={form.grau_sensibilidade === o} onClick={() => !readOnly && setForm({ ...form, grau_sensibilidade: o })} disabled={readOnly} />
+            <IconChip key={o} label={o} icon={Shield} selected={form.grau_sensibilidade === o} onClick={() => !effectiveReadOnly && setForm({ ...form, grau_sensibilidade: o })} disabled={effectiveReadOnly} />
           ))}
         </div>
       </div>
       <div>
         <FieldLabel>Avaliação corporal (medidas, IMC, adiposidade)</FieldLabel>
-        <textarea disabled={readOnly} value={form.avaliacao_corporal} onChange={(e) => setForm({ ...form, avaliacao_corporal: e.target.value })}
+        <textarea disabled={effectiveReadOnly} value={form.avaliacao_corporal} onChange={(e) => setForm({ ...form, avaliacao_corporal: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground resize-none focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" rows={3} placeholder="Descreva medidas, IMC..." />
       </div>
     </div>
@@ -484,30 +494,38 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
         </div>
         <div className="flex flex-wrap gap-3">
           <ToggleChip label="Consentimento informado" selected={form.consentimento_informado}
-            onClick={() => !readOnly && setForm({ ...form, consentimento_informado: !form.consentimento_informado })} disabled={readOnly} />
+            onClick={() => !effectiveReadOnly && setForm({ ...form, consentimento_informado: !form.consentimento_informado })} disabled={effectiveReadOnly} />
           <ToggleChip label="Autorização para uso de imagem" selected={form.autorizacao_imagem}
-            onClick={() => !readOnly && setForm({ ...form, autorizacao_imagem: !form.autorizacao_imagem })} disabled={readOnly} />
+            onClick={() => !effectiveReadOnly && setForm({ ...form, autorizacao_imagem: !form.autorizacao_imagem })} disabled={effectiveReadOnly} />
         </div>
       </div>
       <div>
         <FieldLabel>Assinatura do cliente (nome completo)</FieldLabel>
-        <input disabled={readOnly} value={form.assinatura_cliente} onChange={(e) => setForm({ ...form, assinatura_cliente: e.target.value })}
+        <input disabled={effectiveReadOnly} value={form.assinatura_cliente} onChange={(e) => setForm({ ...form, assinatura_cliente: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Nome completo do cliente" />
       </div>
       <div>
         <FieldLabel>Assinatura da profissional (nome completo)</FieldLabel>
-        <input disabled={readOnly} value={form.assinatura_profissional} onChange={(e) => setForm({ ...form, assinatura_profissional: e.target.value })}
+        <input disabled={effectiveReadOnly} value={form.assinatura_profissional} onChange={(e) => setForm({ ...form, assinatura_profissional: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" placeholder="Nome completo da profissional" />
       </div>
       <div>
         <FieldLabel>Data</FieldLabel>
-        <input type="date" disabled={readOnly} value={form.data_assinatura} onChange={(e) => setForm({ ...form, data_assinatura: e.target.value })}
+        <input type="date" disabled={effectiveReadOnly} value={form.data_assinatura} onChange={(e) => setForm({ ...form, data_assinatura: e.target.value })}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50" />
+      </div>
+      <div className="mt-4 pt-4 border-t border-border">
+        <FieldLabel>📝 Observações da profissional</FieldLabel>
+        <textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+          className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-body text-foreground resize-none focus:ring-2 focus:ring-primary focus:outline-none" rows={4} placeholder="Anotações, observações sobre o cliente..." />
+        <p className="font-body text-[10px] text-muted-foreground mt-1">Este campo pode ser editado a qualquer momento.</p>
       </div>
     </div>
   );
 
   const formatDateBR = (d: string) => { const [y, m, dd] = d.split("-"); return `${dd}/${m}/${y}`; };
+
+  
 
   return (
     <AnimatePresence>
@@ -526,11 +544,25 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
               <div>
                 <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  Ficha de Anamnese
+                  {consultMode ? "Consultar Anamnese" : "Ficha de Anamnese"}
                 </h3>
                 <p className="font-body text-xs text-muted-foreground mt-0.5">{clientName}</p>
               </div>
               <div className="flex items-center gap-2">
+                {existingId && !readOnly && (
+                  <button
+                    onClick={() => setConsultMode(!consultMode)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors border ${
+                      consultMode
+                        ? "border-primary/20 text-primary hover:bg-primary/10"
+                        : "border-border text-muted-foreground hover:bg-muted"
+                    }`}
+                    title={consultMode ? "Editar ficha" : "Modo consulta"}
+                  >
+                    <Pen className="w-3.5 h-3.5" />
+                    {consultMode ? "Editar" : "Consultar"}
+                  </button>
+                )}
                 {existingId && (
                   <button onClick={handlePrint} className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Imprimir">
                     <Printer className="w-4 h-4" />
@@ -587,7 +619,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
                   <button onClick={save} disabled={saving}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
                     <Save className="w-3.5 h-3.5" />
-                    {saving ? "Salvando..." : "Salvar"}
+                    {saving ? "Salvando..." : consultMode ? "Salvar Obs." : "Salvar"}
                   </button>
                 )}
                 {step < 4 && (
@@ -641,6 +673,12 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
               <div><span className="signature-line">{form.assinatura_profissional}</span><br/><small>Assinatura da Profissional</small></div>
             </div>
             <p style={{marginTop: "20px"}}>Data: {form.data_assinatura ? formatDateBR(form.data_assinatura) : "—"}</p>
+            {form.observacoes && (
+              <>
+                <h2>6. Observações</h2>
+                <div className="field"><span className="value">{form.observacoes}</span></div>
+              </>
+            )}
           </div>
         </motion.div>
       )}

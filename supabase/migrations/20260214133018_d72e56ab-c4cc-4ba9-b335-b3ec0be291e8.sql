@@ -1,0 +1,1 @@
+ALTER TABLE public.anamnesis ADD COLUMN observacoes TEXT DEFAULT '';
