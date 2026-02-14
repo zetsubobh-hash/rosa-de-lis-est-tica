@@ -273,9 +273,10 @@ const AdminUsers = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="bg-card rounded-2xl border border-border p-5 hover:shadow-md transition-shadow"
+              className="bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-shadow"
             >
-              <div className="flex items-center gap-3">
+              {/* Top row: avatar + info */}
+              <div className="flex items-start gap-3">
                 <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                   {u.avatar_url ? (
                     <img src={u.avatar_url} alt={u.full_name} className="w-full h-full object-cover" />
@@ -286,7 +287,7 @@ const AdminUsers = () => {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={`shrink-0 w-2.5 h-2.5 rounded-full ${
                         isOnline(u.last_seen) ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-muted-foreground/30"
@@ -315,65 +316,69 @@ const AdminUsers = () => {
                     <p className="font-body text-xs text-muted-foreground truncate mt-0.5">{u.email}</p>
                   )}
                 </div>
-                {u.user_id === MASTER_ADMIN_ID ? (
-                  <span className="shrink-0 px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground/50">
+              </div>
+
+              {/* Bottom row: actions */}
+              {u.user_id === MASTER_ADMIN_ID ? (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <span className="px-3 py-2 rounded-xl text-xs font-medium text-muted-foreground/50">
                     Protegido
                   </span>
-                ) : (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => setHistoryUser(u)}
-                      className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
-                      title="Histórico do cliente"
-                    >
-                      <History className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => openEditUser(u)}
-                      className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
-                      title="Editar dados"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setAnamnesisUser(u)}
-                      className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
-                      title="Ficha de Anamnese"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => toggleAdmin(u.user_id, u.isAdmin)}
-                      disabled={toggling === u.user_id}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all disabled:opacity-50 ${
-                        u.isAdmin
-                          ? "border-destructive/20 text-destructive hover:bg-destructive/5"
-                          : "border-primary/20 text-primary hover:bg-primary/5"
-                      }`}
-                    >
-                      {u.isAdmin ? (
-                        <>
-                          <ShieldOff className="w-3.5 h-3.5" />
-                          Remover
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          Promover
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => setUserToDelete(u)}
-                      disabled={deleting === u.user_id}
-                      className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 border border-transparent hover:border-destructive/20 transition-all disabled:opacity-50"
-                      title="Excluir usuário"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => setHistoryUser(u)}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
+                    title="Histórico do cliente"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => openEditUser(u)}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
+                    title="Editar dados"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setAnamnesisUser(u)}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
+                    title="Ficha de Anamnese"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => toggleAdmin(u.user_id, u.isAdmin)}
+                    disabled={toggling === u.user_id}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all disabled:opacity-50 ${
+                      u.isAdmin
+                        ? "border-destructive/20 text-destructive hover:bg-destructive/5"
+                        : "border-primary/20 text-primary hover:bg-primary/5"
+                    }`}
+                  >
+                    {u.isAdmin ? (
+                      <>
+                        <ShieldOff className="w-3.5 h-3.5" />
+                        Remover
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Promover
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setUserToDelete(u)}
+                    disabled={deleting === u.user_id}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 border border-transparent hover:border-destructive/20 transition-all disabled:opacity-50 ml-auto"
+                    title="Excluir usuário"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
