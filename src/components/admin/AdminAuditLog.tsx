@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Search, Shield, LogIn, LogOut, ShoppingBag, CalendarCheck, Users, Settings, RefreshCw } from "lucide-react";
+import { Search, Shield, LogIn, LogOut, ShoppingBag, CalendarCheck, Users, Settings, RefreshCw, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface AuditEntry {
   id: string;
@@ -65,6 +67,19 @@ const AdminAuditLog = () => {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
+  const [clearing, setClearing] = useState(false);
+
+  const handleClearLogs = async () => {
+    setClearing(true);
+    const { error } = await (supabase.from("audit_logs" as any).delete() as any).neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) {
+      toast.error("Erro ao limpar registros");
+    } else {
+      toast.success("Registros limpos com sucesso");
+      setLogs([]);
+    }
+    setClearing(false);
+  };
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -157,6 +172,28 @@ const AdminAuditLog = () => {
         <Button variant="outline" size="icon" onClick={fetchLogs} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" className="gap-2" disabled={clearing || logs.length === 0}>
+              <Trash2 className="w-4 h-4" />
+              Limpar
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Limpar todos os registros?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação vai excluir permanentemente todos os {logs.length} registros de auditoria. Essa ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearLogs} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Sim, limpar tudo
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Table */}
