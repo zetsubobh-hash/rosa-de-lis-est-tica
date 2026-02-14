@@ -60,7 +60,20 @@ const Header = () => {
       if (data) {
         const greeting = data.sex === "masculino" ? "Seja bem-vindo" : "Seja bem-vinda";
         setProfileName(`${greeting}, ${data.full_name}, à Rosa de Lis Estética!`);
-        setAvatarUrl(data.avatar_url || null);
+        
+        let finalAvatar = data.avatar_url || null;
+        // Fallback: se não tem avatar no perfil, busca do parceiro
+        if (!finalAvatar) {
+          const { data: partnerData } = await supabase
+            .from("partners")
+            .select("avatar_url")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (partnerData?.avatar_url) {
+            finalAvatar = partnerData.avatar_url;
+          }
+        }
+        setAvatarUrl(finalAvatar);
       }
     };
     fetchProfile();
