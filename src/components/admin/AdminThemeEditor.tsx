@@ -323,52 +323,55 @@ const AdminThemeEditor = () => {
         <div className="bg-card rounded-xl border border-border p-4 space-y-3">
           <Label className="font-body text-sm font-semibold flex items-center gap-2">
             <Palette className="w-4 h-4 text-primary" />
-            Temas Salvos
+            Tema Ativo
           </Label>
-          <div className="flex flex-wrap gap-2">
-            {themes.map((theme) => (
-              <div key={theme.id} className="flex items-center gap-1">
-                <Button
-                  variant={theme.id === activeThemeId ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleSelectTheme(theme.id)}
-                  className="gap-2 font-body"
-                >
-                  {theme.id === activeThemeId && <Check className="w-3.5 h-3.5" />}
-                  <div className="flex gap-0.5">
-                    {Object.values(theme.colors).slice(0, 4).map((hsl, i) => (
-                      <span
-                        key={i}
-                        className="w-3 h-3 rounded-full border border-border/50 inline-block"
-                        style={{ backgroundColor: `hsl(${hsl})` }}
-                      />
-                    ))}
-                  </div>
-                  {theme.name}
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir tema "{theme.name}"?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Essa ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteTheme(theme.id)}>
-                        Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            ))}
+          <div className="flex items-center gap-3">
+            <Select value={activeThemeId || ""} onValueChange={handleSelectTheme}>
+              <SelectTrigger className="font-body flex-1">
+                <SelectValue placeholder="Selecione um tema..." />
+              </SelectTrigger>
+              <SelectContent>
+                {themes.map((theme) => (
+                  <SelectItem key={theme.id} value={theme.id} className="font-body">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-0.5">
+                        {Object.values(theme.colors).slice(0, 5).map((hsl, i) => (
+                          <span
+                            key={i}
+                            className="w-3 h-3 rounded-full border border-border/50 inline-block"
+                            style={{ backgroundColor: `hsl(${hsl})` }}
+                          />
+                        ))}
+                      </div>
+                      {theme.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {activeTheme && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-muted-foreground hover:text-destructive shrink-0">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir tema "{activeTheme.name}"?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Essa ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeleteTheme(activeTheme.id)}>
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
       )}
