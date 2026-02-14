@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Search, Shield, LogIn, LogOut, ShoppingBag, CalendarCheck, Users, Settings, RefreshCw, Trash2 } from "lucide-react";
+import { Search, Shield, LogIn, LogOut, ShoppingBag, CalendarCheck, Users, Settings, RefreshCw, Trash2, Timer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface AuditEntry {
@@ -68,6 +70,65 @@ const AdminAuditLog = () => {
   const [roleFilter, setRoleFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
   const [clearing, setClearing] = useState(false);
+  const [autoCleanup, setAutoCleanup] = useState(false);
+  const [cleanupHours, setCleanupHours] = useState("48");
+  const [savingCleanup, setSavingCleanup] = useState(false);
+
+  // Load cleanup settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      const { data } = await supabase.from("site_settings").select("key, value").in("key", ["audit_auto_cleanup", "audit_cleanup_hours"]);
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((r: any) => { map[r.key] = r.value; });
+        setAutoCleanup(map.audit_auto_cleanup === "true");
+        if (map.audit_cleanup_hours) setCleanupHours(map.audit_cleanup_hours);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // Run auto-cleanup on load
+  useEffect(() => {
+    if (autoCleanup) {
+      supabase.rpc("cleanup_old_audit_logs" as any).then(() => {});
+    }
+  }, [autoCleanup]);
+
+  const saveCleanupSettings = async (enabled: boolean, hours: string) => {
+    setSavingCleanup(true);
+    const upsert = async (key: string, value: string) => {
+      const { data: existing } = await supabase.from("site_settings").select("id").eq("key", key).maybeSingle();
+      if (existing) {
+        await supabase.from("site_settings").update({ value }).eq("key", key);
+      } else {
+        await supabase.from("site_settings").insert({ key, value } as any);
+      }
+    };
+    await Promise.all([
+      upsert("audit_auto_cleanup", enabled ? "true" : "false"),
+      upsert("audit_cleanup_hours", hours),
+    ]);
+    toast.success("Configuração de limpeza salva");
+    setSavingCleanup(false);
+    if (enabled) {
+      const { data } = await supabase.rpc("cleanup_old_audit_logs" as any);
+      if (data && (data as number) > 0) {
+        toast.info(`${data} registros antigos removidos`);
+        fetchLogs();
+      }
+    }
+  };
+
+  const handleToggleAutoCleanup = async (checked: boolean) => {
+    setAutoCleanup(checked);
+    await saveCleanupSettings(checked, cleanupHours);
+  };
+
+  const handleChangeHours = async (value: string) => {
+    setCleanupHours(value);
+    await saveCleanupSettings(autoCleanup, value);
+  };
 
   const handleClearLogs = async () => {
     setClearing(true);
@@ -145,7 +206,38 @@ const AdminAuditLog = () => {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Auto-cleanup config */}
+      <Card className="border-dashed">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Timer className="w-5 h-5 text-muted-foreground" />
+              <Label htmlFor="auto-cleanup" className="font-medium cursor-pointer">Limpeza Automática</Label>
+              <Switch id="auto-cleanup" checked={autoCleanup} onCheckedChange={handleToggleAutoCleanup} disabled={savingCleanup} />
+            </div>
+            {autoCleanup && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Excluir registros com mais de</span>
+                <Select value={cleanupHours} onValueChange={handleChangeHours} disabled={savingCleanup}>
+                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="12">12 horas</SelectItem>
+                    <SelectItem value="24">24 horas</SelectItem>
+                    <SelectItem value="48">48 horas</SelectItem>
+                    <SelectItem value="72">3 dias</SelectItem>
+                    <SelectItem value="168">7 dias</SelectItem>
+                    <SelectItem value="720">30 dias</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <span className={`text-xs px-2 py-1 rounded-full ${autoCleanup ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+              {autoCleanup ? "Ligado" : "Desligado"}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
