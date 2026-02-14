@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText, Pencil, Save, Key } from "lucide-react";
+import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText, Pencil, Save, Key, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import AnamnesisModal from "@/components/AnamnesisModal";
+import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +50,7 @@ const AdminUsers = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [anamnesisUser, setAnamnesisUser] = useState<UserProfile | null>(null);
+  const [historyUser, setHistoryUser] = useState<UserProfile | null>(null);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string; username: string; new_password: string }>({ full_name: "", phone: "", email: "", address: "", sex: "", username: "", new_password: "" });
   const [savingEdit, setSavingEdit] = useState(false);
@@ -320,6 +322,13 @@ const AdminUsers = () => {
                 ) : (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      onClick={() => setHistoryUser(u)}
+                      className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
+                      title="Histórico do cliente"
+                    >
+                      <History className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => openEditUser(u)}
                       className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
                       title="Editar dados"
@@ -465,6 +474,15 @@ const AdminUsers = () => {
           clientUserId={anamnesisUser.user_id}
           clientName={anamnesisUser.full_name}
           adminMode
+        />
+      )}
+
+      {historyUser && (
+        <UserHistoryModal
+          open={!!historyUser}
+          onClose={() => setHistoryUser(null)}
+          userId={historyUser.user_id}
+          userName={historyUser.full_name}
         />
       )}
     </motion.div>
