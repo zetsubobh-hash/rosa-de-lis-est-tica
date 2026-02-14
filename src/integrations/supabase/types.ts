@@ -214,6 +214,39 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          user_id: string
+          user_name: string
+          user_role: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_id: string
+          user_name?: string
+          user_role?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string
+          user_name?: string
+          user_role?: string
+        }
+        Relationships: []
+      }
       client_plans: {
         Row: {
           appointment_id: string | null
@@ -688,6 +721,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_audit: {
+        Args: {
+          _action: string
+          _details?: Json
+          _user_id: string
+          _user_name: string
+          _user_role: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
