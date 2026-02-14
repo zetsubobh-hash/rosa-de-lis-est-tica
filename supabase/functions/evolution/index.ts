@@ -173,13 +173,27 @@ serve(async (req) => {
     if (action === "send_test") {
       if (!phone) return json({ error: "Informe o número de telefone" }, 400);
 
+      // Load the reschedule template to use as test
+      const { data: tplData } = await supabase
+        .from("payment_settings")
+        .select("value")
+        .eq("key", "whatsapp_msg_reschedule_text")
+        .maybeSingle();
+
+      const template = tplData?.value || "Olá {nome}! 🔄 Seu agendamento de *{servico}* foi reagendado para o dia *{data}* às *{hora}*. Nos vemos em breve! 💕";
+      const testMsg = template
+        .replace("{nome}", "Maria Silva")
+        .replace("{servico}", "Limpeza de Pele")
+        .replace("{data}", "20/02/2026")
+        .replace("{hora}", "14:00");
+
       const formatted = phone.replace(/\D/g, "");
       const res = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
         method: "POST",
         headers,
         body: JSON.stringify({
           number: formatted,
-          text: "✅ Teste de envio automático via Evolution API — tudo funcionando! 🎉",
+          text: testMsg,
         }),
       });
       const data = await res.json();
