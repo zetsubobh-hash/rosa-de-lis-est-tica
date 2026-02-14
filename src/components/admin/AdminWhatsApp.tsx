@@ -36,7 +36,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: Mail,
     enabledKey: "whatsapp_msg_confirmation_enabled",
     textKey: "whatsapp_msg_confirmation_text",
-    variables: ["{nome}", "{servico}", "{data}", "{hora}"],
+    variables: ["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"],
   },
   {
     key: "reminder",
@@ -45,7 +45,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: Bell,
     enabledKey: "whatsapp_msg_reminder_enabled",
     textKey: "whatsapp_msg_reminder_text",
-    variables: ["{nome}", "{servico}", "{data}", "{hora}"],
+    variables: ["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"],
   },
   {
     key: "cancellation",
@@ -54,7 +54,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: Ban,
     enabledKey: "whatsapp_msg_cancellation_enabled",
     textKey: "whatsapp_msg_cancellation_text",
-    variables: ["{nome}", "{servico}", "{data}", "{hora}"],
+    variables: ["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"],
   },
   {
     key: "reschedule",
@@ -63,7 +63,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: CalendarClock,
     enabledKey: "whatsapp_msg_reschedule_enabled",
     textKey: "whatsapp_msg_reschedule_text",
-    variables: ["{nome}", "{servico}", "{data}", "{hora}"],
+    variables: ["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"],
   },
   {
     key: "partner",
@@ -72,7 +72,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: MessageCircle,
     enabledKey: "whatsapp_msg_partner_enabled",
     textKey: "whatsapp_msg_partner_text",
-    variables: ["{nome}", "{servico}", "{data}", "{hora}"],
+    variables: ["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"],
   },
   {
     key: "admin",
@@ -81,7 +81,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: ShieldCheck,
     enabledKey: "whatsapp_msg_admin_enabled",
     textKey: "whatsapp_msg_admin_text",
-    variables: ["{nome}", "{servico}", "{data}", "{hora}"],
+    variables: ["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"],
   },
 ];
 
