@@ -5,13 +5,13 @@ import { ptBR } from "date-fns/locale";
 import {
   Search, ChevronRight, ChevronLeft, Check, ShoppingBag,
   Calendar as CalendarIcon, CreditCard, User, Package, Sparkles,
-  UserPlus, X, Camera, Loader2,
+  UserPlus, X, Camera, Loader2, Pencil,
 } from "lucide-react";
 import Cropper, { Area } from "react-easy-crop";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServices } from "@/hooks/useServices";
-import { useAllServicePrices, formatCents, ServicePrice } from "@/hooks/useServicePrices";
+import { useAllServicePrices, formatCents, parseBRL, ServicePrice } from "@/hooks/useServicePrices";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -37,6 +37,8 @@ interface CartItem {
   planName?: string;
   sessions: number;
   priceCents: number;
+  originalPriceCents?: number;
+  customPrice?: boolean;
 }
 
 interface PartnerOption {
@@ -156,6 +158,8 @@ const AdminCounterSales = () => {
 
   // Step 2: Cart
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [editingCartIdx, setEditingCartIdx] = useState<number | null>(null);
+  const [editingCartValue, setEditingCartValue] = useState("");
 
   // Step 3: Schedule
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -293,10 +297,33 @@ const AdminCounterSales = () => {
       planName: type === "plano" ? price.plan_name : undefined,
       sessions: price.sessions,
       priceCents: price.total_price_cents,
+      originalPriceCents: price.total_price_cents,
     }]);
   };
 
   const removeFromCart = (idx: number) => setCart(prev => prev.filter((_, i) => i !== idx));
+
+  const formatBRLInput = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    const num = parseInt(digits, 10) / 100;
+    return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const startEditCartPrice = (idx: number) => {
+    const item = cart[idx];
+    setEditingCartIdx(idx);
+    setEditingCartValue((item.priceCents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  };
+
+  const confirmEditCartPrice = () => {
+    if (editingCartIdx === null) return;
+    const cents = parseBRL(editingCartValue);
+    if (cents <= 0) { toast.error("Valor inválido"); return; }
+    setCart(prev => prev.map((item, i) => i === editingCartIdx ? { ...item, priceCents: cents, customPrice: true } : item));
+    setEditingCartIdx(null);
+    setEditingCartValue("");
+  };
 
   /* ─── Submit sale ─── */
   const handleSubmit = async () => {
@@ -600,8 +627,33 @@ const AdminCounterSales = () => {
                         {item.serviceTitle}
                         {item.type === "plano" && <span className="text-muted-foreground"> • {item.planName} ({item.sessions}x)</span>}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-body font-semibold text-primary whitespace-nowrap">{formatCents(item.priceCents)}</span>
+                      <div className="flex items-center gap-1.5">
+                        {editingCartIdx === idx ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground">R$</span>
+                            <input
+                              type="text"
+                              value={editingCartValue}
+                              onChange={(e) => setEditingCartValue(formatBRLInput(e.target.value))}
+                              onKeyDown={(e) => { if (e.key === "Enter") confirmEditCartPrice(); if (e.key === "Escape") setEditingCartIdx(null); }}
+                              className="w-24 px-2 py-1 rounded-lg border border-primary bg-background text-sm font-body font-semibold text-primary text-right focus:outline-none focus:ring-1 focus:ring-primary"
+                              autoFocus
+                            />
+                            <button onClick={confirmEditCartPrice} className="text-primary hover:text-primary/80"><Check className="w-4 h-4" /></button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className={cn("font-body font-semibold whitespace-nowrap", item.customPrice ? "text-green-600 dark:text-green-400" : "text-primary")}>
+                              {formatCents(item.priceCents)}
+                            </span>
+                            {item.customPrice && item.originalPriceCents && (
+                              <span className="font-body text-xs text-muted-foreground line-through">{formatCents(item.originalPriceCents)}</span>
+                            )}
+                            <button onClick={() => startEditCartPrice(idx)} className="text-muted-foreground hover:text-primary transition-colors" title="Editar preço">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
                         <button onClick={() => removeFromCart(idx)} className="text-destructive hover:text-destructive/80 text-xs">✕</button>
                       </div>
                     </div>
@@ -767,7 +819,12 @@ const AdminCounterSales = () => {
                       {item.serviceTitle}
                       {item.type === "plano" && ` (${item.planName})`}
                     </span>
-                    <span className="font-semibold text-primary">{formatCents(item.priceCents)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("font-semibold", item.customPrice ? "text-green-600 dark:text-green-400" : "text-primary")}>{formatCents(item.priceCents)}</span>
+                      {item.customPrice && item.originalPriceCents && (
+                        <span className="text-xs text-muted-foreground line-through">{formatCents(item.originalPriceCents)}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
                 <div className="border-t border-border pt-2 flex justify-between font-body font-bold text-lg">
