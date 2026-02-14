@@ -57,6 +57,14 @@ serve(async (req) => {
       return json({ skipped: true, reason: "Notifications disabled" });
     }
 
+    // Fetch business name from site_settings
+    const { data: siteSettingsData } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .eq("key", "business_name")
+      .maybeSingle();
+    const businessName = siteSettingsData?.value || "Rosa de Lis Estética";
+
     const apiUrl = cfg.evolution_api_url?.replace(/\/+$/, "");
     const apiKey = cfg.evolution_api_key;
     const instanceName = cfg.evolution_instance_name;
@@ -156,7 +164,7 @@ serve(async (req) => {
       const [y, m, d] = apt.appointment_date.split("-");
       const dateFormatted = `${d}/${m}/${y}`;
 
-      const vars = { nome: clientName, servico: apt.service_title, data: dateFormatted, hora: apt.appointment_time };
+      const vars = { nome: clientName, servico: apt.service_title, data: dateFormatted, hora: apt.appointment_time, empresa: businessName };
 
       if (notificationType === "reschedule") {
         // Reschedule notifications — each recipient gets their own message
@@ -167,17 +175,17 @@ serve(async (req) => {
         const rescheduleTemplate = cfg.whatsapp_msg_reschedule_text || "";
         const clientMsg = rescheduleTemplate
           ? applyTemplate(rescheduleTemplate, vars)
-          : `Olá ${clientName}! 🔄 Seu agendamento de *${apt.service_title}* foi reagendado para o dia *${dateFormatted}* às *${apt.appointment_time}*. Nos vemos em breve! 💕`;
+          : `Olá, aqui é da *${businessName}*! 🔄\n\nOlá ${clientName}! Seu agendamento de *${apt.service_title}* foi reagendado para o dia *${dateFormatted}* às *${apt.appointment_time}*. Nos vemos em breve! 💕`;
 
         // Admin message — informational about the reschedule
         const adminRescheduleMsg = adminTemplate
           ? applyTemplate(adminTemplate.replace("Novo agendamento", "Reagendamento"), vars)
-          : `🔄 *Reagendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Nova Data:* ${dateFormatted}\n🕐 *Novo Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+          : `🔄 *Reagendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Nova Data:* ${dateFormatted}\n🕐 *Novo Horário:* ${apt.appointment_time}\n\n_${businessName}_`;
 
         // Partner message — informational about the reschedule
         const partnerRescheduleMsg = partnerTemplate
           ? applyTemplate(partnerTemplate.replace("Novo agendamento", "Reagendamento"), vars)
-          : `🔄 *Reagendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Nova Data:* ${dateFormatted}\n🕐 *Novo Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+          : `🔄 *Reagendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Nova Data:* ${dateFormatted}\n🕐 *Novo Horário:* ${apt.appointment_time}\n\n_${businessName}_`;
 
         // Send to client
         if (clientPhone) {
@@ -200,11 +208,23 @@ serve(async (req) => {
         }
       } else {
         // New appointment notifications
+        // Send confirmation to client
+        const confirmationEnabled = cfg.whatsapp_msg_confirmation_enabled !== "false";
+        if (confirmationEnabled && clientPhone) {
+          const confirmationTemplate = cfg.whatsapp_msg_confirmation_text || "";
+          const clientMsg = confirmationTemplate
+            ? applyTemplate(confirmationTemplate, vars)
+            : `Olá, aqui é da *${businessName}*! ✅\n\nOlá ${clientName}! Seu agendamento de *${apt.service_title}* foi confirmado para o dia *${dateFormatted}* às *${apt.appointment_time}*. Nos vemos em breve! 💕`;
+
+          const r = await sendMessage(clientPhone, clientMsg);
+          results.push({ ...r, type: "confirmation_client", appointment_id: apt.id });
+        }
+
         // Send to all admins
         if (adminEnabled) {
           const adminMsg = adminTemplate
             ? applyTemplate(adminTemplate, vars)
-            : `📋 *Novo Agendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+            : `📋 *Novo Agendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_${businessName}_`;
 
           for (const phone of adminPhones) {
             const r = await sendMessage(phone, adminMsg);
@@ -216,7 +236,7 @@ serve(async (req) => {
         if (partnerEnabled && apt.partner_id && partnerPhones[apt.partner_id]) {
           const partnerMsg = partnerTemplate
             ? applyTemplate(partnerTemplate, vars)
-            : `📋 *Agendamento Atribuído a Você*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+            : `📋 *Agendamento Atribuído a Você*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_${businessName}_`;
 
           const r = await sendMessage(partnerPhones[apt.partner_id], partnerMsg);
           results.push({ ...r, type: "partner", appointment_id: apt.id });
