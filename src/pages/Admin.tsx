@@ -20,6 +20,7 @@ import AdminClientPlans from "@/components/admin/AdminClientPlans";
 import AdminHistory from "@/components/admin/AdminHistory";
 import AdminInstallApp from "@/components/admin/AdminInstallApp";
 import AdminSiteSettings from "@/components/admin/AdminSiteSettings";
+import PasswordGate from "@/components/admin/PasswordGate";
 
 type Tab = "dashboard" | "agenda" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings";
 
@@ -35,6 +36,7 @@ const Admin = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminName, setAdminName] = useState<string | null>(null);
   const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
+  const [partnersUnlocked, setPartnersUnlocked] = useState(false);
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
@@ -243,8 +245,16 @@ const Admin = () => {
           {activeTab === "pricing" && <AdminPricing />}
           {activeTab === "payments" && <AdminPaymentSettings initialSettings={settingsMap} />}
           {activeTab === "branding" && <AdminBranding />}
-          {activeTab === "partners" && <AdminPartners />}
-          {activeTab === "partner-view" && <AdminPartnerView />}
+          {activeTab === "partners" && (
+            <PasswordGate unlocked={partnersUnlocked} onUnlock={() => setPartnersUnlocked(true)}>
+              <AdminPartners />
+            </PasswordGate>
+          )}
+          {activeTab === "partner-view" && (
+            <PasswordGate unlocked={partnersUnlocked} onUnlock={() => setPartnersUnlocked(true)}>
+              <AdminPartnerView />
+            </PasswordGate>
+          )}
           {activeTab === "whatsapp" && <AdminWhatsApp />}
           {activeTab === "client-plans" && <AdminClientPlans />}
           {activeTab === "history" && <AdminHistory />}
