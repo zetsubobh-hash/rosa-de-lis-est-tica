@@ -14,8 +14,9 @@ interface AnamnesisModalProps {
   onClose: () => void;
   clientUserId: string;
   clientName: string;
-  partnerId: string;
+  partnerId?: string;
   readOnly?: boolean;
+  adminMode?: boolean;
 }
 
 type Step = 0 | 1 | 2 | 3 | 4;
@@ -151,7 +152,7 @@ const FieldLabel = ({ children }: { children: React.ReactNode }) => (
   <p className="font-body text-xs text-muted-foreground mb-1.5 font-medium">{children}</p>
 );
 
-const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, readOnly = false }: AnamnesisModalProps) => {
+const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, readOnly = false, adminMode = false }: AnamnesisModalProps) => {
   const [step, setStep] = useState<Step>(0);
   const [form, setForm] = useState<FormData>({ ...defaultForm });
   const [loading, setLoading] = useState(false);
@@ -168,12 +169,18 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
 
   const loadExisting = async () => {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("anamnesis" as any)
       .select("*")
-      .eq("user_id", clientUserId)
-      .eq("partner_id", partnerId)
-      .maybeSingle();
+      .eq("user_id", clientUserId);
+    
+    if (!adminMode && partnerId) {
+      query = query.eq("partner_id", partnerId);
+    }
+
+    const { data } = adminMode
+      ? await query.order("updated_at", { ascending: false }).limit(1).maybeSingle()
+      : await query.maybeSingle();
 
     if (data) {
       setExistingId((data as any).id);
@@ -228,7 +235,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
 
   const save = async () => {
     setSaving(true);
-    const payload = { ...form, user_id: clientUserId, partner_id: partnerId };
+    const payload = { ...form, user_id: clientUserId, ...(partnerId ? { partner_id: partnerId } : {}) };
 
     let error;
     if (existingId) {
