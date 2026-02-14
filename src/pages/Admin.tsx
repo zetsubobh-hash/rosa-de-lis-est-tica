@@ -257,11 +257,7 @@ const Admin = () => {
               <AdminPartners />
             </PasswordGate>
           )}
-          {activeTab === "partner-view" && (
-            <PasswordGate unlocked={partnersUnlocked} onUnlock={() => setPartnersUnlocked(true)}>
-              <AdminPartnerView />
-            </PasswordGate>
-          )}
+          {activeTab === "partner-view" && <AdminPartnerView />}
           {activeTab === "whatsapp" && <AdminWhatsApp />}
           {activeTab === "client-plans" && <AdminClientPlans />}
           {activeTab === "history" && <AdminHistory />}
