@@ -714,6 +714,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_stale_pending_appointments: { Args: never; Returns: undefined }
       has_role: {
         Args: {
