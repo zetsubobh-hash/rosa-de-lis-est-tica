@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import AdminInstallApp from "@/components/admin/AdminInstallApp";
 import AdminSiteSettings from "@/components/admin/AdminSiteSettings";
 import AdminThemeEditor from "@/components/admin/AdminThemeEditor";
 import AdminCounterSales from "@/components/admin/AdminCounterSales";
+import AdminSEO from "@/components/admin/AdminSEO";
 import PasswordGate from "@/components/admin/PasswordGate";
 
 type Tab = "dashboard" | "agenda" | "counter-sales" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings";
@@ -273,10 +274,14 @@ const Admin = () => {
           {activeTab === "install-app" && <AdminInstallApp />}
           {activeTab === "site-settings" && (
             <Tabs defaultValue="negocio" className="space-y-6">
-              <TabsList className="w-full justify-start">
+              <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1">
                 <TabsTrigger value="negocio" className="gap-2">
                   <Settings className="w-4 h-4" />
                   Negócio
+                </TabsTrigger>
+                <TabsTrigger value="seo" className="gap-2">
+                  <Search className="w-4 h-4" />
+                  SEO
                 </TabsTrigger>
                 <TabsTrigger value="tema" className="gap-2">
                   <Palette className="w-4 h-4" />
@@ -285,6 +290,9 @@ const Admin = () => {
               </TabsList>
               <TabsContent value="negocio">
                 <AdminSiteSettings />
+              </TabsContent>
+              <TabsContent value="seo">
+                <AdminSEO />
               </TabsContent>
               <TabsContent value="tema">
                 <AdminThemeEditor />
