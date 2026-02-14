@@ -99,16 +99,25 @@ const AdminCounterSales = () => {
     });
   }, []);
 
-  /* ─── Fetch all clients on mount ─── */
+  /* ─── Fetch all clients on mount (with partner avatar fallback) ─── */
   const [allClients, setAllClients] = useState<ClientProfile[]>([]);
   useEffect(() => {
-    supabase
-      .from("profiles")
-      .select("user_id, full_name, phone, email, avatar_url")
-      .order("full_name")
-      .then(({ data }) => {
-        if (data) setAllClients(data as ClientProfile[]);
+    const fetchClients = async () => {
+      const [profilesRes, partnersRes] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name, phone, email, avatar_url").order("full_name"),
+        supabase.from("partners").select("user_id, avatar_url"),
+      ]);
+      const partnerAvatars = new Map<string, string>();
+      partnersRes.data?.forEach((p: any) => {
+        if (p.avatar_url) partnerAvatars.set(p.user_id, p.avatar_url);
       });
+      const clients = (profilesRes.data || []).map((p: any) => ({
+        ...p,
+        avatar_url: p.avatar_url || partnerAvatars.get(p.user_id) || null,
+      }));
+      setAllClients(clients as ClientProfile[]);
+    };
+    fetchClients();
   }, []);
 
   /* ─── Filter clients by search ─── */
