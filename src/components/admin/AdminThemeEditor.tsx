@@ -2,14 +2,40 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Save, RotateCcw, Paintbrush } from "lucide-react";
+import { Save, RotateCcw, Paintbrush, Plus, Trash2, Check, Palette } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ThemeColor {
   key: string;
   label: string;
   description: string;
   cssVar: string;
+}
+
+interface SavedTheme {
+  id: string;
+  name: string;
+  colors: Record<string, string>;
+  is_active: boolean;
 }
 
 const THEME_COLORS: ThemeColor[] = [
@@ -28,7 +54,6 @@ const THEME_COLORS: ThemeColor[] = [
   { key: "theme_gold", label: "Cor Dourada", description: "Destaques premium e ícones especiais", cssVar: "--gold" },
 ];
 
-// Convert HSL string "H S% L%" to hex
 function hslToHex(h: number, s: number, l: number): string {
   s /= 100;
   l /= 100;
@@ -41,16 +66,13 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-// Convert hex to HSL values "H S% L%"
 function hexToHsl(hex: string): string {
   let r = parseInt(hex.slice(1, 3), 16) / 255;
   let g = parseInt(hex.slice(3, 5), 16) / 255;
   let b = parseInt(hex.slice(5, 7), 16) / 255;
-
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   let h = 0, s = 0;
   const l = (max + min) / 2;
-
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -60,68 +82,98 @@ function hexToHsl(hex: string): string {
       case b: h = ((r - g) / d + 4) * 60; break;
     }
   }
-
   return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
-// Parse CSS var value "H S% L%" to hex
 function cssHslToHex(value: string): string {
   const parts = value.trim().split(/\s+/);
   if (parts.length < 3) return "#e91e63";
-  const h = parseFloat(parts[0]);
-  const s = parseFloat(parts[1]);
-  const l = parseFloat(parts[2]);
-  return hslToHex(h, s, l);
+  return hslToHex(parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2]));
 }
 
-// Read current CSS variable value from :root
 function getCurrentCssVar(varName: string): string {
-  const style = getComputedStyle(document.documentElement);
-  return style.getPropertyValue(varName).trim();
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function getDefaultColors(): Record<string, string> {
+  // Remove inline overrides to read CSS defaults
+  THEME_COLORS.forEach((tc) => document.documentElement.style.removeProperty(tc.cssVar));
+  const defaults: Record<string, string> = {};
+  THEME_COLORS.forEach((tc) => {
+    const current = getCurrentCssVar(tc.cssVar);
+    defaults[tc.key] = current || "340 80% 55%";
+  });
+  return defaults;
+}
+
+function colorsToHex(hslColors: Record<string, string>): Record<string, string> {
+  const hex: Record<string, string> = {};
+  THEME_COLORS.forEach((tc) => {
+    hex[tc.key] = hslColors[tc.key] ? cssHslToHex(hslColors[tc.key]) : "#e91e63";
+  });
+  return hex;
+}
+
+function applyColorsToDOM(hslColors: Record<string, string>) {
+  THEME_COLORS.forEach((tc) => {
+    if (hslColors[tc.key]) {
+      document.documentElement.style.setProperty(tc.cssVar, hslColors[tc.key]);
+    }
+  });
 }
 
 const AdminThemeEditor = () => {
   const [colors, setColors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [themes, setThemes] = useState<SavedTheme[]>([]);
+  const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
+  const [newThemeName, setNewThemeName] = useState("");
+  const [showNewTheme, setShowNewTheme] = useState(false);
 
-  // Load saved theme from DB, fallback to current CSS values
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("site_settings" as any)
-        .select("key, value")
-        .like("key", "theme_%");
-
-      const saved: Record<string, string> = {};
-      if (data) {
-        (data as any[]).forEach((row) => {
-          saved[row.key] = row.value;
-        });
+  const fetchThemes = async () => {
+    const { data } = await supabase
+      .from("site_themes" as any)
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (data) {
+      const parsed = (data as any[]).map((t) => ({
+        id: t.id,
+        name: t.name,
+        colors: typeof t.colors === "string" ? JSON.parse(t.colors) : t.colors,
+        is_active: t.is_active,
+      }));
+      setThemes(parsed);
+      const active = parsed.find((t) => t.is_active);
+      if (active) {
+        setActiveThemeId(active.id);
+        setColors(colorsToHex(active.colors));
+        applyColorsToDOM(active.colors);
       }
+      return parsed;
+    }
+    return [];
+  };
 
-      // Build initial colors: saved HSL → hex, or read from current CSS
-      const initial: Record<string, string> = {};
-      THEME_COLORS.forEach((tc) => {
-        if (saved[tc.key]) {
-          initial[tc.key] = cssHslToHex(saved[tc.key]);
-        } else {
-          const current = getCurrentCssVar(tc.cssVar);
-          initial[tc.key] = current ? cssHslToHex(current) : "#e91e63";
-        }
-      });
-      setColors(initial);
+  useEffect(() => {
+    const init = async () => {
+      const loaded = await fetchThemes();
+      if (!loaded || loaded.length === 0 || !loaded.find((t) => t.is_active)) {
+        // No active theme — read current CSS
+        const defaults = getDefaultColors();
+        setColors(colorsToHex(defaults));
+        // Re-apply defaults since getDefaultColors removes overrides
+        applyColorsToDOM(defaults);
+      }
       setLoading(false);
     };
-    load();
+    init();
   }, []);
 
-  // Live preview: apply colors to :root as user picks
   const applyPreview = useCallback((key: string, hex: string) => {
     const tc = THEME_COLORS.find((c) => c.key === key);
     if (!tc) return;
-    const hsl = hexToHsl(hex);
-    document.documentElement.style.setProperty(tc.cssVar, hsl);
+    document.documentElement.style.setProperty(tc.cssVar, hexToHsl(hex));
   }, []);
 
   const handleColorChange = (key: string, hex: string) => {
@@ -129,48 +181,116 @@ const AdminThemeEditor = () => {
     applyPreview(key, hex);
   };
 
-  const handleSave = async () => {
+  // Save current colors as a NEW theme
+  const handleSaveNewTheme = async () => {
+    if (!newThemeName.trim()) {
+      toast.error("Digite um nome para o tema");
+      return;
+    }
     setSaving(true);
     try {
-      for (const tc of THEME_COLORS) {
-        const hslValue = hexToHsl(colors[tc.key]);
-        // Upsert: try update, if no rows affected, insert
-        const { data: existing } = await supabase
-          .from("site_settings" as any)
-          .select("id")
-          .eq("key", tc.key)
-          .maybeSingle();
+      const hslColors: Record<string, string> = {};
+      THEME_COLORS.forEach((tc) => {
+        hslColors[tc.key] = hexToHsl(colors[tc.key]);
+      });
 
-        if (existing) {
-          await supabase
-            .from("site_settings" as any)
-            .update({ value: hslValue, updated_at: new Date().toISOString() } as any)
-            .eq("key", tc.key);
-        } else {
-          await supabase
-            .from("site_settings" as any)
-            .insert({ key: tc.key, value: hslValue } as any);
-        }
-      }
-      toast.success("Tema salvo com sucesso! As cores serão aplicadas em todo o site.");
-    } catch {
-      toast.error("Erro ao salvar tema");
+      // Deactivate all others
+      await supabase
+        .from("site_themes" as any)
+        .update({ is_active: false } as any)
+        .eq("is_active", true);
+
+      const { data, error } = await supabase
+        .from("site_themes" as any)
+        .insert({ name: newThemeName.trim(), colors: hslColors, is_active: true } as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success(`Tema "${newThemeName.trim()}" salvo e ativado!`);
+      setNewThemeName("");
+      setShowNewTheme(false);
+      await fetchThemes();
+    } catch (err: any) {
+      toast.error("Erro ao salvar tema: " + err.message);
     }
     setSaving(false);
   };
 
+  // Update the currently active theme
+  const handleUpdateTheme = async () => {
+    if (!activeThemeId) {
+      toast.error("Nenhum tema selecionado para atualizar");
+      return;
+    }
+    setSaving(true);
+    try {
+      const hslColors: Record<string, string> = {};
+      THEME_COLORS.forEach((tc) => {
+        hslColors[tc.key] = hexToHsl(colors[tc.key]);
+      });
+
+      await supabase
+        .from("site_themes" as any)
+        .update({ colors: hslColors, updated_at: new Date().toISOString() } as any)
+        .eq("id", activeThemeId);
+
+      toast.success("Tema atualizado!");
+      await fetchThemes();
+    } catch {
+      toast.error("Erro ao atualizar tema");
+    }
+    setSaving(false);
+  };
+
+  // Switch to a different theme
+  const handleSelectTheme = async (themeId: string) => {
+    const theme = themes.find((t) => t.id === themeId);
+    if (!theme) return;
+
+    try {
+      // Deactivate all
+      await supabase
+        .from("site_themes" as any)
+        .update({ is_active: false } as any)
+        .eq("is_active", true);
+
+      // Activate selected
+      await supabase
+        .from("site_themes" as any)
+        .update({ is_active: true } as any)
+        .eq("id", themeId);
+
+      setActiveThemeId(themeId);
+      setColors(colorsToHex(theme.colors));
+      applyColorsToDOM(theme.colors);
+      toast.success(`Tema "${theme.name}" ativado!`);
+      await fetchThemes();
+    } catch {
+      toast.error("Erro ao ativar tema");
+    }
+  };
+
+  const handleDeleteTheme = async (themeId: string) => {
+    try {
+      const theme = themes.find((t) => t.id === themeId);
+      await supabase.from("site_themes" as any).delete().eq("id", themeId);
+      toast.success(`Tema "${theme?.name}" excluído`);
+      if (activeThemeId === themeId) {
+        setActiveThemeId(null);
+      }
+      await fetchThemes();
+    } catch {
+      toast.error("Erro ao excluir tema");
+    }
+  };
+
   const handleReset = () => {
-    // Re-read from CSS defaults (remove inline overrides)
-    THEME_COLORS.forEach((tc) => {
-      document.documentElement.style.removeProperty(tc.cssVar);
-    });
-    const initial: Record<string, string> = {};
-    THEME_COLORS.forEach((tc) => {
-      const current = getCurrentCssVar(tc.cssVar);
-      initial[tc.key] = current ? cssHslToHex(current) : "#e91e63";
-    });
-    setColors(initial);
-    toast.info("Cores restauradas ao padrão. Salve para confirmar.");
+    const defaults = getDefaultColors();
+    setColors(colorsToHex(defaults));
+    applyColorsToDOM(defaults);
+    toast.info("Cores restauradas ao padrão do CSS.");
   };
 
   if (loading) {
@@ -181,8 +301,11 @@ const AdminThemeEditor = () => {
     );
   }
 
+  const activeTheme = themes.find((t) => t.id === activeThemeId);
+
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
           <Paintbrush className="w-5 h-5 text-primary" />
@@ -190,11 +313,67 @@ const AdminThemeEditor = () => {
         <div>
           <h3 className="font-heading text-base font-bold text-foreground">Editor de Tema</h3>
           <p className="font-body text-sm text-muted-foreground">
-            Personalize as cores do site. A prévia é aplicada em tempo real.
+            Crie, salve e alterne entre temas personalizados.
           </p>
         </div>
       </div>
 
+      {/* Saved themes selector */}
+      {themes.length > 0 && (
+        <div className="bg-card rounded-xl border border-border p-4 space-y-3">
+          <Label className="font-body text-sm font-semibold flex items-center gap-2">
+            <Palette className="w-4 h-4 text-primary" />
+            Temas Salvos
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {themes.map((theme) => (
+              <div key={theme.id} className="flex items-center gap-1">
+                <Button
+                  variant={theme.id === activeThemeId ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSelectTheme(theme.id)}
+                  className="gap-2 font-body"
+                >
+                  {theme.id === activeThemeId && <Check className="w-3.5 h-3.5" />}
+                  <div className="flex gap-0.5">
+                    {Object.values(theme.colors).slice(0, 4).map((hsl, i) => (
+                      <span
+                        key={i}
+                        className="w-3 h-3 rounded-full border border-border/50 inline-block"
+                        style={{ backgroundColor: `hsl(${hsl})` }}
+                      />
+                    ))}
+                  </div>
+                  {theme.name}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir tema "{theme.name}"?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Essa ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteTheme(theme.id)}>
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Color pickers */}
       <div className="grid gap-4 sm:grid-cols-2">
         {THEME_COLORS.map((tc) => (
           <div
@@ -223,15 +402,47 @@ const AdminThemeEditor = () => {
         ))}
       </div>
 
-      <div className="flex gap-3 flex-wrap">
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
-          <Save className="w-4 h-4" />
-          {saving ? "Salvando..." : "Salvar Tema"}
-        </Button>
-        <Button variant="outline" onClick={handleReset} className="gap-2">
-          <RotateCcw className="w-4 h-4" />
-          Restaurar Padrão
-        </Button>
+      {/* Actions */}
+      <div className="space-y-4">
+        {/* Save new theme */}
+        {showNewTheme ? (
+          <div className="flex items-end gap-3 p-4 bg-card rounded-xl border border-border">
+            <div className="flex-1 space-y-1.5">
+              <Label className="font-body text-sm font-medium">Nome do Tema</Label>
+              <Input
+                value={newThemeName}
+                onChange={(e) => setNewThemeName(e.target.value)}
+                placeholder="Ex: Rosa Clássico, Azul Moderno..."
+                className="font-body"
+                onKeyDown={(e) => e.key === "Enter" && handleSaveNewTheme()}
+              />
+            </div>
+            <Button onClick={handleSaveNewTheme} disabled={saving} className="gap-2">
+              <Save className="w-4 h-4" />
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+            <Button variant="ghost" onClick={() => { setShowNewTheme(false); setNewThemeName(""); }}>
+              Cancelar
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-3 flex-wrap">
+            <Button onClick={() => setShowNewTheme(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Salvar como Novo Tema
+            </Button>
+            {activeTheme && (
+              <Button variant="secondary" onClick={handleUpdateTheme} disabled={saving} className="gap-2">
+                <Save className="w-4 h-4" />
+                {saving ? "Salvando..." : `Atualizar "${activeTheme.name}"`}
+              </Button>
+            )}
+            <Button variant="outline" onClick={handleReset} className="gap-2">
+              <RotateCcw className="w-4 h-4" />
+              Restaurar Padrão
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -20,16 +20,22 @@ const CSS_VAR_MAP: Record<string, string> = {
 export const useThemeColors = () => {
   useEffect(() => {
     const applyTheme = async () => {
+      // Load active theme from site_themes table
       const { data } = await supabase
-        .from("site_settings" as any)
-        .select("key, value")
-        .like("key", "theme_%");
+        .from("site_themes" as any)
+        .select("colors")
+        .eq("is_active", true)
+        .maybeSingle();
 
-      if (data && (data as any[]).length > 0) {
-        (data as any[]).forEach((row) => {
-          const cssVar = CSS_VAR_MAP[row.key];
-          if (cssVar && row.value) {
-            document.documentElement.style.setProperty(cssVar, row.value);
+      if (data && (data as any).colors) {
+        const colors = typeof (data as any).colors === "string"
+          ? JSON.parse((data as any).colors)
+          : (data as any).colors;
+
+        Object.entries(colors).forEach(([key, value]) => {
+          const cssVar = CSS_VAR_MAP[key];
+          if (cssVar && value) {
+            document.documentElement.style.setProperty(cssVar, value as string);
           }
         });
       }
