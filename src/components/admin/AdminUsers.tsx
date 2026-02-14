@@ -57,11 +57,19 @@ const AdminUsers = () => {
       .select("user_id, role")
       .eq("role", "admin");
 
+    const { data: partners } = await supabase
+      .from("partners")
+      .select("user_id, avatar_url");
+
     const adminIds = new Set(roles?.map((r: any) => r.user_id) || []);
+    const partnerAvatars = new Map(
+      (partners || []).filter((p: any) => p.avatar_url).map((p: any) => [p.user_id, p.avatar_url])
+    );
 
     setUsers(
       (profiles || []).map((p: any) => ({
         ...p,
+        avatar_url: p.avatar_url || partnerAvatars.get(p.user_id) || null,
         isAdmin: adminIds.has(p.user_id),
       }))
     );
