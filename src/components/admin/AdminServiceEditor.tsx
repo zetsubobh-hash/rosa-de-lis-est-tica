@@ -57,47 +57,6 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     setHasChanges(true);
   };
 
-  const convertToWebP = (file: File): Promise<{ blob: Blob; ext: string }> => {
-    return new Promise((resolve) => {
-      const objectUrl = URL.createObjectURL(file);
-      const img = new window.Image();
-      img.onload = () => {
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) { 
-            URL.revokeObjectURL(objectUrl);
-            resolve({ blob: file, ext: file.name.split(".").pop() || "png" }); 
-            return; 
-          }
-          ctx.drawImage(img, 0, 0);
-          canvas.toBlob(
-            (blob) => {
-              URL.revokeObjectURL(objectUrl);
-              if (blob) {
-                resolve({ blob, ext: "webp" });
-              } else {
-                resolve({ blob: file, ext: file.name.split(".").pop() || "png" });
-              }
-            },
-            "image/webp",
-            0.85
-          );
-        } catch {
-          URL.revokeObjectURL(objectUrl);
-          resolve({ blob: file, ext: file.name.split(".").pop() || "png" });
-        }
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        resolve({ blob: file, ext: file.name.split(".").pop() || "png" });
-      };
-      img.src = objectUrl;
-    });
-  };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -107,17 +66,53 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     }
     setUploading(true);
     try {
-      const { blob, ext } = await convertToWebP(file);
-      const contentType = ext === "webp" ? "image/webp" : file.type;
+      // Try WebP conversion via canvas, fallback to original
+      let uploadBlob: Blob = file;
+      let ext = file.name.split(".").pop() || "png";
+      let contentType = file.type;
+
+      try {
+        const webpBlob = await new Promise<Blob | null>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext("2d");
+              if (!ctx) { resolve(null); return; }
+              ctx.drawImage(img, 0, 0);
+              canvas.toBlob((blob) => resolve(blob), "image/webp", 0.9);
+            };
+            img.onerror = () => resolve(null);
+            img.src = event.target?.result as string;
+          };
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+        });
+
+        if (webpBlob) {
+          uploadBlob = webpBlob;
+          ext = "webp";
+          contentType = "image/webp";
+        }
+      } catch {
+        // Keep original file
+      }
+
       const path = `${service.slug || "new"}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("service-images").upload(path, blob, { upsert: true, contentType });
+      const { error } = await supabase.storage
+        .from("service-images")
+        .upload(path, uploadBlob, { upsert: true, contentType });
       if (error) throw error;
+
       const { data: urlData } = supabase.storage.from("service-images").getPublicUrl(path);
       updateField("image_url", urlData.publicUrl);
       toast({ title: "Imagem atualizada! ✅" });
     } catch (err: any) {
-      console.error("Upload error:", err);
-      toast({ title: "Erro ao enviar imagem", description: err.message, variant: "destructive" });
+      console.error("Upload error details:", err);
+      toast({ title: "Erro ao enviar imagem", description: err?.message || "Erro desconhecido", variant: "destructive" });
     }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
