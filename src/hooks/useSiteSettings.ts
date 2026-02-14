@@ -26,10 +26,25 @@ export const useSiteSettings = () => {
   }, []);
 
   const updateSetting = async (key: string, value: string) => {
-    const { error } = await supabase
+    // Try upsert: update if exists, insert if not
+    const { data: existing } = await supabase
       .from("site_settings" as any)
-      .update({ value, updated_at: new Date().toISOString() } as any)
-      .eq("key", key);
+      .select("id")
+      .eq("key", key)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      ({ error } = await supabase
+        .from("site_settings" as any)
+        .update({ value, updated_at: new Date().toISOString() } as any)
+        .eq("key", key));
+    } else {
+      ({ error } = await supabase
+        .from("site_settings" as any)
+        .insert({ key, value } as any));
+    }
+
     if (!error) {
       setSettings((prev) => ({ ...prev, [key]: value }));
     }

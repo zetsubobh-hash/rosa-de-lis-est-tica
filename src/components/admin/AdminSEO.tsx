@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,8 @@ import {
   FileText,
   Image,
   Info,
+  Upload,
+  Trash2,
 } from "lucide-react";
 
 const AdminSEO = () => {
@@ -21,16 +24,73 @@ const AdminSEO = () => {
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [ogPreview, setOgPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!initialized && !loading && Object.keys(settings).length > 0) {
+  if (!initialized && !loading) {
     setForm({ ...settings });
+    setOgPreview(settings.seo_og_image || null);
     setInitialized(true);
   }
+
+  const handleOgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem válido.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `og-image.${ext}`;
+
+      // Remove old file if exists
+      await supabase.storage.from("branding").remove([path]);
+
+      const { error: uploadError } = await supabase.storage
+        .from("branding")
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("branding")
+        .getPublicUrl(path);
+
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      setForm((prev) => ({ ...prev, seo_og_image: publicUrl }));
+      setOgPreview(publicUrl);
+      toast.success("Imagem carregada! Clique em Salvar para aplicar.");
+    } catch {
+      toast.error("Erro ao enviar imagem.");
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemoveOg = () => {
+    setForm((prev) => ({ ...prev, seo_og_image: "" }));
+    setOgPreview(null);
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const seoKeys = fields.map((f) => f.key);
+      const seoKeys = [
+        "seo_meta_title",
+        "seo_meta_description",
+        "seo_og_image",
+        "seo_google_analytics_id",
+        "seo_google_search_console",
+        "seo_google_maps_embed",
+        "seo_google_tag_manager",
+        "seo_facebook_pixel",
+        "seo_canonical_url",
+      ];
       for (const key of seoKeys) {
         const value = form[key] ?? "";
         if (value !== (settings[key] ?? "")) {
@@ -75,8 +135,8 @@ const AdminSEO = () => {
       key: "seo_og_image",
       label: "Imagem de Compartilhamento (OG Image)",
       icon: Image,
-      placeholder: "https://seusite.com/imagem-compartilhamento.jpg",
-      type: "text",
+      placeholder: "",
+      type: "upload",
       help: "Imagem que aparece quando o site é compartilhado no WhatsApp, Facebook, Instagram e outras redes. Tamanho recomendado: 1200×630 pixels.",
     },
     {
@@ -86,10 +146,7 @@ const AdminSEO = () => {
       placeholder: "G-XXXXXXXXXX",
       type: "text",
       help: 'Insira o ID de medição do Google Analytics 4 (começa com "G-"). Com ele você acompanha visitantes, páginas mais acessadas, origem do tráfego e conversões.',
-      link: {
-        url: "https://analytics.google.com/",
-        text: "Abrir Google Analytics",
-      },
+      link: { url: "https://analytics.google.com/", text: "Abrir Google Analytics" },
       steps: [
         "Acesse analytics.google.com e crie uma conta/propriedade",
         'Vá em Admin → Fluxos de dados → Web → copie o "ID de Medição"',
@@ -100,13 +157,10 @@ const AdminSEO = () => {
       key: "seo_google_search_console",
       label: "Google Search Console (Meta Tag de Verificação)",
       icon: Search,
-      placeholder: "google-site-verification=XXXXXXXXXXXXX",
+      placeholder: "XXXXXXXXXXXXX",
       type: "text",
-      help: "Cole aqui o conteúdo da meta tag de verificação do Google Search Console. Com ele você monitora como o Google indexa seu site, palavras-chave que geram tráfego e possíveis erros.",
-      link: {
-        url: "https://search.google.com/search-console/",
-        text: "Abrir Google Search Console",
-      },
+      help: 'Cole aqui apenas o valor do content da meta tag de verificação. Com ele você monitora como o Google indexa seu site, palavras-chave que geram tráfego e possíveis erros.',
+      link: { url: "https://search.google.com/search-console/", text: "Abrir Google Search Console" },
       steps: [
         "Acesse search.google.com/search-console e adicione seu site",
         'Escolha o método "Meta tag HTML" de verificação',
@@ -118,14 +172,10 @@ const AdminSEO = () => {
       key: "seo_google_maps_embed",
       label: "Google Maps (URL de Incorporação)",
       icon: MapPin,
-      placeholder:
-        "https://www.google.com/maps/embed?pb=!1m18!1m12...",
+      placeholder: "https://www.google.com/maps/embed?pb=!1m18!1m12...",
       type: "text",
-      help: "URL de incorporação do Google Maps para exibir a localização do seu negócio no site. Mostra aos clientes exatamente onde você está.",
-      link: {
-        url: "https://www.google.com/maps",
-        text: "Abrir Google Maps",
-      },
+      help: "URL de incorporação do Google Maps para exibir a localização do seu negócio no site.",
+      link: { url: "https://www.google.com/maps", text: "Abrir Google Maps" },
       steps: [
         "Pesquise seu endereço no Google Maps",
         'Clique em "Compartilhar" → "Incorporar um mapa"',
@@ -139,11 +189,8 @@ const AdminSEO = () => {
       icon: Globe,
       placeholder: "GTM-XXXXXXX",
       type: "text",
-      help: 'O Tag Manager permite gerenciar todas as tags de marketing (Facebook Pixel, Google Ads, etc.) sem alterar o código. Insira o ID do contêiner (começa com "GTM-").',
-      link: {
-        url: "https://tagmanager.google.com/",
-        text: "Abrir Google Tag Manager",
-      },
+      help: 'Gerencia todas as tags de marketing sem alterar o código. Insira o ID (começa com "GTM-").',
+      link: { url: "https://tagmanager.google.com/", text: "Abrir Google Tag Manager" },
       steps: [
         "Acesse tagmanager.google.com e crie uma conta/contêiner",
         "Copie o ID do contêiner (ex: GTM-XXXXXXX)",
@@ -156,11 +203,8 @@ const AdminSEO = () => {
       icon: Globe,
       placeholder: "123456789012345",
       type: "text",
-      help: "O Pixel do Facebook/Meta rastreia conversões de anúncios, permite criar públicos personalizados e otimizar campanhas de marketing nas plataformas Meta (Facebook e Instagram).",
-      link: {
-        url: "https://business.facebook.com/events_manager",
-        text: "Abrir Gerenciador de Eventos",
-      },
+      help: "Rastreia conversões e permite criar públicos personalizados nas plataformas Meta.",
+      link: { url: "https://business.facebook.com/events_manager", text: "Abrir Gerenciador de Eventos" },
       steps: [
         "Acesse business.facebook.com → Gerenciador de Eventos",
         "Crie ou selecione um Pixel existente",
@@ -174,7 +218,7 @@ const AdminSEO = () => {
       icon: Globe,
       placeholder: "https://www.rosadelis.com.br",
       type: "text",
-      help: "Informe o domínio principal do seu site. A URL canônica evita conteúdo duplicado e indica ao Google qual é a versão oficial do seu site.",
+      help: "Domínio principal do site. Evita conteúdo duplicado e indica ao Google a versão oficial.",
     },
   ];
 
@@ -195,24 +239,17 @@ const AdminSEO = () => {
 
       <div className="space-y-6">
         {fields.map((field) => (
-          <div
-            key={field.key}
-            className="space-y-2 rounded-xl border border-border p-4"
-          >
+          <div key={field.key} className="space-y-2 rounded-xl border border-border p-4">
             <Label className="flex items-center gap-2 font-body text-sm font-semibold">
               <field.icon className="w-4 h-4 text-primary" />
               {field.label}
             </Label>
 
-            <p className="font-body text-xs text-muted-foreground">
-              {field.help}
-            </p>
+            <p className="font-body text-xs text-muted-foreground">{field.help}</p>
 
             {(field as any).steps && (
               <div className="font-body text-xs text-muted-foreground bg-muted/50 rounded-lg p-3 space-y-1">
-                <p className="font-medium text-foreground text-xs mb-1.5">
-                  Como configurar:
-                </p>
+                <p className="font-medium text-foreground text-xs mb-1.5">Como configurar:</p>
                 <ol className="list-decimal list-inside space-y-0.5">
                   {(field as any).steps.map((step: string, i: number) => (
                     <li key={i}>{step}</li>
@@ -233,12 +270,53 @@ const AdminSEO = () => {
               </a>
             )}
 
-            {field.type === "textarea" ? (
+            {field.type === "upload" ? (
+              <div className="space-y-3">
+                {ogPreview && (
+                  <div className="relative rounded-lg overflow-hidden border border-border bg-muted/30">
+                    <img
+                      src={ogPreview}
+                      alt="OG Image preview"
+                      className="w-full h-auto max-h-48 object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 w-8 h-8"
+                      onClick={handleRemoveOg}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleOgUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="gap-2 font-body"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="w-4 h-4" />
+                    {uploading ? "Enviando..." : ogPreview ? "Trocar Imagem" : "Enviar Imagem"}
+                  </Button>
+                </div>
+                <p className="font-body text-[11px] text-muted-foreground">
+                  Formatos aceitos: JPG, PNG, WebP. Tamanho ideal: 1200×630px.
+                </p>
+              </div>
+            ) : field.type === "textarea" ? (
               <Textarea
                 value={form[field.key] ?? ""}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, [field.key]: e.target.value }))
-                }
+                onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
                 placeholder={field.placeholder}
                 className="font-body text-sm"
                 rows={3}
@@ -246,9 +324,7 @@ const AdminSEO = () => {
             ) : (
               <Input
                 value={form[field.key] ?? ""}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, [field.key]: e.target.value }))
-                }
+                onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
                 placeholder={field.placeholder}
                 className="font-body text-sm"
               />
