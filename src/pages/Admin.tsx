@@ -39,8 +39,8 @@ const Admin = () => {
   const [partnersUnlocked, setPartnersUnlocked] = useState(false);
 
   const handleTabChange = (tab: Tab) => {
-    // Re-lock partners when leaving protected tabs
-    if ((activeTab === "partners" || activeTab === "partner-view") && tab !== "partners" && tab !== "partner-view") {
+    // Always re-lock when leaving any tab (so returning to partners requires password again)
+    if (tab !== activeTab) {
       setPartnersUnlocked(false);
     }
     setActiveTab(tab);
