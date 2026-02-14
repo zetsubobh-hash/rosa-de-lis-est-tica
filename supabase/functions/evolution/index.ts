@@ -95,17 +95,34 @@ serve(async (req) => {
       const data = await res.json();
       if (!res.ok) {
         console.error("Evolution create_instance error:", res.status, data);
-        // If instance already exists, try to connect/get QR code instead
         const msg = JSON.stringify(data).toLowerCase();
         if (res.status === 403 && msg.includes("already in use")) {
-          console.log("Instance already exists, fetching QR code instead...");
+          console.log("Instance already exists, restarting and fetching QR code...");
+
+          // First try to restart the instance to get a fresh QR
+          try {
+            const restartRes = await fetch(`${baseUrl}/instance/restart/${instanceName}`, {
+              method: "PUT",
+              headers,
+            });
+            const restartData = await restartRes.json();
+            console.log("Restart result:", restartRes.status, JSON.stringify(restartData));
+          } catch (e) {
+            console.log("Restart attempt failed (may not exist), continuing...", e);
+          }
+
+          // Small delay to allow restart
+          await new Promise((r) => setTimeout(r, 1500));
+
+          // Now fetch QR code
           const qrRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
             method: "GET",
             headers,
           });
           const qrData = await qrRes.json();
+          console.log("QR code response:", qrRes.status, JSON.stringify(qrData));
           if (!qrRes.ok) {
-            return json({ error: qrData?.message || "Erro ao conectar instância existente" }, qrRes.status);
+            return json({ error: qrData?.message || "Erro ao conectar instância existente", details: qrData }, qrRes.status);
           }
           return json({ ...qrData, reused: true });
         }
