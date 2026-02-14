@@ -10,9 +10,10 @@ interface PasswordGateProps {
   children: React.ReactNode;
   onUnlock: () => void;
   unlocked: boolean;
+  description?: string;
 }
 
-const PasswordGate = ({ children, onUnlock, unlocked }: PasswordGateProps) => {
+const PasswordGate = ({ children, onUnlock, unlocked, description = "Digite sua senha para acessar esta área protegida." }: PasswordGateProps) => {
   const { user } = useAuth();
   const [password, setPassword] = useState("");
   const [checking, setChecking] = useState(false);
@@ -55,7 +56,7 @@ const PasswordGate = ({ children, onUnlock, unlocked }: PasswordGateProps) => {
           </div>
           <h2 className="font-heading text-lg font-bold text-foreground">Área Protegida</h2>
           <p className="font-body text-sm text-muted-foreground">
-            Digite sua senha para acessar o gerenciamento de parceiros.
+            {description}
           </p>
           <form
             onSubmit={(e) => {

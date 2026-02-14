@@ -38,11 +38,13 @@ const Admin = () => {
   const [adminName, setAdminName] = useState<string | null>(null);
   const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
   const [partnersUnlocked, setPartnersUnlocked] = useState(false);
+  const [usersUnlocked, setUsersUnlocked] = useState(false);
 
   const handleTabChange = (tab: Tab) => {
     // Always re-lock when leaving any tab (so returning to partners requires password again)
     if (tab !== activeTab) {
       setPartnersUnlocked(false);
+      setUsersUnlocked(false);
     }
     setActiveTab(tab);
     setMobileMenuOpen(false);
@@ -261,7 +263,11 @@ const Admin = () => {
           {activeTab === "whatsapp" && <AdminWhatsApp />}
           {activeTab === "client-plans" && <AdminClientPlans />}
           {activeTab === "history" && <AdminHistory />}
-          {activeTab === "users" && <AdminUsers />}
+          {activeTab === "users" && (
+            <PasswordGate unlocked={usersUnlocked} onUnlock={() => setUsersUnlocked(true)} description="Digite sua senha para acessar o gerenciamento de usuários.">
+              <AdminUsers />
+            </PasswordGate>
+          )}
           {activeTab === "install-app" && <AdminInstallApp />}
           {activeTab === "site-settings" && <AdminSiteSettings />}
         </div>
