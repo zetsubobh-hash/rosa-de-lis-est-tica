@@ -146,12 +146,12 @@ const ServiceDetail = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="flex-shrink-0"
+              className="flex-shrink-0 overflow-visible"
             >
               <img
                 src={service.image_url}
                 alt={service.title}
-                className="max-w-[250px] md:max-w-[310px]"
+                className="max-w-[250px] md:max-w-[310px] w-full h-auto"
               />
             </motion.div>
           )}
