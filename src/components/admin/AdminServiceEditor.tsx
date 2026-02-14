@@ -57,23 +57,44 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     setHasChanges(true);
   };
 
-  const convertToWebP = (file: File): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
+  const convertToWebP = (file: File): Promise<{ blob: Blob; ext: string }> => {
+    return new Promise((resolve) => {
+      const objectUrl = URL.createObjectURL(file);
       const img = new window.Image();
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error("Falha na conversão"))),
-          "image/webp",
-          0.85
-        );
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { 
+            URL.revokeObjectURL(objectUrl);
+            resolve({ blob: file, ext: file.name.split(".").pop() || "png" }); 
+            return; 
+          }
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(
+            (blob) => {
+              URL.revokeObjectURL(objectUrl);
+              if (blob) {
+                resolve({ blob, ext: "webp" });
+              } else {
+                resolve({ blob: file, ext: file.name.split(".").pop() || "png" });
+              }
+            },
+            "image/webp",
+            0.85
+          );
+        } catch {
+          URL.revokeObjectURL(objectUrl);
+          resolve({ blob: file, ext: file.name.split(".").pop() || "png" });
+        }
       };
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve({ blob: file, ext: file.name.split(".").pop() || "png" });
+      };
+      img.src = objectUrl;
     });
   };
 
@@ -86,16 +107,20 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     }
     setUploading(true);
     try {
-      const webpBlob = await convertToWebP(file);
-      const path = `${service.slug || "new"}-${Date.now()}.webp`;
-      const { error } = await supabase.storage.from("service-images").upload(path, webpBlob, { upsert: true, contentType: "image/webp" });
+      const { blob, ext } = await convertToWebP(file);
+      const contentType = ext === "webp" ? "image/webp" : file.type;
+      const path = `${service.slug || "new"}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("service-images").upload(path, blob, { upsert: true, contentType });
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("service-images").getPublicUrl(path);
       updateField("image_url", urlData.publicUrl);
+      toast({ title: "Imagem atualizada! ✅" });
     } catch (err: any) {
+      console.error("Upload error:", err);
       toast({ title: "Erro ao enviar imagem", description: err.message, variant: "destructive" });
     }
     setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSave = async () => {
