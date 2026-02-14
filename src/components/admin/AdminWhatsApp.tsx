@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -12,6 +12,7 @@ const MSG_KEYS = [
   "whatsapp_msg_reminder_enabled", "whatsapp_msg_reminder_text",
   "whatsapp_msg_cancellation_enabled", "whatsapp_msg_cancellation_text",
   "whatsapp_msg_partner_enabled", "whatsapp_msg_partner_text",
+  "whatsapp_msg_admin_enabled", "whatsapp_msg_admin_text",
 ];
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
@@ -61,6 +62,15 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: MessageCircle,
     enabledKey: "whatsapp_msg_partner_enabled",
     textKey: "whatsapp_msg_partner_text",
+    variables: ["{nome}", "{servico}", "{data}", "{hora}"],
+  },
+  {
+    key: "admin",
+    label: "Notificação ao Administrador",
+    description: "Enviada aos admins quando há um novo agendamento",
+    icon: ShieldCheck,
+    enabledKey: "whatsapp_msg_admin_enabled",
+    textKey: "whatsapp_msg_admin_text",
     variables: ["{nome}", "{servico}", "{data}", "{hora}"],
   },
 ];
