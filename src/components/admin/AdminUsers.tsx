@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText } from "lucide-react";
+import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText, Pencil, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,9 @@ interface UserProfile {
   email: string | null;
   avatar_url: string | null;
   last_seen: string | null;
+  address: string;
+  sex: string;
+  username: string;
   isAdmin: boolean;
 }
 
@@ -46,12 +49,15 @@ const AdminUsers = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [anamnesisUser, setAnamnesisUser] = useState<UserProfile | null>(null);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string }>({ full_name: "", phone: "", email: "", address: "", sex: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, full_name, phone, email, avatar_url, last_seen")
+      .select("user_id, full_name, phone, email, avatar_url, last_seen, address, sex, username")
       .order("full_name");
 
     const { data: roles } = await supabase
@@ -142,6 +148,45 @@ const AdminUsers = () => {
       }
     }
     setToggling(null);
+  };
+
+  const openEditUser = (u: UserProfile) => {
+    setEditingUser(u);
+    setEditForm({
+      full_name: u.full_name,
+      phone: u.phone,
+      email: u.email || "",
+      address: u.address || "",
+      sex: u.sex || "",
+    });
+  };
+
+  const saveEditUser = async () => {
+    if (!editingUser) return;
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: editForm.full_name,
+        phone: editForm.phone,
+        email: editForm.email,
+        address: editForm.address,
+        sex: editForm.sex,
+      })
+      .eq("user_id", editingUser.user_id);
+    
+    setSavingEdit(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Dados atualizados com sucesso ✅" });
+      setUsers((prev) => prev.map((u) =>
+        u.user_id === editingUser.user_id
+          ? { ...u, full_name: editForm.full_name, phone: editForm.phone, email: editForm.email, address: editForm.address, sex: editForm.sex }
+          : u
+      ));
+      setEditingUser(null);
+    }
   };
 
   const filtered = users.filter((u) =>
@@ -236,6 +281,13 @@ const AdminUsers = () => {
                 ) : (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      onClick={() => openEditUser(u)}
+                      className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
+                      title="Editar dados"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => setAnamnesisUser(u)}
                       className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
                       title="Ficha de Anamnese"
@@ -279,6 +331,7 @@ const AdminUsers = () => {
         </div>
       )}
 
+      {/* Delete Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -297,6 +350,54 @@ const AdminUsers = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleting ? "Excluindo..." : "Sim, excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit User Dialog */}
+      <AlertDialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-primary" />
+              Editar Dados — {editingUser?.full_name}
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">Nome completo</label>
+              <Input value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
+            </div>
+            <div>
+              <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">Telefone</label>
+              <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+            </div>
+            <div>
+              <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">E-mail</label>
+              <Input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+            </div>
+            <div>
+              <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">Endereço</label>
+              <Input value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
+            </div>
+            <div>
+              <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">Sexo</label>
+              <div className="flex gap-2">
+                {["Masculino", "Feminino", "Outro"].map((s) => (
+                  <button key={s} type="button" onClick={() => setEditForm({ ...editForm, sex: s })}
+                    className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
+                      editForm.sex === s ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground hover:border-primary/50"
+                    }`}>{s}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingEdit}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={saveEditUser} disabled={savingEdit}>
+              <Save className="w-3.5 h-3.5 mr-1.5" />
+              {savingEdit ? "Salvando..." : "Salvar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
