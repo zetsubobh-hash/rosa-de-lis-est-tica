@@ -1,0 +1,1 @@
+UPDATE public.services SET image_url = NULL WHERE image_url = '/images/service-placeholder.webp';
