@@ -293,9 +293,13 @@ const AdminCounterSales = () => {
 
               {selectedClient && (
                 <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm">
-                    {selectedClient.full_name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
-                  </div>
+                  {selectedClient.avatar_url ? (
+                    <img src={selectedClient.avatar_url} alt={selectedClient.full_name} className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm">
+                      {selectedClient.full_name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-body font-semibold text-foreground truncate">{selectedClient.full_name}</p>
                     <p className="font-body text-xs text-muted-foreground">{selectedClient.phone}</p>
@@ -311,9 +315,13 @@ const AdminCounterSales = () => {
                     onClick={() => { setSelectedClient(client); setSearch(""); }}
                     className="w-full p-3 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 flex items-center gap-3 transition-all"
                   >
-                    <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-heading font-bold text-xs">
-                      {client.full_name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
-                    </div>
+                    {client.avatar_url ? (
+                      <img src={client.avatar_url} alt={client.full_name} className="w-9 h-9 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-heading font-bold text-xs">
+                        {client.full_name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+                      </div>
+                    )}
                     <div className="text-left flex-1 min-w-0">
                       <p className="font-body text-sm font-medium text-foreground truncate">{client.full_name}</p>
                       <p className="font-body text-xs text-muted-foreground">{client.phone}</p>
