@@ -39,6 +39,10 @@ const Admin = () => {
   const [partnersUnlocked, setPartnersUnlocked] = useState(false);
 
   const handleTabChange = (tab: Tab) => {
+    // Re-lock partners when leaving protected tabs
+    if ((activeTab === "partners" || activeTab === "partner-view") && tab !== "partners" && tab !== "partner-view") {
+      setPartnersUnlocked(false);
+    }
     setActiveTab(tab);
     setMobileMenuOpen(false);
   };
