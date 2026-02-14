@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar, Clock, CalendarCheck, CalendarClock,
-  Users, History, ClipboardList, CheckCircle2, Home, LogOut
+  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
+import AnamnesisModal from "@/components/AnamnesisModal";
 
 interface SessionInfo {
   date: string;
@@ -72,7 +73,7 @@ const AdminPartnerView = () => {
   const [loading, setLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("agenda");
-
+  const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
   useEffect(() => {
     const fetchPartners = async () => {
       const { data } = await supabase
@@ -296,8 +297,22 @@ const AdminPartnerView = () => {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-heading text-sm font-bold text-foreground">{apt.service_title}</p>
-          <p className="font-body text-xs text-muted-foreground mt-0.5">{apt.profile?.full_name || "Cliente"}</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-heading text-sm font-bold text-foreground">{apt.service_title}</p>
+              <p className="font-body text-xs text-muted-foreground mt-0.5">{apt.profile?.full_name || "Cliente"}</p>
+            </div>
+            {apt.profile && (
+              <button
+                onClick={() => setAnamnesisClient({ userId: apt.user_id, name: apt.profile?.full_name || "Cliente" })}
+                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
+                title="Ficha de Anamnese"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Anamnese</span>
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs font-body text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
@@ -521,8 +536,22 @@ const AdminPartnerView = () => {
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="font-heading text-sm font-bold text-foreground">{plan.profile?.full_name || "Cliente"}</p>
-                            <p className="font-body text-xs text-muted-foreground mt-0.5">{plan.service_title} · {plan.plan_name}</p>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-heading text-sm font-bold text-foreground">{plan.profile?.full_name || "Cliente"}</p>
+                                <p className="font-body text-xs text-muted-foreground mt-0.5">{plan.service_title} · {plan.plan_name}</p>
+                              </div>
+                              {plan.profile && (
+                                <button
+                                  onClick={() => setAnamnesisClient({ userId: plan.user_id, name: plan.profile?.full_name || "Cliente" })}
+                                  className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
+                                  title="Ficha de Anamnese"
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Anamnese</span>
+                                </button>
+                              )}
+                            </div>
 
                             <div className="mt-2">
                               <div className="flex items-center justify-between mb-1">
@@ -647,6 +676,15 @@ const AdminPartnerView = () => {
             )}
           </div>
         </div>
+      )}
+      {anamnesisClient && (
+        <AnamnesisModal
+          open={!!anamnesisClient}
+          onClose={() => setAnamnesisClient(null)}
+          clientUserId={anamnesisClient.userId}
+          clientName={anamnesisClient.name}
+          partnerId={selectedPartner}
+        />
       )}
     </div>
   );
