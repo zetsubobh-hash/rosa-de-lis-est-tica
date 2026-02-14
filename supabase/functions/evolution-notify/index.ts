@@ -23,7 +23,8 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { appointment_ids } = await req.json();
+    const { appointment_ids, type } = await req.json();
+    const notificationType = type || "new"; // "new" | "reschedule"
 
     if (!appointment_ids || !Array.isArray(appointment_ids) || appointment_ids.length === 0) {
       return json({ skipped: true, reason: "No appointment IDs" });
@@ -43,6 +44,10 @@ serve(async (req) => {
         "whatsapp_msg_admin_text",
         "whatsapp_msg_partner_enabled",
         "whatsapp_msg_partner_text",
+        "whatsapp_msg_reschedule_enabled",
+        "whatsapp_msg_reschedule_text",
+        "whatsapp_msg_confirmation_enabled",
+        "whatsapp_msg_confirmation_text",
       ]);
 
     const cfg: Record<string, string> = {};
@@ -147,31 +152,61 @@ serve(async (req) => {
     for (const apt of appointments) {
       const client = profileMap[apt.user_id];
       const clientName = client?.full_name || "Cliente";
+      const clientPhone = client?.phone;
       const [y, m, d] = apt.appointment_date.split("-");
       const dateFormatted = `${d}/${m}/${y}`;
 
       const vars = { nome: clientName, servico: apt.service_title, data: dateFormatted, hora: apt.appointment_time };
 
-      // Send to all admins
-      if (adminEnabled) {
-        const adminMsg = adminTemplate
-          ? applyTemplate(adminTemplate, vars)
-          : `📋 *Novo Agendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+      if (notificationType === "reschedule") {
+        // Reschedule notifications — send to client, partner, and admins
+        const rescheduleEnabled = cfg.whatsapp_msg_reschedule_enabled !== "false";
+        if (!rescheduleEnabled) continue;
 
-        for (const phone of adminPhones) {
-          const r = await sendMessage(phone, adminMsg);
-          results.push({ ...r, type: "admin", appointment_id: apt.id });
+        const rescheduleTemplate = cfg.whatsapp_msg_reschedule_text || "";
+        const defaultMsg = `🔄 *Reagendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Nova Data:* ${dateFormatted}\n🕐 *Novo Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+        const msg = rescheduleTemplate ? applyTemplate(rescheduleTemplate, vars) : defaultMsg;
+
+        // Send to client
+        if (clientPhone) {
+          const r = await sendMessage(clientPhone, msg);
+          results.push({ ...r, type: "reschedule_client", appointment_id: apt.id });
         }
-      }
 
-      // Send to assigned partner
-      if (partnerEnabled && apt.partner_id && partnerPhones[apt.partner_id]) {
-        const partnerMsg = partnerTemplate
-          ? applyTemplate(partnerTemplate, vars)
-          : `📋 *Agendamento Atribuído a Você*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+        // Send to admins
+        for (const phone of adminPhones) {
+          const r = await sendMessage(phone, msg);
+          results.push({ ...r, type: "reschedule_admin", appointment_id: apt.id });
+        }
 
-        const r = await sendMessage(partnerPhones[apt.partner_id], partnerMsg);
-        results.push({ ...r, type: "partner", appointment_id: apt.id });
+        // Send to partner
+        if (apt.partner_id && partnerPhones[apt.partner_id]) {
+          const r = await sendMessage(partnerPhones[apt.partner_id], msg);
+          results.push({ ...r, type: "reschedule_partner", appointment_id: apt.id });
+        }
+      } else {
+        // New appointment notifications
+        // Send to all admins
+        if (adminEnabled) {
+          const adminMsg = adminTemplate
+            ? applyTemplate(adminTemplate, vars)
+            : `📋 *Novo Agendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+
+          for (const phone of adminPhones) {
+            const r = await sendMessage(phone, adminMsg);
+            results.push({ ...r, type: "admin", appointment_id: apt.id });
+          }
+        }
+
+        // Send to assigned partner
+        if (partnerEnabled && apt.partner_id && partnerPhones[apt.partner_id]) {
+          const partnerMsg = partnerTemplate
+            ? applyTemplate(partnerTemplate, vars)
+            : `📋 *Agendamento Atribuído a Você*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+
+          const r = await sendMessage(partnerPhones[apt.partner_id], partnerMsg);
+          results.push({ ...r, type: "partner", appointment_id: apt.id });
+        }
       }
     }
 

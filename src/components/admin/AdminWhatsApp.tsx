@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck } from "lucide-react";
+import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck, CalendarClock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +11,7 @@ const MSG_KEYS = [
   "whatsapp_msg_confirmation_enabled", "whatsapp_msg_confirmation_text",
   "whatsapp_msg_reminder_enabled", "whatsapp_msg_reminder_text",
   "whatsapp_msg_cancellation_enabled", "whatsapp_msg_cancellation_text",
+  "whatsapp_msg_reschedule_enabled", "whatsapp_msg_reschedule_text",
   "whatsapp_msg_partner_enabled", "whatsapp_msg_partner_text",
   "whatsapp_msg_admin_enabled", "whatsapp_msg_admin_text",
 ];
@@ -53,6 +54,15 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: Ban,
     enabledKey: "whatsapp_msg_cancellation_enabled",
     textKey: "whatsapp_msg_cancellation_text",
+    variables: ["{nome}", "{servico}", "{data}", "{hora}"],
+  },
+  {
+    key: "reschedule",
+    label: "Reagendamento",
+    description: "Enviada ao cliente, parceiro e admins quando a data/hora é alterada",
+    icon: CalendarClock,
+    enabledKey: "whatsapp_msg_reschedule_enabled",
+    textKey: "whatsapp_msg_reschedule_text",
     variables: ["{nome}", "{servico}", "{data}", "{hora}"],
   },
   {
