@@ -57,18 +57,43 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     setHasChanges(true);
   };
 
+  const convertToWebP = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("Falha na conversão"))),
+          "image/webp",
+          0.85
+        );
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Imagem muito grande. Máximo 5MB.", variant: "destructive" });
+      return;
+    }
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${service.slug || "new"}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("service-images").upload(path, file, { upsert: true });
-    if (error) {
-      toast({ title: "Erro ao enviar imagem", variant: "destructive" });
-    } else {
+    try {
+      const webpBlob = await convertToWebP(file);
+      const path = `${service.slug || "new"}-${Date.now()}.webp`;
+      const { error } = await supabase.storage.from("service-images").upload(path, webpBlob, { upsert: true, contentType: "image/webp" });
+      if (error) throw error;
       const { data: urlData } = supabase.storage.from("service-images").getPublicUrl(path);
       updateField("image_url", urlData.publicUrl);
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar imagem", description: err.message, variant: "destructive" });
     }
     setUploading(false);
   };
