@@ -95,6 +95,20 @@ serve(async (req) => {
       const data = await res.json();
       if (!res.ok) {
         console.error("Evolution create_instance error:", res.status, data);
+        // If instance already exists, try to connect/get QR code instead
+        const msg = JSON.stringify(data).toLowerCase();
+        if (res.status === 403 && msg.includes("already in use")) {
+          console.log("Instance already exists, fetching QR code instead...");
+          const qrRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
+            method: "GET",
+            headers,
+          });
+          const qrData = await qrRes.json();
+          if (!qrRes.ok) {
+            return json({ error: qrData?.message || "Erro ao conectar instância existente" }, qrRes.status);
+          }
+          return json({ ...qrData, reused: true });
+        }
         return json({ error: data?.message || "Erro ao criar instância" }, res.status);
       }
       return json(data);
