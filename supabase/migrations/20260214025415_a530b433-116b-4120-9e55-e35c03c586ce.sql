@@ -1,0 +1,1 @@
+INSERT INTO public.site_settings (key, value) VALUES ('whatsapp_number', '') ON CONFLICT (key) DO NOTHING;
