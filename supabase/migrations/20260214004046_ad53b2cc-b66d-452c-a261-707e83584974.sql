@@ -1,0 +1,1 @@
+UPDATE public.services SET image_url = '/images/botox.webp' WHERE slug = 'botox';
