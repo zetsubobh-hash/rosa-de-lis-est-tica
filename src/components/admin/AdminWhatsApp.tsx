@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck, CalendarClock } from "lucide-react";
+import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck, CalendarClock, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -95,6 +95,8 @@ const AdminWhatsApp = () => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
+  const [testPhone, setTestPhone] = useState("");
+  const [testSending, setTestSending] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -197,6 +199,38 @@ const AdminWhatsApp = () => {
     } catch {
       toast({ title: "Erro ao desconectar", variant: "destructive" });
     }
+  };
+
+  const handleSendTest = async () => {
+    if (!testPhone.trim()) {
+      toast({ title: "Informe o número", description: "Digite um número de WhatsApp para enviar o teste.", variant: "destructive" });
+      return;
+    }
+    setTestSending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "send_test", phone: testPhone.trim() }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "✅ Mensagem enviada!", description: `Teste enviado para ${testPhone}` });
+      } else {
+        toast({ title: "Erro ao enviar", description: data.error || "Falha no envio", variant: "destructive" });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    }
+    setTestSending(false);
   };
 
   const isEnabled = settings.evolution_enabled === "true";
@@ -383,6 +417,35 @@ const AdminWhatsApp = () => {
             </button>
           )}
         </div>
+      </motion.div>
+
+      {/* Test Message */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <h3 className="font-heading text-sm font-bold text-foreground flex items-center gap-2">
+          <Send className="w-4 h-4 text-primary" />
+          Testar Envio
+        </h3>
+        <p className="font-body text-xs text-muted-foreground">
+          Envie uma mensagem de teste para verificar se a integração está funcionando.
+        </p>
+        <div>
+          <label className="font-body text-xs text-muted-foreground mb-1 block">Número do WhatsApp</label>
+          <input
+            type="tel"
+            value={testPhone}
+            onChange={(e) => setTestPhone(e.target.value)}
+            placeholder="5511999999999"
+            className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          />
+        </div>
+        <button
+          onClick={handleSendTest}
+          disabled={testSending}
+          className="w-full h-10 rounded-xl bg-emerald-600 text-white font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors disabled:opacity-50"
+        >
+          {testSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {testSending ? "Enviando..." : "Enviar Mensagem de Teste"}
+        </button>
       </motion.div>
 
       {/* Save all button */}

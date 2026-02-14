@@ -169,6 +169,29 @@ serve(async (req) => {
       return json(data);
     }
 
+    // Send test message
+    if (action === "send_test") {
+      const body = await req.clone().json().catch(() => ({}));
+      const phone = body.phone;
+      if (!phone) return json({ error: "Informe o número de telefone" }, 400);
+
+      const formatted = phone.replace(/\D/g, "");
+      const res = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          number: formatted,
+          text: "✅ Teste de envio automático via Evolution API — tudo funcionando! 🎉",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("Evolution send_test error:", res.status, data);
+        return json({ error: data?.message || "Erro ao enviar mensagem de teste" }, res.status);
+      }
+      return json({ success: true, data });
+    }
+
     return json({ error: "Ação inválida" }, 400);
   } catch (e) {
     console.error("evolution error:", e);
