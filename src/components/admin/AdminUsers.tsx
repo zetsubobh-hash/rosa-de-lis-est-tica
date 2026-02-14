@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2 } from "lucide-react";
+import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import AnamnesisModal from "@/components/AnamnesisModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +45,7 @@ const AdminUsers = () => {
   const [toggling, setToggling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  const [anamnesisUser, setAnamnesisUser] = useState<UserProfile | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -234,6 +236,13 @@ const AdminUsers = () => {
                 ) : (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      onClick={() => setAnamnesisUser(u)}
+                      className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
+                      title="Ficha de Anamnese"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={() => toggleAdmin(u.user_id, u.isAdmin)}
                       disabled={toggling === u.user_id}
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all disabled:opacity-50 ${
@@ -292,6 +301,16 @@ const AdminUsers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {anamnesisUser && (
+        <AnamnesisModal
+          open={!!anamnesisUser}
+          onClose={() => setAnamnesisUser(null)}
+          clientUserId={anamnesisUser.user_id}
+          clientName={anamnesisUser.full_name}
+          adminMode
+        />
+      )}
     </motion.div>
   );
 };
