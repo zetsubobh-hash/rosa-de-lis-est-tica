@@ -1,0 +1,1 @@
+UPDATE public.payment_settings SET value = 'https://rosadelis.com/instalar' WHERE key = 'app_install_url';
