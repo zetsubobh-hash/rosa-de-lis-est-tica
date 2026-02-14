@@ -280,6 +280,18 @@ const AdminAgenda = () => {
         )
       );
       setRescheduleId(null);
+
+      // Fire reschedule WhatsApp notification (fire-and-forget)
+      const { data: { session } } = await supabase.auth.getSession();
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-notify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ appointment_ids: [rescheduleId], type: "reschedule" }),
+      }).catch((e) => console.warn("Reschedule WhatsApp notification failed:", e));
     }
     setSaving(false);
   };
