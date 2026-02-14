@@ -173,9 +173,11 @@ const AdminCounterSales = () => {
     const dateStr = format(selectedDate, "yyyy-MM-dd");
 
     try {
+      const resolvedPartnerId = partnerId && partnerId !== "none" ? partnerId : null;
+
       for (const item of cart) {
-        if (item.type === "plano" && item.sessions > 1) {
-          // Create plan
+        if (item.type === "plano") {
+          // Always create a plan for "plano" type, regardless of session count
           const { data: plan, error: planErr } = await supabase
             .from("client_plans")
             .insert({
@@ -193,7 +195,7 @@ const AdminCounterSales = () => {
             .single();
           if (planErr) throw planErr;
 
-          // Create first session appointment
+          // Create first session appointment linked to the plan
           const { error: apptErr } = await supabase.from("appointments").insert({
             user_id: selectedClient.user_id,
             service_slug: item.serviceSlug,
@@ -203,12 +205,12 @@ const AdminCounterSales = () => {
             status: "confirmed",
             plan_id: plan.id,
             session_number: 1,
-            partner_id: partnerId || null,
+            partner_id: resolvedPartnerId,
             notes: notes || null,
           });
           if (apptErr) throw apptErr;
         } else {
-          // Single session
+          // Single session (avulso) — no plan
           const { error: apptErr } = await supabase.from("appointments").insert({
             user_id: selectedClient.user_id,
             service_slug: item.serviceSlug,
@@ -216,7 +218,7 @@ const AdminCounterSales = () => {
             appointment_date: dateStr,
             appointment_time: selectedTime,
             status: "confirmed",
-            partner_id: partnerId || null,
+            partner_id: resolvedPartnerId,
             notes: notes || null,
           });
           if (apptErr) throw apptErr;
