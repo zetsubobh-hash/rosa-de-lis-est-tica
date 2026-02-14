@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -271,12 +272,24 @@ const Admin = () => {
           )}
           {activeTab === "install-app" && <AdminInstallApp />}
           {activeTab === "site-settings" && (
-            <div className="space-y-10">
-              <AdminSiteSettings />
-              <div className="border-t border-border pt-8">
+            <Tabs defaultValue="negocio" className="space-y-6">
+              <TabsList className="w-full justify-start">
+                <TabsTrigger value="negocio" className="gap-2">
+                  <Settings className="w-4 h-4" />
+                  Negócio
+                </TabsTrigger>
+                <TabsTrigger value="tema" className="gap-2">
+                  <Palette className="w-4 h-4" />
+                  Tema
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="negocio">
+                <AdminSiteSettings />
+              </TabsContent>
+              <TabsContent value="tema">
                 <AdminThemeEditor />
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </main>
