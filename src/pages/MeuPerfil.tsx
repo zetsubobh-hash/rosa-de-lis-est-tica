@@ -147,7 +147,7 @@ const MeuPerfil = () => {
             <label className="font-body text-xs font-medium text-muted-foreground mb-1 block">Nome Completo</label>
             <Input
               value={profile.full_name}
-              onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+              onChange={(e) => setProfile({ ...profile, full_name: e.target.value.replace(/\b\w/g, (char) => char.toUpperCase()) })}
               className="font-body"
             />
           </div>
