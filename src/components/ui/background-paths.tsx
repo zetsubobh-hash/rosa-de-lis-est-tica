@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-function FloatingPaths({ position, count }: { position: number; count: number }) {
+function FloatingPaths({ position, count, isMobile }: { position: number; count: number; isMobile: boolean }) {
     const paths = Array.from({ length: count }, (_, i) => ({
         id: i,
         d: `M-${380 - i * 5 * position} -${189 + i * 6}C-${
@@ -13,7 +13,7 @@ function FloatingPaths({ position, count }: { position: number; count: number })
         } ${343 - i * 6}C${616 - i * 5 * position} ${470 - i * 6} ${
             684 - i * 5 * position
         } ${875 - i * 6} ${684 - i * 5 * position} ${875 - i * 6}`,
-        width: 0.5 + i * 0.03,
+        width: isMobile ? 0.8 + i * 0.06 : 0.5 + i * 0.03,
     }));
 
     return (
@@ -30,15 +30,15 @@ function FloatingPaths({ position, count }: { position: number; count: number })
                         d={path.d}
                         stroke="currentColor"
                         strokeWidth={path.width}
-                        strokeOpacity={0.15 + path.id * 0.03}
-                        initial={{ pathLength: 0.3, opacity: 0.6 }}
+                        strokeOpacity={isMobile ? 0.35 + path.id * 0.04 : 0.15 + path.id * 0.03}
+                        initial={{ pathLength: 0.3, opacity: isMobile ? 0.8 : 0.6 }}
                         animate={{
                             pathLength: 1,
-                            opacity: [0.3, 0.6, 0.3],
+                            opacity: isMobile ? [0.5, 0.9, 0.5] : [0.3, 0.6, 0.3],
                             pathOffset: [0, 1, 0],
                         }}
                         transition={{
-                            duration: 20 + Math.random() * 10,
+                            duration: isMobile ? 15 + Math.random() * 8 : 20 + Math.random() * 10,
                             repeat: Infinity,
                             ease: "linear",
                         }}
@@ -50,19 +50,21 @@ function FloatingPaths({ position, count }: { position: number; count: number })
 }
 
 export function BackgroundPaths() {
-    const [pathCount, setPathCount] = useState(36);
+    const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
-        const check = () => setPathCount(window.innerWidth < 768 ? 24 : 36);
+        const check = () => setIsMobile(window.innerWidth < 768);
         check();
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
 
+    const pathCount = isMobile ? 24 : 36;
+
     return (
-        <div className="absolute inset-0 text-primary-foreground/40">
-            <FloatingPaths position={1} count={pathCount} />
-            <FloatingPaths position={-1} count={pathCount} />
+        <div className={`absolute inset-0 ${isMobile ? 'text-primary-foreground/70' : 'text-primary-foreground/40'}`}>
+            <FloatingPaths position={1} count={pathCount} isMobile={isMobile} />
+            <FloatingPaths position={-1} count={pathCount} isMobile={isMobile} />
         </div>
     );
 }
