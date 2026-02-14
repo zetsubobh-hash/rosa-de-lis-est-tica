@@ -1,11 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Search, ChevronRight, ChevronLeft, Check, ShoppingBag,
   Calendar as CalendarIcon, CreditCard, User, Package, Sparkles,
+  UserPlus, X, Camera, Loader2,
 } from "lucide-react";
+import Cropper, { Area } from "react-easy-crop";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServices } from "@/hooks/useServices";
@@ -65,6 +67,50 @@ const TIME_SLOTS = Array.from({ length: 21 }, (_, i) => {
   return `${String(h).padStart(2, "0")}:${m}`;
 });
 
+const formatPhone = (value: string) => {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  if (d.length === 0) return "";
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+};
+
+const capitalize = (s: string) =>
+  s.replace(/\b\w/g, (c) => c.toUpperCase());
+
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.addEventListener("load", () => resolve(img));
+    img.addEventListener("error", reject);
+    img.setAttribute("crossOrigin", "anonymous");
+    img.src = url;
+  });
+
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.9);
+  });
+}
+
+interface NewClientForm {
+  full_name: string;
+  username: string;
+  password: string;
+  phone: string;
+  email: string;
+  sex: string;
+  address: string;
+}
+
+const emptyNewClient: NewClientForm = { full_name: "", username: "", password: "", phone: "", email: "", sex: "", address: "" };
+
 /* ─── Component ─── */
 const AdminCounterSales = () => {
   const { user } = useAuth();
@@ -76,6 +122,37 @@ const AdminCounterSales = () => {
   // Step 1: Client
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<ClientProfile | null>(null);
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [newClient, setNewClient] = useState<NewClientForm>(emptyNewClient);
+  const [creatingClient, setCreatingClient] = useState(false);
+
+  // Avatar for new client
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
+  const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
+  const [avatarZoom, setAvatarZoom] = useState(1);
+  const [avatarCropArea, setAvatarCropArea] = useState<Area | null>(null);
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const onAvatarCropComplete = useCallback(async (_: Area, croppedPixels: Area) => {
+    setAvatarCropArea(croppedPixels);
+    if (avatarSrc) {
+      try {
+        const blob = await getCroppedImg(avatarSrc, croppedPixels);
+        setAvatarBlob(blob);
+      } catch { /* ignore */ }
+    }
+  }, [avatarSrc]);
+
+  const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande. Máximo 5MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => setAvatarSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  };
 
   // Step 2: Cart
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -119,6 +196,61 @@ const AdminCounterSales = () => {
     };
     fetchClients();
   }, []);
+
+  /* ─── Create new client ─── */
+  const createNewClient = async () => {
+    const { full_name, username, password, phone, sex, address, email } = newClient;
+    if (!full_name || !username || !password || !phone || !sex || !address) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Senha deve ter no mínimo 6 caracteres");
+      return;
+    }
+    setCreatingClient(true);
+    try {
+      const rawPhone = phone.replace(/\D/g, "");
+      const res = await supabase.functions.invoke("register", {
+        body: { username: username.toLowerCase(), password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined },
+      });
+      if (res.error || res.data?.error) throw new Error(res.data?.error || res.error?.message || "Erro ao criar cliente");
+
+      const newUserId = res.data.user_id;
+
+      // Upload avatar if cropped
+      let avatarUrl: string | null = null;
+      if (avatarBlob && newUserId) {
+        const filePath = `${newUserId}/avatar.jpg`;
+        await supabase.storage.from("avatars").remove([filePath]);
+        const { error: upErr } = await supabase.storage.from("avatars").upload(filePath, avatarBlob, { upsert: true, contentType: "image/jpeg" });
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+          avatarUrl = urlData.publicUrl + "?t=" + Date.now();
+          await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("user_id", newUserId);
+        }
+      }
+
+      const client: ClientProfile = {
+        user_id: newUserId,
+        full_name: full_name.trim(),
+        phone: rawPhone,
+        email: email.trim() || null,
+        avatar_url: avatarUrl,
+      };
+      setAllClients(prev => [client, ...prev]);
+      setSelectedClient(client);
+      setShowNewClientForm(false);
+      setNewClient(emptyNewClient);
+      setAvatarSrc(null);
+      setAvatarBlob(null);
+      toast.success("Cliente criado com sucesso!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao criar cliente");
+    } finally {
+      setCreatingClient(false);
+    }
+  };
 
   /* ─── Filter clients by search ─── */
   const filteredClients = useMemo(() => {
@@ -291,55 +423,165 @@ const AdminCounterSales = () => {
           {/* ─── STEP 1: Client ─── */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="font-heading text-lg font-bold text-foreground">Selecionar Cliente</h2>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nome ou telefone..."
-                  className="pl-10 font-body"
-                />
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-lg font-bold text-foreground">Selecionar Cliente</h2>
+                <Button
+                  variant={showNewClientForm ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => { setShowNewClientForm(!showNewClientForm); setSelectedClient(null); }}
+                  className="font-body"
+                >
+                  {showNewClientForm ? <><X className="w-4 h-4 mr-1" /> Cancelar</> : <><UserPlus className="w-4 h-4 mr-1" /> Novo Cliente</>}
+                </Button>
               </div>
 
-              {selectedClient && (
-                <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 flex items-center gap-3">
-                  {selectedClient.avatar_url ? (
-                    <img src={selectedClient.avatar_url} alt={selectedClient.full_name} className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm">
-                      {selectedClient.full_name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+              {/* ─── New Client Form ─── */}
+              {showNewClientForm ? (
+                <div className="space-y-4 p-4 rounded-xl border border-border bg-muted/20">
+                  {/* Avatar */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative group" style={{ width: 72, height: 72 }}>
+                      <div
+                        className="w-full h-full rounded-full overflow-hidden bg-primary/10 border-2 border-primary/20 flex items-center justify-center cursor-pointer"
+                        onClick={() => avatarInputRef.current?.click()}
+                      >
+                        {avatarBlob ? (
+                          <img src={URL.createObjectURL(avatarBlob)} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <Camera className="w-6 h-6 text-primary/40" />
+                        )}
+                      </div>
+                      <div
+                        className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        onClick={() => avatarInputRef.current?.click()}
+                      >
+                        <Camera className="w-5 h-5 text-white" />
+                      </div>
+                      <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarFile} className="hidden" />
+                    </div>
+                    <p className="font-body text-xs text-muted-foreground">Clique para adicionar foto</p>
+                  </div>
+
+                  {/* Avatar Crop Modal */}
+                  <AnimatePresence>
+                    {avatarSrc && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-sm overflow-hidden">
+                          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                            <h3 className="font-heading text-base font-bold text-foreground">Ajustar Avatar</h3>
+                            <button onClick={() => setAvatarSrc(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+                          </div>
+                          <div className="relative w-full aspect-square bg-black">
+                            <Cropper image={avatarSrc} crop={avatarCrop} zoom={avatarZoom} aspect={1} cropShape="round" showGrid={false} onCropChange={setAvatarCrop} onZoomChange={setAvatarZoom} onCropComplete={onAvatarCropComplete} />
+                          </div>
+                          <div className="px-5 py-3">
+                            <label className="font-body text-xs text-muted-foreground mb-1 block">Zoom</label>
+                            <input type="range" min={1} max={3} step={0.05} value={avatarZoom} onChange={(e) => setAvatarZoom(Number(e.target.value))} className="w-full accent-primary" />
+                          </div>
+                          <div className="px-5 pb-5 flex gap-2">
+                            <button onClick={() => { setAvatarSrc(null); setAvatarBlob(null); }} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">Cancelar</button>
+                            <button onClick={() => setAvatarSrc(null)} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+                              <Check className="w-4 h-4" /> Confirmar
+                            </button>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Form fields */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <label className="font-body text-xs font-medium text-foreground">Nome Completo *</label>
+                      <Input value={newClient.full_name} onChange={(e) => setNewClient(prev => ({ ...prev, full_name: capitalize(e.target.value) }))} placeholder="Maria Silva" className="font-body" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-body text-xs font-medium text-foreground">Usuário (login) *</label>
+                      <Input value={newClient.username} onChange={(e) => setNewClient(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, "") }))} placeholder="maria.silva" className="font-body" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-body text-xs font-medium text-foreground">Senha *</label>
+                      <Input type="password" value={newClient.password} onChange={(e) => setNewClient(prev => ({ ...prev, password: e.target.value }))} placeholder="Mín. 6 caracteres" className="font-body" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-body text-xs font-medium text-foreground">Telefone *</label>
+                      <Input value={newClient.phone} onChange={(e) => setNewClient(prev => ({ ...prev, phone: formatPhone(e.target.value) }))} placeholder="(31) 99999-9999" className="font-body" maxLength={15} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-body text-xs font-medium text-foreground">Sexo *</label>
+                      <Select value={newClient.sex} onValueChange={(v) => setNewClient(prev => ({ ...prev, sex: v }))}>
+                        <SelectTrigger className="font-body"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="F">Feminino</SelectItem>
+                          <SelectItem value="M">Masculino</SelectItem>
+                          <SelectItem value="O">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-body text-xs font-medium text-foreground">E-mail</label>
+                      <Input type="email" value={newClient.email} onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))} placeholder="email@exemplo.com" className="font-body" />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="font-body text-xs font-medium text-foreground">Endereço *</label>
+                      <Input value={newClient.address} onChange={(e) => setNewClient(prev => ({ ...prev, address: capitalize(e.target.value) }))} placeholder="Rua..., Nº - Bairro, Cidade" className="font-body" />
+                    </div>
+                  </div>
+
+                  <Button onClick={createNewClient} disabled={creatingClient} className="w-full font-body">
+                    {creatingClient ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Criando...</> : <><UserPlus className="w-4 h-4 mr-2" /> Criar e Selecionar</>}
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome ou telefone..." className="pl-10 font-body" />
+                  </div>
+
+                  {/* Selected client */}
+                  {selectedClient && (
+                    <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 flex items-center gap-3">
+                      {selectedClient.avatar_url ? (
+                        <img src={selectedClient.avatar_url} alt={selectedClient.full_name} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm">
+                          {selectedClient.full_name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body font-semibold text-foreground truncate">{selectedClient.full_name}</p>
+                        <p className="font-body text-xs text-muted-foreground">{selectedClient.phone}</p>
+                      </div>
+                      <Check className="w-5 h-5 text-primary" />
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-body font-semibold text-foreground truncate">{selectedClient.full_name}</p>
-                    <p className="font-body text-xs text-muted-foreground">{selectedClient.phone}</p>
-                  </div>
-                  <Check className="w-5 h-5 text-primary" />
-                </div>
-              )}
 
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {filteredClients.filter(c => c.user_id !== selectedClient?.user_id).map(client => (
-                  <button
-                    key={client.user_id}
-                    onClick={() => { setSelectedClient(client); setSearch(""); }}
-                    className="w-full p-3 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 flex items-center gap-3 transition-all"
-                  >
-                    {client.avatar_url ? (
-                      <img src={client.avatar_url} alt={client.full_name} className="w-9 h-9 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-heading font-bold text-xs">
-                        {client.full_name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
-                      </div>
-                    )}
-                    <div className="text-left flex-1 min-w-0">
-                      <p className="font-body text-sm font-medium text-foreground truncate">{client.full_name}</p>
-                      <p className="font-body text-xs text-muted-foreground">{client.phone}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
+                  {/* Client list */}
+                  <div className="space-y-2 max-h-72 overflow-y-auto">
+                    {filteredClients.filter(c => c.user_id !== selectedClient?.user_id).map(client => (
+                      <button
+                        key={client.user_id}
+                        onClick={() => { setSelectedClient(client); setSearch(""); }}
+                        className="w-full p-3 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 flex items-center gap-3 transition-all"
+                      >
+                        {client.avatar_url ? (
+                          <img src={client.avatar_url} alt={client.full_name} className="w-9 h-9 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-heading font-bold text-xs">
+                            {client.full_name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+                          </div>
+                        )}
+                        <div className="text-left flex-1 min-w-0">
+                          <p className="font-body text-sm font-medium text-foreground truncate">{client.full_name}</p>
+                          <p className="font-body text-xs text-muted-foreground">{client.phone}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
