@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,9 +20,10 @@ import AdminClientPlans from "@/components/admin/AdminClientPlans";
 import AdminHistory from "@/components/admin/AdminHistory";
 import AdminInstallApp from "@/components/admin/AdminInstallApp";
 import AdminSiteSettings from "@/components/admin/AdminSiteSettings";
+import AdminCounterSales from "@/components/admin/AdminCounterSales";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings";
+type Tab = "dashboard" | "agenda" | "counter-sales" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings";
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -86,6 +87,7 @@ const Admin = () => {
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: "dashboard", label: "Dashboard", icon: BarChart3 },
     { key: "agenda", label: "Agenda", icon: CalendarCheck },
+    { key: "counter-sales", label: "Venda Balcão", icon: ShoppingBag },
     { key: "services", label: "Serviços", icon: Briefcase },
     { key: "pricing", label: "Preços", icon: DollarSign },
     { key: "payments", label: "Pagamento", icon: CreditCard },
@@ -245,6 +247,7 @@ const Admin = () => {
         <div className="p-4 md:p-8">
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "agenda" && <AdminAgenda />}
+          {activeTab === "counter-sales" && <AdminCounterSales />}
           {activeTab === "services" && <AdminServices />}
           {activeTab === "pricing" && <AdminPricing />}
           {activeTab === "payments" && <AdminPaymentSettings initialSettings={settingsMap} />}
