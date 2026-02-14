@@ -35,9 +35,9 @@ const CookieConsent = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 80 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50"
+          className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-xs z-50"
         >
-          <div className="bg-card border border-border rounded-2xl shadow-xl p-5 space-y-3">
+          <div className="bg-card border border-border rounded-xl shadow-xl p-5 space-y-3 aspect-auto max-w-[320px] mx-auto">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                 <Cookie className="w-4 h-4 text-primary" />
@@ -57,13 +57,13 @@ const CookieConsent = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAccept}
-                className="flex-1 h-9 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold uppercase tracking-wider hover:bg-primary/90 transition-colors"
+                className="flex-1 h-8 rounded-full bg-primary text-primary-foreground font-body text-[11px] font-bold uppercase tracking-wider hover:bg-primary/90 transition-colors"
               >
                 Aceitar
               </button>
               <button
                 onClick={handleReject}
-                className="flex-1 h-9 rounded-xl border border-border text-muted-foreground font-body text-xs font-bold uppercase tracking-wider hover:bg-muted transition-colors"
+                className="flex-1 h-8 rounded-full border border-border text-muted-foreground font-body text-[11px] font-bold uppercase tracking-wider hover:bg-muted transition-colors"
               >
                 Recusar
               </button>
