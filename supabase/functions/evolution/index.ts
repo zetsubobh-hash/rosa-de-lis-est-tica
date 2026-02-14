@@ -61,7 +61,7 @@ serve(async (req) => {
 
     if (!roleData) return json({ error: "Acesso negado" }, 403);
 
-    const { action } = await req.json();
+    const { action, phone } = await req.json();
     const config = await getConfig(supabase);
 
     // Save settings action
@@ -171,8 +171,6 @@ serve(async (req) => {
 
     // Send test message
     if (action === "send_test") {
-      const body = await req.clone().json().catch(() => ({}));
-      const phone = body.phone;
       if (!phone) return json({ error: "Informe o número de telefone" }, 400);
 
       const formatted = phone.replace(/\D/g, "");
