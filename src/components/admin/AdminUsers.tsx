@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText, Pencil, Save } from "lucide-react";
+import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText, Pencil, Save, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,7 @@ const AdminUsers = () => {
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [anamnesisUser, setAnamnesisUser] = useState<UserProfile | null>(null);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
-  const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string }>({ full_name: "", phone: "", email: "", address: "", sex: "" });
+  const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string; username: string; new_password: string }>({ full_name: "", phone: "", email: "", address: "", sex: "", username: "", new_password: "" });
   const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchUsers = async () => {
@@ -158,12 +158,16 @@ const AdminUsers = () => {
       email: u.email || "",
       address: u.address || "",
       sex: u.sex || "",
+      username: u.username || "",
+      new_password: "",
     });
   };
 
   const saveEditUser = async () => {
     if (!editingUser) return;
     setSavingEdit(true);
+
+    // 1. Update profile data
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -175,18 +179,53 @@ const AdminUsers = () => {
       })
       .eq("user_id", editingUser.user_id);
     
-    setSavingEdit(false);
     if (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Dados atualizados com sucesso ✅" });
-      setUsers((prev) => prev.map((u) =>
-        u.user_id === editingUser.user_id
-          ? { ...u, full_name: editForm.full_name, phone: editForm.phone, email: editForm.email, address: editForm.address, sex: editForm.sex }
-          : u
-      ));
-      setEditingUser(null);
+      setSavingEdit(false);
+      toast({ title: "Erro ao salvar perfil", description: error.message, variant: "destructive" });
+      return;
     }
+
+    // 2. Update credentials (username/password) via edge function if changed
+    const credentialsChanged = editForm.username !== editingUser.username || editForm.new_password.length > 0;
+    if (credentialsChanged) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const body: any = { target_user_id: editingUser.user_id };
+        if (editForm.username !== editingUser.username) body.new_username = editForm.username;
+        if (editForm.new_password.length > 0) body.new_password = editForm.new_password;
+
+        const res = await fetch(
+          `https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/admin-update-credentials`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session?.access_token}`,
+            },
+            body: JSON.stringify(body),
+          }
+        );
+        const result = await res.json();
+        if (!res.ok) {
+          setSavingEdit(false);
+          toast({ title: "Erro ao atualizar credenciais", description: result.error, variant: "destructive" });
+          return;
+        }
+      } catch {
+        setSavingEdit(false);
+        toast({ title: "Erro ao atualizar credenciais", variant: "destructive" });
+        return;
+      }
+    }
+
+    setSavingEdit(false);
+    toast({ title: "Dados atualizados com sucesso ✅" });
+    setUsers((prev) => prev.map((u) =>
+      u.user_id === editingUser.user_id
+        ? { ...u, full_name: editForm.full_name, phone: editForm.phone, email: editForm.email, address: editForm.address, sex: editForm.sex, username: editForm.username }
+        : u
+    ));
+    setEditingUser(null);
   };
 
   const filtered = users.filter((u) =>
@@ -390,6 +429,22 @@ const AdminUsers = () => {
                       editForm.sex === s ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground hover:border-primary/50"
                     }`}>{s}</button>
                 ))}
+              </div>
+            </div>
+            <div className="pt-3 mt-3 border-t border-border">
+              <div className="flex items-center gap-2 mb-3">
+                <Key className="w-4 h-4 text-primary" />
+                <span className="font-body text-xs font-bold text-foreground">Credenciais de Acesso</span>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">Nome de usuário (login)</label>
+                  <Input value={editForm.username} onChange={(e) => setEditForm({ ...editForm, username: e.target.value })} placeholder="username" />
+                </div>
+                <div>
+                  <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">Nova senha (deixe vazio para manter)</label>
+                  <Input type="password" value={editForm.new_password} onChange={(e) => setEditForm({ ...editForm, new_password: e.target.value })} placeholder="••••••" />
+                </div>
               </div>
             </div>
           </div>
