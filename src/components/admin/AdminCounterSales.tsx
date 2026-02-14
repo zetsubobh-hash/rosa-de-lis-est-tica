@@ -75,9 +75,7 @@ const AdminCounterSales = () => {
 
   // Step 1: Client
   const [search, setSearch] = useState("");
-  const [clients, setClients] = useState<ClientProfile[]>([]);
   const [selectedClient, setSelectedClient] = useState<ClientProfile | null>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
 
   // Step 2: Cart
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -101,19 +99,24 @@ const AdminCounterSales = () => {
     });
   }, []);
 
-  /* ─── Search clients ─── */
-  const searchClients = async (term: string) => {
-    setSearch(term);
-    if (term.length < 2) { setClients([]); return; }
-    setSearchLoading(true);
-    const { data } = await supabase
+  /* ─── Fetch all clients on mount ─── */
+  const [allClients, setAllClients] = useState<ClientProfile[]>([]);
+  useEffect(() => {
+    supabase
       .from("profiles")
       .select("user_id, full_name, phone, email, avatar_url")
-      .ilike("full_name", `%${term}%`)
-      .limit(10);
-    setClients((data as ClientProfile[]) || []);
-    setSearchLoading(false);
-  };
+      .order("full_name")
+      .then(({ data }) => {
+        if (data) setAllClients(data as ClientProfile[]);
+      });
+  }, []);
+
+  /* ─── Filter clients by search ─── */
+  const filteredClients = useMemo(() => {
+    if (!search.trim()) return allClients;
+    const term = search.toLowerCase();
+    return allClients.filter(c => c.full_name.toLowerCase().includes(term) || c.phone?.includes(term));
+  }, [allClients, search]);
 
   /* ─── Fetch booked times for selected date ─── */
   useEffect(() => {
@@ -282,8 +285,8 @@ const AdminCounterSales = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={search}
-                  onChange={(e) => searchClients(e.target.value)}
-                  placeholder="Buscar por nome..."
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome ou telefone..."
                   className="pl-10 font-body"
                 />
               </div>
@@ -301,13 +304,11 @@ const AdminCounterSales = () => {
                 </div>
               )}
 
-              {searchLoading && <p className="font-body text-sm text-muted-foreground">Buscando...</p>}
-
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {clients.filter(c => c.user_id !== selectedClient?.user_id).map(client => (
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {filteredClients.filter(c => c.user_id !== selectedClient?.user_id).map(client => (
                   <button
                     key={client.user_id}
-                    onClick={() => { setSelectedClient(client); setClients([]); setSearch(""); }}
+                    onClick={() => { setSelectedClient(client); setSearch(""); }}
                     className="w-full p-3 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 flex items-center gap-3 transition-all"
                   >
                     <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-heading font-bold text-xs">
