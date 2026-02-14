@@ -138,7 +138,7 @@ const ServiceDetail = () => {
       </section>
 
       {/* About: image left + description right */}
-      <section className="max-w-6xl mx-auto px-6 py-12 md:py-20">
+      <section className="max-w-6xl mx-auto px-6 py-12 md:py-20 overflow-visible">
         <div className="flex flex-col md:flex-row items-center gap-8 md:gap-14">
           {service.image_url && (
             <motion.div
@@ -146,7 +146,7 @@ const ServiceDetail = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="flex-shrink-0 overflow-visible"
+              className="flex-shrink-0 overflow-visible pt-4"
             >
               <img
                 src={service.image_url}
