@@ -201,9 +201,26 @@ const AdminWhatsApp = () => {
     }
   };
 
+  const formatTestPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    const local = digits.startsWith("55") ? digits.slice(2) : digits;
+    const d = local.slice(0, 11);
+    if (d.length === 0) return "";
+    if (d.length <= 2) return `(${d}`;
+    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+
+  const testPhoneToRaw = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    const local = digits.startsWith("55") ? digits.slice(2) : digits;
+    return local.length > 0 ? `55${local.slice(0, 11)}` : "";
+  };
+
   const handleSendTest = async () => {
-    if (!testPhone.trim()) {
-      toast({ title: "Informe o número", description: "Digite um número de WhatsApp para enviar o teste.", variant: "destructive" });
+    const rawPhone = testPhoneToRaw(testPhone);
+    if (!rawPhone || rawPhone.length < 12) {
+      toast({ title: "Informe o número", description: "Digite um número de WhatsApp válido para enviar o teste.", variant: "destructive" });
       return;
     }
     setTestSending(true);
@@ -218,7 +235,7 @@ const AdminWhatsApp = () => {
             Authorization: `Bearer ${session?.access_token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ action: "send_test", phone: testPhone.trim() }),
+          body: JSON.stringify({ action: "send_test", phone: rawPhone }),
         }
       );
       const data = await res.json();
@@ -430,13 +447,17 @@ const AdminWhatsApp = () => {
         </p>
         <div>
           <label className="font-body text-xs text-muted-foreground mb-1 block">Número do WhatsApp</label>
-          <input
-            type="tel"
-            value={testPhone}
-            onChange={(e) => setTestPhone(e.target.value)}
-            placeholder="5511999999999"
-            className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-body text-sm text-muted-foreground pointer-events-none">+55</span>
+            <input
+              type="tel"
+              value={testPhone}
+              onChange={(e) => setTestPhone(formatTestPhone(e.target.value))}
+              placeholder="(31) 99999-9999"
+              maxLength={15}
+              className="w-full h-10 rounded-xl border border-border bg-background pl-12 pr-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+          </div>
         </div>
         <button
           onClick={handleSendTest}
