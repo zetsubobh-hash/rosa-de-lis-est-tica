@@ -20,6 +20,7 @@ import AdminClientPlans from "@/components/admin/AdminClientPlans";
 import AdminHistory from "@/components/admin/AdminHistory";
 import AdminInstallApp from "@/components/admin/AdminInstallApp";
 import AdminSiteSettings from "@/components/admin/AdminSiteSettings";
+import AdminThemeEditor from "@/components/admin/AdminThemeEditor";
 import AdminCounterSales from "@/components/admin/AdminCounterSales";
 import PasswordGate from "@/components/admin/PasswordGate";
 
@@ -269,7 +270,14 @@ const Admin = () => {
             </PasswordGate>
           )}
           {activeTab === "install-app" && <AdminInstallApp />}
-          {activeTab === "site-settings" && <AdminSiteSettings />}
+          {activeTab === "site-settings" && (
+            <div className="space-y-10">
+              <AdminSiteSettings />
+              <div className="border-t border-border pt-8">
+                <AdminThemeEditor />
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

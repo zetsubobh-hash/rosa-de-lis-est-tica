@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { useBranding } from "@/hooks/useBranding";
+import { useThemeColors } from "@/hooks/useThemeColors";
 import CookieConsent from "@/components/CookieConsent";
 import Index from "./pages/Index";
 import ServiceDetail from "./pages/ServiceDetail";
@@ -26,6 +27,7 @@ const queryClient = new QueryClient();
 const AppInit = ({ children }: { children: React.ReactNode }) => {
   usePageTracking();
   useBranding(); // applies favicon dynamically
+  useThemeColors(); // applies saved theme colors
   return <>{children}</>;
 };
 
