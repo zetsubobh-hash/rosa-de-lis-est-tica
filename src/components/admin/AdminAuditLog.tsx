@@ -70,7 +70,7 @@ const AdminAuditLog = () => {
     setLoading(true);
     let query = (supabase.from("audit_logs" as any).select("*") as any)
       .order("created_at", { ascending: false })
-      .limit(500);
+      .limit(2000);
 
     if (roleFilter !== "all") query = query.eq("user_role", roleFilter);
     if (actionFilter !== "all") query = query.eq("action", actionFilter);
@@ -86,16 +86,24 @@ const AdminAuditLog = () => {
     !search || l.user_name.toLowerCase().includes(search.toLowerCase()) || l.action.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Stats
+  // Stats - total period
   const todayStr = format(new Date(), "yyyy-MM-dd");
-  const todayLogs = logs.filter(l => l.created_at.startsWith(todayStr));
-  const uniqueUsersToday = new Set(todayLogs.map(l => l.user_id)).size;
-  const loginsToday = todayLogs.filter(l => l.action === "login").length;
+  const todayLogs = filtered.filter(l => l.created_at.startsWith(todayStr));
+  const totalLogins = filtered.filter(l => l.action === "login").length;
+  const uniqueUsers = new Set(filtered.map(l => l.user_id)).size;
 
   return (
     <div className="space-y-6">
       {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Registros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{filtered.length}</p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Registros Hoje</CardTitle>
@@ -106,18 +114,18 @@ const AdminAuditLog = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Usuários Ativos Hoje</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Usuários Únicos</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{uniqueUsersToday}</p>
+            <p className="text-2xl font-bold">{uniqueUsers}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Logins Hoje</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Logins</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{loginsToday}</p>
+            <p className="text-2xl font-bold">{totalLogins}</p>
           </CardContent>
         </Card>
       </div>
