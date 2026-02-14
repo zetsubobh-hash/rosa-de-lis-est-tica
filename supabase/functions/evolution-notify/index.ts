@@ -39,6 +39,10 @@ serve(async (req) => {
         "evolution_api_url",
         "evolution_api_key",
         "evolution_instance_name",
+        "whatsapp_msg_admin_enabled",
+        "whatsapp_msg_admin_text",
+        "whatsapp_msg_partner_enabled",
+        "whatsapp_msg_partner_text",
       ]);
 
     const cfg: Record<string, string> = {};
@@ -127,33 +131,44 @@ serve(async (req) => {
 
     const results: any[] = [];
 
+    const adminEnabled = cfg.whatsapp_msg_admin_enabled !== "false"; // default true for backward compat
+    const adminTemplate = cfg.whatsapp_msg_admin_text || "";
+    const partnerEnabled = cfg.whatsapp_msg_partner_enabled !== "false";
+    const partnerTemplate = cfg.whatsapp_msg_partner_text || "";
+
+    const applyTemplate = (template: string, vars: Record<string, string>) => {
+      let text = template;
+      for (const [key, val] of Object.entries(vars)) {
+        text = text.replace(new RegExp(`\\{${key}\\}`, "g"), val);
+      }
+      return text;
+    };
+
     for (const apt of appointments) {
       const client = profileMap[apt.user_id];
       const clientName = client?.full_name || "Cliente";
       const [y, m, d] = apt.appointment_date.split("-");
       const dateFormatted = `${d}/${m}/${y}`;
 
-      const message = `📋 *Novo Agendamento*\n\n` +
-        `👤 *Cliente:* ${clientName}\n` +
-        `💆 *Serviço:* ${apt.service_title}\n` +
-        `📅 *Data:* ${dateFormatted}\n` +
-        `🕐 *Horário:* ${apt.appointment_time}\n\n` +
-        `_Rosa de Lis — Estética Avançada_`;
+      const vars = { nome: clientName, servico: apt.service_title, data: dateFormatted, hora: apt.appointment_time };
 
       // Send to all admins
-      for (const phone of adminPhones) {
-        const r = await sendMessage(phone, message);
-        results.push({ ...r, type: "admin", appointment_id: apt.id });
+      if (adminEnabled) {
+        const adminMsg = adminTemplate
+          ? applyTemplate(adminTemplate, vars)
+          : `📋 *Novo Agendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
+
+        for (const phone of adminPhones) {
+          const r = await sendMessage(phone, adminMsg);
+          results.push({ ...r, type: "admin", appointment_id: apt.id });
+        }
       }
 
       // Send to assigned partner
-      if (apt.partner_id && partnerPhones[apt.partner_id]) {
-        const partnerMsg = `📋 *Agendamento Atribuído a Você*\n\n` +
-          `👤 *Cliente:* ${clientName}\n` +
-          `💆 *Serviço:* ${apt.service_title}\n` +
-          `📅 *Data:* ${dateFormatted}\n` +
-          `🕐 *Horário:* ${apt.appointment_time}\n\n` +
-          `_Rosa de Lis — Estética Avançada_`;
+      if (partnerEnabled && apt.partner_id && partnerPhones[apt.partner_id]) {
+        const partnerMsg = partnerTemplate
+          ? applyTemplate(partnerTemplate, vars)
+          : `📋 *Agendamento Atribuído a Você*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_Rosa de Lis — Estética Avançada_`;
 
         const r = await sendMessage(partnerPhones[apt.partner_id], partnerMsg);
         results.push({ ...r, type: "partner", appointment_id: apt.id });
