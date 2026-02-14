@@ -1,0 +1,1 @@
+UPDATE public.payment_settings SET value = 'true' WHERE key = 'evolution_notifications_enabled';
