@@ -151,7 +151,7 @@ const ServiceDetail = () => {
               <img
                 src={service.image_url}
                 alt={service.title}
-                className="max-w-[260px] md:max-w-[320px]"
+                className="max-w-[250px] md:max-w-[310px]"
               />
             </motion.div>
           )}
