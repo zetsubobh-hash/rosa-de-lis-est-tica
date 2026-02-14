@@ -14,6 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
+      anamnesis: {
+        Row: {
+          alergias: string[] | null
+          alergias_outras: string | null
+          alimentacao: string | null
+          area_tratada: string | null
+          assinatura_cliente: string | null
+          assinatura_profissional: string | null
+          atividade_fisica: string | null
+          autorizacao_imagem: boolean | null
+          avaliacao_corporal: string | null
+          cirurgias: string | null
+          condicoes_esteticas: string[] | null
+          condicoes_esteticas_outras: string | null
+          consentimento_informado: boolean | null
+          consumo_agua: string | null
+          consumo_alcool: string | null
+          created_at: string
+          data_assinatura: string | null
+          disturbios_hormonais: boolean | null
+          disturbios_hormonais_detalhe: string | null
+          doencas: string[] | null
+          doencas_outras: string | null
+          fototipo: string | null
+          gestante_amamentando: string | null
+          grau_sensibilidade: string | null
+          id: string
+          medicamentos: string | null
+          motivo_consulta: string | null
+          nivel_estresse: string | null
+          partner_id: string | null
+          problemas_pele: string[] | null
+          problemas_pele_outros: string | null
+          qualidade_sono: string | null
+          tabagismo: string | null
+          tempo_queixa: string | null
+          tipo_pele: string | null
+          tratamentos_anteriores: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alergias?: string[] | null
+          alergias_outras?: string | null
+          alimentacao?: string | null
+          area_tratada?: string | null
+          assinatura_cliente?: string | null
+          assinatura_profissional?: string | null
+          atividade_fisica?: string | null
+          autorizacao_imagem?: boolean | null
+          avaliacao_corporal?: string | null
+          cirurgias?: string | null
+          condicoes_esteticas?: string[] | null
+          condicoes_esteticas_outras?: string | null
+          consentimento_informado?: boolean | null
+          consumo_agua?: string | null
+          consumo_alcool?: string | null
+          created_at?: string
+          data_assinatura?: string | null
+          disturbios_hormonais?: boolean | null
+          disturbios_hormonais_detalhe?: string | null
+          doencas?: string[] | null
+          doencas_outras?: string | null
+          fototipo?: string | null
+          gestante_amamentando?: string | null
+          grau_sensibilidade?: string | null
+          id?: string
+          medicamentos?: string | null
+          motivo_consulta?: string | null
+          nivel_estresse?: string | null
+          partner_id?: string | null
+          problemas_pele?: string[] | null
+          problemas_pele_outros?: string | null
+          qualidade_sono?: string | null
+          tabagismo?: string | null
+          tempo_queixa?: string | null
+          tipo_pele?: string | null
+          tratamentos_anteriores?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alergias?: string[] | null
+          alergias_outras?: string | null
+          alimentacao?: string | null
+          area_tratada?: string | null
+          assinatura_cliente?: string | null
+          assinatura_profissional?: string | null
+          atividade_fisica?: string | null
+          autorizacao_imagem?: boolean | null
+          avaliacao_corporal?: string | null
+          cirurgias?: string | null
+          condicoes_esteticas?: string[] | null
+          condicoes_esteticas_outras?: string | null
+          consentimento_informado?: boolean | null
+          consumo_agua?: string | null
+          consumo_alcool?: string | null
+          created_at?: string
+          data_assinatura?: string | null
+          disturbios_hormonais?: boolean | null
+          disturbios_hormonais_detalhe?: string | null
+          doencas?: string[] | null
+          doencas_outras?: string | null
+          fototipo?: string | null
+          gestante_amamentando?: string | null
+          grau_sensibilidade?: string | null
+          id?: string
+          medicamentos?: string | null
+          motivo_consulta?: string | null
+          nivel_estresse?: string | null
+          partner_id?: string | null
+          problemas_pele?: string[] | null
+          problemas_pele_outros?: string | null
+          qualidade_sono?: string | null
+          tabagismo?: string | null
+          tempo_queixa?: string | null
+          tipo_pele?: string | null
+          tratamentos_anteriores?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           appointment_date: string
