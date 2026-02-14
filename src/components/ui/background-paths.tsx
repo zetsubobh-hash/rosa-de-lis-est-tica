@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
-function FloatingPaths({ position }: { position: number }) {
-    const paths = Array.from({ length: 36 }, (_, i) => ({
+function FloatingPaths({ position, count }: { position: number; count: number }) {
+    const paths = Array.from({ length: count }, (_, i) => ({
         id: i,
         d: `M-${380 - i * 5 * position} -${189 + i * 6}C-${
             380 - i * 5 * position
@@ -38,7 +39,7 @@ function FloatingPaths({ position }: { position: number }) {
                         }}
                         transition={{
                             duration: 20 + Math.random() * 10,
-                            repeat: Number.POSITIVE_INFINITY,
+                            repeat: Infinity,
                             ease: "linear",
                         }}
                     />
@@ -49,10 +50,21 @@ function FloatingPaths({ position }: { position: number }) {
 }
 
 export function BackgroundPaths() {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768);
+        check();
+        window.addEventListener("resize", check);
+        return () => window.removeEventListener("resize", check);
+    }, []);
+
+    const pathCount = isMobile ? 12 : 36;
+
     return (
         <div className="absolute inset-0 text-primary-foreground/40">
-            <FloatingPaths position={1} />
-            <FloatingPaths position={-1} />
+            <FloatingPaths position={1} count={pathCount} />
+            {!isMobile && <FloatingPaths position={-1} count={pathCount} />}
         </div>
     );
 }
