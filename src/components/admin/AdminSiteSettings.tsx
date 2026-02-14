@@ -6,6 +6,23 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Save, MapPin, Phone, Instagram, Building2, Clock, MessageCircle } from "lucide-react";
 
+const formatWhatsApp = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  // Remove leading 55 if user types it (we add it automatically)
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  const d = local.slice(0, 11);
+  if (d.length === 0) return "";
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+};
+
+const whatsAppToRaw = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  return local.length > 0 ? `55${local.slice(0, 11)}` : "";
+};
+
 const AdminSiteSettings = () => {
   const { settings, loading, updateSetting } = useSiteSettings();
   const [form, setForm] = useState<Record<string, string>>({});
@@ -13,7 +30,12 @@ const AdminSiteSettings = () => {
   const [initialized, setInitialized] = useState(false);
 
   if (!initialized && !loading && Object.keys(settings).length > 0) {
-    setForm(settings);
+    const formatted = { ...settings };
+    // Display whatsapp as masked
+    if (formatted.whatsapp_number) {
+      formatted.whatsapp_number = formatWhatsApp(formatted.whatsapp_number);
+    }
+    setForm(formatted);
     setInitialized(true);
   }
 
@@ -21,8 +43,9 @@ const AdminSiteSettings = () => {
     setSaving(true);
     try {
       for (const key of Object.keys(form)) {
-        if (form[key] !== settings[key]) {
-          const { error } = await updateSetting(key, form[key]);
+        const value = key === "whatsapp_number" ? whatsAppToRaw(form[key]) : form[key];
+        if (value !== settings[key]) {
+          const { error } = await updateSetting(key, value);
           if (error) throw error;
         }
       }
@@ -44,7 +67,7 @@ const AdminSiteSettings = () => {
   const fields = [
     { key: "business_name", label: "Nome do Negócio", icon: Building2, placeholder: "Rosa de Lis Estética" },
     { key: "phone", label: "Telefone", icon: Phone, placeholder: "(31) 99999-9999" },
-    { key: "whatsapp_number", label: "Número do WhatsApp (botão flutuante)", icon: MessageCircle, placeholder: "5531999999999 (apenas números, com DDI+DDD)" },
+    { key: "whatsapp_number", label: "Número do WhatsApp (botão flutuante)", icon: MessageCircle, placeholder: "(31) 99999-9999", mask: "whatsapp" },
     { key: "address", label: "Endereço", icon: MapPin, placeholder: "Rua..., Nº - Bairro, Cidade - UF, CEP" },
     { key: "business_hours", label: "Horário de Funcionamento", icon: Clock, placeholder: "Seg a Sex: 8h às 20h | Sáb: 8h às 14h" },
     { key: "instagram_url", label: "Link do Instagram", icon: Instagram, placeholder: "https://instagram.com/rosadelis" },
@@ -82,13 +105,28 @@ const AdminSiteSettings = () => {
                 {" "}com a API "Places API" ativada.
               </p>
             )}
-            <Input
-              value={form[field.key] ?? ""}
-              onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
-              placeholder={field.placeholder}
-              className="font-body"
-              type={field.key === "google_api_key" ? "password" : "text"}
-            />
+            {(field as any).mask === "whatsapp" && (
+              <p className="font-body text-xs text-muted-foreground">O código +55 (Brasil) é adicionado automaticamente.</p>
+            )}
+            <div className="relative">
+              {(field as any).mask === "whatsapp" && (
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-body text-sm text-muted-foreground pointer-events-none">+55</span>
+              )}
+              <Input
+                value={form[field.key] ?? ""}
+                onChange={(e) => {
+                  if ((field as any).mask === "whatsapp") {
+                    setForm((prev) => ({ ...prev, [field.key]: formatWhatsApp(e.target.value) }));
+                  } else {
+                    setForm((prev) => ({ ...prev, [field.key]: e.target.value }));
+                  }
+                }}
+                placeholder={field.placeholder}
+                className={`font-body ${(field as any).mask === "whatsapp" ? "pl-12" : ""}`}
+                type={field.key === "google_api_key" ? "password" : "text"}
+                maxLength={(field as any).mask === "whatsapp" ? 15 : undefined}
+              />
+            </div>
           </div>
         ))}
       </div>
