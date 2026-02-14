@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.google-reviews]
 verify_jwt = false
+
+[functions.admin-create-partner-account]
+verify_jwt = false

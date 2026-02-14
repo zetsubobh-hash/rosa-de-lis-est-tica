@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, X, Save, Search, Users, Phone,
-  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText, KeyRound
+  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText, KeyRound, UserPlus
 } from "lucide-react";
 import PartnerPaymentHistory from "@/components/admin/PartnerPaymentHistory";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,6 +84,7 @@ const AdminPartners = () => {
   const [credPassword, setCredPassword] = useState("");
   const [credShowPassword, setCredShowPassword] = useState(false);
   const [credSaving, setCredSaving] = useState(false);
+  const [hasRealAccount, setHasRealAccount] = useState(false);
 
   const fetchPartners = async () => {
     setLoading(true);
@@ -184,12 +185,13 @@ const AdminPartners = () => {
     setIsNew(false);
     setCredPassword("");
     setCredShowPassword(false);
-    // Load current username
+    // Check if partner has a real account (profile exists)
     const { data: profile } = await supabase
       .from("profiles")
       .select("username")
       .eq("user_id", p.user_id)
       .maybeSingle();
+    setHasRealAccount(!!profile);
     setCredUsername(profile?.username || "");
   };
 
@@ -317,6 +319,59 @@ const AdminPartners = () => {
         ? editing.work_days.filter((d) => d !== day)
         : [...editing.work_days, day],
     });
+  };
+
+  const handleCreateAccount = async () => {
+    if (!editing || isNew) return;
+    if (!credUsername || !credPassword) {
+      toast({ title: "Preencha username e senha", variant: "destructive" });
+      return;
+    }
+    if (credPassword.length < 6) {
+      toast({ title: "Senha deve ter no mínimo 6 caracteres", variant: "destructive" });
+      return;
+    }
+    setCredSaving(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        toast({ title: "Sessão expirada", variant: "destructive" });
+        setCredSaving(false);
+        return;
+      }
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL || "https://sxzmtnsfsyifujdnqyzr.supabase.co"}/functions/v1/admin-create-partner-account`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${sessionData.session.access_token}`,
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4em10bnNmc3lpZnVqZG5xeXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NDc1OTcsImV4cCI6MjA4NjMyMzU5N30.WIaOFGFVrQ2eqroPSrujSC79gWdEz8UsIcrFbeL--X0",
+          },
+          body: JSON.stringify({
+            partner_id: editing.id,
+            username: credUsername,
+            password: credPassword,
+          }),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        toast({ title: "Erro ao criar conta", description: result.error, variant: "destructive" });
+      } else {
+        toast({ title: "Conta de login criada com sucesso ✅" });
+        setHasRealAccount(true);
+        setCredPassword("");
+        // Update local partner data with new user_id
+        if (result.user_id) {
+          setEditing({ ...editing, user_id: result.user_id });
+        }
+        fetchPartners();
+      }
+    } catch {
+      toast({ title: "Erro de conexão", variant: "destructive" });
+    }
+    setCredSaving(false);
   };
 
   const handleCredentialsSave = async () => {
@@ -721,26 +776,37 @@ const AdminPartners = () => {
                   <div className="pt-2 border-t border-border">
                     <div className="flex items-center gap-2 mb-3">
                       <KeyRound className="w-4 h-4 text-muted-foreground" />
-                      <label className="font-body text-xs font-semibold text-foreground uppercase tracking-wider">Login e Senha</label>
+                      <label className="font-body text-xs font-semibold text-foreground uppercase tracking-wider">
+                        {hasRealAccount ? "Login e Senha" : "Criar Conta de Login"}
+                      </label>
                     </div>
+                    {!hasRealAccount && (
+                      <p className="font-body text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-lg px-3 py-2 mb-3">
+                        Este parceiro ainda não possui conta de login. Crie uma para que ele possa acessar o sistema.
+                      </p>
+                    )}
                     <div className="space-y-3">
                       <div>
-                        <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Username (login)</label>
+                        <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">
+                          {hasRealAccount ? "Username (login)" : "Nome de usuário para login"}
+                        </label>
                         <Input
                           value={credUsername}
                           onChange={(e) => setCredUsername(capitalizeWords(e.target.value))}
-                          placeholder="username"
+                          placeholder={hasRealAccount ? "username" : "Ex: Camila Silva"}
                           className="font-body"
                         />
                       </div>
                       <div>
-                        <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Nova senha</label>
+                        <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">
+                          {hasRealAccount ? "Nova senha" : "Senha"}
+                        </label>
                         <div className="relative">
                           <Input
                             type={credShowPassword ? "text" : "password"}
                             value={credPassword}
                             onChange={(e) => setCredPassword(e.target.value)}
-                            placeholder="Deixe vazio para manter a atual"
+                            placeholder={hasRealAccount ? "Deixe vazio para manter a atual" : "Mínimo 6 caracteres"}
                             className="font-body pr-10"
                           />
                           <button
@@ -752,16 +818,28 @@ const AdminPartners = () => {
                           </button>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCredentialsSave}
-                        disabled={credSaving || (!credUsername && !credPassword)}
-                        className="gap-1.5 w-full"
-                      >
-                        {credSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-                        {credSaving ? "Salvando..." : "Atualizar Credenciais"}
-                      </Button>
+                      {hasRealAccount ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCredentialsSave}
+                          disabled={credSaving || (!credUsername && !credPassword)}
+                          className="gap-1.5 w-full"
+                        >
+                          {credSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                          {credSaving ? "Salvando..." : "Atualizar Credenciais"}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={handleCreateAccount}
+                          disabled={credSaving || !credUsername || !credPassword}
+                          className="gap-1.5 w-full"
+                        >
+                          {credSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                          {credSaving ? "Criando conta..." : "Criar Conta de Login"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
