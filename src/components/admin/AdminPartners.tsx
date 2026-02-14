@@ -728,7 +728,7 @@ const AdminPartners = () => {
                         <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">Username (login)</label>
                         <Input
                           value={credUsername}
-                          onChange={(e) => setCredUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
+                          onChange={(e) => setCredUsername(capitalizeWords(e.target.value))}
                           placeholder="username"
                           className="font-body"
                         />
