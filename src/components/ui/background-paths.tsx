@@ -30,7 +30,7 @@ function FloatingPaths({ position, count }: { position: number; count: number })
                         d={path.d}
                         stroke="currentColor"
                         strokeWidth={path.width}
-                        strokeOpacity={0.1 + path.id * 0.03}
+                        strokeOpacity={0.15 + path.id * 0.03}
                         initial={{ pathLength: 0.3, opacity: 0.6 }}
                         animate={{
                             pathLength: 1,
@@ -50,21 +50,19 @@ function FloatingPaths({ position, count }: { position: number; count: number })
 }
 
 export function BackgroundPaths() {
-    const [isMobile, setIsMobile] = useState(false);
+    const [pathCount, setPathCount] = useState(36);
 
     useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 768);
+        const check = () => setPathCount(window.innerWidth < 768 ? 24 : 36);
         check();
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
 
-    const pathCount = isMobile ? 12 : 36;
-
     return (
         <div className="absolute inset-0 text-primary-foreground/40">
             <FloatingPaths position={1} count={pathCount} />
-            {!isMobile && <FloatingPaths position={-1} count={pathCount} />}
+            <FloatingPaths position={-1} count={pathCount} />
         </div>
     );
 }
