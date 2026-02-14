@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,30 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { LogIn, UserPlus, Loader2, Eye, EyeOff } from "lucide-react";
+import { LogIn, UserPlus, Loader2, Eye, EyeOff, Camera, X, Check } from "lucide-react";
+import Cropper, { Area } from "react-easy-crop";
+import { AnimatePresence, motion } from "framer-motion";
+
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.addEventListener("load", () => resolve(img));
+    img.addEventListener("error", reject);
+    img.setAttribute("crossOrigin", "anonymous");
+    img.src = url;
+  });
+
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.9);
+  });
+}
 
 interface AuthModalProps {
   open: boolean;
@@ -56,6 +79,59 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [regCidade, setRegCidade] = useState("");
   const [regEstado, setRegEstado] = useState("");
 
+  // Avatar during registration
+  const [regAvatarPreview, setRegAvatarPreview] = useState<string | null>(null);
+  const [regAvatarBlob, setRegAvatarBlob] = useState<Blob | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
+    setCroppedAreaPixels(croppedPixels);
+  }, []);
+
+  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Imagem muito grande. Máximo 5MB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setCropImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  };
+
+  const handleCropSave = async () => {
+    if (!cropImageSrc || !croppedAreaPixels) return;
+    const blob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+    setRegAvatarBlob(blob);
+    setRegAvatarPreview(URL.createObjectURL(blob));
+    setCropImageSrc(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+  };
+
+  const uploadAvatarAfterRegister = async (userId: string) => {
+    if (!regAvatarBlob) return;
+    try {
+      const filePath = `${userId}/avatar.jpg`;
+      await supabase.storage.from("avatars").remove([filePath]);
+      const { error } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, regAvatarBlob, { upsert: true, contentType: "image/jpeg" });
+      if (error) throw error;
+      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const url = data.publicUrl + "?t=" + Date.now();
+      await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", userId);
+    } catch (err: any) {
+      console.error("Avatar upload error:", err.message);
+    }
+  };
+
   const resetFields = () => {
     setLoginUsername("");
     setPassword("");
@@ -71,6 +147,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     setRegBairro("");
     setRegCidade("");
     setRegEstado("");
+    setRegAvatarPreview(null);
+    setRegAvatarBlob(null);
+    setCropImageSrc(null);
   };
 
   const fetchCep = async (cep: string) => {
@@ -221,6 +300,11 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           setMode("login");
         } else {
           toast({ title: "Cadastro realizado com sucesso!" });
+          // Upload avatar if selected (after user is logged in)
+          if (regAvatarBlob) {
+            const userId = result.user_id;
+            await uploadAvatarAfterRegister(userId);
+          }
           onOpenChange(false);
           setTimeout(() => {
             document.getElementById("servicos")?.scrollIntoView({ behavior: "smooth" });
@@ -311,6 +395,31 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-4 mt-2">
+            {/* Avatar picker */}
+            <div className="flex flex-col items-center gap-2">
+              <div
+                className="relative w-20 h-20 rounded-full overflow-hidden bg-primary/10 border-2 border-dashed border-primary/30 flex items-center justify-center cursor-pointer group"
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                {regAvatarPreview ? (
+                  <img src={regAvatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <Camera className="w-7 h-7 text-primary/40 group-hover:text-primary/60 transition-colors" />
+                )}
+                <div className="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="w-5 h-5 text-white" />
+                </div>
+              </div>
+              <span className="font-body text-xs text-muted-foreground">Foto de perfil (opcional)</span>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarFileSelect}
+                className="hidden"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="reg-name" className="font-body text-sm">Nome completo *</Label>
               <Input
@@ -465,6 +574,74 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             </p>
           </form>
         )}
+
+        {/* Crop Modal */}
+        <AnimatePresence>
+          {cropImageSrc && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-sm overflow-hidden"
+              >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                  <h3 className="font-heading text-base font-bold text-foreground">Ajustar Foto</h3>
+                  <button onClick={() => setCropImageSrc(null)} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="relative w-full aspect-square bg-black">
+                  <Cropper
+                    image={cropImageSrc}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1}
+                    cropShape="round"
+                    showGrid={false}
+                    onCropChange={setCrop}
+                    onZoomChange={setZoom}
+                    onCropComplete={onCropComplete}
+                  />
+                </div>
+                <div className="px-5 py-3">
+                  <label className="font-body text-xs text-muted-foreground mb-1 block">Zoom</label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={3}
+                    step={0.05}
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="w-full accent-primary"
+                  />
+                </div>
+                <div className="px-5 pb-5 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCropImageSrc(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCropSave}
+                    className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    Confirmar
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );
