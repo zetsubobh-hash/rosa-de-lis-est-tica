@@ -71,6 +71,18 @@ serve(async (req) => {
       );
     }
 
+    // Log audit
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", profile.user_id);
+    const userRole = roles?.some((r: any) => r.role === "admin") ? "admin" : roles?.some((r: any) => r.role === "partner") ? "partner" : "user";
+    const { data: prof } = await supabaseAdmin.from("profiles").select("full_name").eq("user_id", profile.user_id).maybeSingle();
+    await supabaseAdmin.from("audit_logs").insert({
+      user_id: profile.user_id,
+      user_name: prof?.full_name || sanitizedUsername,
+      user_role: userRole,
+      action: "login",
+      details: {},
+    });
+
     return new Response(
       JSON.stringify({
         access_token: session.session?.access_token,

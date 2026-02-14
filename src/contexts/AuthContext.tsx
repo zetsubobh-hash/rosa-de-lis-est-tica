@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -45,6 +45,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    // Log audit before signing out
+    try {
+      const { logAudit } = await import("@/lib/auditLog");
+      await logAudit({ action: "logout" });
+    } catch {}
     await supabase.auth.signOut();
   };
 
