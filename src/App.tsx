@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,18 +11,25 @@ import { useBranding } from "@/hooks/useBranding";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { useSEO } from "@/hooks/useSEO";
 import CookieConsent from "@/components/CookieConsent";
-import Index from "./pages/Index";
-import ServiceDetail from "./pages/ServiceDetail";
-import Agendar from "./pages/Agendar";
-import Checkout from "./pages/Checkout";
-import MeusAgendamentos from "./pages/MeusAgendamentos";
 
-import MeuPerfil from "./pages/MeuPerfil";
-import Admin from "./pages/Admin";
-import PartnerDashboard from "./pages/PartnerDashboard";
-import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
-import Instalar from "./pages/Instalar";
-import NotFound from "./pages/NotFound";
+// Lazy-loaded pages for faster initial load
+const Index = lazy(() => import("./pages/Index"));
+const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
+const Agendar = lazy(() => import("./pages/Agendar"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const MeusAgendamentos = lazy(() => import("./pages/MeusAgendamentos"));
+const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
+const Admin = lazy(() => import("./pages/Admin"));
+const PartnerDashboard = lazy(() => import("./pages/PartnerDashboard"));
+const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
+const Instalar = lazy(() => import("./pages/Instalar"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -42,21 +50,21 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppInit>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/servico/:slug" element={<ServiceDetail />} />
-              <Route path="/agendar/:slug" element={<Agendar />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/meus-agendamentos" element={<MeusAgendamentos />} />
-              
-              <Route path="/meu-perfil" element={<MeuPerfil />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/parceiro" element={<PartnerDashboard />} />
-              <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
-              <Route path="/instalar" element={<Instalar />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/servico/:slug" element={<ServiceDetail />} />
+                <Route path="/agendar/:slug" element={<Agendar />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/meus-agendamentos" element={<MeusAgendamentos />} />
+                <Route path="/meu-perfil" element={<MeuPerfil />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/parceiro" element={<PartnerDashboard />} />
+                <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+                <Route path="/instalar" element={<Instalar />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
             <CookieConsent />
           </AppInit>
         </BrowserRouter>
