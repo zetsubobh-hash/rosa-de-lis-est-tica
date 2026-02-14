@@ -45,7 +45,7 @@ const Hero = () => {
           <motion.img
             src={logoWhite}
             alt="Rosa de Lis"
-            className="h-24 md:h-20 w-auto mb-4 mx-auto lg:mx-0"
+            className="h-24 mx-auto md:h-20 md:mx-0 w-auto mb-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
