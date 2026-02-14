@@ -106,7 +106,18 @@ const ServiceDetail = () => {
           >
             <Link to="/" className="hover:text-primary-foreground transition-colors">Início</Link>
             <ChevronRight className="w-3 h-3" />
-            <Link to="/#servicos" className="hover:text-primary-foreground transition-colors">Serviços</Link>
+            <button
+              onClick={() => {
+                navigate("/");
+                setTimeout(() => {
+                  const el = document.getElementById("servicos");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }, 300);
+              }}
+              className="hover:text-primary-foreground transition-colors"
+            >
+              Serviços
+            </button>
             <ChevronRight className="w-3 h-3" />
             <span className="text-primary-foreground">{service.title}</span>
           </motion.div>
