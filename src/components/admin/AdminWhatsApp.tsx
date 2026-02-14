@@ -96,6 +96,7 @@ const AdminWhatsApp = () => {
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
   const [testPhone, setTestPhone] = useState("");
+  const [testMessage, setTestMessage] = useState("Olá, aqui é da *{empresa}*! ✅\n\nOlá {nome}! Seu agendamento de *{servico}* foi confirmado para o dia *{data}* às *{hora}*. Nos vemos em breve! 💕");
   const [testSending, setTestSending] = useState(false);
 
   useEffect(() => {
@@ -235,7 +236,7 @@ const AdminWhatsApp = () => {
             Authorization: `Bearer ${session?.access_token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ action: "send_test", phone: rawPhone }),
+          body: JSON.stringify({ action: "send_test", phone: rawPhone, message: testMessage }),
         }
       );
       const data = await res.json();
@@ -457,6 +458,21 @@ const AdminWhatsApp = () => {
               maxLength={15}
               className="w-full h-10 rounded-xl border border-border bg-background pl-12 pr-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
+          </div>
+        </div>
+        <div>
+          <label className="font-body text-xs text-muted-foreground mb-1 block">Texto da mensagem de teste</label>
+          <textarea
+            value={testMessage}
+            onChange={(e) => setTestMessage(e.target.value)}
+            rows={4}
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+          />
+          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+            <span className="font-body text-xs text-muted-foreground">Variáveis:</span>
+            {["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"].map((v) => (
+              <span key={v} className="font-body text-xs bg-muted px-1.5 py-0.5 rounded">{v}</span>
+            ))}
           </div>
         </div>
         <button

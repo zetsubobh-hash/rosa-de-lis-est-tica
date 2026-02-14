@@ -61,7 +61,7 @@ serve(async (req) => {
 
     if (!roleData) return json({ error: "Acesso negado" }, 403);
 
-    const { action, phone } = await req.json();
+    const { action, phone, message } = await req.json();
     const config = await getConfig(supabase);
 
     // Save settings action
@@ -173,19 +173,22 @@ serve(async (req) => {
     if (action === "send_test") {
       if (!phone) return json({ error: "Informe o número de telefone" }, 400);
 
-      // Load the reschedule template to use as test
-      const { data: tplData } = await supabase
-        .from("payment_settings")
+      // Fetch business name from site_settings
+      const { data: siteSettingsData } = await supabase
+        .from("site_settings")
         .select("value")
-        .eq("key", "whatsapp_msg_reschedule_text")
+        .eq("key", "business_name")
         .maybeSingle();
+      const businessName = siteSettingsData?.value || "Rosa de Lis Estética";
 
-      const template = tplData?.value || "Olá {nome}! 🔄 Seu agendamento de *{servico}* foi reagendado para o dia *{data}* às *{hora}*. Nos vemos em breve! 💕";
+      // Use custom message if provided, otherwise fallback to default
+      const template = message || "Olá, aqui é da *{empresa}*! ✅\n\nOlá {nome}! Seu agendamento de *{servico}* foi confirmado para o dia *{data}* às *{hora}*. Nos vemos em breve! 💕";
       const testMsg = template
-        .replace("{nome}", "Maria Silva")
-        .replace("{servico}", "Limpeza de Pele")
-        .replace("{data}", "20/02/2026")
-        .replace("{hora}", "14:00");
+        .replace(/\{nome\}/g, "Maria Silva")
+        .replace(/\{servico\}/g, "Limpeza de Pele")
+        .replace(/\{data\}/g, "20/02/2026")
+        .replace(/\{hora\}/g, "14:00")
+        .replace(/\{empresa\}/g, businessName);
 
       const formatted = phone.replace(/\D/g, "");
       const res = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
