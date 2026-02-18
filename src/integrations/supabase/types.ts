@@ -709,6 +709,149 @@ export type Database = {
         }
         Relationships: []
       }
+      video_projects: {
+        Row: {
+          character_sheet: Json | null
+          created_at: string
+          description: string | null
+          duration_target: number
+          error_message: string | null
+          final_video_url: string | null
+          generation_mode: string
+          id: string
+          narration_text: string | null
+          status: string
+          story_text: string | null
+          style: string
+          theme: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          vps_callback_url: string | null
+          youtube_description: string | null
+          youtube_tags: string[] | null
+          youtube_title: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          character_sheet?: Json | null
+          created_at?: string
+          description?: string | null
+          duration_target?: number
+          error_message?: string | null
+          final_video_url?: string | null
+          generation_mode: string
+          id?: string
+          narration_text?: string | null
+          status?: string
+          story_text?: string | null
+          style?: string
+          theme: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          vps_callback_url?: string | null
+          youtube_description?: string | null
+          youtube_tags?: string[] | null
+          youtube_title?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          character_sheet?: Json | null
+          created_at?: string
+          description?: string | null
+          duration_target?: number
+          error_message?: string | null
+          final_video_url?: string | null
+          generation_mode?: string
+          id?: string
+          narration_text?: string | null
+          status?: string
+          story_text?: string | null
+          style?: string
+          theme?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          vps_callback_url?: string | null
+          youtube_description?: string | null
+          youtube_tags?: string[] | null
+          youtube_title?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      video_scenes: {
+        Row: {
+          audio_url: string | null
+          camera_movement: string | null
+          continuity_notes: string | null
+          created_at: string
+          duration_seconds: number
+          emotion: string | null
+          error_message: string | null
+          id: string
+          image_url: string | null
+          last_frame_url: string | null
+          narration_text: string | null
+          project_id: string
+          prompt_text: string
+          scene_order: number
+          status: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          camera_movement?: string | null
+          continuity_notes?: string | null
+          created_at?: string
+          duration_seconds?: number
+          emotion?: string | null
+          error_message?: string | null
+          id?: string
+          image_url?: string | null
+          last_frame_url?: string | null
+          narration_text?: string | null
+          project_id: string
+          prompt_text: string
+          scene_order: number
+          status?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          camera_movement?: string | null
+          continuity_notes?: string | null
+          created_at?: string
+          duration_seconds?: number
+          emotion?: string | null
+          error_message?: string | null
+          id?: string
+          image_url?: string | null
+          last_frame_url?: string | null
+          narration_text?: string | null
+          project_id?: string
+          prompt_text?: string
+          scene_order?: number
+          status?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_scenes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "video_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
