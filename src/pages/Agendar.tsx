@@ -32,6 +32,7 @@ const Agendar = () => {
   const { items, addItem, removeItem, clearCart } = useCart();
   const { services, loading: servicesLoading } = useServices();
   const service = services.find((s) => s.slug === slug);
+  console.log("[Agendar] slug:", slug, "services:", services.length, "found:", !!service, "loading:", servicesLoading);
   const [searchParams] = useSearchParams();
   const planName = searchParams.get("plan") || "";
   const planPrice = parseInt(searchParams.get("price") || "0");
