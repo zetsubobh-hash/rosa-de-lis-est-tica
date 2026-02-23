@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.admin-create-partner-account]
 verify_jwt = false
+
+[functions.error-monitor]
+verify_jwt = false
