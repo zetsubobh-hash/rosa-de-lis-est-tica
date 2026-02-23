@@ -190,12 +190,34 @@ const AdminHistory = () => {
                           </span>
                         )}
                       </div>
-                      {apt.notes && (
-                        <p className="font-body text-xs text-muted-foreground/80 flex items-start gap-1">
-                          <FileText className="w-3 h-3 mt-0.5 shrink-0" />
-                          {apt.notes}
-                        </p>
-                      )}
+                      {apt.notes && (() => {
+                        try {
+                          const parsed = JSON.parse(apt.notes);
+                          // Don't render raw JSON objects as notes
+                          if (typeof parsed === "object" && parsed !== null) {
+                            const parts: string[] = [];
+                            if (parsed.plan) parts.push(`Plano: ${parsed.plan}`);
+                            if (parsed.price_cents) parts.push(`Valor: R$ ${(parsed.price_cents / 100).toFixed(2).replace(".", ",")}`);
+                            if (parsed.rescheduled) parts.push("Remarcado");
+                            if (parts.length === 0) return null;
+                            return (
+                              <div className="flex items-center gap-2 flex-wrap text-xs font-body text-muted-foreground/80">
+                                {parts.map((part, i) => (
+                                  <span key={i} className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-medium">{part}</span>
+                                ))}
+                              </div>
+                            );
+                          }
+                        } catch {
+                          // Not JSON, show as plain text
+                        }
+                        return (
+                          <p className="font-body text-xs text-muted-foreground/80 flex items-start gap-1">
+                            <FileText className="w-3 h-3 mt-0.5 shrink-0" />
+                            {apt.notes}
+                          </p>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
