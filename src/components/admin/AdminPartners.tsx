@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import PartnerPaymentHistory from "@/components/admin/PartnerPaymentHistory";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { useServices } from "@/hooks/useServices";
 import { Input } from "@/components/ui/input";
@@ -340,13 +341,13 @@ const AdminPartners = () => {
         return;
       }
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || "https://sxzmtnsfsyifujdnqyzr.supabase.co"}/functions/v1/admin-create-partner-account`,
+        `${SUPABASE_URL}/functions/v1/admin-create-partner-account`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${sessionData.session.access_token}`,
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4em10bnNmc3lpZnVqZG5xeXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NDc1OTcsImV4cCI6MjA4NjMyMzU5N30.WIaOFGFVrQ2eqroPSrujSC79gWdEz8UsIcrFbeL--X0",
+            "apikey": SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
             partner_id: editing.id,
@@ -390,13 +391,13 @@ const AdminPartners = () => {
         return;
       }
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || "https://sxzmtnsfsyifujdnqyzr.supabase.co"}/functions/v1/admin-update-credentials`,
+        `${SUPABASE_URL}/functions/v1/admin-update-credentials`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${sessionData.session.access_token}`,
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4em10bnNmc3lpZnVqZG5xeXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NDc1OTcsImV4cCI6MjA4NjMyMzU5N30.WIaOFGFVrQ2eqroPSrujSC79gWdEz8UsIcrFbeL--X0",
+            "apikey": SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
             target_user_id: editing.user_id,

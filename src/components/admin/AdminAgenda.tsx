@@ -215,13 +215,13 @@ const AdminAgenda = () => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL || "https://sxzmtnsfsyifujdnqyzr.supabase.co"}/functions/v1/admin-update-appointment`,
+        `${SUPABASE_URL}/functions/v1/admin-update-appointment`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${sessionData.session.access_token}`,
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4em10bnNmc3lpZnVqZG5xeXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NDc1OTcsImV4cCI6MjA4NjMyMzU5N30.WIaOFGFVrQ2eqroPSrujSC79gWdEz8UsIcrFbeL--X0",
+            "apikey": SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({ appointment_id: aptId, partner_id: partnerId }),
         }
