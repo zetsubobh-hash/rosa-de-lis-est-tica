@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,9 +25,10 @@ import AdminThemeEditor from "@/components/admin/AdminThemeEditor";
 import AdminCounterSales from "@/components/admin/AdminCounterSales";
 import AdminSEO from "@/components/admin/AdminSEO";
 import AdminAuditLog from "@/components/admin/AdminAuditLog";
+import AdminDebugMonitor from "@/components/admin/AdminDebugMonitor";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "counter-sales" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log";
+type Tab = "dashboard" | "agenda" | "counter-sales" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -112,6 +113,7 @@ const Admin = () => {
     { key: "install-app", label: "Instalar App", icon: Smartphone },
     { key: "site-settings", label: "Configurações", icon: Settings },
     ...(user?.id === MASTER_ADMIN_ID ? [{ key: "audit-log" as Tab, label: "Auditoria", icon: FileText }] : []),
+    { key: "debug-monitor" as Tab, label: "Debug Monitor", icon: Bug },
   ];
 
   return (
@@ -280,6 +282,7 @@ const Admin = () => {
           )}
           {activeTab === "install-app" && <AdminInstallApp />}
           {activeTab === "audit-log" && user?.id === MASTER_ADMIN_ID && <AdminAuditLog />}
+          {activeTab === "debug-monitor" && <AdminDebugMonitor />}
           {activeTab === "site-settings" && (
             <Tabs defaultValue="negocio" className="space-y-6">
               <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1">

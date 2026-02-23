@@ -10,6 +10,7 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { useBranding } from "@/hooks/useBranding";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { useSEO } from "@/hooks/useSEO";
+import { useErrorMonitor } from "@/hooks/useErrorMonitor";
 import CookieConsent from "@/components/CookieConsent";
 
 // Lazy-loaded pages for faster initial load
@@ -35,9 +36,10 @@ const queryClient = new QueryClient();
 
 const AppInit = ({ children }: { children: React.ReactNode }) => {
   usePageTracking();
-  useBranding(); // applies favicon dynamically
-  useThemeColors(); // applies saved theme colors
-  useSEO(); // applies SEO meta tags, analytics, and tracking scripts
+  useBranding();
+  useThemeColors();
+  useSEO();
+  useErrorMonitor();
   return <>{children}</>;
 };
 
