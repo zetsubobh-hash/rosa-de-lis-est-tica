@@ -21,31 +21,39 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     const updateLastSeen = (userId: string) => {
       supabase.from("profiles").update({ last_seen: new Date().toISOString() }).eq("user_id", userId).then();
     };
 
+    // Set up listener FIRST (before getSession)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setLoading(false);
-        if (session?.user) updateLastSeen(session.user.id);
+      (_event, newSession) => {
+        setSession(newSession);
+        // Only set loading false from listener if initial load is already done
+        if (initialLoadDone.current) {
+          setLoading(false);
+        }
+        if (newSession?.user) {
+          setTimeout(() => updateLastSeen(newSession.user.id), 0);
+        }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    // Initial session fetch — controls loading state
+    supabase.auth.getSession().then(({ data: { session: initSession } }) => {
+      setSession(initSession);
+      if (initSession?.user) updateLastSeen(initSession.user.id);
+      initialLoadDone.current = true;
       setLoading(false);
-      if (session?.user) updateLastSeen(session.user.id);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
-    // Log audit before signing out
     try {
       const { logAudit } = await import("@/lib/auditLog");
       await logAudit({ action: "logout" });

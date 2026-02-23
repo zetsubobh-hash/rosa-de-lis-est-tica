@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -42,16 +42,30 @@ const Agendar = () => {
   const [step, setStep] = useState<Step>("calendar");
   const [loading, setLoading] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  
+  // Grace period: don't redirect until auth has had time to settle after login
+  const mountedAt = useRef(Date.now());
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    // Wait at least 2s after mount before redirecting unauthenticated users
+    // This prevents the loop where setSession hasn't propagated yet
+    if (authLoading || servicesLoading) return;
+    if (!user) {
+      const elapsed = Date.now() - mountedAt.current;
+      if (elapsed < 2000) {
+        const timer = setTimeout(() => {
+          // Re-check after grace period
+          if (!user) navigate(`/servico/${slug}`, { replace: true });
+        }, 2000 - elapsed);
+        return () => clearTimeout(timer);
+      }
       navigate(`/servico/${slug}`, { replace: true });
     }
-  }, [user, authLoading, slug, navigate]);
+  }, [user, authLoading, servicesLoading, slug, navigate]);
 
   useEffect(() => {
     if (!selectedDate) return;
