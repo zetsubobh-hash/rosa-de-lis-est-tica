@@ -389,11 +389,12 @@ const AdminAgenda = () => {
     ? appointments.filter((a) => a.appointment_date === filterDateStr)
     : appointments
   ).filter((a) => {
-    // Hide appointments whose corresponding plan is completed
-    const completedPlan = clientPlans.find(
-      (p) => p.status === "completed" && p.user_id === a.user_id && p.service_slug === a.service_slug
-    );
-    return !completedPlan;
+    // Only hide appointments that are explicitly linked to a completed plan
+    if (a.plan_id) {
+      const linkedPlan = clientPlans.find((p) => p.id === a.plan_id);
+      if (linkedPlan && linkedPlan.status === "completed") return false;
+    }
+    return true;
   });
 
   // Group by user_id + appointment_date
