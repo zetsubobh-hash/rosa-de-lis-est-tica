@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, User, Calendar, Clock, Hash, ChevronDown } from "lucide-react";
-import { format } from "date-fns";
+import { CheckCircle2, User, Calendar, Clock, ChevronDown, FileText, UserCheck, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
@@ -19,6 +18,10 @@ interface CompletedAppointment {
   session_number: number | null;
   plan_id: string | null;
   status: string;
+  notes: string | null;
+  partner_id: string | null;
+  partner_name?: string;
+  service_slug: string;
 }
 
 interface ClientGroup {
@@ -44,10 +47,9 @@ const AdminHistory = () => {
     const fetchData = async () => {
       setLoading(true);
 
-      // Fetch ALL completed appointments (not just plan-linked)
       const { data: appointments } = await supabase
         .from("appointments")
-        .select("id, user_id, appointment_date, appointment_time, service_title, session_number, plan_id, status")
+        .select("id, user_id, appointment_date, appointment_time, service_title, service_slug, session_number, plan_id, status, notes, partner_id")
         .eq("status", "completed")
         .order("appointment_date", { ascending: false });
 
@@ -58,29 +60,31 @@ const AdminHistory = () => {
       }
 
       const userIds = [...new Set(appointments.map((a) => a.user_id))];
+      const partnerIds = [...new Set(appointments.map((a) => a.partner_id).filter(Boolean))] as string[];
 
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, phone, email, avatar_url")
-        .in("user_id", userIds);
+      const [profilesRes, partnersRes] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name, phone, email, avatar_url").in("user_id", userIds),
+        partnerIds.length > 0
+          ? supabase.from("partners").select("id, full_name").in("id", partnerIds)
+          : Promise.resolve({ data: [] }),
+      ]);
 
       const profileMap: Record<string, Profile> = {};
-      profiles?.forEach((p: any) => {
-        profileMap[p.user_id] = p;
-      });
+      profilesRes.data?.forEach((p: any) => { profileMap[p.user_id] = p; });
 
-      // Group by user
+      const partnerMap: Record<string, string> = {};
+      partnersRes.data?.forEach((p: any) => { partnerMap[p.id] = p.full_name; });
+
       const groupMap: Record<string, ClientGroup> = {};
       for (const apt of appointments) {
         const uid = apt.user_id as string;
         if (!groupMap[uid]) {
-          groupMap[uid] = {
-            userId: uid,
-            profile: profileMap[uid] || null,
-            appointments: [],
-          };
+          groupMap[uid] = { userId: uid, profile: profileMap[uid] || null, appointments: [] };
         }
-        groupMap[uid].appointments.push(apt as CompletedAppointment);
+        groupMap[uid].appointments.push({
+          ...(apt as any),
+          partner_name: apt.partner_id ? partnerMap[apt.partner_id] || "—" : undefined,
+        });
       }
 
       setGroups(Object.values(groupMap));
@@ -153,27 +157,45 @@ const AdminHistory = () => {
                 animate={{ height: "auto", opacity: 1 }}
                 className="border-t border-border"
               >
-                <div className="p-5 space-y-1.5">
+                <div className="p-5 space-y-2">
                   {group.appointments.map((apt) => (
-                    <div key={apt.id} className="flex items-center gap-2 py-2 px-3 rounded-lg bg-muted/50">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <span className="font-heading text-xs font-semibold text-foreground truncate flex-1">
-                        {apt.service_title}
-                      </span>
-                      {apt.session_number && (
-                        <>
-                          <Hash className="w-3 h-3 text-muted-foreground shrink-0" />
-                          <span className="font-body text-[11px] text-muted-foreground">{apt.session_number}</span>
-                        </>
+                    <div key={apt.id} className="p-3 rounded-xl border border-border hover:border-primary/20 transition-colors space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-heading text-xs font-semibold text-foreground truncate flex-1">
+                          {apt.service_title}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                          Concluído
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 flex-wrap text-xs font-body text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(apt.appointment_date)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {apt.appointment_time}
+                        </span>
+                        {apt.session_number && (
+                          <span className="flex items-center gap-1">
+                            <Package className="w-3 h-3" />
+                            Sessão {apt.session_number}
+                          </span>
+                        )}
+                        {apt.partner_name && (
+                          <span className="flex items-center gap-1 text-primary/70">
+                            <UserCheck className="w-3 h-3" />
+                            {apt.partner_name}
+                          </span>
+                        )}
+                      </div>
+                      {apt.notes && (
+                        <p className="font-body text-xs text-muted-foreground/80 flex items-start gap-1">
+                          <FileText className="w-3 h-3 mt-0.5 shrink-0" />
+                          {apt.notes}
+                        </p>
                       )}
-                      <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <span className="font-body text-[11px] text-muted-foreground">
-                        {formatDate(apt.appointment_date)}
-                      </span>
-                      <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <span className="font-body text-[11px] text-muted-foreground">
-                        {apt.appointment_time}
-                      </span>
                     </div>
                   ))}
                 </div>
