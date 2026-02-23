@@ -229,6 +229,14 @@ const AdminAgenda = () => {
     if (error) {
       toast({ title: "Erro ao finalizar", variant: "destructive" });
     } else {
+      // Also update plan sessions if linked
+      const plan = clientPlans.find((p) => p.user_id === apt.user_id && p.service_slug === apt.service_slug);
+      if (plan && plan.completed_sessions < plan.total_sessions) {
+        const newCompleted = Math.min(plan.total_sessions, plan.completed_sessions + 1);
+        const newStatus = newCompleted >= plan.total_sessions ? "completed" : "active";
+        await supabase.from("client_plans").update({ completed_sessions: newCompleted, status: newStatus }).eq("id", plan.id);
+        setClientPlans((prev) => prev.map((p) => p.id === plan.id ? { ...p, completed_sessions: newCompleted, status: newStatus } : p));
+      }
       toast({ title: "Procedimento finalizado ✅" });
       setAppointments((prev) => prev.filter((a) => a.id !== apt.id));
       setCompletedAppointments((prev) => [{ ...apt, status: "completed" }, ...prev]);
@@ -662,6 +670,10 @@ const AdminAgenda = () => {
                         </div>
                         <div className="flex items-center gap-4 text-xs font-body text-muted-foreground">
                           <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formatDate(apt.appointment_date)}
+                          </span>
+                          <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
                             {apt.appointment_time}
                           </span>
@@ -773,7 +785,7 @@ const AdminAgenda = () => {
                                       (a) => a.plan_id === plan.id && a.session_number === sNum && a.status !== "cancelled"
                                     );
                                     const sCompleted = (sNum - 1) < plan.completed_sessions;
-                                    const canSched = !sCompleted && !sApt && !isComplete;
+                                    const canSched = !sCompleted && !sApt && plan.completed_sessions < plan.total_sessions;
 
                                     return (
                                       <motion.div
@@ -785,11 +797,11 @@ const AdminAgenda = () => {
                                         <p className="font-heading text-xs font-bold text-foreground">
                                           Sessão {sNum} {sCompleted ? "— Realizada ✅" : ""}
                                         </p>
-                                        {sApt && (
+                                        {(sApt || (!sApt && plan.total_sessions === 1)) && (
                                           <p className="font-body text-[11px] text-muted-foreground flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
-                                            {formatDate(sApt.appointment_date)} • {sApt.appointment_time}
-                                            {isRescheduled(sApt) && (
+                                            {formatDate((sApt || apt).appointment_date)} • {(sApt || apt).appointment_time}
+                                            {isRescheduled(sApt || apt) && (
                                               <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase">Remarcado</span>
                                             )}
                                           </p>
