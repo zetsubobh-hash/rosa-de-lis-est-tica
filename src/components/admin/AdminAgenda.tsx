@@ -849,17 +849,14 @@ const AdminAgenda = () => {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        if (isComplete) {
-                                          handleComplete(apt);
-                                        } else {
-                                          updateSessions(plan.id, 1);
-                                        }
+                                        updateSessions(plan.id, 1);
+                                        handleComplete(apt);
                                       }}
                                       disabled={updatingPlan === plan.id}
                                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all disabled:opacity-30"
                                     >
                                       <PlusCircle className="w-3.5 h-3.5" />
-                                      {isComplete ? "Finalizar Procedimento" : "Sessão Realizada"}
+                                      Sessão Realizada
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); updateSessions(plan.id, 1, "Sessão cancelada (cliente faltou) ⚠️"); }}
