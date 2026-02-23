@@ -4,6 +4,7 @@ import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock,
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { useAllServicePrices, formatCents } from "@/hooks/useServicePrices";
 import { Input } from "@/components/ui/input";
@@ -283,12 +284,12 @@ const AdminAgenda = () => {
 
       // Fire reschedule WhatsApp notification (fire-and-forget)
       const { data: { session } } = await supabase.auth.getSession();
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-notify`, {
+      fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          apikey: SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ appointment_ids: [rescheduleId], type: "reschedule" }),
       }).catch((e) => console.warn("Reschedule WhatsApp notification failed:", e));

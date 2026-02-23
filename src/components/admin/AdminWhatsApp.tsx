@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck, CalendarClock, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 
@@ -140,13 +141,13 @@ const AdminWhatsApp = () => {
   const callEvolution = async (action: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution`,
+      `${SUPABASE_URL}/functions/v1/evolution`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          apikey: SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ action }),
       }
@@ -228,13 +229,13 @@ const AdminWhatsApp = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution`,
+        `${SUPABASE_URL}/functions/v1/evolution`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session?.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            apikey: SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({ action: "send_test", phone: rawPhone, message: testMessage }),
         }
