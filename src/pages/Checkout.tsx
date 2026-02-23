@@ -86,7 +86,7 @@ const Checkout = () => {
   const handleConfirmPixPayment = async () => {
     setConfirming(true);
     try {
-      // Create payment records for PIX manual
+      // Create payment records as pending — admin will confirm later
       for (const apt of appointments) {
         const { error } = await supabase.from("payments").insert({
           user_id: user!.id,
@@ -97,45 +97,10 @@ const Checkout = () => {
         if (error) throw error;
       }
 
-      // Update appointments to confirmed
-      const { error } = await supabase
-        .from("appointments")
-        .update({ status: "confirmed" })
-        .in("id", appointmentIds);
-      if (error) throw error;
+      // Keep appointment status as "pending" — admin confirms via agenda
+      // No status change here!
 
-      // Auto-create client plans based on purchased sessions
-      for (const apt of appointments) {
-        let planName = "Essencial";
-        let sessions = 1;
-        if (apt.notes) {
-          try {
-            const noteData = JSON.parse(apt.notes);
-            if (noteData.plan) planName = noteData.plan;
-            if (noteData.sessions) sessions = noteData.sessions;
-          } catch { /* ignore */ }
-        }
-        // Try to get sessions from service_prices if not in notes
-        if (sessions <= 1 && allPrices.length > 0) {
-          const dbPrice = allPrices.find(
-            (p) => p.service_slug === apt.service_slug && p.plan_name === planName
-          );
-          if (dbPrice) sessions = dbPrice.sessions;
-        }
-        await supabase.from("client_plans").insert({
-          user_id: user!.id,
-          service_slug: apt.service_slug,
-          service_title: apt.service_title,
-          plan_name: planName,
-          total_sessions: sessions,
-          completed_sessions: 0,
-          status: "active",
-          created_by: "auto",
-          appointment_id: apt.id,
-        });
-      }
-
-      // Fire WhatsApp notification (fire-and-forget, don't block UI)
+      // Fire WhatsApp notification to admin about pending payment
       const { data: { session } } = await supabase.auth.getSession();
       fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
         method: "POST",
@@ -148,12 +113,12 @@ const Checkout = () => {
       }).catch((e) => console.warn("WhatsApp notification failed:", e));
 
       toast({
-        title: "Agendamento confirmado! ✅",
-        description: "Realize o PIX e seu agendamento será validado.",
+        title: "PIX enviado! ⏳",
+        description: "Aguarde a confirmação do pagamento pela equipe.",
       });
-      navigate("/");
+      navigate("/meus-agendamentos");
     } catch {
-      toast({ title: "Erro ao confirmar", variant: "destructive" });
+      toast({ title: "Erro ao registrar pagamento", variant: "destructive" });
     } finally {
       setConfirming(false);
     }

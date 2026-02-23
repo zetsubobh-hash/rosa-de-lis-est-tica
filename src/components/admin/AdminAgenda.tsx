@@ -207,13 +207,26 @@ const AdminAgenda = () => {
 
   const handleConfirmPayment = async (apt: Appointment) => {
     try {
-      // Create payment record
-      await supabase.from("payments").insert({
-        user_id: apt.user_id,
-        appointment_id: apt.id,
-        method: "pix_manual",
-        status: "confirmed",
-      });
+      // Try to update existing pending payment, or create a new one
+      const { data: existingPayment } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("appointment_id", apt.id)
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (existingPayment) {
+        await supabase.from("payments")
+          .update({ status: "confirmed" })
+          .eq("id", existingPayment.id);
+      } else {
+        await supabase.from("payments").insert({
+          user_id: apt.user_id,
+          appointment_id: apt.id,
+          method: "pix_manual",
+          status: "confirmed",
+        });
+      }
 
       // Update appointment to confirmed
       const { error } = await supabase
