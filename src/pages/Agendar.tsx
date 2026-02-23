@@ -27,7 +27,7 @@ type Step = "calendar" | "time" | "confirm";
 const Agendar = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { items, addItem, removeItem, clearCart } = useCart();
   const { services, loading: servicesLoading } = useServices();
@@ -48,10 +48,10 @@ const Agendar = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate(`/servico/${slug}`, { replace: true });
     }
-  }, [user, slug, navigate]);
+  }, [user, authLoading, slug, navigate]);
 
   useEffect(() => {
     if (!selectedDate) return;
@@ -136,7 +136,7 @@ const Agendar = () => {
   const today = startOfDay(new Date());
   const maxDate = addDays(today, 60);
 
-  if (servicesLoading) {
+  if (servicesLoading || authLoading) {
     return (
       <>
         <Header />
