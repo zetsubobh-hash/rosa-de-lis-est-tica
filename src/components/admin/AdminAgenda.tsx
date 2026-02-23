@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle, Handshake, ChevronDown, Hash, MinusCircle, PlusCircle, CheckCircle2, CalendarPlus } from "lucide-react";
+import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle, Handshake, ChevronDown, Hash, MinusCircle, PlusCircle, CheckCircle2, CalendarPlus, Banknote } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -202,6 +202,76 @@ const AdminAgenda = () => {
     } else {
       toast({ title: "Agendamento cancelado ✅" });
       setAppointments((prev) => prev.filter((a) => a.id !== id));
+    }
+  };
+
+  const handleConfirmPayment = async (apt: Appointment) => {
+    try {
+      // Create payment record
+      await supabase.from("payments").insert({
+        user_id: apt.user_id,
+        appointment_id: apt.id,
+        method: "pix_manual",
+        status: "confirmed",
+      });
+
+      // Update appointment to confirmed
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "confirmed" })
+        .eq("id", apt.id);
+      if (error) throw error;
+
+      // Auto-create client plan if applicable
+      let planName = "Essencial";
+      let sessions = 1;
+      if (apt.notes) {
+        try {
+          const noteData = JSON.parse(apt.notes);
+          if (noteData.plan) planName = noteData.plan;
+          if (noteData.sessions) sessions = noteData.sessions;
+        } catch { /* ignore */ }
+      }
+      if (sessions <= 1 && allPrices.length > 0) {
+        const dbPrice = allPrices.find(
+          (p: any) => p.service_slug === apt.service_slug && p.plan_name === planName
+        );
+        if (dbPrice) sessions = dbPrice.sessions;
+      }
+      await supabase.from("client_plans").insert({
+        user_id: apt.user_id,
+        service_slug: apt.service_slug,
+        service_title: apt.service_title,
+        plan_name: planName,
+        total_sessions: sessions,
+        completed_sessions: 0,
+        status: "active",
+        created_by: "admin",
+        appointment_id: apt.id,
+      });
+
+      // Update local state
+      setAppointments((prev) =>
+        prev.map((a) => a.id === apt.id ? { ...a, status: "confirmed" } : a)
+      );
+
+      // Fire WhatsApp notification
+      const { data: { session } } = await supabase.auth.getSession();
+      fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+          apikey: SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ appointment_ids: [apt.id] }),
+      }).catch((e) => console.warn("WhatsApp notification failed:", e));
+
+      toast({ title: "Pagamento confirmado e agendamento ativado ✅" });
+      await fetchAll();
+    } catch (err) {
+      console.error("[ConfirmPayment] Error:", err);
+      toast({ title: "Erro ao confirmar pagamento", variant: "destructive" });
     }
   };
 
@@ -541,8 +611,17 @@ const AdminAgenda = () => {
                             ))}
                           </select>
                         </div>
-                        {/* Remarcar button - always visible */}
-                        <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                        {/* Action buttons - always visible */}
+                        <div className="flex gap-2 mt-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                          {apt.status === "pending" && (
+                            <button
+                              onClick={() => handleConfirmPayment(apt)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-emerald-400/40 text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all"
+                            >
+                              <Banknote className="w-3.5 h-3.5" />
+                              Confirmar PIX
+                            </button>
+                          )}
                           <button
                             onClick={() => openReschedule(apt)}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all"
