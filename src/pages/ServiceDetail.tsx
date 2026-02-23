@@ -22,6 +22,7 @@ const ServiceDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<{ name?: string; cents?: number } | null>(null);
   const { services, loading } = useServices();
   const { prices } = useServicePrices(slug);
 
@@ -30,11 +31,20 @@ const ServiceDetail = () => {
 
   const handleAgendar = (planName?: string, priceCents?: number) => {
     if (!user) {
+      setPendingPlan({ name: planName, cents: priceCents });
       setAuthModalOpen(true);
     } else {
       const planQuery = planName && priceCents ? `?plan=${encodeURIComponent(planName)}&price=${priceCents}` : "";
       setTimeout(() => navigate(`/agendar/${slug}${planQuery}`), 250);
     }
+  };
+
+  const handleAuthSuccess = () => {
+    // After successful login, navigate to booking with pending plan
+    const plan = pendingPlan;
+    setPendingPlan(null);
+    const planQuery = plan?.name && plan?.cents ? `?plan=${encodeURIComponent(plan.name)}&price=${plan.cents}` : "";
+    setTimeout(() => navigate(`/agendar/${slug}${planQuery}`), 500);
   };
 
   useEffect(() => {
@@ -425,7 +435,7 @@ const ServiceDetail = () => {
 
       <Footer />
       <WhatsAppButton />
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} onSuccess={handleAuthSuccess} />
     </div>
   );
 };

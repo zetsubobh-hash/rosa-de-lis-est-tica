@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText, Pencil, Save, Key, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import AnamnesisModal from "@/components/AnamnesisModal";
@@ -96,7 +97,7 @@ const AdminUsers = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/delete-user`,
+        `${SUPABASE_URL}/functions/v1/delete-user`,
         {
           method: "POST",
           headers: {
@@ -197,7 +198,7 @@ const AdminUsers = () => {
         if (editForm.new_password.length > 0) body.new_password = editForm.new_password;
 
         const res = await fetch(
-          `https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/admin-update-credentials`,
+          `${SUPABASE_URL}/functions/v1/admin-update-credentials`,
           {
             method: "POST",
             headers: {

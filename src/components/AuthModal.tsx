@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL } from "@/lib/supabaseUrl";
 import { toast } from "@/hooks/use-toast";
 import { LogIn, UserPlus, Loader2, Eye, EyeOff, Camera, X, Check } from "lucide-react";
 import Cropper, { Area } from "react-easy-crop";
@@ -34,6 +35,7 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 const formatPhone = (value: string) => {
@@ -53,7 +55,7 @@ const capitalizeWords = (value: string) => {
   return value.replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
+const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
@@ -196,7 +198,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     setLoading(true);
 
     try {
-      const res = await fetch(`https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/login`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -227,6 +229,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         toast({ title: "Login realizado com sucesso!" });
         resetFields();
         onOpenChange(false);
+        onSuccess?.();
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch {
@@ -252,7 +255,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     const generatedUsername = regName.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
     try {
-      const res = await fetch(`https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/register`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -275,7 +278,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       }
 
       // Auto-login after registration via edge function
-      const loginRes = await fetch(`https://sxzmtnsfsyifujdnqyzr.supabase.co/functions/v1/login`, {
+      const loginRes = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -306,9 +309,13 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             await uploadAvatarAfterRegister(userId);
           }
           onOpenChange(false);
-          setTimeout(() => {
-            document.getElementById("servicos")?.scrollIntoView({ behavior: "smooth" });
-          }, 300);
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            setTimeout(() => {
+              document.getElementById("servicos")?.scrollIntoView({ behavior: "smooth" });
+            }, 300);
+          }
         }
       }
     } catch {
