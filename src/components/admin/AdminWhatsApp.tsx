@@ -140,18 +140,23 @@ const AdminWhatsApp = () => {
 
   const callEvolution = async (action: string) => {
     const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch(
-      `${SUPABASE_URL}/functions/v1/evolution`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-          apikey: SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ action }),
-      }
-    );
+    const url = `${SUPABASE_URL}/functions/v1/evolution`;
+    console.log("[Evolution] calling:", url, "action:", action);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ action }),
+    });
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const text = await res.text();
+      console.error("[Evolution] Non-JSON response:", res.status, text.substring(0, 200));
+      throw new Error(`Erro de conexão com a API (status ${res.status}). Verifique se o site foi republicado.`);
+    }
     return res.json();
   };
 
@@ -240,6 +245,12 @@ const AdminWhatsApp = () => {
           body: JSON.stringify({ action: "send_test", phone: rawPhone, message: testMessage }),
         }
       );
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        const text = await res.text();
+        console.error("[Evolution] Non-JSON response:", res.status, text.substring(0, 200));
+        throw new Error(`Erro de conexão com a API (status ${res.status}).`);
+      }
       const data = await res.json();
       if (data.success) {
         toast({ title: "✅ Mensagem enviada!", description: `Teste enviado para ${testPhone}` });
