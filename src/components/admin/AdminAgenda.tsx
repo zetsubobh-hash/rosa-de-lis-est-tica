@@ -96,14 +96,10 @@ const HOURS = Array.from({ length: 11 }, (_, i) => {
   return `${String(h).padStart(2, "0")}:00`;
 });
 
-type AgendaTab = "active" | "completed";
-
 const AdminAgenda = () => {
   const { toast } = useToast();
   const { prices: allPrices } = useAllServicePrices();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [completedAppointments, setCompletedAppointments] = useState<Appointment[]>([]);
-  const [agendaTab, setAgendaTab] = useState<AgendaTab>("active");
   const [loading, setLoading] = useState(true);
   const [partnerOptions, setPartnerOptions] = useState<PartnerOption[]>([]);
   const [clientPlans, setClientPlans] = useState<ClientPlan[]>([]);
@@ -128,19 +124,13 @@ const AdminAgenda = () => {
     setLoading(true);
 
     // Run ALL queries in parallel
-    const [appointmentsRes, completedRes, profilesRes, partnersRes, plansRes] = await Promise.all([
+    const [appointmentsRes, profilesRes, partnersRes, plansRes] = await Promise.all([
       supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
         .in("status", ["confirmed", "pending"])
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true }),
-      supabase
-        .from("appointments")
-        .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
-        .eq("status", "completed")
-        .order("appointment_date", { ascending: false })
-        .order("appointment_time", { ascending: false }),
       supabase
         .from("profiles")
         .select("user_id, full_name, phone, email, sex, address, avatar_url"),
@@ -166,11 +156,6 @@ const AdminAgenda = () => {
     if (appointmentsRes.data) {
       setAppointments(
         appointmentsRes.data.map((a) => ({ ...a, profiles: profileMap[a.user_id] || null }))
-      );
-    }
-    if (completedRes.data) {
-      setCompletedAppointments(
-        completedRes.data.map((a) => ({ ...a, profiles: profileMap[a.user_id] || null }))
       );
     }
 
@@ -239,7 +224,6 @@ const AdminAgenda = () => {
       }
       toast({ title: "Procedimento finalizado ✅" });
       setAppointments((prev) => prev.filter((a) => a.id !== apt.id));
-      setCompletedAppointments((prev) => [{ ...apt, status: "completed" }, ...prev]);
     }
   };
 
@@ -426,7 +410,7 @@ const AdminAgenda = () => {
     );
   }
 
-  if (appointments.length === 0 && completedAppointments.length === 0) {
+  if (appointments.length === 0) {
     return (
       <div className="bg-card rounded-2xl border border-border p-12 text-center">
         <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
@@ -463,34 +447,6 @@ const AdminAgenda = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      {/* Tabs */}
-      <div className="flex items-center gap-2 mb-6">
-        <button
-          onClick={() => setAgendaTab("active")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold font-heading transition-all ${
-            agendaTab === "active"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          }`}
-        >
-          <Calendar className="w-4 h-4 inline mr-1.5" />
-          Agenda ({filtered.length})
-        </button>
-        <button
-          onClick={() => setAgendaTab("completed")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold font-heading transition-all ${
-            agendaTab === "completed"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          }`}
-        >
-          <CheckCircle2 className="w-4 h-4 inline mr-1.5" />
-          Finalizados ({completedAppointments.length})
-        </button>
-      </div>
-
-      {agendaTab === "active" && (
-      <>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h2 className="font-heading text-lg font-bold text-foreground">
           Agendamentos ({filtered.length})
@@ -906,66 +862,6 @@ const AdminAgenda = () => {
           );
         })}
       </div>
-      )}
-      </>
-      )}
-
-      {/* Completed Tab */}
-      {agendaTab === "completed" && (
-        <div>
-          <h2 className="font-heading text-lg font-bold text-foreground mb-4">
-            Finalizados ({completedAppointments.length})
-          </h2>
-          {completedAppointments.length === 0 ? (
-            <div className="bg-card rounded-2xl border border-border p-12 text-center">
-              <CheckCircle2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="font-body text-muted-foreground">Nenhum procedimento finalizado ainda.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {completedAppointments.map((apt, i) => {
-                const profile = apt.profiles;
-                return (
-                  <motion.div
-                    key={apt.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="bg-card rounded-2xl border border-border p-4 flex items-center gap-4"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                      {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
-                      ) : profile ? (
-                        <span className="font-heading text-xs font-bold text-primary">
-                          {getInitials(profile.full_name)}
-                        </span>
-                      ) : (
-                        <User className="w-4 h-4 text-primary/50" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-heading text-sm font-semibold text-foreground truncate">
-                        {profile?.full_name || "Cliente"}
-                      </p>
-                      <p className="font-body text-xs text-muted-foreground truncate">
-                        {apt.service_title}
-                      </p>
-                      <p className="font-body text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3" />
-                        {formatDate(apt.appointment_date)} • {apt.appointment_time}
-                      </p>
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary flex-shrink-0">
-                      <CheckCircle2 className="w-3 h-3 inline mr-1" />
-                      Finalizado
-                    </span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       )}
 
       <AnimatePresence>
