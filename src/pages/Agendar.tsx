@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarCheck, ChevronRight, Clock, ArrowLeft, Check, CalendarPlus, Plus, Trash2 } from "lucide-react";
-import { getServiceBySlug } from "@/data/services";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -14,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useServices } from "@/hooks/useServices";
+import { getIconByName } from "@/lib/iconMap";
 
 const TIME_SLOTS = [
   "08:00", "09:00", "10:00", "11:00",
@@ -29,7 +30,8 @@ const Agendar = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { items, addItem, removeItem, clearCart } = useCart();
-  const service = slug ? getServiceBySlug(slug) : undefined;
+  const { services, loading: servicesLoading } = useServices();
+  const service = services.find((s) => s.slug === slug);
   const [searchParams] = useSearchParams();
   const planName = searchParams.get("plan") || "";
   const planPrice = parseInt(searchParams.get("price") || "0");
@@ -53,7 +55,6 @@ const Agendar = () => {
   useEffect(() => {
     if (!selectedDate) return;
     const fetchBooked = async () => {
-      // Clean up stale pending appointments (>30 min old)
       await supabase.rpc("cleanup_stale_pending_appointments");
 
       const dateStr = format(selectedDate, "yyyy-MM-dd");
@@ -75,7 +76,6 @@ const Agendar = () => {
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
-    // Show selection visually, then add to cart and go to confirm after a short delay
     setTimeout(() => {
       if (service && selectedDate) {
         addItem({
@@ -85,7 +85,7 @@ const Agendar = () => {
           date: format(selectedDate, "yyyy-MM-dd"),
           dateFormatted: format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR }),
           time,
-          iconName: service.slug,
+          iconName: service.icon_name,
         });
       }
       setStep("confirm");
@@ -105,12 +105,9 @@ const Agendar = () => {
         status: "pending",
         notes: planPrice > 0 ? JSON.stringify({ plan: planName, price_cents: planPrice }) : null,
       }));
-      console.log("[Agendar] Inserting appointments:", JSON.stringify(inserts));
       const { data, error } = await supabase.from("appointments").insert(inserts).select("id");
-      console.log("[Agendar] Insert result - data:", JSON.stringify(data), "error:", JSON.stringify(error));
       if (error) throw error;
       const ids = data?.map((d: any) => d.id).join(",") || "";
-      console.log("[Agendar] Navigating to checkout with ids:", ids);
       clearCart();
       navigate(`/checkout?ids=${ids}`);
     } catch (err) {
@@ -138,6 +135,17 @@ const Agendar = () => {
   const today = startOfDay(new Date());
   const maxDate = addDays(today, 60);
 
+  if (servicesLoading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-background flex items-center justify-center pt-20">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      </>
+    );
+  }
+
   if (!service) {
     return (
       <>
@@ -152,7 +160,7 @@ const Agendar = () => {
     );
   }
 
-  const Icon = service.icon;
+  const IconComponent = getIconByName(service.icon_name);
 
   return (
     <div className="min-h-screen bg-background">
@@ -297,8 +305,8 @@ const Agendar = () => {
                 {/* Cart items */}
                 <div className="space-y-4 mb-6">
                   {items.map((item, idx) => {
-                    const itemService = getServiceBySlug(item.serviceSlug);
-                    const ItemIcon = itemService?.icon;
+                    const itemService = services.find((s) => s.slug === item.serviceSlug);
+                    const ItemIcon = itemService ? getIconByName(itemService.icon_name) : null;
                     return (
                       <motion.div
                         key={idx}
