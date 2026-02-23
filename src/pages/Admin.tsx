@@ -112,8 +112,10 @@ const Admin = () => {
     { key: "users", label: "Usuários", icon: Users },
     { key: "install-app", label: "Instalar App", icon: Smartphone },
     { key: "site-settings", label: "Configurações", icon: Settings },
-    ...(user?.id === MASTER_ADMIN_ID ? [{ key: "audit-log" as Tab, label: "Auditoria", icon: FileText }] : []),
-    { key: "debug-monitor" as Tab, label: "Debug Monitor", icon: Bug },
+    ...(user?.id === MASTER_ADMIN_ID ? [
+      { key: "audit-log" as Tab, label: "Auditoria", icon: FileText },
+      { key: "debug-monitor" as Tab, label: "Debug Monitor", icon: Bug },
+    ] : []),
   ];
 
   return (
@@ -282,7 +284,7 @@ const Admin = () => {
           )}
           {activeTab === "install-app" && <AdminInstallApp />}
           {activeTab === "audit-log" && user?.id === MASTER_ADMIN_ID && <AdminAuditLog />}
-          {activeTab === "debug-monitor" && <AdminDebugMonitor />}
+          {activeTab === "debug-monitor" && user?.id === MASTER_ADMIN_ID && <AdminDebugMonitor />}
           {activeTab === "site-settings" && (
             <Tabs defaultValue="negocio" className="space-y-6">
               <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1">
