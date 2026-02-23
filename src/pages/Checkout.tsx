@@ -5,6 +5,7 @@ import { QrCode, CreditCard, CheckCircle, Copy, ArrowLeft, ShieldCheck } from "l
 import { useAuth } from "@/contexts/AuthContext";
 import { usePaymentSettings } from "@/hooks/usePaymentSettings";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { getIconByName } from "@/lib/iconMap";
 import { useAllServicePrices, formatCents } from "@/hooks/useServicePrices";
@@ -136,12 +137,12 @@ const Checkout = () => {
 
       // Fire WhatsApp notification (fire-and-forget, don't block UI)
       const { data: { session } } = await supabase.auth.getSession();
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-notify`, {
+      fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          apikey: SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ appointment_ids: appointmentIds }),
       }).catch((e) => console.warn("WhatsApp notification failed:", e));
