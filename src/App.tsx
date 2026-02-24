@@ -13,18 +13,32 @@ import { useSEO } from "@/hooks/useSEO";
 import { useErrorMonitor } from "@/hooks/useErrorMonitor";
 import CookieConsent from "@/components/CookieConsent";
 
-// Lazy-loaded pages for faster initial load
-const Index = lazy(() => import("./pages/Index"));
-const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
-const Agendar = lazy(() => import("./pages/Agendar"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const MeusAgendamentos = lazy(() => import("./pages/MeusAgendamentos"));
-const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
-const Admin = lazy(() => import("./pages/Admin"));
-const PartnerDashboard = lazy(() => import("./pages/PartnerDashboard"));
-const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
-const Instalar = lazy(() => import("./pages/Instalar"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Retry dynamic imports — reloads page once if chunk is missing (post-deploy cache issue)
+const lazyRetry = (factory: () => Promise<{ default: React.ComponentType<any> }>) =>
+  lazy(() =>
+    factory().catch((err) => {
+      const key = "chunk_reload";
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        window.location.reload();
+        return new Promise(() => {}); // never resolves, page is reloading
+      }
+      sessionStorage.removeItem(key);
+      throw err;
+    })
+  );
+
+const Index = lazyRetry(() => import("./pages/Index"));
+const ServiceDetail = lazyRetry(() => import("./pages/ServiceDetail"));
+const Agendar = lazyRetry(() => import("./pages/Agendar"));
+const Checkout = lazyRetry(() => import("./pages/Checkout"));
+const MeusAgendamentos = lazyRetry(() => import("./pages/MeusAgendamentos"));
+const MeuPerfil = lazyRetry(() => import("./pages/MeuPerfil"));
+const Admin = lazyRetry(() => import("./pages/Admin"));
+const PartnerDashboard = lazyRetry(() => import("./pages/PartnerDashboard"));
+const PoliticaPrivacidade = lazyRetry(() => import("./pages/PoliticaPrivacidade"));
+const Instalar = lazyRetry(() => import("./pages/Instalar"));
+const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
