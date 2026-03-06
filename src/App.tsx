@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ComponentType } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,19 +13,33 @@ import { useSEO } from "@/hooks/useSEO";
 import { useErrorMonitor } from "@/hooks/useErrorMonitor";
 import CookieConsent from "@/components/CookieConsent";
 
-// Retry dynamic imports — reloads page once if chunk is missing (post-deploy cache issue)
-const lazyRetry = (factory: () => Promise<{ default: React.ComponentType<any> }>) =>
+const CHUNK_RELOAD_KEY = "chunk_reload_ts";
+const CHUNK_RELOAD_WINDOW_MS = 15_000;
+
+// Retry dynamic imports — reloads page once per short window when chunk is missing (post-deploy cache issue)
+const lazyRetry = (factory: () => Promise<{ default: ComponentType<any> }>) =>
   lazy(() =>
-    factory().catch((err) => {
-      const key = "chunk_reload";
-      if (!sessionStorage.getItem(key)) {
-        sessionStorage.setItem(key, "1");
-        window.location.reload();
-        return new Promise(() => {}); // never resolves, page is reloading
-      }
-      sessionStorage.removeItem(key);
-      throw err;
-    })
+    factory()
+      .then((module) => {
+        sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+        return module;
+      })
+      .catch((err) => {
+        const lastReload = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || "0");
+        const canReloadAgain =
+          Number.isNaN(lastReload) || Date.now() - lastReload > CHUNK_RELOAD_WINDOW_MS;
+
+        if (canReloadAgain) {
+          sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+          const url = new URL(window.location.href);
+          url.searchParams.set("reload", Date.now().toString());
+          window.location.replace(url.toString());
+          return new Promise(() => {}); // never resolves, page is reloading
+        }
+
+        sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+        throw err;
+      })
   );
 
 const Index = lazyRetry(() => import("./pages/Index"));
