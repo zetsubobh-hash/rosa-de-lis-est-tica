@@ -171,6 +171,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [consultMode, setConsultMode] = useState(false);
+  const [procedures, setProcedures] = useState<ProcedureRecord[]>([]);
 
   useEffect(() => {
     if (!open) return;
