@@ -23,6 +23,7 @@ interface ProfileData {
   avatar_url: string | null;
   created_at: string;
   last_seen: string | null;
+  birth_date: string | null;
 }
 
 interface AnamnesisData {
