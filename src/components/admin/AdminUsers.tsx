@@ -166,6 +166,7 @@ const AdminUsers = () => {
       sex: u.sex || "",
       username: u.username || "",
       new_password: "",
+      birth_date: u.birth_date || "",
     });
   };
 
