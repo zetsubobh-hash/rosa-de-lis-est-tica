@@ -189,18 +189,32 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
       supabase.from("partners").select("id, full_name"),
     ]);
     const partnerMap = new Map((partnersRes.data || []).map((p: any) => [p.id, p.full_name]));
-    setProcedures(
-      (aptsRes.data || []).map((a: any) => ({
-        id: a.id,
-        service_title: a.service_title,
-        appointment_date: a.appointment_date,
-        appointment_time: a.appointment_time,
-        status: a.status,
-        session_number: a.session_number,
-        notes: a.notes,
-        partner_name: a.partner_id ? partnerMap.get(a.partner_id) || "—" : undefined,
-      }))
-    );
+    const mapped = (aptsRes.data || []).map((a: any) => ({
+      id: a.id,
+      service_title: a.service_title,
+      appointment_date: a.appointment_date,
+      appointment_time: a.appointment_time,
+      status: a.status,
+      session_number: a.session_number,
+      notes: a.notes,
+      partner_name: a.partner_id ? partnerMap.get(a.partner_id) || "—" : undefined,
+    }));
+    setProcedures(mapped);
+    // Initialize editable notes from existing values
+    const notesMap: Record<string, string> = {};
+    mapped.forEach((m) => {
+      let obs = "";
+      if (m.notes) {
+        try {
+          const parsed = JSON.parse(m.notes);
+          obs = parsed.observacao_procedimento || "";
+        } catch {
+          // plain text notes — don't treat as procedure observation
+        }
+      }
+      notesMap[m.id] = obs;
+    });
+    setProcNotes(notesMap);
   };
 
   const loadExisting = async () => {
