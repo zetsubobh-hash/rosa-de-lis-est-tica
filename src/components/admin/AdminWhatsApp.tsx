@@ -832,7 +832,19 @@ const AdminWhatsApp = () => {
 
         {/* Message */}
         <div>
-          <label className="font-body text-xs font-semibold text-foreground mb-1 block">Mensagem</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="font-body text-xs font-semibold text-foreground">Mensagem</label>
+            {broadcastMsg !== DEFAULT_BROADCAST_MSG && (
+              <button
+                type="button"
+                onClick={() => setBroadcastMsg(DEFAULT_BROADCAST_MSG)}
+                className="flex items-center gap-1 font-body text-[11px] text-primary hover:text-primary/80 transition-colors font-medium"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Restaurar original
+              </button>
+            )}
+          </div>
           <textarea
             rows={5}
             value={broadcastMsg}
