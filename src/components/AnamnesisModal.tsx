@@ -599,6 +599,28 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
     }
   };
 
+  const saveProcNote = async (procId: string) => {
+    setSavingNoteId(procId);
+    const proc = procedures.find((p) => p.id === procId);
+    let existingNotes: any = {};
+    if (proc?.notes) {
+      try { existingNotes = JSON.parse(proc.notes); } catch { existingNotes = { texto_original: proc.notes }; }
+    }
+    existingNotes.observacao_procedimento = procNotes[procId] || "";
+    const { error } = await supabase
+      .from("appointments")
+      .update({ notes: JSON.stringify(existingNotes) })
+      .eq("id", procId);
+    if (error) {
+      toast.error("Erro ao salvar observação");
+    } else {
+      toast.success("Observação salva!");
+      // Update local state
+      setProcedures((prev) => prev.map((p) => p.id === procId ? { ...p, notes: JSON.stringify(existingNotes) } : p));
+    }
+    setSavingNoteId(null);
+  };
+
   const renderStep5 = () => (
     <div className="space-y-4">
       <SectionTitle icon={ClipboardList} title="Procedimentos Realizados" />
@@ -608,12 +630,12 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
           <p className="font-body text-sm text-muted-foreground">Nenhum procedimento registrado.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {procedures.map((p) => {
             const st = STATUS_LABELS[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
-            const notesText = parseNotes(p.notes);
+            const systemNotes = parseNotes(p.notes);
             return (
-              <div key={p.id} className="rounded-xl border border-border p-3 space-y-1.5">
+              <div key={p.id} className="rounded-xl border border-border p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-heading text-sm font-semibold text-foreground">{p.service_title}</p>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${st.cls}`}>{st.label}</span>
@@ -635,12 +657,30 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
                     </span>
                   )}
                 </div>
-                {notesText && (
-                  <div className="mt-1 pt-1.5 border-t border-border">
-                    <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Observações</p>
-                    <p className="font-body text-xs text-foreground whitespace-pre-wrap">{notesText}</p>
+                {systemNotes && (
+                  <div className="bg-muted/50 rounded-lg px-2.5 py-1.5">
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Info do sistema</p>
+                    <p className="font-body text-xs text-foreground">{systemNotes}</p>
                   </div>
                 )}
+                <div className="pt-1">
+                  <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1">📝 Observação do procedimento</p>
+                  <textarea
+                    value={procNotes[p.id] || ""}
+                    onChange={(e) => setProcNotes((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                    className="w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-body text-foreground resize-none focus:ring-2 focus:ring-primary focus:outline-none"
+                    rows={2}
+                    placeholder="Ex: Cliente relatou melhora, houve queimadura leve, emagreceu 3kg..."
+                  />
+                  <button
+                    onClick={() => saveProcNote(p.id)}
+                    disabled={savingNoteId === p.id}
+                    className="mt-1 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  >
+                    <Save className="w-3 h-3" />
+                    {savingNoteId === p.id ? "Salvando..." : "Salvar observação"}
+                  </button>
+                </div>
               </div>
             );
           })}
