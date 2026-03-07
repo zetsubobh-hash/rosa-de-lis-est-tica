@@ -135,6 +135,14 @@ const AdminWhatsApp = () => {
   const [tplTestSending, setTplTestSending] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    const fetchServices = async () => {
+      const { data } = await supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order");
+      setServices(data || []);
+    };
+    fetchServices();
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       const { data } = await supabase
         .from("payment_settings")
