@@ -17,6 +17,7 @@ interface ProfileData {
   address: string;
   sex: string;
   avatar_url: string | null;
+  birth_date: string | null;
 }
 
 const MeuPerfil = () => {
