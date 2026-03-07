@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
+import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import {
   AlertDialog,
   AlertDialogAction,
