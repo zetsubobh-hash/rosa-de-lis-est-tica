@@ -331,6 +331,13 @@ const AdminUsers = () => {
               ) : (
                 <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 flex-wrap">
                   <button
+                    onClick={() => setViewingUser(u)}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
+                    title="Visualizar dados completos"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={() => setHistoryUser(u)}
                     className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
                     title="Histórico do cliente"
