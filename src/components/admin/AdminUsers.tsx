@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText, Pencil, Save, Key, History } from "lucide-react";
+import { ShieldCheck, ShieldOff, Search, Users, Crown, Trash2, FileText, Pencil, Save, Key, History, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
+import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +54,7 @@ const AdminUsers = () => {
   const [anamnesisUser, setAnamnesisUser] = useState<UserProfile | null>(null);
   const [historyUser, setHistoryUser] = useState<UserProfile | null>(null);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [viewingUser, setViewingUser] = useState<UserProfile | null>(null);
   const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string; username: string; new_password: string }>({ full_name: "", phone: "", email: "", address: "", sex: "", username: "", new_password: "" });
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -329,6 +331,13 @@ const AdminUsers = () => {
               ) : (
                 <div className="mt-3 pt-3 border-t border-border flex items-center gap-1.5 flex-wrap">
                   <button
+                    onClick={() => setViewingUser(u)}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
+                    title="Visualizar dados completos"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={() => setHistoryUser(u)}
                     className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all"
                     title="Histórico do cliente"
@@ -491,6 +500,14 @@ const AdminUsers = () => {
           userName={historyUser.full_name}
         />
       )}
+
+      <ClientDetailModal
+        open={!!viewingUser}
+        onClose={() => setViewingUser(null)}
+        userId={viewingUser?.user_id || ""}
+        userName={viewingUser?.full_name || ""}
+        avatarUrl={viewingUser?.avatar_url || null}
+      />
     </motion.div>
   );
 };
