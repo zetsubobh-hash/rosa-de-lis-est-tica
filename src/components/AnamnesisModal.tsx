@@ -178,7 +178,28 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
     setStep(0);
     setConsultMode(false);
     loadExisting();
+    loadProcedures();
   }, [open, clientUserId, partnerId]);
+
+  const loadProcedures = async () => {
+    const [aptsRes, partnersRes] = await Promise.all([
+      supabase.from("appointments").select("*").eq("user_id", clientUserId).order("appointment_date", { ascending: false }),
+      supabase.from("partners").select("id, full_name"),
+    ]);
+    const partnerMap = new Map((partnersRes.data || []).map((p: any) => [p.id, p.full_name]));
+    setProcedures(
+      (aptsRes.data || []).map((a: any) => ({
+        id: a.id,
+        service_title: a.service_title,
+        appointment_date: a.appointment_date,
+        appointment_time: a.appointment_time,
+        status: a.status,
+        session_number: a.session_number,
+        notes: a.notes,
+        partner_name: a.partner_id ? partnerMap.get(a.partner_id) || "—" : undefined,
+      }))
+    );
+  };
 
   const loadExisting = async () => {
     setLoading(true);
