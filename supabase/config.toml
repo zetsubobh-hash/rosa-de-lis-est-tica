@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.error-monitor]
 verify_jwt = false
+
+[functions.birthday-check]
+verify_jwt = false
