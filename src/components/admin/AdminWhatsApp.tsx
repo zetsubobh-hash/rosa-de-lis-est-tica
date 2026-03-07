@@ -618,117 +618,8 @@ const AdminWhatsApp = () => {
         )}
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
-        <h3 className="font-heading text-sm font-bold text-foreground">Configuração da API</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="font-body text-xs text-muted-foreground mb-1 block">URL da API</label>
-            <input type="url" value={settings.evolution_api_url || ""} onChange={(e) => updateField("evolution_api_url", e.target.value)} placeholder="https://sua-instancia.evolution-api.com" className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
-          </div>
-          <div>
-            <label className="font-body text-xs text-muted-foreground mb-1 block">API Key</label>
-            <input type="password" value={settings.evolution_api_key || ""} onChange={(e) => updateField("evolution_api_key", e.target.value)} placeholder="Sua chave API da Evolution" className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
-          </div>
-          <div>
-            <label className="font-body text-xs text-muted-foreground mb-1 block">Nome da Instância</label>
-            <input type="text" value={settings.evolution_instance_name || ""} onChange={(e) => updateField("evolution_instance_name", e.target.value)} placeholder="rosa-de-lis" className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* QR Code & Connection */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
-        <h3 className="font-heading text-sm font-bold text-foreground flex items-center gap-2">
-          <QrCode className="w-4 h-4 text-primary" />
-          Conexão WhatsApp
-        </h3>
-
-        {connectionStatus && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-body ${connectionStatus === "open" ? "bg-emerald-500/10 text-emerald-700" : "bg-amber-500/10 text-amber-700"}`}>
-            {connectionStatus === "open" ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
-            {connectionStatus === "open" ? "Conectado ao WhatsApp" : `Status: ${connectionStatus}`}
-          </div>
-        )}
-
-        {qrCode && (
-          <div className="flex flex-col items-center py-4">
-            <div className="bg-white p-4 rounded-2xl shadow-sm">
-              <img src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code WhatsApp" className="w-64 h-64" />
-            </div>
-            <p className="font-body text-xs text-muted-foreground mt-3 text-center max-w-xs">
-              Abra o WhatsApp no celular → Dispositivos conectados → Conectar dispositivo → Escaneie este QR Code
-            </p>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row gap-2">
-          <button onClick={handleCreateAndConnect} disabled={qrLoading} className="flex-1 h-10 rounded-xl bg-emerald-600 text-white font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors disabled:opacity-50">
-            {qrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
-            {qrLoading ? "Gerando..." : "Gerar QR Code"}
-          </button>
-          <button onClick={handleCheckStatus} disabled={statusLoading} className="flex-1 h-10 rounded-xl border border-border bg-background text-foreground font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-muted transition-colors disabled:opacity-50">
-            {statusLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            Verificar Status
-          </button>
-          {connectionStatus === "open" && (
-            <button onClick={handleLogout} className="h-10 px-4 rounded-xl border border-destructive/30 text-destructive font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-destructive/5 transition-colors">
-              <Trash2 className="w-4 h-4" />
-              Desconectar
-            </button>
-          )}
-        </div>
-      </motion.div>
-
-      {/* Test Message */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
-        <h3 className="font-heading text-sm font-bold text-foreground flex items-center gap-2">
-          <Send className="w-4 h-4 text-primary" />
-          Testar Envio
-        </h3>
-        <p className="font-body text-xs text-muted-foreground">
-          Envie uma mensagem de teste para verificar se a integração está funcionando.
-        </p>
-        <div>
-          <label className="font-body text-xs text-muted-foreground mb-1 block">Número do WhatsApp</label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-body text-sm text-muted-foreground pointer-events-none">+55</span>
-            <input
-              type="tel"
-              value={testPhone}
-              onChange={(e) => setTestPhone(formatTestPhone(e.target.value))}
-              placeholder="(31) 99999-9999"
-              maxLength={15}
-              className="w-full h-10 rounded-xl border border-border bg-background pl-12 pr-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="font-body text-xs text-muted-foreground mb-1 block">Texto da mensagem de teste</label>
-          <textarea
-            value={testMessage}
-            onChange={(e) => setTestMessage(e.target.value)}
-            rows={4}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
-          />
-          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-            <span className="font-body text-xs text-muted-foreground">Variáveis:</span>
-            {["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"].map((v) => (
-              <span key={v} className="font-body text-xs bg-muted px-1.5 py-0.5 rounded">{v}</span>
-            ))}
-          </div>
-        </div>
-        <button
-          onClick={handleSendTest}
-          disabled={testSending}
-          className="w-full h-10 rounded-xl bg-emerald-600 text-white font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors disabled:opacity-50"
-        >
-          {testSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          {testSending ? "Enviando..." : "Enviar Mensagem de Teste"}
-        </button>
-      </motion.div>
-
       {/* ═══════════ BROADCAST TO PARTNERS ═══════════ */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-primary" />
           <h3 className="font-heading text-sm font-bold text-foreground">Enviar Mensagem aos Parceiros e Admins</h3>
@@ -926,6 +817,115 @@ const AdminWhatsApp = () => {
         >
           {broadcastSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           {broadcastSending ? "Enviando..." : `Enviar para ${selectedPartners.length + selectedAdmins.length} destinatário(s)`}
+        </button>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <h3 className="font-heading text-sm font-bold text-foreground">Configuração da API</h3>
+        <div className="space-y-3">
+          <div>
+            <label className="font-body text-xs text-muted-foreground mb-1 block">URL da API</label>
+            <input type="url" value={settings.evolution_api_url || ""} onChange={(e) => updateField("evolution_api_url", e.target.value)} placeholder="https://sua-instancia.evolution-api.com" className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+          </div>
+          <div>
+            <label className="font-body text-xs text-muted-foreground mb-1 block">API Key</label>
+            <input type="password" value={settings.evolution_api_key || ""} onChange={(e) => updateField("evolution_api_key", e.target.value)} placeholder="Sua chave API da Evolution" className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+          </div>
+          <div>
+            <label className="font-body text-xs text-muted-foreground mb-1 block">Nome da Instância</label>
+            <input type="text" value={settings.evolution_instance_name || ""} onChange={(e) => updateField("evolution_instance_name", e.target.value)} placeholder="rosa-de-lis" className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* QR Code & Connection */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <h3 className="font-heading text-sm font-bold text-foreground flex items-center gap-2">
+          <QrCode className="w-4 h-4 text-primary" />
+          Conexão WhatsApp
+        </h3>
+
+        {connectionStatus && (
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-body ${connectionStatus === "open" ? "bg-emerald-500/10 text-emerald-700" : "bg-amber-500/10 text-amber-700"}`}>
+            {connectionStatus === "open" ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+            {connectionStatus === "open" ? "Conectado ao WhatsApp" : `Status: ${connectionStatus}`}
+          </div>
+        )}
+
+        {qrCode && (
+          <div className="flex flex-col items-center py-4">
+            <div className="bg-white p-4 rounded-2xl shadow-sm">
+              <img src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code WhatsApp" className="w-64 h-64" />
+            </div>
+            <p className="font-body text-xs text-muted-foreground mt-3 text-center max-w-xs">
+              Abra o WhatsApp no celular → Dispositivos conectados → Conectar dispositivo → Escaneie este QR Code
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button onClick={handleCreateAndConnect} disabled={qrLoading} className="flex-1 h-10 rounded-xl bg-emerald-600 text-white font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors disabled:opacity-50">
+            {qrLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
+            {qrLoading ? "Gerando..." : "Gerar QR Code"}
+          </button>
+          <button onClick={handleCheckStatus} disabled={statusLoading} className="flex-1 h-10 rounded-xl border border-border bg-background text-foreground font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-muted transition-colors disabled:opacity-50">
+            {statusLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Verificar Status
+          </button>
+          {connectionStatus === "open" && (
+            <button onClick={handleLogout} className="h-10 px-4 rounded-xl border border-destructive/30 text-destructive font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-destructive/5 transition-colors">
+              <Trash2 className="w-4 h-4" />
+              Desconectar
+            </button>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Test Message */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <h3 className="font-heading text-sm font-bold text-foreground flex items-center gap-2">
+          <Send className="w-4 h-4 text-primary" />
+          Testar Envio
+        </h3>
+        <p className="font-body text-xs text-muted-foreground">
+          Envie uma mensagem de teste para verificar se a integração está funcionando.
+        </p>
+        <div>
+          <label className="font-body text-xs text-muted-foreground mb-1 block">Número do WhatsApp</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-body text-sm text-muted-foreground pointer-events-none">+55</span>
+            <input
+              type="tel"
+              value={testPhone}
+              onChange={(e) => setTestPhone(formatTestPhone(e.target.value))}
+              placeholder="(31) 99999-9999"
+              maxLength={15}
+              className="w-full h-10 rounded-xl border border-border bg-background pl-12 pr-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="font-body text-xs text-muted-foreground mb-1 block">Texto da mensagem de teste</label>
+          <textarea
+            value={testMessage}
+            onChange={(e) => setTestMessage(e.target.value)}
+            rows={4}
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+          />
+          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+            <span className="font-body text-xs text-muted-foreground">Variáveis:</span>
+            {["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"].map((v) => (
+              <span key={v} className="font-body text-xs bg-muted px-1.5 py-0.5 rounded">{v}</span>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={handleSendTest}
+          disabled={testSending}
+          className="w-full h-10 rounded-xl bg-emerald-600 text-white font-body text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors disabled:opacity-50"
+        >
+          {testSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {testSending ? "Enviando..." : "Enviar Mensagem de Teste"}
         </button>
       </motion.div>
 
