@@ -22,6 +22,17 @@ const MSG_KEYS = [
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
 
+const DEFAULT_TEMPLATES: Record<string, string> = {
+  whatsapp_msg_confirmation_text: "Olá {nome}! 😊\n\nSeu agendamento de *{servico}* foi confirmado! ✅\n\n📅 *Data:* {data}\n⏰ *Horário:* {hora}\n\nNos vemos em breve! 💕\n— *{empresa}*",
+  whatsapp_msg_reminder_text: "Oi {nome}! 🌸\n\nLembrando que você tem um horário amanhã:\n\n📅 *{data}* às *{hora}*\n💆 *{servico}*\n\nTe esperamos! 😘\n— *{empresa}*",
+  whatsapp_msg_cancellation_text: "Oi {nome},\n\nSeu agendamento de *{servico}* do dia *{data}* às *{hora}* foi cancelado. 😢\n\nCaso queira reagendar, entre em contato conosco!\n— *{empresa}*",
+  whatsapp_msg_reschedule_text: "Oi {nome}! 📋\n\nSeu agendamento de *{servico}* foi reagendado:\n\n📅 *Nova data:* {data}\n⏰ *Novo horário:* {hora}\n\nQualquer dúvida, estamos à disposição! 💕\n— *{empresa}*",
+  whatsapp_msg_partner_text: "Olá! Novo agendamento recebido 📋\n\n👤 *Cliente:* {nome}\n💆 *Serviço:* {servico}\n📅 *Data:* {data}\n⏰ *Horário:* {hora}\n\n— *{empresa}*",
+  whatsapp_msg_admin_text: "🔔 *Novo agendamento!*\n\n👤 *Cliente:* {nome}\n💆 *Serviço:* {servico}\n📅 *Data:* {data}\n⏰ *Horário:* {hora}\n\n— *{empresa}*",
+  whatsapp_msg_birthday_text: "🎂 *Aniversariante do dia!*\n\n👤 *Nome:* {nome}\n🎈 *Idade:* {idade} anos\n📱 *Telefone:* {telefone}\n\n🎁 *Brinde configurado:* {brinde}\n\n_Lembre-se de entrar em contato para parabenizar e oferecer o presente!_ 💕\n\n— *{empresa}*",
+  whatsapp_msg_birthday_client_text: "🎉 *Feliz Aniversário, {nome}!* 🎂\n\nHoje é o seu dia especial e nós da *{empresa}* queremos te parabenizar! 🥳\n\nPreparamos um presente pra você: 🎁\n*{brinde}*\n\nEntre em contato conosco para resgatar seu presente! 💕\n\nUm abraço carinhoso de toda a equipe! 💖\n\n— *{empresa}*",
+};
+
 interface MessageTemplate {
   key: string;
   label: string;
