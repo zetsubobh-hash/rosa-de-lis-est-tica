@@ -4,7 +4,7 @@ import {
   X, FileText, Save, Printer, ChevronRight, ChevronLeft,
   Droplets, Apple, Dumbbell, Cigarette, Wine, Moon, Brain,
   Heart, Pill, Baby, AlertTriangle, Sun,
-  Eye, Sparkles, Shield, CheckCircle2, Circle, Pen,
+  Eye, Sparkles, Shield, CheckCircle2, Circle, Pen, ClipboardList, Calendar, Clock, User,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ interface AnamnesisModalProps {
   adminMode?: boolean;
 }
 
-type Step = 0 | 1 | 2 | 3 | 4;
+type Step = 0 | 1 | 2 | 3 | 4 | 5;
 
 const STEP_LABELS = [
   "Queixa Principal",
@@ -27,7 +27,19 @@ const STEP_LABELS = [
   "Hábitos de Vida",
   "Avaliação Estética",
   "Termos Legais",
+  "Procedimentos",
 ];
+
+interface ProcedureRecord {
+  id: string;
+  service_title: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  session_number: number | null;
+  notes: string | null;
+  partner_name?: string;
+}
 
 const DOENCAS_OPTIONS = [
   "Diabetes", "Hipertensão", "Cardiopatia", "Tireoide", "Epilepsia", "Câncer", "Asma",
@@ -159,13 +171,35 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [consultMode, setConsultMode] = useState(false);
+  const [procedures, setProcedures] = useState<ProcedureRecord[]>([]);
 
   useEffect(() => {
     if (!open) return;
     setStep(0);
     setConsultMode(false);
     loadExisting();
+    loadProcedures();
   }, [open, clientUserId, partnerId]);
+
+  const loadProcedures = async () => {
+    const [aptsRes, partnersRes] = await Promise.all([
+      supabase.from("appointments").select("*").eq("user_id", clientUserId).order("appointment_date", { ascending: false }),
+      supabase.from("partners").select("id, full_name"),
+    ]);
+    const partnerMap = new Map((partnersRes.data || []).map((p: any) => [p.id, p.full_name]));
+    setProcedures(
+      (aptsRes.data || []).map((a: any) => ({
+        id: a.id,
+        service_title: a.service_title,
+        appointment_date: a.appointment_date,
+        appointment_time: a.appointment_time,
+        status: a.status,
+        session_number: a.session_number,
+        notes: a.notes,
+        partner_name: a.partner_id ? partnerMap.get(a.partner_id) || "—" : undefined,
+      }))
+    );
+  };
 
   const loadExisting = async () => {
     setLoading(true);
@@ -530,6 +564,78 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
     </div>
   );
 
+  const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
+    confirmed: { label: "Confirmado", cls: "bg-blue-100 text-blue-700" },
+    completed: { label: "Concluído", cls: "bg-emerald-100 text-emerald-700" },
+    cancelled: { label: "Cancelado", cls: "bg-red-100 text-red-700" },
+    pending: { label: "Pendente", cls: "bg-amber-100 text-amber-700" },
+    paid: { label: "Pago", cls: "bg-emerald-100 text-emerald-700" },
+  };
+
+  const parseNotes = (notes: string | null): string | null => {
+    if (!notes) return null;
+    try {
+      const parsed = JSON.parse(notes);
+      if (parsed.motivo) return parsed.motivo;
+      return null;
+    } catch {
+      return notes;
+    }
+  };
+
+  const renderStep5 = () => (
+    <div className="space-y-4">
+      <SectionTitle icon={ClipboardList} title="Procedimentos Realizados" />
+      {procedures.length === 0 ? (
+        <div className="text-center py-8">
+          <Calendar className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="font-body text-sm text-muted-foreground">Nenhum procedimento registrado.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {procedures.map((p) => {
+            const st = STATUS_LABELS[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
+            const notesText = parseNotes(p.notes);
+            return (
+              <div key={p.id} className="rounded-xl border border-border p-3 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-heading text-sm font-semibold text-foreground">{p.service_title}</p>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${st.cls}`}>{st.label}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground font-body">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {(() => { try { return new Date(p.appointment_date + "T00:00:00").toLocaleDateString("pt-BR"); } catch { return p.appointment_date; } })()}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {p.appointment_time}
+                  </span>
+                  {p.session_number && <span>Sessão {p.session_number}</span>}
+                  {p.partner_name && (
+                    <span className="flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      {p.partner_name}
+                    </span>
+                  )}
+                </div>
+                {notesText && (
+                  <div className="mt-1 pt-1.5 border-t border-border">
+                    <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Observações</p>
+                    <p className="font-body text-xs text-foreground whitespace-pre-wrap">{notesText}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <p className="font-body text-[10px] text-muted-foreground/60 pt-1 text-center">
+            Total: {procedures.length} procedimento{procedures.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
   const formatDateBR = (d: string) => { const [y, m, dd] = d.split("-"); return `${dd}/${m}/${y}`; };
 
   
@@ -607,6 +713,7 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
                   {step === 2 && renderStep2()}
                   {step === 3 && renderStep3()}
                   {step === 4 && renderStep4()}
+                  {step === 5 && renderStep5()}
                 </>
               )}
             </div>
@@ -629,9 +736,9 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
                     {saving ? "Salvando..." : consultMode ? "Salvar Obs." : "Salvar"}
                   </button>
                 )}
-                {step < 4 && (
+                {step < 5 && (
                   <button
-                    onClick={() => setStep((s) => Math.min(4, s + 1) as Step)}
+                    onClick={() => setStep((s) => Math.min(5, s + 1) as Step)}
                     className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
                   >
                     Próximo
