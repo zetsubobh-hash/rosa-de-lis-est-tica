@@ -143,12 +143,22 @@ const AdminWhatsApp = () => {
 
   useEffect(() => {
     const fetchExtras = async () => {
-      const [{ data: svcData }, { data: partnerData }] = await Promise.all([
+      const [{ data: svcData }, { data: partnerData }, { data: adminRoles }] = await Promise.all([
         supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
         supabase.from("partners").select("id, full_name, phone, user_id").eq("is_active", true).order("full_name"),
+        supabase.from("user_roles").select("user_id").eq("role", "admin"),
       ]);
       setServices(svcData || []);
       setPartners(partnerData || []);
+      // Fetch admin profiles
+      if (adminRoles && adminRoles.length > 0) {
+        const adminUserIds = adminRoles.map((r: any) => r.user_id);
+        const { data: adminProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, phone")
+          .in("user_id", adminUserIds);
+        setAdmins((adminProfiles || []).map((p: any) => ({ id: p.user_id, full_name: p.full_name, phone: p.phone })));
+      }
     };
     fetchExtras();
   }, []);
