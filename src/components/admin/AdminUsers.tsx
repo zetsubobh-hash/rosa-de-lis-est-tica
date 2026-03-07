@@ -183,6 +183,7 @@ const AdminUsers = () => {
         email: editForm.email,
         address: editForm.address,
         sex: editForm.sex,
+        birth_date: editForm.birth_date || null,
       })
       .eq("user_id", editingUser.user_id);
     
