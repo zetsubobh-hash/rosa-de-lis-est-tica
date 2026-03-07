@@ -301,6 +301,54 @@ const AdminWhatsApp = () => {
     setTestSending(false);
   };
 
+  const handleSendTemplateTest = async (tplKey: string, textKey: string) => {
+    const phone = tplTestPhone[tplKey] || "";
+    const rawPhone = testPhoneToRaw(phone);
+    if (!rawPhone || rawPhone.length < 12) {
+      toast({ title: "Informe o número", description: "Digite um número válido para enviar o teste.", variant: "destructive" });
+      return;
+    }
+    setTplTestSending((prev) => ({ ...prev, [tplKey]: true }));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Replace variables with example values
+      const text = (settings[textKey] || "")
+        .replace(/{nome}/g, "Maria Exemplo")
+        .replace(/{servico}/g, "Limpeza de Pele")
+        .replace(/{data}/g, "15/04/2026")
+        .replace(/{hora}/g, "14:00")
+        .replace(/{empresa}/g, "Rosa de Lis")
+        .replace(/{idade}/g, "30")
+        .replace(/{telefone}/g, "(11) 99999-9999")
+        .replace(/{brinde}/g, "1 sessão gratuita de Limpeza de Pele");
+      const res = await fetch(
+        `${SUPABASE_URL}/functions/v1/evolution`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ action: "send_test", phone: rawPhone, message: text }),
+        }
+      );
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        throw new Error(`Erro de conexão (status ${res.status}).`);
+      }
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "✅ Teste enviado!", description: `Mensagem enviada para ${phone}` });
+      } else {
+        toast({ title: "Erro ao enviar", description: data.error || "Falha", variant: "destructive" });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    }
+    setTplTestSending((prev) => ({ ...prev, [tplKey]: false }));
+  };
+
   const isEnabled = settings.evolution_enabled === "true";
 
   if (loading) {
