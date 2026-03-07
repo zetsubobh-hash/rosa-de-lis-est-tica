@@ -56,7 +56,7 @@ const AdminUsers = () => {
   const [historyUser, setHistoryUser] = useState<UserProfile | null>(null);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [viewingUser, setViewingUser] = useState<UserProfile | null>(null);
-  const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string; username: string; new_password: string }>({ full_name: "", phone: "", email: "", address: "", sex: "", username: "", new_password: "" });
+  const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string; username: string; new_password: string; birth_date: string }>({ full_name: "", phone: "", email: "", address: "", sex: "", username: "", new_password: "", birth_date: "" });
   const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchUsers = async () => {
