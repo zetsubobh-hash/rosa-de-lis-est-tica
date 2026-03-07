@@ -736,9 +736,9 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
                     {saving ? "Salvando..." : consultMode ? "Salvar Obs." : "Salvar"}
                   </button>
                 )}
-                {step < 4 && (
+                {step < 5 && (
                   <button
-                    onClick={() => setStep((s) => Math.min(4, s + 1) as Step)}
+                    onClick={() => setStep((s) => Math.min(5, s + 1) as Step)}
                     className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
                   >
                     Próximo
