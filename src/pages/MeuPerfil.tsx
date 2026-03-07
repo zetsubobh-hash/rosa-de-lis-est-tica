@@ -64,6 +64,7 @@ const MeuPerfil = () => {
         address: profile.address,
         sex: profile.sex,
         email: profile.email?.trim() || null,
+        birth_date: profile.birth_date || null,
       })
       .eq("user_id", user.id);
 
