@@ -140,6 +140,10 @@ const AdminWhatsApp = () => {
         .in("key", ALL_KEYS);
       const map: Record<string, string> = {};
       data?.forEach((r: any) => { map[r.key] = r.value; });
+      // Apply default templates for empty fields
+      for (const [key, defaultVal] of Object.entries(DEFAULT_TEMPLATES)) {
+        if (!map[key]) map[key] = defaultVal;
+      }
       setSettings(map);
       setLoading(false);
     };
