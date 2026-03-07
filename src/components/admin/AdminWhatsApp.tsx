@@ -408,7 +408,92 @@ const AdminWhatsApp = () => {
         </div>
       </motion.div>
 
-      {/* API Configuration */}
+      {/* ═══════════ BIRTHDAY GIFT CONFIG ═══════════ */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Cake className="w-4 h-4 text-primary" />
+          <h3 className="font-heading text-sm font-bold text-foreground">Brinde de Aniversário</h3>
+        </div>
+        <p className="font-body text-xs text-muted-foreground">
+          Configure o presente que será enviado automaticamente ao cliente no dia do aniversário. O valor do brinde é inserido na variável <code className="text-[11px] font-mono bg-muted border border-border rounded px-1 py-0.5">{"{brinde}"}</code> dos templates acima.
+        </p>
+
+        <div>
+          <label className="font-body text-xs font-semibold text-foreground mb-2 block">Tipo do brinde</label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: "discount", label: "💰 Cupom de Desconto" },
+              { value: "session", label: "💆 Sessão Gratuita" },
+              { value: "custom", label: "✍️ Texto Livre" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => updateField("birthday_gift_type", opt.value)}
+                className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
+                  settings.birthday_gift_type === opt.value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-foreground hover:border-primary/50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {settings.birthday_gift_type === "discount" && (
+          <div>
+            <label className="font-body text-xs font-semibold text-foreground mb-1 block">Valor do desconto</label>
+            <input
+              type="text"
+              value={settings.birthday_gift_discount || ""}
+              onChange={(e) => updateField("birthday_gift_discount", e.target.value)}
+              placeholder="Ex: 20% ou R$ 50,00"
+              className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+            <p className="font-body text-[11px] text-muted-foreground mt-1">Será substituído em {"{brinde}"} como: "Cupom de 20% de desconto"</p>
+          </div>
+        )}
+
+        {settings.birthday_gift_type === "session" && (
+          <div>
+            <label className="font-body text-xs font-semibold text-foreground mb-1 block">Serviço da sessão gratuita</label>
+            <input
+              type="text"
+              value={settings.birthday_gift_service || ""}
+              onChange={(e) => updateField("birthday_gift_service", e.target.value)}
+              placeholder="Ex: Limpeza de Pele, Massagem Relaxante"
+              className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+            <p className="font-body text-[11px] text-muted-foreground mt-1">Será substituído em {"{brinde}"} como: "1 sessão gratuita de Limpeza de Pele"</p>
+          </div>
+        )}
+
+        {settings.birthday_gift_type === "custom" && (
+          <div>
+            <label className="font-body text-xs font-semibold text-foreground mb-1 block">Descrição do brinde</label>
+            <input
+              type="text"
+              value={settings.birthday_gift_custom_text || ""}
+              onChange={(e) => updateField("birthday_gift_custom_text", e.target.value)}
+              placeholder="Ex: Ganhe um kit de hidratação especial!"
+              className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+            <p className="font-body text-[11px] text-muted-foreground mt-1">Será substituído em {"{brinde}"} exatamente como digitado</p>
+          </div>
+        )}
+
+        {!settings.birthday_gift_type && (
+          <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-muted/50">
+            <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+            <p className="font-body text-[11px] text-muted-foreground">
+              Selecione um tipo de brinde acima. O valor configurado será inserido automaticamente na variável {"{brinde}"} das mensagens de aniversário.
+            </p>
+          </div>
+        )}
+      </motion.div>
+
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
         <h3 className="font-heading text-sm font-bold text-foreground">Configuração da API</h3>
         <div className="space-y-3">
