@@ -140,11 +140,15 @@ const AdminWhatsApp = () => {
   const [broadcastSending, setBroadcastSending] = useState(false);
 
   useEffect(() => {
-    const fetchServices = async () => {
-      const { data } = await supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order");
-      setServices(data || []);
+    const fetchExtras = async () => {
+      const [{ data: svcData }, { data: partnerData }] = await Promise.all([
+        supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
+        supabase.from("partners").select("id, full_name, phone, user_id").eq("is_active", true).order("full_name"),
+      ]);
+      setServices(svcData || []);
+      setPartners(partnerData || []);
     };
-    fetchServices();
+    fetchExtras();
   }, []);
 
   useEffect(() => {
