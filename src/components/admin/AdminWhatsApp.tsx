@@ -124,6 +124,7 @@ const AdminWhatsApp = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [services, setServices] = useState<{ slug: string; title: string }[]>([]);
+  const [qrLoading, setQrLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
