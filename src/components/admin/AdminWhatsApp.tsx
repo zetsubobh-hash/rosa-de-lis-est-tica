@@ -559,14 +559,17 @@ const AdminWhatsApp = () => {
         {settings.birthday_gift_type === "session" && (
           <div>
             <label className="font-body text-xs font-semibold text-foreground mb-1 block">Serviço da sessão gratuita</label>
-            <input
-              type="text"
+            <select
               value={settings.birthday_gift_service || ""}
               onChange={(e) => updateField("birthday_gift_service", e.target.value)}
-              placeholder="Ex: Limpeza de Pele, Massagem Relaxante"
-              className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            />
-            <p className="font-body text-[11px] text-muted-foreground mt-1">Será substituído em {"{brinde}"} como: "1 sessão gratuita de Limpeza de Pele"</p>
+              className="w-full h-10 rounded-xl border border-border bg-background px-4 font-body text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            >
+              <option value="">Selecione um serviço...</option>
+              {services.map((s) => (
+                <option key={s.slug} value={s.title}>{s.title}</option>
+              ))}
+            </select>
+            <p className="font-body text-[11px] text-muted-foreground mt-1">Será substituído em {"{brinde}"} como: "1 sessão gratuita de {settings.birthday_gift_service || 'Serviço'}"</p>
           </div>
         )}
 
