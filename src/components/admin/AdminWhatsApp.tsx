@@ -89,12 +89,21 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
   },
   {
     key: "birthday",
-    label: "🎂 Aniversário de Cliente",
+    label: "🎂 Aniversário — Aviso ao Admin",
     description: "Enviada aos admins diariamente às 8h quando um cliente faz aniversário",
     icon: Cake,
     enabledKey: "whatsapp_msg_birthday_enabled",
     textKey: "whatsapp_msg_birthday_text",
-    variables: ["{nome}", "{idade}", "{telefone}", "{empresa}"],
+    variables: ["{nome}", "{idade}", "{telefone}", "{empresa}", "{brinde}"],
+  },
+  {
+    key: "birthday_client",
+    label: "🎁 Aniversário — Parabéns ao Cliente",
+    description: "Enviada diretamente ao cliente aniversariante com o brinde configurado",
+    icon: Cake,
+    enabledKey: "whatsapp_msg_birthday_client_enabled",
+    textKey: "whatsapp_msg_birthday_client_text",
+    variables: ["{nome}", "{idade}", "{empresa}", "{brinde}"],
   },
 ];
 
