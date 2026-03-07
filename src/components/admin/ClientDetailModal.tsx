@@ -202,7 +202,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                       <InfoRow icon={Phone} label="Telefone" value={profile?.phone} />
                       <InfoRow icon={Mail} label="E-mail" value={profile?.email} />
                       <InfoRow icon={MapPin} label="Endereço" value={profile?.address} />
-                      <InfoRow icon={Venus} label="Sexo" value={profile?.sex} />
+                      <InfoRow icon={Heart} label="Sexo" value={profile?.sex} />
                       <InfoRow icon={User} label="Usuário (login)" value={profile?.username} />
                       <InfoRow icon={Calendar} label="Cadastro" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pt-BR") : null} />
                       <InfoRow icon={Clock} label="Último acesso" value={profile?.last_seen ? new Date(profile.last_seen).toLocaleString("pt-BR") : "Nunca acessou"} />
