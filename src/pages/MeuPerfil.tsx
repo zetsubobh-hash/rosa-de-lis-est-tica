@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, Loader2, Lock, User as UserIcon, Phone, MapPin, Mail } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Lock, User as UserIcon, Phone, MapPin, Mail, Cake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
