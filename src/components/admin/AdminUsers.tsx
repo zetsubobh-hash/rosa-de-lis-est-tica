@@ -54,6 +54,7 @@ const AdminUsers = () => {
   const [anamnesisUser, setAnamnesisUser] = useState<UserProfile | null>(null);
   const [historyUser, setHistoryUser] = useState<UserProfile | null>(null);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [viewingUser, setViewingUser] = useState<UserProfile | null>(null);
   const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string; username: string; new_password: string }>({ full_name: "", phone: "", email: "", address: "", sex: "", username: "", new_password: "" });
   const [savingEdit, setSavingEdit] = useState(false);
 
