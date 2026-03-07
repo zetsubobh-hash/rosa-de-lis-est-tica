@@ -468,14 +468,15 @@ const AdminPartners = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className={`bg-card rounded-2xl border border-border p-5 hover:shadow-md transition-shadow ${!p.is_active ? "opacity-60" : ""}`}
+              className={`bg-card rounded-2xl border border-border p-4 sm:p-5 hover:shadow-md transition-shadow ${!p.is_active ? "opacity-60" : ""}`}
             >
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+              {/* Top: Avatar + Name + Actions */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                   {p.avatar_url ? (
                     <img src={p.avatar_url} alt={p.full_name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="font-heading text-sm font-bold text-primary">
+                    <span className="font-heading text-xs sm:text-sm font-bold text-primary">
                       {getInitials(p.full_name)}
                     </span>
                   )}
@@ -489,115 +490,109 @@ const AdminPartners = () => {
                   </div>
                   {p.phone && (
                     <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Phone className="w-3 h-3" /> {p.phone}
+                      <Phone className="w-3 h-3 shrink-0" /> {p.phone}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 mt-1.5 text-xs font-body text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {p.work_start} - {p.work_end}
-                    </span>
-                    <span className="font-semibold text-primary">{p.commission_pct}%</span>
-                  </div>
-                  <div className="flex gap-1 mt-1.5">
-                    {WEEK_DAYS.map((d) => (
-                      <span
-                        key={d.key}
-                        className={`w-7 h-5 flex items-center justify-center rounded text-[9px] font-bold uppercase tracking-wide ${
-                          p.work_days.includes(d.key)
-                            ? "bg-primary/15 text-primary"
-                            : "bg-muted text-muted-foreground/40"
-                        }`}
-                      >
-                        {d.label.slice(0, 1)}
-                      </span>
-                    ))}
-                  </div>
-                  {p.specialties && p.specialties.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {p.specialties.map((slug) => {
-                        const svc = services.find((s) => s.slug === slug);
-                        return (
-                          <span key={slug} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
-                            {svc?.title || slug}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-0.5 shrink-0">
                   {p.phone && (
-                    <>
-                      <a
-                        href={`tel:${p.phone.replace(/\D/g, "")}`}
-                        className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      >
-                        <Phone className="w-4 h-4" />
-                      </a>
-                      <a
-                        href={`https://wa.me/55${p.phone.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/5 transition-colors"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </a>
-                    </>
+                    <a
+                      href={`https://wa.me/55${p.phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/5 transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </a>
                   )}
                   <button
                     onClick={() => openEdit(p)}
-                    className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(p.id)}
-                    className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
+              {/* Info row: hours + commission + days */}
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="flex items-center gap-1 text-xs font-body text-muted-foreground">
+                  <Clock className="w-3 h-3 shrink-0" />
+                  {p.work_start} - {p.work_end}
+                </span>
+                <span className="text-xs font-body font-semibold text-primary">{p.commission_pct}% comissão</span>
+                <div className="flex gap-0.5">
+                  {WEEK_DAYS.map((d) => (
+                    <span
+                      key={d.key}
+                      className={`w-6 h-5 flex items-center justify-center rounded text-[9px] font-bold uppercase ${
+                        p.work_days.includes(d.key)
+                          ? "bg-primary/15 text-primary"
+                          : "bg-muted text-muted-foreground/40"
+                      }`}
+                    >
+                      {d.label.slice(0, 1)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Specialties */}
+              {p.specialties && p.specialties.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {p.specialties.map((slug) => {
+                    const svc = services.find((s) => s.slug === slug);
+                    return (
+                      <span key={slug} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
+                        {svc?.title || slug}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Financial Summary */}
               <div className="mt-3 pt-3 border-t border-border">
-                <div className="grid grid-cols-5 gap-1.5 text-center">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
                   <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Salário</p>
-                    <p className="font-heading text-xs font-bold text-foreground">
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Salário</p>
+                    <p className="font-heading text-xs font-bold text-foreground mt-0.5">
                       {(p.salary_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
                   </div>
                   <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Comissões</p>
-                    <p className="font-heading text-xs font-bold text-primary">
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Comissões</p>
+                    <p className="font-heading text-xs font-bold text-primary mt-0.5">
                       {((earnings[p.id]?.commissionCents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
-                    <p className="font-body text-[9px] text-muted-foreground">
-                      {earnings[p.id]?.sessions || 0} sess.
-                    </p>
+                    <p className="font-body text-[9px] text-muted-foreground">{earnings[p.id]?.sessions || 0} sess.</p>
                   </div>
                   <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Total</p>
-                    <p className="font-heading text-xs font-bold text-foreground">
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Total</p>
+                    <p className="font-heading text-xs font-bold text-foreground mt-0.5">
                       {((p.salary_cents + (earnings[p.id]?.commissionCents || 0)) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
                   </div>
                   <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Pago</p>
-                    <p className="font-heading text-xs font-bold text-foreground">
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Pago</p>
+                    <p className="font-heading text-xs font-bold text-foreground mt-0.5">
                       {((paidMap[p.id] || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
                   </div>
                   <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider">Saldo</p>
+                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Saldo</p>
                     {(() => {
                       const total = p.salary_cents + (earnings[p.id]?.commissionCents || 0);
                       const paid = paidMap[p.id] || 0;
                       const balance = total - paid;
                       return (
-                        <p className={`font-heading text-xs font-bold ${balance > 0 ? "text-amber-600" : balance < 0 ? "text-destructive" : "text-emerald-600"}`}>
+                        <p className={`font-heading text-xs font-bold mt-0.5 ${balance > 0 ? "text-amber-600" : balance < 0 ? "text-destructive" : "text-emerald-600"}`}>
                           {(Math.abs(balance) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </p>
                       );
