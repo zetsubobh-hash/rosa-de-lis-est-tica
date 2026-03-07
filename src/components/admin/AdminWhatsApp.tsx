@@ -714,6 +714,139 @@ const AdminWhatsApp = () => {
         </button>
       </motion.div>
 
+      {/* ═══════════ BROADCAST TO PARTNERS ═══════════ */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-primary" />
+          <h3 className="font-heading text-sm font-bold text-foreground">Enviar Mensagem aos Parceiros</h3>
+        </div>
+        <p className="font-body text-xs text-muted-foreground">
+          Envie comunicados, novidades ou mensagens personalizadas diretamente para os parceiros selecionados via WhatsApp.
+        </p>
+
+        {/* Partner selection */}
+        <div>
+          <label className="font-body text-xs font-semibold text-foreground mb-2 block">Selecionar parceiros</label>
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedPartners.length === partners.length) {
+                  setSelectedPartners([]);
+                } else {
+                  setSelectedPartners(partners.map((p) => p.id));
+                }
+              }}
+              className="font-body text-xs text-primary hover:underline"
+            >
+              {selectedPartners.length === partners.length ? "Desmarcar todos" : "Selecionar todos"}
+            </button>
+            <div className="flex flex-wrap gap-2">
+              {partners.map((p) => {
+                const isSelected = selectedPartners.includes(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedPartners((prev) =>
+                        isSelected ? prev.filter((id) => id !== p.id) : [...prev, p.id]
+                      )
+                    }
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3" />}
+                    {p.full_name}
+                  </button>
+                );
+              })}
+            </div>
+            {partners.length === 0 && (
+              <p className="font-body text-xs text-muted-foreground">Nenhum parceiro ativo encontrado.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Message */}
+        <div>
+          <label className="font-body text-xs font-semibold text-foreground mb-1 block">Mensagem</label>
+          <textarea
+            rows={5}
+            value={broadcastMsg}
+            onChange={(e) => setBroadcastMsg(e.target.value)}
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+            placeholder="Digite a mensagem para os parceiros..."
+          />
+          <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-muted/50 mt-2">
+            <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <p className="font-body text-[11px] text-muted-foreground font-semibold mb-1">Variáveis disponíveis:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {["{nome}", "{empresa}"].map((v) => (
+                  <code key={v} className="text-[11px] font-mono bg-background border border-border rounded px-1.5 py-0.5 text-foreground">{v}</code>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Send button */}
+        <button
+          onClick={async () => {
+            if (selectedPartners.length === 0) {
+              toast({ title: "Selecione parceiros", description: "Escolha pelo menos um parceiro.", variant: "destructive" });
+              return;
+            }
+            if (!broadcastMsg.trim()) {
+              toast({ title: "Mensagem vazia", variant: "destructive" });
+              return;
+            }
+            setBroadcastSending(true);
+            let sent = 0;
+            let failed = 0;
+            const { data: { session } } = await supabase.auth.getSession();
+            for (const pid of selectedPartners) {
+              const partner = partners.find((p) => p.id === pid);
+              if (!partner || !partner.phone) { failed++; continue; }
+              const rawPhone = `55${partner.phone.replace(/\D/g, "")}`;
+              const text = broadcastMsg
+                .replace(/{nome}/g, partner.full_name)
+                .replace(/{empresa}/g, "Rosa de Lis");
+              try {
+                const res = await fetch(`${SUPABASE_URL}/functions/v1/evolution`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${session?.access_token}`,
+                    apikey: SUPABASE_ANON_KEY,
+                  },
+                  body: JSON.stringify({ action: "send_test", phone: rawPhone, message: text }),
+                });
+                const data = await res.json();
+                if (data.success) sent++;
+                else failed++;
+              } catch {
+                failed++;
+              }
+            }
+            setBroadcastSending(false);
+            toast({
+              title: `📤 Envio concluído`,
+              description: `${sent} enviada(s) com sucesso${failed > 0 ? `, ${failed} falha(s)` : ""}`,
+            });
+          }}
+          disabled={broadcastSending || selectedPartners.length === 0}
+          className="w-full h-10 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {broadcastSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {broadcastSending ? "Enviando..." : `Enviar para ${selectedPartners.length} parceiro(s)`}
+        </button>
+      </motion.div>
+
       {/* Save all button */}
       <button
         onClick={handleSave}
