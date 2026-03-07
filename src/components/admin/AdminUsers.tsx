@@ -31,6 +31,7 @@ interface UserProfile {
   address: string;
   sex: string;
   username: string;
+  birth_date: string | null;
   isAdmin: boolean;
 }
 
@@ -55,14 +56,14 @@ const AdminUsers = () => {
   const [historyUser, setHistoryUser] = useState<UserProfile | null>(null);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [viewingUser, setViewingUser] = useState<UserProfile | null>(null);
-  const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string; username: string; new_password: string }>({ full_name: "", phone: "", email: "", address: "", sex: "", username: "", new_password: "" });
+  const [editForm, setEditForm] = useState<{ full_name: string; phone: string; email: string; address: string; sex: string; username: string; new_password: string; birth_date: string }>({ full_name: "", phone: "", email: "", address: "", sex: "", username: "", new_password: "", birth_date: "" });
   const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, full_name, phone, email, avatar_url, last_seen, address, sex, username")
+      .select("user_id, full_name, phone, email, avatar_url, last_seen, address, sex, username, birth_date")
       .order("full_name");
 
     const { data: roles } = await supabase
@@ -165,6 +166,7 @@ const AdminUsers = () => {
       sex: u.sex || "",
       username: u.username || "",
       new_password: "",
+      birth_date: u.birth_date || "",
     });
   };
 
@@ -181,6 +183,7 @@ const AdminUsers = () => {
         email: editForm.email,
         address: editForm.address,
         sex: editForm.sex,
+        birth_date: editForm.birth_date || null,
       })
       .eq("user_id", editingUser.user_id);
     
@@ -227,7 +230,7 @@ const AdminUsers = () => {
     toast({ title: "Dados atualizados com sucesso ✅" });
     setUsers((prev) => prev.map((u) =>
       u.user_id === editingUser.user_id
-        ? { ...u, full_name: editForm.full_name, phone: editForm.phone, email: editForm.email, address: editForm.address, sex: editForm.sex, username: editForm.username }
+        ? { ...u, full_name: editForm.full_name, phone: editForm.phone, email: editForm.email, address: editForm.address, sex: editForm.sex, username: editForm.username, birth_date: editForm.birth_date || null }
         : u
     ));
     setEditingUser(null);
@@ -454,6 +457,10 @@ const AdminUsers = () => {
                     }`}>{s}</button>
                 ))}
               </div>
+            </div>
+            <div>
+              <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">Data de Nascimento</label>
+              <Input type="date" value={editForm.birth_date} onChange={(e) => setEditForm({ ...editForm, birth_date: e.target.value })} />
             </div>
             <div className="pt-3 mt-3 border-t border-border">
               <div className="flex items-center gap-2 mb-3">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, Loader2, Lock, User as UserIcon, Phone, MapPin, Mail } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Lock, User as UserIcon, Phone, MapPin, Mail, Cake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ interface ProfileData {
   address: string;
   sex: string;
   avatar_url: string | null;
+  birth_date: string | null;
 }
 
 const MeuPerfil = () => {
@@ -39,7 +40,7 @@ const MeuPerfil = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, email, address, sex, avatar_url")
+        .select("full_name, phone, email, address, sex, avatar_url, birth_date")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) setProfile(data);
@@ -63,6 +64,7 @@ const MeuPerfil = () => {
         address: profile.address,
         sex: profile.sex,
         email: profile.email?.trim() || null,
+        birth_date: profile.birth_date || null,
       })
       .eq("user_id", user.id);
 
@@ -186,6 +188,19 @@ const MeuPerfil = () => {
               <option value="feminino">Feminino</option>
               <option value="masculino">Masculino</option>
             </select>
+          </div>
+
+          <div>
+            <label className="font-body text-xs font-medium text-muted-foreground mb-1 block">Data de Nascimento</label>
+            <div className="relative">
+              <Cake className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={profile.birth_date || ""}
+                onChange={(e) => setProfile({ ...profile, birth_date: e.target.value || null })}
+                className="font-body pl-10"
+              />
+            </div>
           </div>
 
           <div>

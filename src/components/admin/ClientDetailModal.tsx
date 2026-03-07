@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope } from "lucide-react";
+import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +23,7 @@ interface ProfileData {
   avatar_url: string | null;
   created_at: string;
   last_seen: string | null;
+  birth_date: string | null;
 }
 
 interface AnamnesisData {
@@ -200,6 +201,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                     <TabsContent value="dados" className="mt-0 space-y-1">
                       <InfoRow icon={User} label="Nome completo" value={profile?.full_name} />
                       <InfoRow icon={Phone} label="Telefone" value={profile?.phone} />
+                      <InfoRow icon={Cake} label="Data de Nascimento" value={profile?.birth_date ? new Date(profile.birth_date + "T00:00:00").toLocaleDateString("pt-BR") : null} />
                       <InfoRow icon={Mail} label="E-mail" value={profile?.email} />
                       <InfoRow icon={MapPin} label="Endereço" value={profile?.address} />
                       <InfoRow icon={Heart} label="Sexo" value={profile?.sex} />
