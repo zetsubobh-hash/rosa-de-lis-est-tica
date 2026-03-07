@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
-  Users, History, ClipboardList, CheckCircle2, FileText
+  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -72,6 +72,9 @@ const PartnerDashboard = () => {
   const [activeTab, setActiveTab] = useState<Tab>("agenda");
   const [newNotifications, setNewNotifications] = useState<string[]>([]);
   const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
+  const [showInstallQR, setShowInstallQR] = useState(false);
+  const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
 
   useEffect(() => {
     if (!user) {
@@ -405,6 +408,9 @@ const PartnerDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setShowInstallQR(true)} className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors" title="Compartilhar instalação do app">
+              <Smartphone className="w-5 h-5" />
+            </button>
             <button onClick={() => navigate("/")} className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
               <Home className="w-5 h-5" />
             </button>
@@ -686,6 +692,69 @@ const PartnerDashboard = () => {
         partnerId={partnerId}
       />
     )}
+
+    {/* Install QR Code Modal */}
+    <AnimatePresence>
+      {showInstallQR && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setShowInstallQR(false); }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="bg-card rounded-2xl border border-border p-6 w-full max-w-sm shadow-xl text-center space-y-4"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-primary" />
+                Instalar o App
+              </h3>
+              <button onClick={() => setShowInstallQR(false)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <p className="font-body text-sm text-muted-foreground">
+              Mostre este QR Code para seus clientes instalarem o app no celular.
+            </p>
+
+            <div className="bg-white rounded-2xl p-4 inline-block mx-auto">
+              <img src={qrCodeUrl} alt="QR Code para instalar o app" className="w-56 h-56" />
+            </div>
+
+            <div className="space-y-2">
+              <p className="font-body text-xs text-muted-foreground font-semibold">📱 iPhone (iOS)</p>
+              <p className="font-body text-xs text-muted-foreground">Abrir no Safari → Compartilhar → "Adicionar à Tela de Início"</p>
+              <p className="font-body text-xs text-muted-foreground font-semibold mt-2">🤖 Android</p>
+              <p className="font-body text-xs text-muted-foreground">Abrir no Chrome → Menu (⋮) → "Instalar aplicativo"</p>
+            </div>
+
+            <button
+              onClick={async () => {
+                if (navigator.share) {
+                  try {
+                    await navigator.share({ title: "Instalar App Rosa de Lis", url: installUrl });
+                  } catch {}
+                } else {
+                  await navigator.clipboard.writeText(installUrl);
+                  alert("Link copiado!");
+                }
+              }}
+              className="w-full h-10 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            >
+              <Share2 className="w-4 h-4" />
+              Compartilhar Link
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     </>
   );
 };
