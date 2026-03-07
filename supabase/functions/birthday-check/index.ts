@@ -56,7 +56,7 @@ serve(async (req) => {
 
     console.log(`Found ${birthdayProfiles.length} birthday(s) today`);
 
-    // Check settings
+    // Check all settings
     const { data: settingsData } = await supabase
       .from("payment_settings")
       .select("key, value")
@@ -67,6 +67,12 @@ serve(async (req) => {
         "evolution_instance_name",
         "whatsapp_msg_birthday_enabled",
         "whatsapp_msg_birthday_text",
+        "whatsapp_msg_birthday_client_enabled",
+        "whatsapp_msg_birthday_client_text",
+        "birthday_gift_type",
+        "birthday_gift_discount",
+        "birthday_gift_service",
+        "birthday_gift_custom_text",
       ]);
 
     const cfg: Record<string, string> = {};
@@ -76,8 +82,11 @@ serve(async (req) => {
       return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Evolution disabled" });
     }
 
-    if (cfg.whatsapp_msg_birthday_enabled === "false") {
-      return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Birthday notifications disabled" });
+    const adminEnabled = cfg.whatsapp_msg_birthday_enabled !== "false";
+    const clientEnabled = cfg.whatsapp_msg_birthday_client_enabled === "true";
+
+    if (!adminEnabled && !clientEnabled) {
+      return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Both birthday notifications disabled" });
     }
 
     const apiUrl = cfg.evolution_api_url?.replace(/\/+$/, "");
@@ -86,6 +95,26 @@ serve(async (req) => {
 
     if (!apiUrl || !apiKey || !instanceName) {
       return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Evolution not configured" });
+    }
+
+    // Build gift text based on type
+    let giftText = "";
+    switch (cfg.birthday_gift_type) {
+      case "discount":
+        giftText = cfg.birthday_gift_discount
+          ? `Cupom de ${cfg.birthday_gift_discount} de desconto`
+          : "Um desconto especial";
+        break;
+      case "session":
+        giftText = cfg.birthday_gift_service
+          ? `1 sessão gratuita de ${cfg.birthday_gift_service}`
+          : "1 sessão gratuita";
+        break;
+      case "custom":
+        giftText = cfg.birthday_gift_custom_text || "Um presente especial";
+        break;
+      default:
+        giftText = "Uma surpresa especial";
     }
 
     // Get business name
@@ -97,23 +126,21 @@ serve(async (req) => {
     const businessName = siteSettingsData?.value || "Rosa de Lis Estética";
 
     // Fetch admin phones
-    const { data: adminRoles } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin");
-
-    const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
     let adminPhones: string[] = [];
-    if (adminUserIds.length > 0) {
-      const { data: adminProfiles } = await supabase
-        .from("profiles")
-        .select("phone")
-        .in("user_id", adminUserIds);
-      adminPhones = adminProfiles?.map((p: any) => p.phone).filter(Boolean) || [];
-    }
+    if (adminEnabled) {
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
 
-    if (adminPhones.length === 0) {
-      return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "No admin phones" });
+      const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
+      if (adminUserIds.length > 0) {
+        const { data: adminProfiles } = await supabase
+          .from("profiles")
+          .select("phone")
+          .in("user_id", adminUserIds);
+        adminPhones = adminProfiles?.map((p: any) => p.phone).filter(Boolean) || [];
+      }
     }
 
     const sendMessage = async (phone: string, text: string) => {
@@ -134,7 +161,16 @@ serve(async (req) => {
       }
     };
 
-    const customTemplate = cfg.whatsapp_msg_birthday_text || "";
+    const applyTemplate = (template: string, vars: Record<string, string>) => {
+      let text = template;
+      for (const [key, val] of Object.entries(vars)) {
+        text = text.replace(new RegExp(`\\{${key}\\}`, "g"), val);
+      }
+      return text;
+    };
+
+    const adminTemplate = cfg.whatsapp_msg_birthday_text || "";
+    const clientTemplate = cfg.whatsapp_msg_birthday_client_text || "";
     const results: any[] = [];
 
     for (const profile of birthdayProfiles) {
@@ -146,25 +182,29 @@ serve(async (req) => {
         idade: age,
         telefone: profile.phone || "Não cadastrado",
         empresa: businessName,
+        brinde: giftText,
       };
 
-      let message: string;
-      if (customTemplate) {
-        message = customTemplate;
-        for (const [key, val] of Object.entries(vars)) {
-          message = message.replace(new RegExp(`\\{${key}\\}`, "g"), val);
+      // Send to admins
+      if (adminEnabled && adminPhones.length > 0) {
+        const adminMsg = adminTemplate
+          ? applyTemplate(adminTemplate, vars)
+          : `🎂 *Aniversário de Cliente!*\n\n👤 *${vars.nome}* completa *${vars.idade} anos* hoje!\n📱 Telefone: ${vars.telefone}\n🎁 Brinde: ${vars.brinde}\n\n💡 Que tal enviar uma mensagem de parabéns?\n\n_${vars.empresa}_`;
+
+        for (const adminPhone of adminPhones) {
+          const r = await sendMessage(adminPhone, adminMsg);
+          results.push({ ...r, type: "admin", client: profile.full_name });
         }
-      } else {
-        message = `🎂 *Aniversário de Cliente!*\n\n` +
-          `👤 *${vars.nome}* completa *${vars.idade} anos* hoje!\n` +
-          `📱 Telefone: ${vars.telefone}\n\n` +
-          `💡 Que tal enviar uma mensagem de parabéns ou oferecer um desconto especial? 🎁\n\n` +
-          `_${vars.empresa}_`;
       }
 
-      for (const adminPhone of adminPhones) {
-        const r = await sendMessage(adminPhone, message);
-        results.push({ ...r, client: profile.full_name });
+      // Send to client
+      if (clientEnabled && profile.phone) {
+        const clientMsg = clientTemplate
+          ? applyTemplate(clientTemplate, vars)
+          : `🎂 *Parabéns, ${vars.nome}!* 🎉\n\nA *${vars.empresa}* deseja um feliz aniversário! 🥳\n\nPreparamos um presente especial pra você:\n🎁 *${vars.brinde}*\n\nEntre em contato para agendar! 💕`;
+
+        const r = await sendMessage(profile.phone, clientMsg);
+        results.push({ ...r, type: "client", client: profile.full_name });
       }
     }
 
