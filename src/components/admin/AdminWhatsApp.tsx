@@ -470,7 +470,19 @@ const AdminWhatsApp = () => {
                         </div>
 
                         <div>
-                          <label className="font-body text-xs font-semibold text-foreground mb-1 block">Texto da mensagem</label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="font-body text-xs font-semibold text-foreground">Texto da mensagem</label>
+                            {DEFAULT_TEMPLATES[tpl.textKey] && settings[tpl.textKey] !== DEFAULT_TEMPLATES[tpl.textKey] && (
+                              <button
+                                type="button"
+                                onClick={() => updateField(tpl.textKey, DEFAULT_TEMPLATES[tpl.textKey])}
+                                className="flex items-center gap-1 font-body text-[11px] text-primary hover:text-primary/80 transition-colors font-medium"
+                              >
+                                <RefreshCw className="w-3 h-3" />
+                                Restaurar original
+                              </button>
+                            )}
+                          </div>
                           <textarea
                             rows={4}
                             value={settings[tpl.textKey] || ""}
