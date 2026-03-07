@@ -59,12 +59,12 @@ export function BackgroundPaths() {
         return () => window.removeEventListener("resize", check);
     }, []);
 
-    const pathCount = isMobile ? 24 : 36;
+    const pathCount = isMobile ? 8 : 24;
 
     return (
         <div className={`absolute inset-0 ${isMobile ? 'text-primary-foreground/70' : 'text-primary-foreground/40'}`}>
             <FloatingPaths position={1} count={pathCount} isMobile={isMobile} />
-            <FloatingPaths position={-1} count={pathCount} isMobile={isMobile} />
+            {!isMobile && <FloatingPaths position={-1} count={pathCount} isMobile={isMobile} />}
         </div>
     );
 }
