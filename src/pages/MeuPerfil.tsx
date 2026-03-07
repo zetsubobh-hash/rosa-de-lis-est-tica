@@ -40,7 +40,7 @@ const MeuPerfil = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, email, address, sex, avatar_url")
+        .select("full_name, phone, email, address, sex, avatar_url, birth_date")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) setProfile(data);
