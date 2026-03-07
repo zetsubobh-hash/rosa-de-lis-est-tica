@@ -135,7 +135,9 @@ const AdminWhatsApp = () => {
   const [tplTestPhone, setTplTestPhone] = useState<Record<string, string>>({});
   const [tplTestSending, setTplTestSending] = useState<Record<string, boolean>>({});
   const [partners, setPartners] = useState<{ id: string; full_name: string; phone: string; user_id: string }[]>([]);
+  const [admins, setAdmins] = useState<{ id: string; full_name: string; phone: string }[]>([]);
   const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
+  const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
   const [broadcastMsg, setBroadcastMsg] = useState("Olá *{nome}*! 🌟\n\nTemos uma novidade na *{empresa}*! 🎉\n\nAgora você pode preencher a *Ficha de Anamnese* digital dos seus clientes diretamente pelo sistema! 📋✨\n\nAcesse seu painel para conferir todas as novidades.\n\nQualquer dúvida, estamos à disposição! 💕");
   const [broadcastSending, setBroadcastSending] = useState(false);
 
