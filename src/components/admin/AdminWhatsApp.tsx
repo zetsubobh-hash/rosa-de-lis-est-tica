@@ -15,6 +15,7 @@ const MSG_KEYS = [
   "whatsapp_msg_reschedule_enabled", "whatsapp_msg_reschedule_text",
   "whatsapp_msg_partner_enabled", "whatsapp_msg_partner_text",
   "whatsapp_msg_admin_enabled", "whatsapp_msg_admin_text",
+  "whatsapp_msg_birthday_enabled", "whatsapp_msg_birthday_text",
 ];
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
