@@ -730,10 +730,10 @@ const AdminWhatsApp = () => {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-primary" />
-          <h3 className="font-heading text-sm font-bold text-foreground">Enviar Mensagem aos Parceiros</h3>
+          <h3 className="font-heading text-sm font-bold text-foreground">Enviar Mensagem aos Parceiros e Admins</h3>
         </div>
         <p className="font-body text-xs text-muted-foreground">
-          Envie comunicados, novidades ou mensagens personalizadas diretamente para os parceiros selecionados via WhatsApp.
+          Envie comunicados, novidades ou mensagens personalizadas diretamente para os parceiros e administradores selecionados via WhatsApp.
         </p>
 
         {/* Partner selection */}
