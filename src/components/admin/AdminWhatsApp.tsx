@@ -131,6 +131,8 @@ const AdminWhatsApp = () => {
   const [testPhone, setTestPhone] = useState("");
   const [testMessage, setTestMessage] = useState("Olá, aqui é da *{empresa}*! ✅\n\nOlá {nome}! Seu agendamento de *{servico}* foi confirmado para o dia *{data}* às *{hora}*. Nos vemos em breve! 💕");
   const [testSending, setTestSending] = useState(false);
+  const [tplTestPhone, setTplTestPhone] = useState<Record<string, string>>({});
+  const [tplTestSending, setTplTestSending] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -299,6 +301,54 @@ const AdminWhatsApp = () => {
     setTestSending(false);
   };
 
+  const handleSendTemplateTest = async (tplKey: string, textKey: string) => {
+    const phone = tplTestPhone[tplKey] || "";
+    const rawPhone = testPhoneToRaw(phone);
+    if (!rawPhone || rawPhone.length < 12) {
+      toast({ title: "Informe o número", description: "Digite um número válido para enviar o teste.", variant: "destructive" });
+      return;
+    }
+    setTplTestSending((prev) => ({ ...prev, [tplKey]: true }));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Replace variables with example values
+      const text = (settings[textKey] || "")
+        .replace(/{nome}/g, "Maria Exemplo")
+        .replace(/{servico}/g, "Limpeza de Pele")
+        .replace(/{data}/g, "15/04/2026")
+        .replace(/{hora}/g, "14:00")
+        .replace(/{empresa}/g, "Rosa de Lis")
+        .replace(/{idade}/g, "30")
+        .replace(/{telefone}/g, "(11) 99999-9999")
+        .replace(/{brinde}/g, "1 sessão gratuita de Limpeza de Pele");
+      const res = await fetch(
+        `${SUPABASE_URL}/functions/v1/evolution`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ action: "send_test", phone: rawPhone, message: text }),
+        }
+      );
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        throw new Error(`Erro de conexão (status ${res.status}).`);
+      }
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "✅ Teste enviado!", description: `Mensagem enviada para ${phone}` });
+      } else {
+        toast({ title: "Erro ao enviar", description: data.error || "Falha", variant: "destructive" });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    }
+    setTplTestSending((prev) => ({ ...prev, [tplKey]: false }));
+  };
+
   const isEnabled = settings.evolution_enabled === "true";
 
   if (loading) {
@@ -412,6 +462,32 @@ const AdminWhatsApp = () => {
                               ))}
                             </div>
                           </div>
+                        </div>
+
+                        {/* Per-template test send */}
+                        <div className="border-t border-border pt-3 space-y-2">
+                          <label className="font-body text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <Send className="w-3.5 h-3.5 text-primary" />
+                            Enviar teste desta mensagem
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="(11) 99999-9999"
+                              value={tplTestPhone[tpl.key] || ""}
+                              onChange={(e) => setTplTestPhone((prev) => ({ ...prev, [tpl.key]: formatTestPhone(e.target.value) }))}
+                              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            />
+                            <button
+                              onClick={() => handleSendTemplateTest(tpl.key, tpl.textKey)}
+                              disabled={tplTestSending[tpl.key]}
+                              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-body text-xs font-semibold hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              {tplTestSending[tpl.key] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                              Testar
+                            </button>
+                          </div>
+                          <p className="font-body text-[10px] text-muted-foreground">As variáveis serão substituídas por dados de exemplo.</p>
                         </div>
                       </div>
                     </motion.div>
