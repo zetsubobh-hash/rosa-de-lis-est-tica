@@ -19,7 +19,7 @@ interface AnamnesisModalProps {
   adminMode?: boolean;
 }
 
-type Step = 0 | 1 | 2 | 3 | 4;
+type Step = 0 | 1 | 2 | 3 | 4 | 5;
 
 const STEP_LABELS = [
   "Queixa Principal",
@@ -27,7 +27,19 @@ const STEP_LABELS = [
   "Hábitos de Vida",
   "Avaliação Estética",
   "Termos Legais",
+  "Procedimentos",
 ];
+
+interface ProcedureRecord {
+  id: string;
+  service_title: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  session_number: number | null;
+  notes: string | null;
+  partner_name?: string;
+}
 
 const DOENCAS_OPTIONS = [
   "Diabetes", "Hipertensão", "Cardiopatia", "Tireoide", "Epilepsia", "Câncer", "Asma",
