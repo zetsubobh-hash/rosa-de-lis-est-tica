@@ -135,18 +135,30 @@ const AdminWhatsApp = () => {
   const [tplTestPhone, setTplTestPhone] = useState<Record<string, string>>({});
   const [tplTestSending, setTplTestSending] = useState<Record<string, boolean>>({});
   const [partners, setPartners] = useState<{ id: string; full_name: string; phone: string; user_id: string }[]>([]);
+  const [admins, setAdmins] = useState<{ id: string; full_name: string; phone: string }[]>([]);
   const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
+  const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
   const [broadcastMsg, setBroadcastMsg] = useState("Olá *{nome}*! 🌟\n\nTemos uma novidade na *{empresa}*! 🎉\n\nAgora você pode preencher a *Ficha de Anamnese* digital dos seus clientes diretamente pelo sistema! 📋✨\n\nAcesse seu painel para conferir todas as novidades.\n\nQualquer dúvida, estamos à disposição! 💕");
   const [broadcastSending, setBroadcastSending] = useState(false);
 
   useEffect(() => {
     const fetchExtras = async () => {
-      const [{ data: svcData }, { data: partnerData }] = await Promise.all([
+      const [{ data: svcData }, { data: partnerData }, { data: adminRoles }] = await Promise.all([
         supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
         supabase.from("partners").select("id, full_name, phone, user_id").eq("is_active", true).order("full_name"),
+        supabase.from("user_roles").select("user_id").eq("role", "admin"),
       ]);
       setServices(svcData || []);
       setPartners(partnerData || []);
+      // Fetch admin profiles
+      if (adminRoles && adminRoles.length > 0) {
+        const adminUserIds = adminRoles.map((r: any) => r.user_id);
+        const { data: adminProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, phone")
+          .in("user_id", adminUserIds);
+        setAdmins((adminProfiles || []).map((p: any) => ({ id: p.user_id, full_name: p.full_name, phone: p.phone })));
+      }
     };
     fetchExtras();
   }, []);
@@ -718,15 +730,15 @@ const AdminWhatsApp = () => {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-primary" />
-          <h3 className="font-heading text-sm font-bold text-foreground">Enviar Mensagem aos Parceiros</h3>
+          <h3 className="font-heading text-sm font-bold text-foreground">Enviar Mensagem aos Parceiros e Admins</h3>
         </div>
         <p className="font-body text-xs text-muted-foreground">
-          Envie comunicados, novidades ou mensagens personalizadas diretamente para os parceiros selecionados via WhatsApp.
+          Envie comunicados, novidades ou mensagens personalizadas diretamente para os parceiros e administradores selecionados via WhatsApp.
         </p>
 
         {/* Partner selection */}
         <div>
-          <label className="font-body text-xs font-semibold text-foreground mb-2 block">Selecionar parceiros</label>
+          <label className="font-body text-xs font-semibold text-foreground mb-2 block">Parceiros</label>
           <div className="space-y-1.5">
             <button
               type="button"
@@ -739,7 +751,7 @@ const AdminWhatsApp = () => {
               }}
               className="font-body text-xs text-primary hover:underline"
             >
-              {selectedPartners.length === partners.length ? "Desmarcar todos" : "Selecionar todos"}
+              {selectedPartners.length === partners.length && partners.length > 0 ? "Desmarcar todos" : "Selecionar todos parceiros"}
             </button>
             <div className="flex flex-wrap gap-2">
               {partners.map((p) => {
@@ -771,6 +783,52 @@ const AdminWhatsApp = () => {
           </div>
         </div>
 
+        {/* Admin selection */}
+        {admins.length > 0 && (
+          <div>
+            <label className="font-body text-xs font-semibold text-foreground mb-2 block">Administradores</label>
+            <div className="space-y-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedAdmins.length === admins.length) {
+                    setSelectedAdmins([]);
+                  } else {
+                    setSelectedAdmins(admins.map((a) => a.id));
+                  }
+                }}
+                className="font-body text-xs text-primary hover:underline"
+              >
+                {selectedAdmins.length === admins.length ? "Desmarcar todos" : "Selecionar todos admins"}
+              </button>
+              <div className="flex flex-wrap gap-2">
+                {admins.map((a) => {
+                  const isSelected = selectedAdmins.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedAdmins((prev) =>
+                          isSelected ? prev.filter((id) => id !== a.id) : [...prev, a.id]
+                        )
+                      }
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                        isSelected
+                          ? "bg-accent text-accent-foreground border-accent"
+                          : "border-border text-foreground hover:border-accent/50"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3" />}
+                      🛡️ {a.full_name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Message */}
         <div>
           <label className="font-body text-xs font-semibold text-foreground mb-1 block">Mensagem</label>
@@ -779,7 +837,7 @@ const AdminWhatsApp = () => {
             value={broadcastMsg}
             onChange={(e) => setBroadcastMsg(e.target.value)}
             className="w-full rounded-xl border border-border bg-background px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
-            placeholder="Digite a mensagem para os parceiros..."
+            placeholder="Digite a mensagem..."
           />
           <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-muted/50 mt-2">
             <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
@@ -797,8 +855,9 @@ const AdminWhatsApp = () => {
         {/* Send button */}
         <button
           onClick={async () => {
-            if (selectedPartners.length === 0) {
-              toast({ title: "Selecione parceiros", description: "Escolha pelo menos um parceiro.", variant: "destructive" });
+            const totalSelected = selectedPartners.length + selectedAdmins.length;
+            if (totalSelected === 0) {
+              toast({ title: "Selecione destinatários", description: "Escolha pelo menos um parceiro ou admin.", variant: "destructive" });
               return;
             }
             if (!broadcastMsg.trim()) {
@@ -809,12 +868,22 @@ const AdminWhatsApp = () => {
             let sent = 0;
             let failed = 0;
             const { data: { session } } = await supabase.auth.getSession();
+
+            // Build recipients list
+            const recipients: { name: string; phone: string }[] = [];
             for (const pid of selectedPartners) {
-              const partner = partners.find((p) => p.id === pid);
-              if (!partner || !partner.phone) { failed++; continue; }
-              const rawPhone = `55${partner.phone.replace(/\D/g, "")}`;
+              const p = partners.find((x) => x.id === pid);
+              if (p?.phone) recipients.push({ name: p.full_name, phone: p.phone });
+            }
+            for (const aid of selectedAdmins) {
+              const a = admins.find((x) => x.id === aid);
+              if (a?.phone) recipients.push({ name: a.full_name, phone: a.phone });
+            }
+
+            for (const r of recipients) {
+              const rawPhone = `55${r.phone.replace(/\D/g, "")}`;
               const text = broadcastMsg
-                .replace(/{nome}/g, partner.full_name)
+                .replace(/{nome}/g, r.name)
                 .replace(/{empresa}/g, "Rosa de Lis");
               try {
                 const res = await fetch(`${SUPABASE_URL}/functions/v1/evolution`, {
@@ -839,11 +908,11 @@ const AdminWhatsApp = () => {
               description: `${sent} enviada(s) com sucesso${failed > 0 ? `, ${failed} falha(s)` : ""}`,
             });
           }}
-          disabled={broadcastSending || selectedPartners.length === 0}
+          disabled={broadcastSending || (selectedPartners.length + selectedAdmins.length) === 0}
           className="w-full h-10 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {broadcastSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          {broadcastSending ? "Enviando..." : `Enviar para ${selectedPartners.length} parceiro(s)`}
+          {broadcastSending ? "Enviando..." : `Enviar para ${selectedPartners.length + selectedAdmins.length} destinatário(s)`}
         </button>
       </motion.div>
 
