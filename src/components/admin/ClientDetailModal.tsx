@@ -154,6 +154,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="bg-card rounded-2xl border border-border w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl"
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center gap-3 p-5 border-b border-border shrink-0">
