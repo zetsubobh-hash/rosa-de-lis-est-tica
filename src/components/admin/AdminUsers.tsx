@@ -458,6 +458,10 @@ const AdminUsers = () => {
                 ))}
               </div>
             </div>
+            <div>
+              <label className="font-body text-xs text-muted-foreground font-medium mb-1 block">Data de Nascimento</label>
+              <Input type="date" value={editForm.birth_date} onChange={(e) => setEditForm({ ...editForm, birth_date: e.target.value })} />
+            </div>
             <div className="pt-3 mt-3 border-t border-border">
               <div className="flex items-center gap-2 mb-3">
                 <Key className="w-4 h-4 text-primary" />
