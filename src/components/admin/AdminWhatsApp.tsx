@@ -16,6 +16,8 @@ const MSG_KEYS = [
   "whatsapp_msg_partner_enabled", "whatsapp_msg_partner_text",
   "whatsapp_msg_admin_enabled", "whatsapp_msg_admin_text",
   "whatsapp_msg_birthday_enabled", "whatsapp_msg_birthday_text",
+  "whatsapp_msg_birthday_client_enabled", "whatsapp_msg_birthday_client_text",
+  "birthday_gift_type", "birthday_gift_discount", "birthday_gift_service", "birthday_gift_custom_text",
 ];
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
