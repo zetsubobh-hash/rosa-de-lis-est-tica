@@ -138,7 +138,8 @@ const AdminWhatsApp = () => {
   const [admins, setAdmins] = useState<{ id: string; full_name: string; phone: string }[]>([]);
   const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
   const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
-  const [broadcastMsg, setBroadcastMsg] = useState("Olá *{nome}*! 🌟\n\nTemos uma novidade na *{empresa}*! 🎉\n\nAgora você pode preencher a *Ficha de Anamnese* digital dos seus clientes diretamente pelo sistema! 📋✨\n\nAcesse seu painel para conferir todas as novidades.\n\nQualquer dúvida, estamos à disposição! 💕");
+  const DEFAULT_BROADCAST_MSG = "Olá *{nome}*! 🌟\n\nTemos uma novidade na *{empresa}*! 🎉\n\nAgora você pode preencher a *Ficha de Anamnese* digital dos seus clientes diretamente pelo sistema! 📋✨\n\nAcesse seu painel para conferir todas as novidades.\n\nQualquer dúvida, estamos à disposição! 💕";
+  const [broadcastMsg, setBroadcastMsg] = useState(DEFAULT_BROADCAST_MSG);
   const [broadcastSending, setBroadcastSending] = useState(false);
 
   useEffect(() => {
