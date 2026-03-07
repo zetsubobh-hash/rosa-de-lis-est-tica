@@ -131,6 +131,8 @@ const AdminWhatsApp = () => {
   const [testPhone, setTestPhone] = useState("");
   const [testMessage, setTestMessage] = useState("Olá, aqui é da *{empresa}*! ✅\n\nOlá {nome}! Seu agendamento de *{servico}* foi confirmado para o dia *{data}* às *{hora}*. Nos vemos em breve! 💕");
   const [testSending, setTestSending] = useState(false);
+  const [tplTestPhone, setTplTestPhone] = useState<Record<string, string>>({});
+  const [tplTestSending, setTplTestSending] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchData = async () => {
