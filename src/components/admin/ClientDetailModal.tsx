@@ -201,6 +201,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                     <TabsContent value="dados" className="mt-0 space-y-1">
                       <InfoRow icon={User} label="Nome completo" value={profile?.full_name} />
                       <InfoRow icon={Phone} label="Telefone" value={profile?.phone} />
+                      <InfoRow icon={Cake} label="Data de Nascimento" value={profile?.birth_date ? new Date(profile.birth_date + "T00:00:00").toLocaleDateString("pt-BR") : null} />
                       <InfoRow icon={Mail} label="E-mail" value={profile?.email} />
                       <InfoRow icon={MapPin} label="Endereço" value={profile?.address} />
                       <InfoRow icon={Heart} label="Sexo" value={profile?.sex} />
