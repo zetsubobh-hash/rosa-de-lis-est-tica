@@ -191,6 +191,19 @@ const MeuPerfil = () => {
           </div>
 
           <div>
+            <label className="font-body text-xs font-medium text-muted-foreground mb-1 block">Data de Nascimento</label>
+            <div className="relative">
+              <Cake className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={profile.birth_date || ""}
+                onChange={(e) => setProfile({ ...profile, birth_date: e.target.value || null })}
+                className="font-body pl-10"
+              />
+            </div>
+          </div>
+
+          <div>
             <label className="font-body text-xs font-medium text-muted-foreground mb-1 block">E-mail (opcional)</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

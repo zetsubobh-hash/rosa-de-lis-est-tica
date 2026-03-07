@@ -230,7 +230,7 @@ const AdminUsers = () => {
     toast({ title: "Dados atualizados com sucesso ✅" });
     setUsers((prev) => prev.map((u) =>
       u.user_id === editingUser.user_id
-        ? { ...u, full_name: editForm.full_name, phone: editForm.phone, email: editForm.email, address: editForm.address, sex: editForm.sex, username: editForm.username }
+        ? { ...u, full_name: editForm.full_name, phone: editForm.phone, email: editForm.email, address: editForm.address, sex: editForm.sex, username: editForm.username, birth_date: editForm.birth_date || null }
         : u
     ));
     setEditingUser(null);
