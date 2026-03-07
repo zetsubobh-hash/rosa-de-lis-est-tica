@@ -500,6 +500,14 @@ const AdminUsers = () => {
           userName={historyUser.full_name}
         />
       )}
+
+      <ClientDetailModal
+        open={!!viewingUser}
+        onClose={() => setViewingUser(null)}
+        userId={viewingUser?.user_id || ""}
+        userName={viewingUser?.full_name || ""}
+        avatarUrl={viewingUser?.avatar_url || null}
+      />
     </motion.div>
   );
 };
