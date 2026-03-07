@@ -85,6 +85,15 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     textKey: "whatsapp_msg_admin_text",
     variables: ["{nome}", "{servico}", "{data}", "{hora}", "{empresa}"],
   },
+  {
+    key: "birthday",
+    label: "🎂 Aniversário de Cliente",
+    description: "Enviada aos admins diariamente às 8h quando um cliente faz aniversário",
+    icon: Cake,
+    enabledKey: "whatsapp_msg_birthday_enabled",
+    textKey: "whatsapp_msg_birthday_text",
+    variables: ["{nome}", "{idade}", "{telefone}", "{empresa}"],
+  },
 ];
 
 const AdminWhatsApp = () => {
