@@ -463,6 +463,32 @@ const AdminWhatsApp = () => {
                             </div>
                           </div>
                         </div>
+
+                        {/* Per-template test send */}
+                        <div className="border-t border-border pt-3 space-y-2">
+                          <label className="font-body text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <Send className="w-3.5 h-3.5 text-primary" />
+                            Enviar teste desta mensagem
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="(11) 99999-9999"
+                              value={tplTestPhone[tpl.key] || ""}
+                              onChange={(e) => setTplTestPhone((prev) => ({ ...prev, [tpl.key]: formatTestPhone(e.target.value) }))}
+                              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            />
+                            <button
+                              onClick={() => handleSendTemplateTest(tpl.key, tpl.textKey)}
+                              disabled={tplTestSending[tpl.key]}
+                              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-body text-xs font-semibold hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              {tplTestSending[tpl.key] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                              Testar
+                            </button>
+                          </div>
+                          <p className="font-body text-[10px] text-muted-foreground">As variáveis serão substituídas por dados de exemplo.</p>
+                        </div>
                       </div>
                     </motion.div>
                   )}
