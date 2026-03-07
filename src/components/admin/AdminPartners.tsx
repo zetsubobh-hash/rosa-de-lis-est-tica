@@ -558,41 +558,42 @@ const AdminPartners = () => {
               )}
 
               {/* Financial Summary */}
-              <div className="mt-3 pt-3 border-t border-border">
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
-                  <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Salário</p>
-                    <p className="font-heading text-xs font-bold text-foreground mt-0.5">
+              <div className="mt-3 pt-3 border-t border-border space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-4 gap-y-2">
+                  <div className="flex sm:flex-col sm:text-center items-center sm:items-stretch justify-between gap-1">
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Salário</p>
+                    <p className="font-heading text-xs font-bold text-foreground">
                       {(p.salary_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
                   </div>
-                  <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Comissões</p>
-                    <p className="font-heading text-xs font-bold text-primary mt-0.5">
+                  <div className="flex sm:flex-col sm:text-center items-center sm:items-stretch justify-between gap-1">
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">
+                      Comissões <span className="text-muted-foreground/60">({earnings[p.id]?.sessions || 0} sess.)</span>
+                    </p>
+                    <p className="font-heading text-xs font-bold text-primary">
                       {((earnings[p.id]?.commissionCents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
-                    <p className="font-body text-[9px] text-muted-foreground">{earnings[p.id]?.sessions || 0} sess.</p>
                   </div>
-                  <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Total</p>
-                    <p className="font-heading text-xs font-bold text-foreground mt-0.5">
+                  <div className="flex sm:flex-col sm:text-center items-center sm:items-stretch justify-between gap-1">
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
+                    <p className="font-heading text-xs font-bold text-foreground">
                       {((p.salary_cents + (earnings[p.id]?.commissionCents || 0)) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
                   </div>
-                  <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Pago</p>
-                    <p className="font-heading text-xs font-bold text-foreground mt-0.5">
+                  <div className="flex sm:flex-col sm:text-center items-center sm:items-stretch justify-between gap-1">
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Pago</p>
+                    <p className="font-heading text-xs font-bold text-foreground">
                       {((paidMap[p.id] || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
                   </div>
-                  <div>
-                    <p className="font-body text-[9px] text-muted-foreground uppercase tracking-wider leading-tight">Saldo</p>
+                  <div className="flex sm:flex-col sm:text-center items-center sm:items-stretch justify-between gap-1 col-span-2 sm:col-span-1">
+                    <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider">Saldo</p>
                     {(() => {
                       const total = p.salary_cents + (earnings[p.id]?.commissionCents || 0);
                       const paid = paidMap[p.id] || 0;
                       const balance = total - paid;
                       return (
-                        <p className={`font-heading text-xs font-bold mt-0.5 ${balance > 0 ? "text-amber-600" : balance < 0 ? "text-destructive" : "text-emerald-600"}`}>
+                        <p className={`font-heading text-xs font-bold ${balance > 0 ? "text-amber-600" : balance < 0 ? "text-destructive" : "text-emerald-600"}`}>
                           {(Math.abs(balance) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </p>
                       );
