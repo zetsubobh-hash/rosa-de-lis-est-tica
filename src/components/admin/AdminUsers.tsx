@@ -31,6 +31,7 @@ interface UserProfile {
   address: string;
   sex: string;
   username: string;
+  birth_date: string | null;
   isAdmin: boolean;
 }
 
