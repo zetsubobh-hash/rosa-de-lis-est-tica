@@ -23,16 +23,15 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Get today's month and day (Brazil timezone)
+    // Get today's month and day (Brazil timezone UTC-3)
     const now = new Date();
-    // Adjust to BRT (UTC-3)
     const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
     const month = String(brt.getUTCMonth() + 1).padStart(2, "0");
     const day = String(brt.getUTCDate()).padStart(2, "0");
 
     console.log(`Checking birthdays for ${day}/${month}`);
 
-    // Fetch all profiles with birth_date matching today's month/day
+    // Fetch all profiles with birth_date
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, full_name, phone, birth_date")
@@ -57,24 +56,28 @@ serve(async (req) => {
 
     console.log(`Found ${birthdayProfiles.length} birthday(s) today`);
 
-    // Check if Evolution WhatsApp is configured and enabled
+    // Check settings
     const { data: settingsData } = await supabase
       .from("payment_settings")
       .select("key, value")
       .in("key", [
         "evolution_enabled",
-        "evolution_notifications_enabled",
         "evolution_api_url",
         "evolution_api_key",
         "evolution_instance_name",
+        "whatsapp_msg_birthday_enabled",
+        "whatsapp_msg_birthday_text",
       ]);
 
     const cfg: Record<string, string> = {};
     settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
 
     if (cfg.evolution_enabled !== "true") {
-      console.log("Evolution not enabled, skipping WhatsApp notifications");
       return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Evolution disabled" });
+    }
+
+    if (cfg.whatsapp_msg_birthday_enabled === "false") {
+      return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Birthday notifications disabled" });
     }
 
     const apiUrl = cfg.evolution_api_url?.replace(/\/+$/, "");
@@ -113,7 +116,6 @@ serve(async (req) => {
       return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "No admin phones" });
     }
 
-    // Send birthday notifications to admins
     const sendMessage = async (phone: string, text: string) => {
       const cleanPhone = phone.replace(/\D/g, "");
       const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
@@ -132,17 +134,33 @@ serve(async (req) => {
       }
     };
 
+    const customTemplate = cfg.whatsapp_msg_birthday_text || "";
     const results: any[] = [];
 
     for (const profile of birthdayProfiles) {
       const [year] = profile.birth_date.split("-");
-      const age = brt.getUTCFullYear() - parseInt(year);
+      const age = String(brt.getUTCFullYear() - parseInt(year));
 
-      const message = `🎂 *Aniversário de Cliente!*\n\n` +
-        `👤 *${profile.full_name}* completa *${age} anos* hoje!\n` +
-        `📱 Telefone: ${profile.phone || "Não cadastrado"}\n\n` +
-        `💡 Que tal enviar uma mensagem de parabéns ou oferecer um desconto especial? 🎁\n\n` +
-        `_${businessName}_`;
+      const vars: Record<string, string> = {
+        nome: profile.full_name,
+        idade: age,
+        telefone: profile.phone || "Não cadastrado",
+        empresa: businessName,
+      };
+
+      let message: string;
+      if (customTemplate) {
+        message = customTemplate;
+        for (const [key, val] of Object.entries(vars)) {
+          message = message.replace(new RegExp(`\\{${key}\\}`, "g"), val);
+        }
+      } else {
+        message = `🎂 *Aniversário de Cliente!*\n\n` +
+          `👤 *${vars.nome}* completa *${vars.idade} anos* hoje!\n` +
+          `📱 Telefone: ${vars.telefone}\n\n` +
+          `💡 Que tal enviar uma mensagem de parabéns ou oferecer um desconto especial? 🎁\n\n` +
+          `_${vars.empresa}_`;
+      }
 
       for (const adminPhone of adminPhones) {
         const r = await sendMessage(adminPhone, message);
