@@ -4,7 +4,7 @@ import {
   X, FileText, Save, Printer, ChevronRight, ChevronLeft,
   Droplets, Apple, Dumbbell, Cigarette, Wine, Moon, Brain,
   Heart, Pill, Baby, AlertTriangle, Sun,
-  Eye, Sparkles, Shield, CheckCircle2, Circle, Pen,
+  Eye, Sparkles, Shield, CheckCircle2, Circle, Pen, ClipboardList, Calendar, Clock, User,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
