@@ -404,8 +404,9 @@ const AdminWhatsApp = () => {
         .replace(/{empresa}/g, "Rosa de Lis")
         .replace(/{idade}/g, "30")
         .replace(/{telefone}/g, "(11) 99999-9999")
-        .replace(/{cupom}/g, sampleCoupon)
-        .replace(/{brinde}/g, giftText);
+        .replace(/{cupom}/g, sampleCoupon || "ANIV-TEST-2026")
+        .replace(/{brinde}/g, giftText)
+        .replace(/{premio}/g, "40% de desconto");
       const res = await fetch(
         `${SUPABASE_URL}/functions/v1/evolution`,
         {
