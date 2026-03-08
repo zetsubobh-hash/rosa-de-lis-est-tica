@@ -22,6 +22,7 @@ const MSG_KEYS = [
   "birthday_roulette_enabled",
   "whatsapp_msg_roulette_client_enabled", "whatsapp_msg_roulette_client_text",
   "whatsapp_msg_roulette_admin_enabled", "whatsapp_msg_roulette_admin_text",
+  "whatsapp_msg_roulette_invite_enabled", "whatsapp_msg_roulette_invite_text",
 ];
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
@@ -37,6 +38,7 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   whatsapp_msg_birthday_client_text: "🎉 *Feliz Aniversário, {nome}!* 🎂\n\nHoje é o seu dia especial e nós da *{empresa}* queremos te parabenizar! 🥳\n\nPreparamos um presente pra você: 🎁\n*{brinde}*\n\nEntre em contato conosco para resgatar seu presente! 💕\n\nUm abraço carinhoso de toda a equipe! 💖\n\n— *{empresa}*",
   whatsapp_msg_roulette_client_text: "🎰 *Parabéns, {nome}!* 🎉\n\nVocê girou a roleta de aniversário da *{empresa}* e ganhou:\n🎁 *{premio}*\n\n🎟️ Código: *{cupom}*\n📅 Válido por 30 dias\n\nUse no checkout do app para resgatar! 💕\n\n— *{empresa}*",
   whatsapp_msg_roulette_admin_text: "🎰 *Roleta de Aniversário!*\n\n👤 *{nome}* girou a roleta e ganhou:\n🎁 *{premio}*\n🎟️ Cupom: *{cupom}*\n📱 Telefone: {telefone}\n\n— *{empresa}*",
+  whatsapp_msg_roulette_invite_text: "🎂 *Feliz Aniversário, {nome}!* 🎉\n\nHoje é o seu dia especial e nós da *{empresa}* queremos te parabenizar! 🥳💖\n\n🎰 Temos uma surpresa pra você: uma *Roleta de Prêmios* te esperando no nosso app!\n\nGire a roleta e ganhe um presente exclusivo de aniversário! 🎁✨\n\n👉 Acesse agora e descubra o que preparamos pra você!\n\nUm abraço carinhoso de toda a equipe! 💕\n\n— *{empresa}*",
 };
 
 interface MessageTemplate {
@@ -139,6 +141,15 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     enabledKey: "whatsapp_msg_roulette_admin_enabled",
     textKey: "whatsapp_msg_roulette_admin_text",
     variables: ["{nome}", "{telefone}", "{empresa}", "{premio}", "{cupom}"],
+  },
+  {
+    key: "roulette_invite",
+    label: "🎂 Roleta — Convite de Aniversário",
+    description: "Enviada ao cliente aniversariante convidando para girar a roleta de prêmios",
+    icon: Cake,
+    enabledKey: "whatsapp_msg_roulette_invite_enabled",
+    textKey: "whatsapp_msg_roulette_invite_text",
+    variables: ["{nome}", "{idade}", "{empresa}"],
   },
 ];
 
