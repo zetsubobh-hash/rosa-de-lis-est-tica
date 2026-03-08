@@ -108,6 +108,7 @@ const Admin = () => {
     { key: "partners", label: "Parceiros", icon: Handshake },
     { key: "partner-view", label: "Visão Parceiro", icon: Eye },
     { key: "client-plans", label: "Planos Clientes", icon: Layers },
+    { key: "welcome-roulette", label: "Roleta Boas-Vindas", icon: Gift },
     { key: "history", label: "Finalizados", icon: History },
     { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
     { key: "users", label: "Usuários", icon: Users },
