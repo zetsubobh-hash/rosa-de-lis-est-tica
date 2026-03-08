@@ -313,6 +313,55 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                         </div>
                       )}
                     </TabsContent>
+
+                    {/* Cupons */}
+                    <TabsContent value="cupons" className="mt-0">
+                      <div className="space-y-2">
+                        {coupons.map((c) => {
+                          const isPercent = c.discount_type === "percent";
+                          const discountLabel = isPercent
+                            ? c.discount_value === 100
+                              ? "Sessão Gratuita"
+                              : `${c.discount_value}% de desconto`
+                            : `R$ ${(c.discount_value / 100).toFixed(2).replace(".", ",")} de desconto`;
+                          const expired = new Date(c.expires_at) < new Date();
+
+                          return (
+                            <div key={c.id} className={`rounded-xl border p-3 space-y-2 ${c.is_used ? "border-border opacity-60" : expired ? "border-destructive/30 opacity-60" : "border-primary/20"}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <div>
+                                  <p className="font-heading text-sm font-semibold text-foreground">{discountLabel}</p>
+                                  <p className="font-mono text-xs text-muted-foreground">{c.code}</p>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  c.is_used ? "bg-muted text-muted-foreground" : expired ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                                }`}>
+                                  {c.is_used ? "Usado" : expired ? "Expirado" : "Ativo"}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-xs text-muted-foreground font-body">
+                                <span>Criado: {new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
+                                <span>Expira: {new Date(c.expires_at).toLocaleDateString("pt-BR")}</span>
+                              </div>
+                              {!c.is_used && !expired && (
+                                <button
+                                  onClick={() => handleMarkUsed(c.id)}
+                                  disabled={markingUsed === c.id}
+                                  className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-body text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                                >
+                                  {markingUsed === c.id ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
+                                  Marcar como Usado
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </TabsContent>
                   </div>
                 </ScrollArea>
               </Tabs>
