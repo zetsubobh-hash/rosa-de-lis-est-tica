@@ -205,6 +205,8 @@ const AdminWhatsApp = () => {
       // Keep birthday automations enabled by default when setting is missing
       if (!map.whatsapp_msg_birthday_enabled) map.whatsapp_msg_birthday_enabled = "true";
       if (!map.whatsapp_msg_birthday_client_enabled) map.whatsapp_msg_birthday_client_enabled = "true";
+      if (!map.whatsapp_msg_roulette_client_enabled) map.whatsapp_msg_roulette_client_enabled = "true";
+      if (!map.whatsapp_msg_roulette_admin_enabled) map.whatsapp_msg_roulette_admin_enabled = "true";
 
       setSettings(map);
       setLoading(false);
