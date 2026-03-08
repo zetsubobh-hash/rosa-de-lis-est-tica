@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,9 +26,10 @@ import AdminCounterSales from "@/components/admin/AdminCounterSales";
 import AdminSEO from "@/components/admin/AdminSEO";
 import AdminAuditLog from "@/components/admin/AdminAuditLog";
 import AdminDebugMonitor from "@/components/admin/AdminDebugMonitor";
+import AdminWelcomeRoulette from "@/components/admin/AdminWelcomeRoulette";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "counter-sales" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor";
+type Tab = "dashboard" | "agenda" | "counter-sales" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -107,6 +108,7 @@ const Admin = () => {
     { key: "partners", label: "Parceiros", icon: Handshake },
     { key: "partner-view", label: "Visão Parceiro", icon: Eye },
     { key: "client-plans", label: "Planos Clientes", icon: Layers },
+    { key: "welcome-roulette", label: "Roleta Boas-Vindas", icon: Gift },
     { key: "history", label: "Finalizados", icon: History },
     { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
     { key: "users", label: "Usuários", icon: Users },
@@ -276,6 +278,7 @@ const Admin = () => {
           {activeTab === "partner-view" && <AdminPartnerView />}
           {activeTab === "whatsapp" && <AdminWhatsApp />}
           {activeTab === "client-plans" && <AdminClientPlans />}
+          {activeTab === "welcome-roulette" && <AdminWelcomeRoulette />}
           {activeTab === "history" && <AdminHistory />}
           {activeTab === "users" && (
             <PasswordGate unlocked={usersUnlocked} onUnlock={() => setUsersUnlocked(true)} description="Digite sua senha para acessar o gerenciamento de usuários.">

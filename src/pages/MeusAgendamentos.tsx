@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
+import WelcomeRoulette from "@/components/WelcomeRoulette";
 import { toast } from "sonner";
 
 interface Appointment {
@@ -472,6 +473,7 @@ const MeusAgendamentos = () => {
 
       <Footer />
       <WhatsAppButton />
+      <WelcomeRoulette />
 
       {/* Session Schedule Modal */}
       {user && scheduleModal && (
