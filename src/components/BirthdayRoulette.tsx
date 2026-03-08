@@ -248,6 +248,13 @@ const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) 
   };
 
   const generateCoupon = async (winner: RouletteSegment) => {
+    if (testMode) {
+      // In test mode, don't create real coupons
+      setSpinning(false);
+      toast.success("🎉 Teste! Prêmio sorteado: " + (winner.type === "discount" ? `${winner.value}% OFF` : `Sessão de ${winner.serviceTitle}`));
+      return;
+    }
+
     if (!user) return;
 
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -274,7 +281,6 @@ const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) 
         return;
       }
     } else {
-      // Free session - store as 100% discount with service info in code
       const { error } = await supabase.from("coupons").insert({
         code,
         user_id: user.id,
