@@ -100,6 +100,9 @@ serve(async (req) => {
         "birthday_gift_discount",
         "birthday_gift_service",
         "birthday_gift_custom_text",
+        "birthday_roulette_enabled",
+        "whatsapp_msg_roulette_invite_enabled",
+        "whatsapp_msg_roulette_invite_text",
       ]);
 
     const cfg: Record<string, string> = {};
@@ -113,9 +116,11 @@ serve(async (req) => {
 
     const adminEnabled = cfg.whatsapp_msg_birthday_enabled !== "false";
     const clientEnabled = cfg.whatsapp_msg_birthday_client_enabled !== "false";
+    const rouletteEnabled = cfg.birthday_roulette_enabled === "true";
+    const rouletteInviteEnabled = cfg.whatsapp_msg_roulette_invite_enabled !== "false";
 
-    if (!adminEnabled && !clientEnabled) {
-      return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Both birthday notifications disabled" });
+    if (!adminEnabled && !clientEnabled && !(rouletteEnabled && rouletteInviteEnabled)) {
+      return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "All birthday notifications disabled" });
     }
 
     const apiUrl = cfg.evolution_api_url?.replace(/\/+$/, "");
@@ -192,6 +197,8 @@ serve(async (req) => {
 
     const adminTemplate = cfg.whatsapp_msg_birthday_text || "";
     const clientTemplate = cfg.whatsapp_msg_birthday_client_text || "";
+    const rouletteInviteTemplate = cfg.whatsapp_msg_roulette_invite_text ||
+      "🎂 *Feliz Aniversário, {nome}!* 🎉\n\nHoje é o seu dia especial e nós da *{empresa}* queremos te parabenizar! 🥳💖\n\n🎰 Temos uma surpresa pra você: uma *Roleta de Prêmios* te esperando no nosso app!\n\nGire a roleta e ganhe um presente exclusivo de aniversário! 🎁✨\n\n👉 Acesse agora e descubra o que preparamos pra você!\n\nUm abraço carinhoso de toda a equipe! 💕\n\n— *{empresa}*";
     const results: any[] = [];
 
     for (const profile of birthdayProfiles) {
@@ -201,7 +208,9 @@ serve(async (req) => {
       let couponCode = "";
       let giftText = baseGiftText;
 
-      if (isDiscountGift && discountInfo && profile.user_id) {
+      // Only create coupons from birthday-check if roulette is NOT enabled
+      // (when roulette is enabled, coupons are created when the user spins)
+      if (!rouletteEnabled && isDiscountGift && discountInfo && profile.user_id) {
         couponCode = generateCouponCode();
         const expiresAt = new Date(brt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -236,34 +245,44 @@ serve(async (req) => {
         cupom: couponCode || "",
       };
 
-      if (adminEnabled && adminPhones.length > 0) {
-        const adminTemplateWithFallback =
-          adminTemplate && (adminTemplate.includes("{brinde}") || adminTemplate.includes("{cupom}"))
-            ? adminTemplate
-            : `${adminTemplate || ""}\n\n🎁 Brinde: {brinde}${isDiscountGift ? "\n🎟️ Cupom: {cupom}" : ""}`.trim();
-
-        const adminMsg = adminTemplate
-          ? applyTemplate(adminTemplateWithFallback, vars)
-          : `🎂 *Aniversário de Cliente!*\n\n👤 *${vars.nome}* completa *${vars.idade} anos* hoje!\n📱 Telefone: ${vars.telefone}\n🎁 Brinde: ${vars.brinde}\n\n💡 Que tal enviar uma mensagem de parabéns?\n\n_${vars.empresa}_`;
-
-        for (const adminPhone of adminPhones) {
-          const r = await sendMessage(adminPhone, adminMsg);
-          results.push({ ...r, type: "admin", client: profile.full_name, coupon: couponCode || null });
-        }
+      // Send roulette invite if roulette is enabled
+      if (rouletteEnabled && rouletteInviteEnabled && profile.phone) {
+        const inviteMsg = applyTemplate(rouletteInviteTemplate, vars);
+        const r = await sendMessage(profile.phone, inviteMsg);
+        results.push({ ...r, type: "roulette_invite", client: profile.full_name });
       }
 
-      if (clientEnabled && profile.phone) {
-        const clientTemplateWithFallback =
-          clientTemplate && (clientTemplate.includes("{brinde}") || clientTemplate.includes("{cupom}"))
-            ? clientTemplate
-            : `${clientTemplate || ""}\n\n🎁 Brinde: {brinde}${isDiscountGift ? "\n🎟️ Código do cupom: *{cupom}*" : ""}`.trim();
+      // Send regular birthday messages only if roulette is NOT enabled
+      if (!rouletteEnabled) {
+        if (adminEnabled && adminPhones.length > 0) {
+          const adminTemplateWithFallback =
+            adminTemplate && (adminTemplate.includes("{brinde}") || adminTemplate.includes("{cupom}"))
+              ? adminTemplate
+              : `${adminTemplate || ""}\n\n🎁 Brinde: {brinde}${isDiscountGift ? "\n🎟️ Cupom: {cupom}" : ""}`.trim();
 
-        const clientMsg = clientTemplate
-          ? applyTemplate(clientTemplateWithFallback, vars)
-          : `🎂 *Parabéns, ${vars.nome}!* 🎉\n\nA *${vars.empresa}* deseja um feliz aniversário! 🥳\n\nPreparamos um presente especial pra você:\n🎁 *${vars.brinde}*\n\nEntre em contato para agendar! 💕`;
+          const adminMsg = adminTemplate
+            ? applyTemplate(adminTemplateWithFallback, vars)
+            : `🎂 *Aniversário de Cliente!*\n\n👤 *${vars.nome}* completa *${vars.idade} anos* hoje!\n📱 Telefone: ${vars.telefone}\n🎁 Brinde: ${vars.brinde}\n\n💡 Que tal enviar uma mensagem de parabéns?\n\n_${vars.empresa}_`;
 
-        const r = await sendMessage(profile.phone, clientMsg);
-        results.push({ ...r, type: "client", client: profile.full_name, coupon: couponCode || null });
+          for (const adminPhone of adminPhones) {
+            const r = await sendMessage(adminPhone, adminMsg);
+            results.push({ ...r, type: "admin", client: profile.full_name, coupon: couponCode || null });
+          }
+        }
+
+        if (clientEnabled && profile.phone) {
+          const clientTemplateWithFallback =
+            clientTemplate && (clientTemplate.includes("{brinde}") || clientTemplate.includes("{cupom}"))
+              ? clientTemplate
+              : `${clientTemplate || ""}\n\n🎁 Brinde: {brinde}${isDiscountGift ? "\n🎟️ Código do cupom: *{cupom}*" : ""}`.trim();
+
+          const clientMsg = clientTemplate
+            ? applyTemplate(clientTemplateWithFallback, vars)
+            : `🎂 *Parabéns, ${vars.nome}!* 🎉\n\nA *${vars.empresa}* deseja um feliz aniversário! 🥳\n\nPreparamos um presente especial pra você:\n🎁 *${vars.brinde}*\n\nEntre em contato para agendar! 💕`;
+
+          const r = await sendMessage(profile.phone, clientMsg);
+          results.push({ ...r, type: "client", client: profile.full_name, coupon: couponCode || null });
+        }
       }
     }
 

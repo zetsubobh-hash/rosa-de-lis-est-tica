@@ -142,6 +142,15 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     textKey: "whatsapp_msg_roulette_admin_text",
     variables: ["{nome}", "{telefone}", "{empresa}", "{premio}", "{cupom}"],
   },
+  {
+    key: "roulette_invite",
+    label: "🎂 Roleta — Convite de Aniversário",
+    description: "Enviada ao cliente aniversariante convidando para girar a roleta de prêmios",
+    icon: Cake,
+    enabledKey: "whatsapp_msg_roulette_invite_enabled",
+    textKey: "whatsapp_msg_roulette_invite_text",
+    variables: ["{nome}", "{idade}", "{empresa}"],
+  },
 ];
 
 const AdminWhatsApp = () => {
