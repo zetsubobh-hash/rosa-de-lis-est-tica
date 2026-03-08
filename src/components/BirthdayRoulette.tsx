@@ -302,7 +302,8 @@ const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) 
     toast.success("🎉 Parabéns! Seu prêmio foi gerado!");
   };
 
-  if (loading || !show || alreadySpun) return null;
+  if (!testMode && (loading || !show || alreadySpun)) return null;
+  if (testMode && !show) return null;
 
   return (
     <AnimatePresence>
