@@ -278,6 +278,7 @@ const Admin = () => {
           {activeTab === "partner-view" && <AdminPartnerView />}
           {activeTab === "whatsapp" && <AdminWhatsApp />}
           {activeTab === "client-plans" && <AdminClientPlans />}
+          {activeTab === "welcome-roulette" && <AdminWelcomeRoulette />}
           {activeTab === "history" && <AdminHistory />}
           {activeTab === "users" && (
             <PasswordGate unlocked={usersUnlocked} onUnlock={() => setUsersUnlocked(true)} description="Digite sua senha para acessar o gerenciamento de usuários.">

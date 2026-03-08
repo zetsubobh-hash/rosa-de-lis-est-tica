@@ -473,6 +473,7 @@ const MeusAgendamentos = () => {
 
       <Footer />
       <WhatsAppButton />
+      <WelcomeRoulette />
 
       {/* Session Schedule Modal */}
       {user && scheduleModal && (
