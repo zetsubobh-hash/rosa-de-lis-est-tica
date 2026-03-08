@@ -161,11 +161,6 @@ const ClientBirthdayPreview = ({ onClose }: ClientBirthdayPreviewProps) => {
                   })}
                 </div>
 
-                <div className="mt-4 p-3 rounded-xl bg-muted/50 border border-border">
-                  <p className="font-body text-[11px] text-muted-foreground">
-                    ℹ️ O brinde fica visível até o admin marcar como "Usado" no painel de detalhes do cliente.
-                  </p>
-                </div>
               </div>
             )}
           </div>
