@@ -659,6 +659,25 @@ const AdminWhatsApp = () => {
         )}
       </motion.div>
 
+      {/* ═══════════ BIRTHDAY ROULETTE ═══════════ */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.075 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Dices className="w-4 h-4 text-primary" />
+            <div>
+              <h3 className="font-heading text-sm font-bold text-foreground">🎰 Roleta de Aniversário</h3>
+              <p className="font-body text-[11px] text-muted-foreground">
+                Quando ativada, o cliente vê uma roleta ao acessar o app no dia do aniversário e ganha um prêmio aleatório (desconto de 10% a 60% ou sessão gratuita).
+              </p>
+            </div>
+          </div>
+          <Switch
+            checked={settings.birthday_roulette_enabled === "true"}
+            onCheckedChange={(checked) => updateField("birthday_roulette_enabled", checked ? "true" : "false")}
+          />
+        </div>
+      </motion.div>
+
       {/* ═══════════ BROADCAST TO PARTNERS ═══════════ */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
         <div className="flex items-center gap-2">
