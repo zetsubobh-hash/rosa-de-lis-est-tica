@@ -122,6 +122,24 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     textKey: "whatsapp_msg_birthday_client_text",
     variables: ["{nome}", "{idade}", "{empresa}", "{brinde}", "{cupom}"],
   },
+  {
+    key: "roulette_client",
+    label: "🎰 Roleta — Prêmio ao Cliente",
+    description: "Enviada ao cliente quando ele gira a roleta e ganha um prêmio",
+    icon: Dices,
+    enabledKey: "whatsapp_msg_roulette_client_enabled",
+    textKey: "whatsapp_msg_roulette_client_text",
+    variables: ["{nome}", "{empresa}", "{premio}", "{cupom}"],
+  },
+  {
+    key: "roulette_admin",
+    label: "🎰 Roleta — Aviso ao Admin",
+    description: "Enviada aos admins quando um cliente gira a roleta",
+    icon: Dices,
+    enabledKey: "whatsapp_msg_roulette_admin_enabled",
+    textKey: "whatsapp_msg_roulette_admin_text",
+    variables: ["{nome}", "{telefone}", "{empresa}", "{premio}", "{cupom}"],
+  },
 ];
 
 const AdminWhatsApp = () => {
