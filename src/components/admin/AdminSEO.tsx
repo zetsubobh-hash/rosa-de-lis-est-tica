@@ -31,7 +31,10 @@ const AdminSEO = () => {
 
   if (!initialized && !loading) {
     setForm({ ...settings });
-    setOgPreview(settings.seo_og_image || "/images/og-rosa-de-lis.png");
+    const normalizedOgImage = settings.seo_og_image === "/images/og-rosa-de-lis.png"
+      ? "/images/og-rosa-de-lis.jpg"
+      : settings.seo_og_image;
+    setOgPreview(normalizedOgImage || "/images/og-rosa-de-lis.jpg");
     setInitialized(true);
   }
 
