@@ -114,20 +114,20 @@ const AdminWelcomeRoulette = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-card rounded-2xl border border-border p-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-card rounded-2xl border border-border p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Gift className="w-5 h-5 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="font-heading text-base font-bold text-foreground">Roleta de Boas-Vindas</h2>
               <p className="font-body text-xs text-muted-foreground">
-                Novos usuários podem girar a roleta uma vez ao se cadastrar. Chance de ganhar desconto ou não ganhar nada.
+                Novos usuários podem girar a roleta uma vez ao se cadastrar.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <Switch checked={enabled} onCheckedChange={toggleEnabled} />
             <span className={`font-body text-sm font-semibold ${enabled ? "text-primary" : "text-muted-foreground"}`}>
               {enabled ? "Ativada" : "Desativada"}
