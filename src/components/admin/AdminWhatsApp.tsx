@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import BirthdayRouletteComponent from "@/components/BirthdayRoulette";
 
 const CONFIG_KEYS = ["evolution_api_url", "evolution_api_key", "evolution_instance_name", "evolution_enabled", "evolution_notifications_enabled"];
 
@@ -142,6 +143,7 @@ const AdminWhatsApp = () => {
   const DEFAULT_BROADCAST_MSG = "Olá *{nome}*! 🌟\n\nTemos uma novidade na *{empresa}*! 🎉\n\nAgora você pode preencher a *Ficha de Anamnese* digital dos seus clientes diretamente pelo sistema! 📋✨\n\nAcesse seu painel para conferir todas as novidades.\n\nQualquer dúvida, estamos à disposição! 💕";
   const [broadcastMsg, setBroadcastMsg] = useState(DEFAULT_BROADCAST_MSG);
   const [broadcastSending, setBroadcastSending] = useState(false);
+  const [showRouletteTest, setShowRouletteTest] = useState(false);
 
   useEffect(() => {
     const fetchExtras = async () => {
@@ -676,6 +678,19 @@ const AdminWhatsApp = () => {
             onCheckedChange={(checked) => updateField("birthday_roulette_enabled", checked ? "true" : "false")}
           />
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowRouletteTest(true)}
+          className="w-full py-2.5 rounded-xl border border-primary/30 text-primary font-body text-xs font-semibold hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+        >
+          <Dices className="w-4 h-4" />
+          Testar Roleta (simulação)
+        </button>
+
+        {showRouletteTest && (
+          <BirthdayRouletteComponent testMode onClose={() => setShowRouletteTest(false)} />
+        )}
       </motion.div>
 
       {/* ═══════════ BROADCAST TO PARTNERS ═══════════ */}

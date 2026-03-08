@@ -28,80 +28,32 @@ const COLORS = [
   "hsl(260, 55%, 55%)",
 ];
 
-const BirthdayRoulette = () => {
+interface BirthdayRouletteProps {
+  testMode?: boolean;
+  onClose?: () => void;
+}
+
+const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) => {
   const { user } = useAuth();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(testMode);
   const [segments, setSegments] = useState<RouletteSegment[]>([]);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<RouletteSegment | null>(null);
   const [rotation, setRotation] = useState(0);
   const [alreadySpun, setAlreadySpun] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!testMode);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (testMode) {
+      loadSegments();
+      return;
+    }
     if (!user) return;
     checkBirthdayAndSetup();
-  }, [user]);
+  }, [user, testMode]);
 
-  const checkBirthdayAndSetup = async () => {
-    if (!user) return;
-    setLoading(true);
-
-    // Check if roulette is enabled
-    const { data: settingsData } = await supabase
-      .from("payment_settings")
-      .select("key, value")
-      .in("key", ["birthday_roulette_enabled"]);
-
-    const cfg: Record<string, string> = {};
-    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
-
-    if (cfg.birthday_roulette_enabled !== "true") {
-      setLoading(false);
-      return;
-    }
-
-    // Check if today is user's birthday
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("birth_date")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!profile?.birth_date) {
-      setLoading(false);
-      return;
-    }
-
-    const now = new Date();
-    const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-    const todayMonth = String(brt.getUTCMonth() + 1).padStart(2, "0");
-    const todayDay = String(brt.getUTCDate()).padStart(2, "0");
-    const [, m, d] = profile.birth_date.split("-");
-
-    if (m !== todayMonth || d !== todayDay) {
-      setLoading(false);
-      return;
-    }
-
-    // Check if already spun today
-    const todayStr = `${brt.getUTCFullYear()}-${todayMonth}-${todayDay}`;
-    const { data: existingCoupon } = await supabase
-      .from("coupons")
-      .select("id")
-      .eq("user_id", user.id)
-      .gte("created_at", `${todayStr}T00:00:00`)
-      .lte("created_at", `${todayStr}T23:59:59`)
-      .limit(1);
-
-    if (existingCoupon && existingCoupon.length > 0) {
-      setAlreadySpun(true);
-      setLoading(false);
-      return;
-    }
-
-    // Build segments: discounts + free sessions from active services
+  const loadSegments = async () => {
     const { data: servicesData } = await supabase
       .from("services")
       .select("slug, title")
@@ -132,6 +84,63 @@ const BirthdayRoulette = () => {
 
     setSegments(segs);
     setShow(true);
+  };
+
+  const checkBirthdayAndSetup = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    const { data: settingsData } = await supabase
+      .from("payment_settings")
+      .select("key, value")
+      .in("key", ["birthday_roulette_enabled"]);
+
+    const cfg: Record<string, string> = {};
+    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
+
+    if (cfg.birthday_roulette_enabled !== "true") {
+      setLoading(false);
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("birth_date")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!profile?.birth_date) {
+      setLoading(false);
+      return;
+    }
+
+    const now = new Date();
+    const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    const todayMonth = String(brt.getUTCMonth() + 1).padStart(2, "0");
+    const todayDay = String(brt.getUTCDate()).padStart(2, "0");
+    const [, m, d] = profile.birth_date.split("-");
+
+    if (m !== todayMonth || d !== todayDay) {
+      setLoading(false);
+      return;
+    }
+
+    const todayStr = `${brt.getUTCFullYear()}-${todayMonth}-${todayDay}`;
+    const { data: existingCoupon } = await supabase
+      .from("coupons")
+      .select("id")
+      .eq("user_id", user.id)
+      .gte("created_at", `${todayStr}T00:00:00`)
+      .lte("created_at", `${todayStr}T23:59:59`)
+      .limit(1);
+
+    if (existingCoupon && existingCoupon.length > 0) {
+      setAlreadySpun(true);
+      setLoading(false);
+      return;
+    }
+
+    await loadSegments();
     setLoading(false);
   };
 
@@ -239,6 +248,13 @@ const BirthdayRoulette = () => {
   };
 
   const generateCoupon = async (winner: RouletteSegment) => {
+    if (testMode) {
+      // In test mode, don't create real coupons
+      setSpinning(false);
+      toast.success("🎉 Teste! Prêmio sorteado: " + (winner.type === "discount" ? `${winner.value}% OFF` : `Sessão de ${winner.serviceTitle}`));
+      return;
+    }
+
     if (!user) return;
 
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -265,7 +281,6 @@ const BirthdayRoulette = () => {
         return;
       }
     } else {
-      // Free session - store as 100% discount with service info in code
       const { error } = await supabase.from("coupons").insert({
         code,
         user_id: user.id,
@@ -287,7 +302,8 @@ const BirthdayRoulette = () => {
     toast.success("🎉 Parabéns! Seu prêmio foi gerado!");
   };
 
-  if (loading || !show || alreadySpun) return null;
+  if (!testMode && (loading || !show || alreadySpun)) return null;
+  if (testMode && !show) return null;
 
   return (
     <AnimatePresence>
@@ -308,7 +324,7 @@ const BirthdayRoulette = () => {
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-accent/20 rounded-full blur-2xl" />
 
           <button
-            onClick={() => setShow(false)}
+            onClick={() => { setShow(false); onClose?.(); }}
             className="absolute top-4 right-4 p-1 rounded-full hover:bg-muted transition-colors z-10"
           >
             <X className="w-4 h-4 text-muted-foreground" />
@@ -391,7 +407,7 @@ const BirthdayRoulette = () => {
 
           {result && (
             <button
-              onClick={() => setShow(false)}
+              onClick={() => { setShow(false); onClose?.(); }}
               className="w-full py-3 rounded-2xl border border-border text-foreground font-body text-sm font-semibold hover:bg-muted transition-all"
             >
               Fechar
