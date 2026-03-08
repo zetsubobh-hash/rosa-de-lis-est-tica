@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers, ChevronDown, Calendar, Hash, Star } from "lucide-react";
+import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers, ChevronDown, Calendar, Hash, Star, Gift, Ticket, Copy } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getIconByName } from "@/lib/iconMap";
@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
+import { toast } from "sonner";
 
 interface Appointment {
   id: string;
