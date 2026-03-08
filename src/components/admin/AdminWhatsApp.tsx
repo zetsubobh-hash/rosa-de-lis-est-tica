@@ -635,7 +635,7 @@ const AdminWhatsApp = () => {
         </div>
 
         {settings.birthday_roulette_enabled === "true" && (
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="button"
               onClick={() => setShowRouletteTest(true)}
