@@ -177,6 +177,7 @@ const AdminWhatsApp = () => {
   const [broadcastMsg, setBroadcastMsg] = useState(DEFAULT_BROADCAST_MSG);
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [showRouletteTest, setShowRouletteTest] = useState(false);
+  const [showClientPreview, setShowClientPreview] = useState(false);
 
   useEffect(() => {
     const fetchExtras = async () => {
