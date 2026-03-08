@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck, CalendarClock, Send, Cake, Users, Check, Dices } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -227,8 +227,26 @@ const AdminWhatsApp = () => {
     fetchData();
   }, []);
 
+  const saveTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
   const updateField = (key: string, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
+
+    // Debounce auto-save per key (500ms for text, instant for toggles)
+    const isToggle = key.includes("_enabled") || key === "birthday_gift_type";
+    const delay = isToggle ? 0 : 500;
+
+    if (saveTimeouts.current[key]) clearTimeout(saveTimeouts.current[key]);
+    saveTimeouts.current[key] = setTimeout(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await supabase
+          .from("payment_settings")
+          .upsert({ key, value, updated_by: session?.user?.id }, { onConflict: "key" });
+      } catch {
+        // silent fail — user can still use manual save as fallback
+      }
+    }, delay);
   };
 
   const handleSave = async () => {
