@@ -324,7 +324,7 @@ const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) 
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-accent/20 rounded-full blur-2xl" />
 
           <button
-            onClick={() => setShow(false)}
+            onClick={() => { setShow(false); onClose?.(); }}
             className="absolute top-4 right-4 p-1 rounded-full hover:bg-muted transition-colors z-10"
           >
             <X className="w-4 h-4 text-muted-foreground" />
