@@ -27,6 +27,7 @@ const MOCK_COUPONS = [
 const ClientBirthdayPreview = ({ onClose }: ClientBirthdayPreviewProps) => {
   const [showRoulette, setShowRoulette] = useState(true);
   const [showCoupons, setShowCoupons] = useState(false);
+  const [alreadySpun, setAlreadySpun] = useState(false);
 
   return (
     <AnimatePresence>
@@ -74,12 +75,17 @@ const ClientBirthdayPreview = ({ onClose }: ClientBirthdayPreviewProps) => {
             {/* Toggle buttons */}
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowRoulette(true); setShowCoupons(false); }}
+                onClick={() => { if (!alreadySpun) { setShowRoulette(true); setShowCoupons(false); } }}
+                disabled={alreadySpun}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                  showRoulette ? "bg-primary text-primary-foreground" : "border border-border text-foreground hover:bg-muted"
+                  alreadySpun
+                    ? "border border-border text-muted-foreground opacity-50 cursor-not-allowed"
+                    : showRoulette
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border text-foreground hover:bg-muted"
                 }`}
               >
-                🎰 Roleta
+                🎰 {alreadySpun ? "Já girou" : "Roleta"}
               </button>
               <button
                 onClick={() => { setShowCoupons(true); setShowRoulette(false); }}
@@ -169,7 +175,7 @@ const ClientBirthdayPreview = ({ onClose }: ClientBirthdayPreviewProps) => {
 
       {/* Roulette overlay */}
       {showRoulette && (
-        <BirthdayRoulette testMode onClose={() => { setShowRoulette(false); setShowCoupons(true); }} />
+        <BirthdayRoulette testMode onClose={() => { setShowRoulette(false); setShowCoupons(true); setAlreadySpun(true); }} />
       )}
     </AnimatePresence>
   );
