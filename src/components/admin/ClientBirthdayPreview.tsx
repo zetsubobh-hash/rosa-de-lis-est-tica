@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Gift, Ticket, Copy, CalendarCheck, Layers, Sparkles } from "lucide-react";
+import { X, Gift, Ticket, Copy, CalendarCheck } from "lucide-react";
 import BirthdayRoulette from "@/components/BirthdayRoulette";
 
 interface ClientBirthdayPreviewProps {
