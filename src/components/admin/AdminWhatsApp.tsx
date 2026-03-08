@@ -22,6 +22,7 @@ const MSG_KEYS = [
   "birthday_roulette_enabled",
   "whatsapp_msg_roulette_client_enabled", "whatsapp_msg_roulette_client_text",
   "whatsapp_msg_roulette_admin_enabled", "whatsapp_msg_roulette_admin_text",
+  "whatsapp_msg_roulette_invite_enabled", "whatsapp_msg_roulette_invite_text",
 ];
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
