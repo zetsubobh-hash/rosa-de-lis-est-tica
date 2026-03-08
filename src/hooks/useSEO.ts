@@ -57,17 +57,12 @@ export const useSEO = () => {
 
       // OG Image
       if (m.seo_og_image) {
-        // Normalize old PNG path to the valid JPEG asset
-        const normalizedOgImage = m.seo_og_image === "/images/og-rosa-de-lis.png"
-          ? "/images/og-rosa-de-lis.jpg"
-          : m.seo_og_image;
-
-        // Convert relative paths to absolute URLs for social sharing
-        const ogImageUrl = normalizedOgImage.startsWith("http")
-          ? normalizedOgImage
-          : `${window.location.origin}${normalizedOgImage}`;
+        const ogImageUrl = m.seo_og_image.startsWith("http")
+          ? m.seo_og_image
+          : `${window.location.origin}${m.seo_og_image}`;
 
         setMeta("property", "og:image", ogImageUrl);
+        setMeta("property", "og:image:secure_url", ogImageUrl);
         setMeta("name", "twitter:image", ogImageUrl);
       }
 
