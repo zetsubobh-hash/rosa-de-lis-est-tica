@@ -18,6 +18,7 @@ const MSG_KEYS = [
   "whatsapp_msg_birthday_enabled", "whatsapp_msg_birthday_text",
   "whatsapp_msg_birthday_client_enabled", "whatsapp_msg_birthday_client_text",
   "birthday_gift_type", "birthday_gift_discount", "birthday_gift_service", "birthday_gift_custom_text",
+  "birthday_roulette_enabled",
 ];
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
