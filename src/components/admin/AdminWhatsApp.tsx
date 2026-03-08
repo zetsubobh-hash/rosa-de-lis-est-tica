@@ -105,7 +105,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: Cake,
     enabledKey: "whatsapp_msg_birthday_enabled",
     textKey: "whatsapp_msg_birthday_text",
-    variables: ["{nome}", "{idade}", "{telefone}", "{empresa}", "{brinde}"],
+    variables: ["{nome}", "{idade}", "{telefone}", "{empresa}", "{brinde}", "{cupom}"],
   },
   {
     key: "birthday_client",
@@ -114,7 +114,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     icon: Cake,
     enabledKey: "whatsapp_msg_birthday_client_enabled",
     textKey: "whatsapp_msg_birthday_client_text",
-    variables: ["{nome}", "{idade}", "{empresa}", "{brinde}"],
+    variables: ["{nome}", "{idade}", "{empresa}", "{brinde}", "{cupom}"],
   },
 ];
 
