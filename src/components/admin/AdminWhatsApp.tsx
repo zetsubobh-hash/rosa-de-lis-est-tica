@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck, CalendarClock, Send, Cake, Users, Check } from "lucide-react";
+import { MessageCircle, QrCode, Wifi, WifiOff, Save, RefreshCw, Loader2, Power, PowerOff, Trash2, Bell, Mail, Ban, ChevronDown, ChevronUp, Info, ShieldCheck, CalendarClock, Send, Cake, Users, Check, Dices } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ const MSG_KEYS = [
   "whatsapp_msg_birthday_enabled", "whatsapp_msg_birthday_text",
   "whatsapp_msg_birthday_client_enabled", "whatsapp_msg_birthday_client_text",
   "birthday_gift_type", "birthday_gift_discount", "birthday_gift_service", "birthday_gift_custom_text",
+  "birthday_roulette_enabled",
 ];
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
@@ -656,6 +657,25 @@ const AdminWhatsApp = () => {
             </p>
           </div>
         )}
+      </motion.div>
+
+      {/* ═══════════ BIRTHDAY ROULETTE ═══════════ */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.075 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Dices className="w-4 h-4 text-primary" />
+            <div>
+              <h3 className="font-heading text-sm font-bold text-foreground">🎰 Roleta de Aniversário</h3>
+              <p className="font-body text-[11px] text-muted-foreground">
+                Quando ativada, o cliente vê uma roleta ao acessar o app no dia do aniversário e ganha um prêmio aleatório (desconto de 10% a 60% ou sessão gratuita).
+              </p>
+            </div>
+          </div>
+          <Switch
+            checked={settings.birthday_roulette_enabled === "true"}
+            onCheckedChange={(checked) => updateField("birthday_roulette_enabled", checked ? "true" : "false")}
+          />
+        </div>
       </motion.div>
 
       {/* ═══════════ BROADCAST TO PARTNERS ═══════════ */}

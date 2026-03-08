@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import BirthdayRoulette from "@/components/BirthdayRoulette";
 
 const About = lazy(() => import("@/components/About"));
 const Services = lazy(() => import("@/components/Services"));
@@ -28,6 +29,7 @@ const Index = () => {
       <LazySection><Contact /></LazySection>
       <LazySection><Footer /></LazySection>
       <WhatsAppButton />
+      <BirthdayRoulette />
     </div>
   );
 };
