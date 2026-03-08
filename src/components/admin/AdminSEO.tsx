@@ -29,12 +29,11 @@ const AdminSEO = () => {
   const [ogPreview, setOgPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const defaultOgUrl = "https://sxzmtnsfsyifujdnqyzr.supabase.co/storage/v1/object/public/branding/og-image.png";
+
   if (!initialized && !loading) {
     setForm({ ...settings });
-    const normalizedOgImage = settings.seo_og_image === "/images/og-rosa-de-lis.png"
-      ? "/images/og-rosa-de-lis.jpg"
-      : settings.seo_og_image;
-    setOgPreview(normalizedOgImage || "/images/og-rosa-de-lis.jpg");
+    setOgPreview(settings.seo_og_image || defaultOgUrl);
     setInitialized(true);
   }
 
@@ -45,23 +44,28 @@ const AdminSEO = () => {
       toast.error("Selecione um arquivo de imagem válido.");
       return;
     }
+
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `og-image.${ext}`;
-      await supabase.storage.from("branding").remove([path]);
+      const path = "og-image.png";
       const { error: uploadError } = await supabase.storage
         .from("branding")
         .upload(path, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
+
       const { data: urlData } = supabase.storage.from("branding").getPublicUrl(path);
-      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-      setForm((prev) => ({ ...prev, seo_og_image: publicUrl }));
-      setOgPreview(publicUrl);
-      toast.success("Imagem carregada! Clique em Salvar para aplicar.");
+      const stableUrl = urlData.publicUrl;
+      const previewUrl = `${stableUrl}?t=${Date.now()}`;
+
+      setForm((prev) => ({ ...prev, seo_og_image: stableUrl }));
+      setOgPreview(previewUrl);
+
+      await updateSetting("seo_og_image", stableUrl);
+      toast.success("Imagem OG atualizada e aplicada automaticamente.");
     } catch {
       toast.error("Erro ao enviar imagem.");
     }
+
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
