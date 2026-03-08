@@ -176,6 +176,11 @@ const AdminWhatsApp = () => {
       for (const [key, defaultVal] of Object.entries(DEFAULT_TEMPLATES)) {
         if (!map[key]) map[key] = defaultVal;
       }
+
+      // Keep birthday automations enabled by default when setting is missing
+      if (!map.whatsapp_msg_birthday_enabled) map.whatsapp_msg_birthday_enabled = "true";
+      if (!map.whatsapp_msg_birthday_client_enabled) map.whatsapp_msg_birthday_client_enabled = "true";
+
       setSettings(map);
       setLoading(false);
     };
