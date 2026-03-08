@@ -33,7 +33,10 @@ const proxyImageResponse = async (imageUrl: string, version: string) => {
     headers: {
       ...corsHeaders,
       "Content-Type": upstream.headers.get("content-type") || "image/png",
-      "Cache-Control": "no-store, max-age=0, must-revalidate",
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+      "Pragma": "no-cache",
+      "Expires": "0",
+      "Surrogate-Control": "no-store",
       "X-Robots-Tag": "none",
     },
   });

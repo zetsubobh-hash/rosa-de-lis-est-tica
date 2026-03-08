@@ -55,12 +55,12 @@ const AdminSEO = () => {
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from("branding").getPublicUrl(path);
-      const stableUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      const publicUrl = urlData.publicUrl;
 
-      setForm((prev) => ({ ...prev, seo_og_image: stableUrl }));
-      setOgPreview(stableUrl);
+      setForm((prev) => ({ ...prev, seo_og_image: publicUrl }));
+      setOgPreview(`${publicUrl}?t=${Date.now()}`);
 
-      await updateSetting("seo_og_image", stableUrl);
+      await updateSetting("seo_og_image", publicUrl);
       toast.success("Imagem OG atualizada e aplicada automaticamente.");
     } catch {
       toast.error("Erro ao enviar imagem.");
