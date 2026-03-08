@@ -337,12 +337,14 @@ const AdminWhatsApp = () => {
   };
 
   // Build dynamic gift text from current settings
-  const buildGiftText = () => {
+  const buildGiftText = (couponCode = "") => {
     switch (settings.birthday_gift_type) {
-      case "discount":
-        return settings.birthday_gift_discount
+      case "discount": {
+        const base = settings.birthday_gift_discount
           ? `Cupom de ${settings.birthday_gift_discount} de desconto`
           : "Um desconto especial";
+        return couponCode ? `${base}\n🎟️ Código do cupom: ${couponCode}` : base;
+      }
       case "session":
         return settings.birthday_gift_service
           ? `1 sessão gratuita de ${settings.birthday_gift_service}`
@@ -364,7 +366,8 @@ const AdminWhatsApp = () => {
     setTplTestSending((prev) => ({ ...prev, [tplKey]: true }));
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const giftText = buildGiftText();
+      const sampleCoupon = settings.birthday_gift_type === "discount" ? "ANIV-TEST-2026" : "";
+      const giftText = buildGiftText(sampleCoupon);
       // Replace variables with example values
       const text = (settings[textKey] || "")
         .replace(/{nome}/g, "Maria Exemplo")
@@ -374,6 +377,7 @@ const AdminWhatsApp = () => {
         .replace(/{empresa}/g, "Rosa de Lis")
         .replace(/{idade}/g, "30")
         .replace(/{telefone}/g, "(11) 99999-9999")
+        .replace(/{cupom}/g, sampleCoupon)
         .replace(/{brinde}/g, giftText);
       const res = await fetch(
         `${SUPABASE_URL}/functions/v1/evolution`,
