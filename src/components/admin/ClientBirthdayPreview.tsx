@@ -175,7 +175,7 @@ const ClientBirthdayPreview = ({ onClose }: ClientBirthdayPreviewProps) => {
 
       {/* Roulette overlay */}
       {showRoulette && (
-        <BirthdayRoulette testMode onClose={() => { setShowRoulette(false); setShowCoupons(true); }} />
+        <BirthdayRoulette testMode onClose={() => { setShowRoulette(false); setShowCoupons(true); setAlreadySpun(true); }} />
       )}
     </AnimatePresence>
   );
