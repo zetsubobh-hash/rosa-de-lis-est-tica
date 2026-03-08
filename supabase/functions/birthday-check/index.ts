@@ -27,17 +27,17 @@ function generateCouponCode(): string {
 function parseDiscount(raw: string): { type: "percent" | "fixed"; value: number } | null {
   if (!raw || raw.trim() === "") return null;
   const cleaned = raw.replace(/\s/g, "").replace(",", ".");
-  // Check for percentage: "20%", "20"
+
   if (cleaned.endsWith("%")) {
     const num = parseFloat(cleaned.replace("%", ""));
     return num > 0 ? { type: "percent", value: num } : null;
   }
-  // Check for R$ prefix: "R$50", "R$50.00"
+
   if (cleaned.toUpperCase().startsWith("R$")) {
     const num = parseFloat(cleaned.replace(/R\$/i, ""));
-    return num > 0 ? { type: "fixed", value: Math.round(num * 100) } : null; // store as cents
+    return num > 0 ? { type: "fixed", value: Math.round(num * 100) } : null;
   }
-  // Plain number — treat as percent if <= 100, fixed (reais) otherwise
+
   const num = parseFloat(cleaned);
   if (isNaN(num) || num <= 0) return null;
   if (num <= 100) return { type: "percent", value: num };
@@ -54,7 +54,6 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Get today's month and day (Brazil timezone UTC-3)
     const now = new Date();
     const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
     const month = String(brt.getUTCMonth() + 1).padStart(2, "0");
@@ -62,7 +61,6 @@ serve(async (req) => {
 
     console.log(`Checking birthdays for ${day}/${month}`);
 
-    // Fetch all profiles with birth_date
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, full_name, phone, birth_date")
@@ -73,7 +71,6 @@ serve(async (req) => {
       return json({ error: profilesError.message }, 500);
     }
 
-    // Filter profiles whose birth_date matches today
     const birthdayProfiles = (profiles || []).filter((p: any) => {
       if (!p.birth_date) return false;
       const [, m, d] = p.birth_date.split("-");
@@ -87,7 +84,6 @@ serve(async (req) => {
 
     console.log(`Found ${birthdayProfiles.length} birthday(s) today`);
 
-    // Check all settings
     const { data: settingsData } = await supabase
       .from("payment_settings")
       .select("key, value")
@@ -107,14 +103,16 @@ serve(async (req) => {
       ]);
 
     const cfg: Record<string, string> = {};
-    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
+    settingsData?.forEach((r: any) => {
+      cfg[r.key] = r.value;
+    });
 
     if (cfg.evolution_enabled !== "true") {
       return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Evolution disabled" });
     }
 
     const adminEnabled = cfg.whatsapp_msg_birthday_enabled !== "false";
-    const clientEnabled = cfg.whatsapp_msg_birthday_client_enabled === "true";
+    const clientEnabled = cfg.whatsapp_msg_birthday_client_enabled !== "false";
 
     if (!adminEnabled && !clientEnabled) {
       return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Both birthday notifications disabled" });
@@ -128,7 +126,6 @@ serve(async (req) => {
       return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Evolution not configured" });
     }
 
-    // Build gift text based on type, and generate coupon if discount
     const isDiscountGift = cfg.birthday_gift_type === "discount";
     const discountInfo = isDiscountGift ? parseDiscount(cfg.birthday_gift_discount || "") : null;
 
@@ -151,7 +148,6 @@ serve(async (req) => {
         baseGiftText = "Uma surpresa especial";
     }
 
-    // Get business name
     const { data: siteSettingsData } = await supabase
       .from("site_settings")
       .select("value")
@@ -159,20 +155,13 @@ serve(async (req) => {
       .maybeSingle();
     const businessName = siteSettingsData?.value || "Rosa de Lis Estética";
 
-    // Fetch admin phones
     let adminPhones: string[] = [];
     if (adminEnabled) {
-      const { data: adminRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
+      const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
 
       const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
       if (adminUserIds.length > 0) {
-        const { data: adminProfiles } = await supabase
-          .from("profiles")
-          .select("phone")
-          .in("user_id", adminUserIds);
+        const { data: adminProfiles } = await supabase.from("profiles").select("phone").in("user_id", adminUserIds);
         adminPhones = adminProfiles?.map((p: any) => p.phone).filter(Boolean) || [];
       }
     }
@@ -187,10 +176,8 @@ serve(async (req) => {
           body: JSON.stringify({ number, text }),
         });
         await res.json();
-        console.log(`Message sent to ${number}:`, res.status);
         return { phone: number, success: res.ok };
-      } catch (e) {
-        console.error(`Failed to send to ${number}:`, e);
+      } catch {
         return { phone: number, success: false };
       }
     };
@@ -211,14 +198,12 @@ serve(async (req) => {
       const [year] = profile.birth_date.split("-");
       const age = String(brt.getUTCFullYear() - parseInt(year));
 
-      // Generate coupon code if discount gift type
       let couponCode = "";
       let giftText = baseGiftText;
 
       if (isDiscountGift && discountInfo && profile.user_id) {
         couponCode = generateCouponCode();
-        // Ensure unique code (retry once if collision)
-        const expiresAt = new Date(brt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+        const expiresAt = new Date(brt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
         const { error: couponError } = await supabase.from("coupons").insert({
           code: couponCode,
@@ -229,8 +214,6 @@ serve(async (req) => {
         });
 
         if (couponError) {
-          console.error("Failed to create coupon:", couponError);
-          // Try once more with new code
           couponCode = generateCouponCode();
           await supabase.from("coupons").insert({
             code: couponCode,
@@ -241,7 +224,6 @@ serve(async (req) => {
           });
         }
 
-        console.log(`Created coupon ${couponCode} for ${profile.full_name} (${discountInfo.type}: ${discountInfo.value})`);
         giftText = `${baseGiftText}\n🎟️ Código do cupom: *${couponCode}*\n📅 Válido por 30 dias`;
       }
 
@@ -251,29 +233,37 @@ serve(async (req) => {
         telefone: profile.phone || "Não cadastrado",
         empresa: businessName,
         brinde: giftText,
-        cupom: couponCode,
+        cupom: couponCode || "",
       };
 
-      // Send to admins
       if (adminEnabled && adminPhones.length > 0) {
+        const adminTemplateWithFallback =
+          adminTemplate && (adminTemplate.includes("{brinde}") || adminTemplate.includes("{cupom}"))
+            ? adminTemplate
+            : `${adminTemplate || ""}\n\n🎁 Brinde: {brinde}${isDiscountGift ? "\n🎟️ Cupom: {cupom}" : ""}`.trim();
+
         const adminMsg = adminTemplate
-          ? applyTemplate(adminTemplate, vars)
+          ? applyTemplate(adminTemplateWithFallback, vars)
           : `🎂 *Aniversário de Cliente!*\n\n👤 *${vars.nome}* completa *${vars.idade} anos* hoje!\n📱 Telefone: ${vars.telefone}\n🎁 Brinde: ${vars.brinde}\n\n💡 Que tal enviar uma mensagem de parabéns?\n\n_${vars.empresa}_`;
 
         for (const adminPhone of adminPhones) {
           const r = await sendMessage(adminPhone, adminMsg);
-          results.push({ ...r, type: "admin", client: profile.full_name });
+          results.push({ ...r, type: "admin", client: profile.full_name, coupon: couponCode || null });
         }
       }
 
-      // Send to client
       if (clientEnabled && profile.phone) {
+        const clientTemplateWithFallback =
+          clientTemplate && (clientTemplate.includes("{brinde}") || clientTemplate.includes("{cupom}"))
+            ? clientTemplate
+            : `${clientTemplate || ""}\n\n🎁 Brinde: {brinde}${isDiscountGift ? "\n🎟️ Código do cupom: *{cupom}*" : ""}`.trim();
+
         const clientMsg = clientTemplate
-          ? applyTemplate(clientTemplate, vars)
+          ? applyTemplate(clientTemplateWithFallback, vars)
           : `🎂 *Parabéns, ${vars.nome}!* 🎉\n\nA *${vars.empresa}* deseja um feliz aniversário! 🥳\n\nPreparamos um presente especial pra você:\n🎁 *${vars.brinde}*\n\nEntre em contato para agendar! 💕`;
 
         const r = await sendMessage(profile.phone, clientMsg);
-        results.push({ ...r, type: "client", client: profile.full_name });
+        results.push({ ...r, type: "client", client: profile.full_name, coupon: couponCode || null });
       }
     }
 
