@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { QrCode, CreditCard, CheckCircle, Copy, ArrowLeft, ShieldCheck } from "lucide-react";
+import { QrCode, CreditCard, CheckCircle, Copy, ArrowLeft, ShieldCheck, Tag, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePaymentSettings } from "@/hooks/usePaymentSettings";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { getIconByName } from "@/lib/iconMap";
 import { useAllServicePrices, formatCents } from "@/hooks/useServicePrices";
+import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -20,6 +21,12 @@ interface AppointmentInfo {
   appointment_date: string;
   appointment_time: string;
   notes: string | null;
+}
+
+interface AppliedCoupon {
+  code: string;
+  discount_type: "percent" | "fixed";
+  discount_value: number;
 }
 
 const Checkout = () => {
@@ -36,45 +43,96 @@ const Checkout = () => {
   const [pixCopied, setPixCopied] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+
   // Get appointment IDs from URL
   const appointmentIds = searchParams.get("ids")?.split(",") || [];
 
   useEffect(() => {
-    console.log("[Checkout] useEffect - user:", user?.id, "appointmentIds:", appointmentIds);
-    
-    if (!user) {
-      console.log("[Checkout] No user, redirecting to home");
-      navigate("/", { replace: true });
-      return;
-    }
-
+    if (!user) { navigate("/", { replace: true }); return; }
     const fetchAppointments = async () => {
-      if (appointmentIds.length === 0) {
-        console.log("[Checkout] No appointment IDs, redirecting to home");
-        navigate("/", { replace: true });
-        return;
-      }
-      console.log("[Checkout] Fetching appointments for IDs:", appointmentIds);
-      const { data, error } = await supabase
+      if (appointmentIds.length === 0) { navigate("/", { replace: true }); return; }
+      const { data } = await supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time, notes")
         .in("id", appointmentIds)
         .eq("user_id", user.id)
         .eq("status", "pending");
 
-      console.log("[Checkout] Query result - data:", JSON.stringify(data), "error:", JSON.stringify(error));
-      
       if (data && data.length > 0) {
         setAppointments(data);
       } else {
-        console.log("[Checkout] No matching appointments found, redirecting to home");
         navigate("/", { replace: true });
       }
       setLoading(false);
     };
-
     fetchAppointments();
   }, [user]);
+
+  // Calculate total from appointments
+  const getTotal = () => {
+    return appointments.reduce((sum, apt) => {
+      if (apt.notes) {
+        try { return sum + (JSON.parse(apt.notes).price_cents || 0); } catch { return sum; }
+      }
+      return sum;
+    }, 0);
+  };
+
+  const getDiscountAmount = (totalCents: number) => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.discount_type === "percent") {
+      return Math.round(totalCents * appliedCoupon.discount_value / 100);
+    }
+    // Fixed discount in cents
+    return Math.min(appliedCoupon.discount_value, totalCents);
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) return;
+    setCouponLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", code)
+        .eq("user_id", user!.id)
+        .eq("is_used", false)
+        .maybeSingle();
+
+      if (error || !data) {
+        toast({ title: "Cupom inválido", description: "Este cupom não existe, já foi usado ou não pertence a você.", variant: "destructive" });
+        setCouponLoading(false);
+        return;
+      }
+
+      // Check expiry
+      if (new Date(data.expires_at) < new Date()) {
+        toast({ title: "Cupom expirado", description: "Este cupom já expirou.", variant: "destructive" });
+        setCouponLoading(false);
+        return;
+      }
+
+      setAppliedCoupon({
+        code: data.code,
+        discount_type: data.discount_type as "percent" | "fixed",
+        discount_value: Number(data.discount_value),
+      });
+      toast({ title: "Cupom aplicado! 🎉", description: `Desconto de ${data.discount_type === "percent" ? `${data.discount_value}%` : formatCents(Number(data.discount_value))} aplicado.` });
+    } catch {
+      toast({ title: "Erro ao validar cupom", variant: "destructive" });
+    }
+    setCouponLoading(false);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+  };
 
   const handleCopyPix = () => {
     navigator.clipboard.writeText(settings.pix_key);
@@ -86,21 +144,42 @@ const Checkout = () => {
   const handleConfirmPixPayment = async () => {
     setConfirming(true);
     try {
-      // Create payment records as pending — admin will confirm later
+      const totalCents = getTotal();
+      const discountCents = getDiscountAmount(totalCents);
+      const finalCents = totalCents - discountCents;
+
+      // Create payment records as pending
       for (const apt of appointments) {
+        const metadata: Record<string, any> = {};
+        if (appliedCoupon) {
+          metadata.coupon_code = appliedCoupon.code;
+          metadata.discount_type = appliedCoupon.discount_type;
+          metadata.discount_value = appliedCoupon.discount_value;
+          metadata.discount_cents = discountCents;
+          metadata.original_total_cents = totalCents;
+        }
+
         const { error } = await supabase.from("payments").insert({
           user_id: user!.id,
           appointment_id: apt.id,
           method: "pix_manual",
           status: "pending",
+          amount_cents: finalCents > 0 ? finalCents : 0,
+          metadata,
         });
         if (error) throw error;
       }
 
-      // Keep appointment status as "pending" — admin confirms via agenda
-      // No status change here!
+      // Mark coupon as used
+      if (appliedCoupon) {
+        await supabase
+          .from("coupons")
+          .update({ is_used: true, used_at: new Date().toISOString() })
+          .eq("code", appliedCoupon.code)
+          .eq("user_id", user!.id);
+      }
 
-      // Fire WhatsApp notification to admin about pending payment
+      // Fire WhatsApp notification
       const { data: { session } } = await supabase.auth.getSession();
       fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
         method: "POST",
@@ -125,7 +204,6 @@ const Checkout = () => {
   };
 
   const handleMercadoPago = () => {
-    // TODO: Integrate with Mercado Pago Checkout Transparente
     toast({
       title: "Em breve",
       description: "Integração com Mercado Pago em desenvolvimento.",
@@ -146,6 +224,10 @@ const Checkout = () => {
       </div>
     );
   }
+
+  const totalCents = getTotal();
+  const discountCents = getDiscountAmount(totalCents);
+  const finalCents = totalCents - discountCents;
 
   return (
     <div className="min-h-screen bg-background">
@@ -174,7 +256,6 @@ const Checkout = () => {
           <div className="space-y-3">
             {appointments.map((apt) => {
               const Icon = getIconByName("Sparkles");
-              // Get price from notes (plan info) or fallback
               let priceCents = 0;
               let planName = "";
               if (apt.notes) {
@@ -184,7 +265,6 @@ const Checkout = () => {
                   planName = noteData.plan || "";
                 } catch { /* ignore */ }
               }
-              // If no price in notes, try to find from DB prices
               if (!priceCents && allPrices.length > 0) {
                 const dbPrice = allPrices.find((p) => p.service_slug === apt.service_slug && p.plan_name === "Essencial");
                 if (dbPrice) priceCents = dbPrice.total_price_cents;
@@ -212,24 +292,74 @@ const Checkout = () => {
               );
             })}
           </div>
-          {(() => {
-            const total = appointments.reduce((sum, apt) => {
-              if (apt.notes) {
-                try { return sum + (JSON.parse(apt.notes).price_cents || 0); } catch { return sum; }
-              }
-              return sum;
-            }, 0);
-            return total > 0 ? (
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+
+          {/* Coupon section */}
+          {totalCents > 0 && (
+            <div className="mt-4 pt-4 border-t border-border">
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-emerald-600" />
+                    <div>
+                      <p className="font-body text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                        Cupom {appliedCoupon.code}
+                      </p>
+                      <p className="font-body text-xs text-emerald-600 dark:text-emerald-500">
+                        -{appliedCoupon.discount_type === "percent" ? `${appliedCoupon.discount_value}%` : formatCents(appliedCoupon.discount_value)}
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={handleRemoveCoupon} className="p-1 rounded-full hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors">
+                    <X className="w-4 h-4 text-emerald-600" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Código do cupom"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    className="font-body text-sm uppercase tracking-wider"
+                  />
+                  <motion.button
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !couponCode.trim()}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-4 py-2 bg-primary text-primary-foreground font-body text-xs font-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {couponLoading ? "..." : "Aplicar"}
+                  </motion.button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Totals */}
+          {totalCents > 0 ? (
+            <div className="mt-4 pt-4 border-t border-border space-y-2">
+              {discountCents > 0 && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="font-body text-sm text-muted-foreground">Subtotal</span>
+                    <span className="font-body text-sm text-muted-foreground">{formatCents(totalCents)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-600">
+                    <span className="font-body text-sm">Desconto</span>
+                    <span className="font-body text-sm font-semibold">-{formatCents(discountCents)}</span>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center justify-between">
                 <span className="font-body text-sm font-semibold text-foreground">Total</span>
-                <span className="font-heading text-lg font-bold text-primary">{formatCents(total)}</span>
+                <span className="font-heading text-lg font-bold text-primary">{formatCents(finalCents)}</span>
               </div>
-            ) : (
-              <p className="font-body text-xs text-muted-foreground text-center mt-4">
-                Valores conforme avaliação personalizada.
-              </p>
-            );
-          })()}
+            </div>
+          ) : (
+            <p className="font-body text-xs text-muted-foreground text-center mt-4">
+              Valores conforme avaliação personalizada.
+            </p>
+          )}
         </motion.div>
 
         {/* Payment methods */}
@@ -241,15 +371,12 @@ const Checkout = () => {
           <div className="space-y-4">
             <h2 className="font-heading text-lg font-bold text-foreground">Escolha o método de pagamento</h2>
 
-            {/* PIX option */}
             {settings.pix_enabled && (
               <motion.button
                 onClick={() => setSelectedMethod("pix")}
                 whileHover={{ scale: 1.02 }}
                 className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${
-                  selectedMethod === "pix"
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-card hover:border-primary/40"
+                  selectedMethod === "pix" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -263,15 +390,12 @@ const Checkout = () => {
               </motion.button>
             )}
 
-            {/* Mercado Pago option */}
             {settings.mercadopago_enabled && (
               <motion.button
                 onClick={() => setSelectedMethod("mercadopago")}
                 whileHover={{ scale: 1.02 }}
                 className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${
-                  selectedMethod === "mercadopago"
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-card hover:border-primary/40"
+                  selectedMethod === "mercadopago" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -285,7 +409,6 @@ const Checkout = () => {
               </motion.button>
             )}
 
-            {/* PIX details */}
             {selectedMethod === "pix" && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -311,6 +434,13 @@ const Checkout = () => {
                   </div>
                 </div>
 
+                {finalCents > 0 && (
+                  <div className="p-3 rounded-2xl bg-primary/5 border border-primary/10 text-center">
+                    <p className="font-body text-xs text-muted-foreground">Valor a transferir</p>
+                    <p className="font-heading text-xl font-bold text-primary">{formatCents(finalCents)}</p>
+                  </div>
+                )}
+
                 <motion.button
                   onClick={handleConfirmPixPayment}
                   disabled={confirming}
@@ -328,7 +458,6 @@ const Checkout = () => {
               </motion.div>
             )}
 
-            {/* Mercado Pago details */}
             {selectedMethod === "mercadopago" && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
