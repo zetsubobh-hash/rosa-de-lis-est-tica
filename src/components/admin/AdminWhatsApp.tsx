@@ -581,7 +581,7 @@ const AdminWhatsApp = () => {
                             <Send className="w-3.5 h-3.5 text-primary" />
                             Enviar teste desta mensagem
                           </label>
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <input
                               type="text"
                               placeholder="(11) 99999-9999"
