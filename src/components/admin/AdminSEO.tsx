@@ -47,16 +47,15 @@ const AdminSEO = () => {
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const path = `og-image-${Date.now()}.${ext}`;
+      const path = "og-image.png";
 
       const { error: uploadError } = await supabase.storage
         .from("branding")
-        .upload(path, file, { upsert: false, contentType: file.type });
+        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "0" });
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from("branding").getPublicUrl(path);
-      const stableUrl = urlData.publicUrl;
+      const stableUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
       setForm((prev) => ({ ...prev, seo_og_image: stableUrl }));
       setOgPreview(stableUrl);
