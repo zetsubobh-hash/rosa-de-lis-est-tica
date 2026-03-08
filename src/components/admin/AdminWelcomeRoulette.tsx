@@ -114,20 +114,20 @@ const AdminWelcomeRoulette = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-card rounded-2xl border border-border p-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-card rounded-2xl border border-border p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Gift className="w-5 h-5 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="font-heading text-base font-bold text-foreground">Roleta de Boas-Vindas</h2>
               <p className="font-body text-xs text-muted-foreground">
-                Novos usuários podem girar a roleta uma vez ao se cadastrar. Chance de ganhar desconto ou não ganhar nada.
+                Novos usuários podem girar a roleta uma vez ao se cadastrar.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <Switch checked={enabled} onCheckedChange={toggleEnabled} />
             <span className={`font-body text-sm font-semibold ${enabled ? "text-primary" : "text-muted-foreground"}`}>
               {enabled ? "Ativada" : "Desativada"}
@@ -180,70 +180,124 @@ const AdminWelcomeRoulette = () => {
             <p className="font-body text-sm text-muted-foreground">Nenhum cupom de boas-vindas gerado ainda.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cliente</th>
-                  <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Código</th>
-                  <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Desconto</th>
-                  <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Validade</th>
-                  <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="text-right p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {prizeCoupons.map((coupon) => {
-                  const expired = new Date(coupon.expires_at) < new Date();
-                  return (
-                    <tr key={coupon.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                      <td className="p-3 font-body text-sm text-foreground">{coupon.user_name}</td>
-                      <td className="p-3 font-mono text-sm text-foreground">{coupon.code}</td>
-                      <td className="p-3 font-body text-sm font-bold text-primary">{coupon.discount_value}%</td>
-                      <td className="p-3 font-body text-xs text-muted-foreground">
-                        {new Date(coupon.expires_at).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className="p-3">
-                        {coupon.is_used ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase">
-                            <CheckCircle2 className="w-3 h-3" /> Usado
-                          </span>
-                        ) : expired ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold uppercase">
-                            <XCircle className="w-3 h-3" /> Expirado
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[10px] font-bold uppercase">
-                            Ativo
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {!coupon.is_used && !expired && (
-                            <button
-                              onClick={() => markUsed(coupon.id)}
-                              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-                              title="Marcar como usado"
-                            >
-                              <CheckCircle2 className="w-4 h-4 text-primary" />
-                            </button>
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cliente</th>
+                    <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Código</th>
+                    <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Desconto</th>
+                    <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Validade</th>
+                    <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                    <th className="text-right p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {prizeCoupons.map((coupon) => {
+                    const expired = new Date(coupon.expires_at) < new Date();
+                    return (
+                      <tr key={coupon.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                        <td className="p-3 font-body text-sm text-foreground">{coupon.user_name}</td>
+                        <td className="p-3 font-mono text-sm text-foreground">{coupon.code}</td>
+                        <td className="p-3 font-body text-sm font-bold text-primary">{coupon.discount_value}%</td>
+                        <td className="p-3 font-body text-xs text-muted-foreground">
+                          {new Date(coupon.expires_at).toLocaleDateString("pt-BR")}
+                        </td>
+                        <td className="p-3">
+                          {coupon.is_used ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase">
+                              <CheckCircle2 className="w-3 h-3" /> Usado
+                            </span>
+                          ) : expired ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold uppercase">
+                              <XCircle className="w-3 h-3" /> Expirado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[10px] font-bold uppercase">
+                              Ativo
+                            </span>
                           )}
+                        </td>
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {!coupon.is_used && !expired && (
+                              <button
+                                onClick={() => markUsed(coupon.id)}
+                                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                                title="Marcar como usado"
+                              >
+                                <CheckCircle2 className="w-4 h-4 text-primary" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => deleteCoupon(coupon.id)}
+                              className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-border">
+              {prizeCoupons.map((coupon) => {
+                const expired = new Date(coupon.expires_at) < new Date();
+                return (
+                  <div key={coupon.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-body text-sm font-semibold text-foreground truncate">{coupon.user_name}</p>
+                      {coupon.is_used ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase flex-shrink-0">
+                          <CheckCircle2 className="w-3 h-3" /> Usado
+                        </span>
+                      ) : expired ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-bold uppercase flex-shrink-0">
+                          <XCircle className="w-3 h-3" /> Expirado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[10px] font-bold uppercase flex-shrink-0">
+                          Ativo
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-mono text-xs text-muted-foreground">{coupon.code}</p>
+                        <p className="font-body text-xs text-muted-foreground">
+                          {coupon.discount_value}% OFF • Até {new Date(coupon.expires_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {!coupon.is_used && !expired && (
                           <button
-                            onClick={() => deleteCoupon(coupon.id)}
-                            className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
-                            title="Excluir"
+                            onClick={() => markUsed(coupon.id)}
+                            className="p-2 rounded-lg hover:bg-muted transition-colors"
                           >
-                            <Trash2 className="w-4 h-4 text-destructive" />
+                            <CheckCircle2 className="w-4 h-4 text-primary" />
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        )}
+                        <button
+                          onClick={() => deleteCoupon(coupon.id)}
+                          className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
