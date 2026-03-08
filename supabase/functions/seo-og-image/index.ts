@@ -9,6 +9,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const withVersion = (url: string, version: string) => `${url}${url.includes("?") ? "&" : "?"}v=${version}`;
+
+const buildAbsoluteImageUrl = (rawImage: string, canonicalBase: string) =>
+  rawImage.startsWith("http")
+    ? rawImage
+    : `${canonicalBase}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`;
+
+const proxyImageResponse = async (imageUrl: string, version: string) => {
+  const upstream = await fetch(withVersion(imageUrl, version), {
+    method: "GET",
+    redirect: "follow",
+  });
+
+  if (!upstream.ok) {
+    throw new Error(`Failed to fetch OG image: ${upstream.status}`);
+  }
+
+  const body = await upstream.arrayBuffer();
+
+  return new Response(body, {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": upstream.headers.get("content-type") || "image/png",
+      "Cache-Control": "no-store, max-age=0, must-revalidate",
+      "X-Robots-Tag": "none",
+    },
+  });
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -45,32 +75,23 @@ serve(async (req) => {
 
     const canonicalBase = (settingsMap.seo_canonical_url || DEFAULT_CANONICAL).replace(/\/$/, "");
     const rawImage = settingsMap.seo_og_image?.trim() || DEFAULT_OG_IMAGE;
-    const finalImage = rawImage.startsWith("http")
-      ? rawImage
-      : `${canonicalBase}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`;
-
-    // Cache-bust so WhatsApp/Facebook picks latest uploaded OG image
+    const imageUrl = buildAbsoluteImageUrl(rawImage, canonicalBase);
     const version = ogUpdatedAt ? new Date(ogUpdatedAt).getTime().toString() : Date.now().toString();
-    const versionedImage = `${finalImage}${finalImage.includes("?") ? "&" : "?"}v=${version}`;
 
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        Location: versionedImage,
-        "Cache-Control": "no-store, max-age=0, must-revalidate",
-      },
-    });
+    return await proxyImageResponse(imageUrl, version);
   } catch (err) {
     console.error("seo-og-image error", err);
 
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        Location: `${DEFAULT_OG_IMAGE}?v=${Date.now()}`,
-        "Cache-Control": "no-store, max-age=0, must-revalidate",
-      },
-    });
+    try {
+      return await proxyImageResponse(DEFAULT_OG_IMAGE, Date.now().toString());
+    } catch {
+      return new Response("OG image unavailable", {
+        status: 503,
+        headers: {
+          ...corsHeaders,
+          "Cache-Control": "no-store, max-age=0, must-revalidate",
+        },
+      });
+    }
   }
 });
