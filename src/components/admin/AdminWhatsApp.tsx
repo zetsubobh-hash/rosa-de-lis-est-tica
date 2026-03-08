@@ -20,6 +20,8 @@ const MSG_KEYS = [
   "whatsapp_msg_birthday_client_enabled", "whatsapp_msg_birthday_client_text",
   "birthday_gift_type", "birthday_gift_discount", "birthday_gift_service", "birthday_gift_custom_text",
   "birthday_roulette_enabled",
+  "whatsapp_msg_roulette_client_enabled", "whatsapp_msg_roulette_client_text",
+  "whatsapp_msg_roulette_admin_enabled", "whatsapp_msg_roulette_admin_text",
 ];
 
 const ALL_KEYS = [...CONFIG_KEYS, ...MSG_KEYS];
@@ -33,6 +35,8 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   whatsapp_msg_admin_text: "🔔 Novo agendamento do Cliente: *{nome}* | Serviço: *{servico}* | Data: *{data}* às *{hora}*.",
   whatsapp_msg_birthday_text: "🎂 *Aniversariante do dia!*\n\n👤 *Nome:* {nome}\n🎈 *Idade:* {idade} anos\n📱 *Telefone:* {telefone}\n\n🎁 *Brinde configurado:* {brinde}\n\n_Lembre-se de entrar em contato para parabenizar e oferecer o presente!_ 💕\n\n— *{empresa}*",
   whatsapp_msg_birthday_client_text: "🎉 *Feliz Aniversário, {nome}!* 🎂\n\nHoje é o seu dia especial e nós da *{empresa}* queremos te parabenizar! 🥳\n\nPreparamos um presente pra você: 🎁\n*{brinde}*\n\nEntre em contato conosco para resgatar seu presente! 💕\n\nUm abraço carinhoso de toda a equipe! 💖\n\n— *{empresa}*",
+  whatsapp_msg_roulette_client_text: "🎰 *Parabéns, {nome}!* 🎉\n\nVocê girou a roleta de aniversário da *{empresa}* e ganhou:\n🎁 *{premio}*\n\n🎟️ Código: *{cupom}*\n📅 Válido por 30 dias\n\nUse no checkout do app para resgatar! 💕\n\n— *{empresa}*",
+  whatsapp_msg_roulette_admin_text: "🎰 *Roleta de Aniversário!*\n\n👤 *{nome}* girou a roleta e ganhou:\n🎁 *{premio}*\n🎟️ Cupom: *{cupom}*\n📱 Telefone: {telefone}\n\n— *{empresa}*",
 };
 
 interface MessageTemplate {
@@ -118,6 +122,24 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
     textKey: "whatsapp_msg_birthday_client_text",
     variables: ["{nome}", "{idade}", "{empresa}", "{brinde}", "{cupom}"],
   },
+  {
+    key: "roulette_client",
+    label: "🎰 Roleta — Prêmio ao Cliente",
+    description: "Enviada ao cliente quando ele gira a roleta e ganha um prêmio",
+    icon: Dices,
+    enabledKey: "whatsapp_msg_roulette_client_enabled",
+    textKey: "whatsapp_msg_roulette_client_text",
+    variables: ["{nome}", "{empresa}", "{premio}", "{cupom}"],
+  },
+  {
+    key: "roulette_admin",
+    label: "🎰 Roleta — Aviso ao Admin",
+    description: "Enviada aos admins quando um cliente gira a roleta",
+    icon: Dices,
+    enabledKey: "whatsapp_msg_roulette_admin_enabled",
+    textKey: "whatsapp_msg_roulette_admin_text",
+    variables: ["{nome}", "{telefone}", "{empresa}", "{premio}", "{cupom}"],
+  },
 ];
 
 const AdminWhatsApp = () => {
@@ -183,6 +205,8 @@ const AdminWhatsApp = () => {
       // Keep birthday automations enabled by default when setting is missing
       if (!map.whatsapp_msg_birthday_enabled) map.whatsapp_msg_birthday_enabled = "true";
       if (!map.whatsapp_msg_birthday_client_enabled) map.whatsapp_msg_birthday_client_enabled = "true";
+      if (!map.whatsapp_msg_roulette_client_enabled) map.whatsapp_msg_roulette_client_enabled = "true";
+      if (!map.whatsapp_msg_roulette_admin_enabled) map.whatsapp_msg_roulette_admin_enabled = "true";
 
       setSettings(map);
       setLoading(false);
@@ -380,8 +404,9 @@ const AdminWhatsApp = () => {
         .replace(/{empresa}/g, "Rosa de Lis")
         .replace(/{idade}/g, "30")
         .replace(/{telefone}/g, "(11) 99999-9999")
-        .replace(/{cupom}/g, sampleCoupon)
-        .replace(/{brinde}/g, giftText);
+        .replace(/{cupom}/g, sampleCoupon || "ANIV-TEST-2026")
+        .replace(/{brinde}/g, giftText)
+        .replace(/{premio}/g, "40% de desconto");
       const res = await fetch(
         `${SUPABASE_URL}/functions/v1/evolution`,
         {
