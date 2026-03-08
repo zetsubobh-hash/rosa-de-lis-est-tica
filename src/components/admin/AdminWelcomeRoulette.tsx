@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Gift, ToggleLeft, ToggleRight, Ticket, CheckCircle2, XCircle, Eye, Trash2 } from "lucide-react";
+import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
