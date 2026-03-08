@@ -261,11 +261,10 @@ const AdminWelcomeRoulette = () => {
   );
 };
 
-// Inline preview component
+import WelcomeRouletteComponent from "@/components/WelcomeRoulette";
+
 const WelcomeRoulettePreview = ({ onClose }: { onClose: () => void }) => {
-  // Lazy import to avoid circular
-  const WelcomeRoulette = require("@/components/WelcomeRoulette").default;
-  return <WelcomeRoulette testMode onClose={onClose} />;
+  return <WelcomeRouletteComponent testMode onClose={onClose} />;
 };
 
 export default AdminWelcomeRoulette;
