@@ -57,8 +57,12 @@ export const useSEO = () => {
 
       // OG Image
       if (m.seo_og_image) {
-        setMeta("property", "og:image", m.seo_og_image);
-        setMeta("name", "twitter:image", m.seo_og_image);
+        // Convert relative paths to absolute URLs for social sharing
+        const ogImageUrl = m.seo_og_image.startsWith("http")
+          ? m.seo_og_image
+          : `${window.location.origin}${m.seo_og_image}`;
+        setMeta("property", "og:image", ogImageUrl);
+        setMeta("name", "twitter:image", ogImageUrl);
       }
 
       // Canonical URL
