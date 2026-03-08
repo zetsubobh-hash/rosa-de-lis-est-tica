@@ -108,35 +108,49 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
+  const [coupons, setCoupons] = useState<{ id: string; code: string; discount_type: string; discount_value: number; expires_at: string; is_used: boolean; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [markingUsed, setMarkingUsed] = useState<string | null>(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    const [profileRes, anamnesisRes, appointmentsRes, partnersRes, couponsRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", userId).single(),
+      supabase.from("anamnesis").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(1),
+      supabase.from("appointments").select("*").eq("user_id", userId).order("appointment_date", { ascending: false }),
+      supabase.from("partners").select("id, full_name"),
+      supabase.from("coupons").select("id, code, discount_type, discount_value, expires_at, is_used, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
+    ]);
+
+    if (profileRes.data) setProfile(profileRes.data as any);
+    if (anamnesisRes.data?.[0]) setAnamnesis(anamnesisRes.data[0] as any);
+    else setAnamnesis(null);
+
+    const partnerMap = new Map((partnersRes.data || []).map((p: any) => [p.id, p.full_name]));
+    setAppointments(
+      (appointmentsRes.data || []).map((a: any) => ({
+        ...a,
+        partner_name: a.partner_id ? partnerMap.get(a.partner_id) || "—" : undefined,
+      }))
+    );
+    setCoupons((couponsRes.data || []) as any);
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-
-    const load = async () => {
-      const [profileRes, anamnesisRes, appointmentsRes, partnersRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", userId).single(),
-        supabase.from("anamnesis").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(1),
-        supabase.from("appointments").select("*").eq("user_id", userId).order("appointment_date", { ascending: false }),
-        supabase.from("partners").select("id, full_name"),
-      ]);
-
-      if (profileRes.data) setProfile(profileRes.data as any);
-      if (anamnesisRes.data?.[0]) setAnamnesis(anamnesisRes.data[0] as any);
-      else setAnamnesis(null);
-
-      const partnerMap = new Map((partnersRes.data || []).map((p: any) => [p.id, p.full_name]));
-      setAppointments(
-        (appointmentsRes.data || []).map((a: any) => ({
-          ...a,
-          partner_name: a.partner_id ? partnerMap.get(a.partner_id) || "—" : undefined,
-        }))
-      );
-      setLoading(false);
-    };
-    load();
+    loadData();
   }, [open, userId]);
+
+  const handleMarkUsed = async (couponId: string) => {
+    setMarkingUsed(couponId);
+    await supabase
+      .from("coupons")
+      .update({ is_used: true, used_at: new Date().toISOString() })
+      .eq("id", couponId);
+    await loadData();
+    setMarkingUsed(null);
+  };
 
   return (
     <AnimatePresence>
