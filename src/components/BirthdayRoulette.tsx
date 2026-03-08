@@ -407,7 +407,7 @@ const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) 
 
           {result && (
             <button
-              onClick={() => setShow(false)}
+              onClick={() => { setShow(false); onClose?.(); }}}
               className="w-full py-3 rounded-2xl border border-border text-foreground font-body text-sm font-semibold hover:bg-muted transition-all"
             >
               Fechar
