@@ -312,6 +312,100 @@ const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) 
     setAlreadySpun(true);
     setSpinning(false);
     toast.success("🎉 Parabéns! Seu prêmio foi gerado!");
+
+    // Send WhatsApp notifications
+    sendRouletteWhatsApp(winner, code);
+  };
+
+  const sendRouletteWhatsApp = async (winner: RouletteSegment, couponCode: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token || !user) return;
+
+      const premio = winner.type === "discount"
+        ? `${winner.value}% de desconto`
+        : `Sessão gratuita de ${winner.serviceTitle}`;
+
+      // Fetch profile for name/phone
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!profile) return;
+
+      // Fetch settings for templates
+      const { data: settingsData } = await supabase
+        .from("payment_settings")
+        .select("key, value")
+        .in("key", [
+          "evolution_enabled",
+          "whatsapp_msg_roulette_client_enabled", "whatsapp_msg_roulette_client_text",
+          "whatsapp_msg_roulette_admin_enabled", "whatsapp_msg_roulette_admin_text",
+        ]);
+
+      const cfg: Record<string, string> = {};
+      settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
+
+      if (cfg.evolution_enabled !== "true") return;
+
+      // Fetch business name
+      const { data: siteData } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "business_name")
+        .maybeSingle();
+      const empresa = siteData?.value || "Rosa de Lis Estética";
+
+      const vars: Record<string, string> = {
+        nome: profile.full_name,
+        empresa,
+        premio,
+        cupom: couponCode,
+        telefone: profile.phone || "Não cadastrado",
+      };
+
+      const applyVars = (text: string) => {
+        let result = text;
+        for (const [key, val] of Object.entries(vars)) {
+          result = result.replace(new RegExp(`\\{${key}\\}`, "g"), val);
+        }
+        return result;
+      };
+
+      const sendMsg = async (phone: string, text: string) => {
+        const cleanPhone = phone.replace(/\D/g, "");
+        const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+        await supabase.functions.invoke("evolution", {
+          body: { action: "send_test", phone: number, message: text },
+        });
+      };
+
+      // Send to client
+      if (cfg.whatsapp_msg_roulette_client_enabled !== "false" && profile.phone) {
+        const clientTemplate = cfg.whatsapp_msg_roulette_client_text ||
+          "🎰 *Parabéns, {nome}!* 🎉\n\nVocê girou a roleta de aniversário da *{empresa}* e ganhou:\n🎁 *{premio}*\n\n🎟️ Código: *{cupom}*\n📅 Válido por 30 dias\n\nUse no checkout do app para resgatar! 💕\n\n— *{empresa}*";
+        await sendMsg(profile.phone, applyVars(clientTemplate));
+      }
+
+      // Send to admins
+      if (cfg.whatsapp_msg_roulette_admin_enabled !== "false") {
+        const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+        const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
+        if (adminUserIds.length > 0) {
+          const { data: adminProfiles } = await supabase.from("profiles").select("phone").in("user_id", adminUserIds);
+          const adminPhones = adminProfiles?.map((p: any) => p.phone).filter(Boolean) || [];
+          const adminTemplate = cfg.whatsapp_msg_roulette_admin_text ||
+            "🎰 *Roleta de Aniversário!*\n\n👤 *{nome}* girou a roleta e ganhou:\n🎁 *{premio}*\n🎟️ Cupom: *{cupom}*\n📱 Telefone: {telefone}\n\n— *{empresa}*";
+          for (const adminPhone of adminPhones) {
+            await sendMsg(adminPhone, applyVars(adminTemplate));
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error sending roulette WhatsApp:", e);
+    }
   };
 
   if (!testMode && (loading || !show || alreadySpun)) return null;
