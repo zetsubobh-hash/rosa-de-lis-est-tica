@@ -208,6 +208,11 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                   <TabsTrigger value="historico" className="text-xs gap-1.5">
                     <History className="w-3.5 h-3.5" /> Histórico ({appointments.length})
                   </TabsTrigger>
+                  {coupons.length > 0 && (
+                    <TabsTrigger value="cupons" className="text-xs gap-1.5">
+                      <Ticket className="w-3.5 h-3.5" /> Cupons ({coupons.filter(c => !c.is_used).length})
+                    </TabsTrigger>
+                  )}
                 </TabsList>
 
                 <ScrollArea className="flex-1 min-h-0">
