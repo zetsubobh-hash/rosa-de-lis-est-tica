@@ -13,6 +13,37 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+/** Generate a unique coupon code like ANIV-XXXX-XXXX */
+function generateCouponCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "ANIV-";
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  code += "-";
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+/** Parse discount config and determine type/value */
+function parseDiscount(raw: string): { type: "percent" | "fixed"; value: number } | null {
+  if (!raw || raw.trim() === "") return null;
+  const cleaned = raw.replace(/\s/g, "").replace(",", ".");
+  // Check for percentage: "20%", "20"
+  if (cleaned.endsWith("%")) {
+    const num = parseFloat(cleaned.replace("%", ""));
+    return num > 0 ? { type: "percent", value: num } : null;
+  }
+  // Check for R$ prefix: "R$50", "R$50.00"
+  if (cleaned.toUpperCase().startsWith("R$")) {
+    const num = parseFloat(cleaned.replace(/R\$/i, ""));
+    return num > 0 ? { type: "fixed", value: Math.round(num * 100) } : null; // store as cents
+  }
+  // Plain number — treat as percent if <= 100, fixed (reais) otherwise
+  const num = parseFloat(cleaned);
+  if (isNaN(num) || num <= 0) return null;
+  if (num <= 100) return { type: "percent", value: num };
+  return { type: "fixed", value: Math.round(num * 100) };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -97,24 +128,27 @@ serve(async (req) => {
       return json({ success: true, birthdays: birthdayProfiles.length, skipped: true, reason: "Evolution not configured" });
     }
 
-    // Build gift text based on type
-    let giftText = "";
+    // Build gift text based on type, and generate coupon if discount
+    const isDiscountGift = cfg.birthday_gift_type === "discount";
+    const discountInfo = isDiscountGift ? parseDiscount(cfg.birthday_gift_discount || "") : null;
+
+    let baseGiftText = "";
     switch (cfg.birthday_gift_type) {
       case "discount":
-        giftText = cfg.birthday_gift_discount
+        baseGiftText = cfg.birthday_gift_discount
           ? `Cupom de ${cfg.birthday_gift_discount} de desconto`
           : "Um desconto especial";
         break;
       case "session":
-        giftText = cfg.birthday_gift_service
+        baseGiftText = cfg.birthday_gift_service
           ? `1 sessão gratuita de ${cfg.birthday_gift_service}`
           : "1 sessão gratuita";
         break;
       case "custom":
-        giftText = cfg.birthday_gift_custom_text || "Um presente especial";
+        baseGiftText = cfg.birthday_gift_custom_text || "Um presente especial";
         break;
       default:
-        giftText = "Uma surpresa especial";
+        baseGiftText = "Uma surpresa especial";
     }
 
     // Get business name
@@ -152,7 +186,7 @@ serve(async (req) => {
           headers: { apikey: apiKey, "Content-Type": "application/json" },
           body: JSON.stringify({ number, text }),
         });
-        const data = await res.json();
+        await res.json();
         console.log(`Message sent to ${number}:`, res.status);
         return { phone: number, success: res.ok };
       } catch (e) {
@@ -177,12 +211,47 @@ serve(async (req) => {
       const [year] = profile.birth_date.split("-");
       const age = String(brt.getUTCFullYear() - parseInt(year));
 
+      // Generate coupon code if discount gift type
+      let couponCode = "";
+      let giftText = baseGiftText;
+
+      if (isDiscountGift && discountInfo && profile.user_id) {
+        couponCode = generateCouponCode();
+        // Ensure unique code (retry once if collision)
+        const expiresAt = new Date(brt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+
+        const { error: couponError } = await supabase.from("coupons").insert({
+          code: couponCode,
+          user_id: profile.user_id,
+          discount_type: discountInfo.type,
+          discount_value: discountInfo.value,
+          expires_at: expiresAt,
+        });
+
+        if (couponError) {
+          console.error("Failed to create coupon:", couponError);
+          // Try once more with new code
+          couponCode = generateCouponCode();
+          await supabase.from("coupons").insert({
+            code: couponCode,
+            user_id: profile.user_id,
+            discount_type: discountInfo.type,
+            discount_value: discountInfo.value,
+            expires_at: expiresAt,
+          });
+        }
+
+        console.log(`Created coupon ${couponCode} for ${profile.full_name} (${discountInfo.type}: ${discountInfo.value})`);
+        giftText = `${baseGiftText}\n🎟️ Código do cupom: *${couponCode}*\n📅 Válido por 30 dias`;
+      }
+
       const vars: Record<string, string> = {
         nome: profile.full_name,
         idade: age,
         telefone: profile.phone || "Não cadastrado",
         empresa: businessName,
         brinde: giftText,
+        cupom: couponCode,
       };
 
       // Send to admins
