@@ -459,7 +459,7 @@ const AdminWhatsApp = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
@@ -581,7 +581,7 @@ const AdminWhatsApp = () => {
                             <Send className="w-3.5 h-3.5 text-primary" />
                             Enviar teste desta mensagem
                           </label>
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <input
                               type="text"
                               placeholder="(11) 99999-9999"
@@ -635,7 +635,7 @@ const AdminWhatsApp = () => {
         </div>
 
         {settings.birthday_roulette_enabled === "true" && (
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="button"
               onClick={() => setShowRouletteTest(true)}
