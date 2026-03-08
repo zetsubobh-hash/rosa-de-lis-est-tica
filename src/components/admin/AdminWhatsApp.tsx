@@ -716,17 +716,31 @@ const AdminWhatsApp = () => {
           />
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowRouletteTest(true)}
-          className="w-full py-2.5 rounded-xl border border-primary/30 text-primary font-body text-xs font-semibold hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
-        >
-          <Dices className="w-4 h-4" />
-          Testar Roleta (simulação)
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setShowRouletteTest(true)}
+            className="flex-1 py-2.5 rounded-xl border border-primary/30 text-primary font-body text-xs font-semibold hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+          >
+            <Dices className="w-4 h-4" />
+            Testar Roleta
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowClientPreview(true)}
+            className="flex-1 py-2.5 rounded-xl border border-primary/30 text-primary font-body text-xs font-semibold hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+          >
+            <Cake className="w-4 h-4" />
+            Simular Visão do Cliente
+          </button>
+        </div>
 
         {showRouletteTest && (
           <BirthdayRouletteComponent testMode onClose={() => setShowRouletteTest(false)} />
+        )}
+
+        {showClientPreview && (
+          <ClientBirthdayPreview onClose={() => setShowClientPreview(false)} />
         )}
       </motion.div>
 
