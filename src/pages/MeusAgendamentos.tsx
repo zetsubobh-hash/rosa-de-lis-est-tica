@@ -53,6 +53,19 @@ const MeusAgendamentos = () => {
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [scheduleModal, setScheduleModal] = useState<{ planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string } | null>(null);
   const { plans, loading: plansLoading, refetch: refetchPlans } = useClientPlans(user?.id);
+  const [coupons, setCoupons] = useState<{ id: string; code: string; discount_type: string; discount_value: number; expires_at: string; is_used: boolean }[]>([]);
+
+  const fetchCoupons = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("coupons")
+      .select("id, code, discount_type, discount_value, expires_at, is_used")
+      .eq("user_id", user.id)
+      .eq("is_used", false)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
+    setCoupons(data || []);
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -74,6 +87,7 @@ const MeusAgendamentos = () => {
     };
 
     fetchAppointments();
+    fetchCoupons();
   }, [user, authLoading]);
 
   const refetchAll = async () => {
@@ -86,6 +100,7 @@ const MeusAgendamentos = () => {
       .order("appointment_time", { ascending: false });
     setAppointments(data || []);
     refetchPlans();
+    fetchCoupons();
   };
 
   if (loading || authLoading || plansLoading) {
