@@ -28,27 +28,68 @@ const COLORS = [
   "hsl(260, 55%, 55%)",
 ];
 
-const BirthdayRoulette = () => {
+interface BirthdayRouletteProps {
+  testMode?: boolean;
+  onClose?: () => void;
+}
+
+const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) => {
   const { user } = useAuth();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(testMode);
   const [segments, setSegments] = useState<RouletteSegment[]>([]);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<RouletteSegment | null>(null);
   const [rotation, setRotation] = useState(0);
   const [alreadySpun, setAlreadySpun] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!testMode);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (testMode) {
+      loadSegments();
+      return;
+    }
     if (!user) return;
     checkBirthdayAndSetup();
-  }, [user]);
+  }, [user, testMode]);
+
+  const loadSegments = async () => {
+    const { data: servicesData } = await supabase
+      .from("services")
+      .select("slug, title")
+      .eq("is_active", true)
+      .order("sort_order")
+      .limit(6);
+
+    const segs: RouletteSegment[] = [];
+    const discounts = [10, 20, 30, 40, 50, 60];
+    discounts.forEach((d, i) => {
+      segs.push({
+        label: `${d}% OFF`,
+        type: "discount",
+        value: d,
+        color: COLORS[i % COLORS.length],
+      });
+    });
+
+    (servicesData || []).slice(0, 4).forEach((s, i) => {
+      segs.push({
+        label: `Sessão ${s.title.length > 12 ? s.title.substring(0, 12) + "…" : s.title}`,
+        type: "session",
+        value: 0,
+        serviceTitle: s.title,
+        color: COLORS[(6 + i) % COLORS.length],
+      });
+    });
+
+    setSegments(segs);
+    setShow(true);
+  };
 
   const checkBirthdayAndSetup = async () => {
     if (!user) return;
     setLoading(true);
 
-    // Check if roulette is enabled
     const { data: settingsData } = await supabase
       .from("payment_settings")
       .select("key, value")
@@ -62,7 +103,6 @@ const BirthdayRoulette = () => {
       return;
     }
 
-    // Check if today is user's birthday
     const { data: profile } = await supabase
       .from("profiles")
       .select("birth_date")
@@ -85,7 +125,6 @@ const BirthdayRoulette = () => {
       return;
     }
 
-    // Check if already spun today
     const todayStr = `${brt.getUTCFullYear()}-${todayMonth}-${todayDay}`;
     const { data: existingCoupon } = await supabase
       .from("coupons")
