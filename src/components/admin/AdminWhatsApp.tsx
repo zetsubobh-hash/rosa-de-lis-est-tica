@@ -35,6 +35,8 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   whatsapp_msg_admin_text: "🔔 Novo agendamento do Cliente: *{nome}* | Serviço: *{servico}* | Data: *{data}* às *{hora}*.",
   whatsapp_msg_birthday_text: "🎂 *Aniversariante do dia!*\n\n👤 *Nome:* {nome}\n🎈 *Idade:* {idade} anos\n📱 *Telefone:* {telefone}\n\n🎁 *Brinde configurado:* {brinde}\n\n_Lembre-se de entrar em contato para parabenizar e oferecer o presente!_ 💕\n\n— *{empresa}*",
   whatsapp_msg_birthday_client_text: "🎉 *Feliz Aniversário, {nome}!* 🎂\n\nHoje é o seu dia especial e nós da *{empresa}* queremos te parabenizar! 🥳\n\nPreparamos um presente pra você: 🎁\n*{brinde}*\n\nEntre em contato conosco para resgatar seu presente! 💕\n\nUm abraço carinhoso de toda a equipe! 💖\n\n— *{empresa}*",
+  whatsapp_msg_roulette_client_text: "🎰 *Parabéns, {nome}!* 🎉\n\nVocê girou a roleta de aniversário da *{empresa}* e ganhou:\n🎁 *{premio}*\n\n🎟️ Código: *{cupom}*\n📅 Válido por 30 dias\n\nUse no checkout do app para resgatar! 💕\n\n— *{empresa}*",
+  whatsapp_msg_roulette_admin_text: "🎰 *Roleta de Aniversário!*\n\n👤 *{nome}* girou a roleta e ganhou:\n🎁 *{premio}*\n🎟️ Cupom: *{cupom}*\n📱 Telefone: {telefone}\n\n— *{empresa}*",
 };
 
 interface MessageTemplate {
