@@ -27,6 +27,7 @@ const MOCK_COUPONS = [
 const ClientBirthdayPreview = ({ onClose }: ClientBirthdayPreviewProps) => {
   const [showRoulette, setShowRoulette] = useState(true);
   const [showCoupons, setShowCoupons] = useState(false);
+  const [alreadySpun, setAlreadySpun] = useState(false);
 
   return (
     <AnimatePresence>
