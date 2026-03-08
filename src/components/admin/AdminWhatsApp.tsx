@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import BirthdayRouletteComponent from "@/components/BirthdayRoulette";
 
 const CONFIG_KEYS = ["evolution_api_url", "evolution_api_key", "evolution_instance_name", "evolution_enabled", "evolution_notifications_enabled"];
 
