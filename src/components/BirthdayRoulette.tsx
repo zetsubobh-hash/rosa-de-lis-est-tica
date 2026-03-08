@@ -210,35 +210,46 @@ const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) 
     setSpinning(true);
     setResult(null);
 
-    // Pick random segment
-    const winIndex = Math.floor(Math.random() * segments.length);
     const arc = (2 * Math.PI) / segments.length;
-    // Spin 5-8 full rotations + land on winIndex
-    const fullRotations = (5 + Math.random() * 3) * 2 * Math.PI;
-    // The pointer is at top (negative y), so segment center should be at -PI/2
-    const targetAngle = -winIndex * arc - arc / 2 - Math.PI / 2;
-    const finalRotation = fullRotations + targetAngle - (rotation % (2 * Math.PI));
+    // Pick random segment to land on
+    const winIndex = Math.floor(Math.random() * segments.length);
+
+    // The pointer is at the top of the canvas (angle = -π/2 = 3π/2 from 0).
+    // Segment i occupies angles [i*arc, (i+1)*arc] in the drawn wheel.
+    // For the pointer to point at segment winIndex center, we need:
+    //   finalRotation mod 2π such that pointer angle (3π/2) falls inside segment winIndex.
+    // pointerAngle relative to wheel = (3π/2 - finalRot) mod 2π should be in [winIndex*arc, (winIndex+1)*arc]
+    // So: finalRot = 3π/2 - winIndex*arc - arc/2 (to hit center)
+
+    const targetRot = (3 * Math.PI / 2) - winIndex * arc - arc / 2;
+    // Add random offset within segment (avoid exact center for realism)
+    const jitter = (Math.random() - 0.5) * arc * 0.6;
+    const fullSpins = (5 + Math.random() * 3) * 2 * Math.PI;
+    // Normalize to positive rotation
+    const finalTarget = fullSpins + targetRot + jitter;
 
     const startRot = rotation;
-    const totalRot = finalRotation;
+    const totalRot = finalTarget - startRot;
     const duration = 4000;
     const startTime = performance.now();
 
     const animate = (time: number) => {
       const elapsed = time - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       const currentRot = startRot + totalRot * eased;
 
       drawWheel(currentRot);
-      setRotation(currentRot);
 
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
         setRotation(currentRot);
-        const winner = segments[winIndex];
+        // Determine winner from final angle to be 100% accurate
+        const pointerAngle = ((3 * Math.PI / 2) - currentRot) % (2 * Math.PI);
+        const normalized = ((pointerAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        const actualIndex = Math.floor(normalized / arc) % segments.length;
+        const winner = segments[actualIndex];
         setResult(winner);
         generateCoupon(winner);
       }
