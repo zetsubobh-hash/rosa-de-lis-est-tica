@@ -127,19 +127,12 @@ const AdminWelcomeRoulette = () => {
               </p>
             </div>
           </div>
-          <button
-            onClick={toggleEnabled}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all"
-          >
-            {enabled ? (
-              <ToggleRight className="w-8 h-8 text-primary" />
-            ) : (
-              <ToggleLeft className="w-8 h-8 text-muted-foreground" />
-            )}
+          <div className="flex items-center gap-3">
+            <Switch checked={enabled} onCheckedChange={toggleEnabled} />
             <span className={`font-body text-sm font-semibold ${enabled ? "text-primary" : "text-muted-foreground"}`}>
               {enabled ? "Ativada" : "Desativada"}
             </span>
-          </button>
+          </div>
         </div>
 
         <div className="mt-4 flex items-center gap-3">
