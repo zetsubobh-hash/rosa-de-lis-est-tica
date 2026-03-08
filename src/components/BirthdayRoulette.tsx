@@ -140,37 +140,7 @@ const BirthdayRoulette = ({ testMode = false, onClose }: BirthdayRouletteProps) 
       return;
     }
 
-    // Build segments: discounts + free sessions from active services
-    const { data: servicesData } = await supabase
-      .from("services")
-      .select("slug, title")
-      .eq("is_active", true)
-      .order("sort_order")
-      .limit(6);
-
-    const segs: RouletteSegment[] = [];
-    const discounts = [10, 20, 30, 40, 50, 60];
-    discounts.forEach((d, i) => {
-      segs.push({
-        label: `${d}% OFF`,
-        type: "discount",
-        value: d,
-        color: COLORS[i % COLORS.length],
-      });
-    });
-
-    (servicesData || []).slice(0, 4).forEach((s, i) => {
-      segs.push({
-        label: `Sessão ${s.title.length > 12 ? s.title.substring(0, 12) + "…" : s.title}`,
-        type: "session",
-        value: 0,
-        serviceTitle: s.title,
-        color: COLORS[(6 + i) % COLORS.length],
-      });
-    });
-
-    setSegments(segs);
-    setShow(true);
+    await loadSegments();
     setLoading(false);
   };
 
