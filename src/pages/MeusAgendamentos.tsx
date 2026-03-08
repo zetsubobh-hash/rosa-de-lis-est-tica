@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers, ChevronDown, Calendar, Hash, Star } from "lucide-react";
+import { CalendarCheck, ArrowLeft, Clock, XCircle, CheckCircle2, AlertCircle, Layers, ChevronDown, Calendar, Hash, Star, Gift, Ticket, Copy } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getIconByName } from "@/lib/iconMap";
@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
+import { toast } from "sonner";
 
 interface Appointment {
   id: string;
@@ -52,6 +53,19 @@ const MeusAgendamentos = () => {
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [scheduleModal, setScheduleModal] = useState<{ planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string } | null>(null);
   const { plans, loading: plansLoading, refetch: refetchPlans } = useClientPlans(user?.id);
+  const [coupons, setCoupons] = useState<{ id: string; code: string; discount_type: string; discount_value: number; expires_at: string; is_used: boolean }[]>([]);
+
+  const fetchCoupons = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("coupons")
+      .select("id, code, discount_type, discount_value, expires_at, is_used")
+      .eq("user_id", user.id)
+      .eq("is_used", false)
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
+    setCoupons(data || []);
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -73,6 +87,7 @@ const MeusAgendamentos = () => {
     };
 
     fetchAppointments();
+    fetchCoupons();
   }, [user, authLoading]);
 
   const refetchAll = async () => {
@@ -85,6 +100,7 @@ const MeusAgendamentos = () => {
       .order("appointment_time", { ascending: false });
     setAppointments(data || []);
     refetchPlans();
+    fetchCoupons();
   };
 
   if (loading || authLoading || plansLoading) {
@@ -119,6 +135,69 @@ const MeusAgendamentos = () => {
       </section>
 
       <div className="max-w-2xl mx-auto px-6 py-10">
+        {/* Active Birthday Coupons */}
+        {coupons.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Gift className="w-5 h-5 text-primary" />
+              <h2 className="font-heading text-lg font-bold text-foreground">Meus Brindes</h2>
+            </div>
+            <div className="space-y-3">
+              {coupons.map((coupon, idx) => {
+                const isPercent = coupon.discount_type === "percent";
+                const discountLabel = isPercent
+                  ? coupon.discount_value === 100
+                    ? "Sessão Gratuita"
+                    : `${coupon.discount_value}% de desconto`
+                  : `R$ ${(coupon.discount_value / 100).toFixed(2).replace(".", ",")} de desconto`;
+                const expiresDate = new Date(coupon.expires_at).toLocaleDateString("pt-BR");
+
+                return (
+                  <motion.div
+                    key={coupon.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-card rounded-2xl border border-primary/20 overflow-hidden"
+                  >
+                    <div className="p-5">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Ticket className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-heading text-sm font-bold text-foreground">🎁 Brinde de Aniversário</p>
+                          <p className="font-body text-lg font-bold text-primary">{discountLabel}</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-muted/50 rounded-xl p-3 flex items-center justify-between">
+                        <div>
+                          <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider">Código do cupom</p>
+                          <p className="font-mono text-base font-bold text-foreground tracking-wider">{coupon.code}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(coupon.code);
+                            toast.success("Código copiado!");
+                          }}
+                          className="p-2 rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <Copy className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+
+                      <p className="font-body text-xs text-muted-foreground mt-2">
+                        📅 Válido até {expiresDate} • Use no checkout
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Active Plans / Session Progress */}
         {plans.filter((p) => p.status === "active").length > 0 && (
           <div className="mb-8">

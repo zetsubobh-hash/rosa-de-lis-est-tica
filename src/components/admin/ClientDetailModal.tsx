@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake } from "lucide-react";
+import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake, Ticket, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -108,35 +108,49 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
+  const [coupons, setCoupons] = useState<{ id: string; code: string; discount_type: string; discount_value: number; expires_at: string; is_used: boolean; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [markingUsed, setMarkingUsed] = useState<string | null>(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    const [profileRes, anamnesisRes, appointmentsRes, partnersRes, couponsRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", userId).single(),
+      supabase.from("anamnesis").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(1),
+      supabase.from("appointments").select("*").eq("user_id", userId).order("appointment_date", { ascending: false }),
+      supabase.from("partners").select("id, full_name"),
+      supabase.from("coupons").select("id, code, discount_type, discount_value, expires_at, is_used, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
+    ]);
+
+    if (profileRes.data) setProfile(profileRes.data as any);
+    if (anamnesisRes.data?.[0]) setAnamnesis(anamnesisRes.data[0] as any);
+    else setAnamnesis(null);
+
+    const partnerMap = new Map((partnersRes.data || []).map((p: any) => [p.id, p.full_name]));
+    setAppointments(
+      (appointmentsRes.data || []).map((a: any) => ({
+        ...a,
+        partner_name: a.partner_id ? partnerMap.get(a.partner_id) || "—" : undefined,
+      }))
+    );
+    setCoupons((couponsRes.data || []) as any);
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-
-    const load = async () => {
-      const [profileRes, anamnesisRes, appointmentsRes, partnersRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", userId).single(),
-        supabase.from("anamnesis").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(1),
-        supabase.from("appointments").select("*").eq("user_id", userId).order("appointment_date", { ascending: false }),
-        supabase.from("partners").select("id, full_name"),
-      ]);
-
-      if (profileRes.data) setProfile(profileRes.data as any);
-      if (anamnesisRes.data?.[0]) setAnamnesis(anamnesisRes.data[0] as any);
-      else setAnamnesis(null);
-
-      const partnerMap = new Map((partnersRes.data || []).map((p: any) => [p.id, p.full_name]));
-      setAppointments(
-        (appointmentsRes.data || []).map((a: any) => ({
-          ...a,
-          partner_name: a.partner_id ? partnerMap.get(a.partner_id) || "—" : undefined,
-        }))
-      );
-      setLoading(false);
-    };
-    load();
+    loadData();
   }, [open, userId]);
+
+  const handleMarkUsed = async (couponId: string) => {
+    setMarkingUsed(couponId);
+    await supabase
+      .from("coupons")
+      .update({ is_used: true, used_at: new Date().toISOString() })
+      .eq("id", couponId);
+    await loadData();
+    setMarkingUsed(null);
+  };
 
   return (
     <AnimatePresence>
@@ -194,6 +208,11 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                   <TabsTrigger value="historico" className="text-xs gap-1.5">
                     <History className="w-3.5 h-3.5" /> Histórico ({appointments.length})
                   </TabsTrigger>
+                  {coupons.length > 0 && (
+                    <TabsTrigger value="cupons" className="text-xs gap-1.5">
+                      <Ticket className="w-3.5 h-3.5" /> Cupons ({coupons.filter(c => !c.is_used).length})
+                    </TabsTrigger>
+                  )}
                 </TabsList>
 
                 <ScrollArea className="flex-1 min-h-0">
@@ -293,6 +312,55 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                           })}
                         </div>
                       )}
+                    </TabsContent>
+
+                    {/* Cupons */}
+                    <TabsContent value="cupons" className="mt-0">
+                      <div className="space-y-2">
+                        {coupons.map((c) => {
+                          const isPercent = c.discount_type === "percent";
+                          const discountLabel = isPercent
+                            ? c.discount_value === 100
+                              ? "Sessão Gratuita"
+                              : `${c.discount_value}% de desconto`
+                            : `R$ ${(c.discount_value / 100).toFixed(2).replace(".", ",")} de desconto`;
+                          const expired = new Date(c.expires_at) < new Date();
+
+                          return (
+                            <div key={c.id} className={`rounded-xl border p-3 space-y-2 ${c.is_used ? "border-border opacity-60" : expired ? "border-destructive/30 opacity-60" : "border-primary/20"}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <div>
+                                  <p className="font-heading text-sm font-semibold text-foreground">{discountLabel}</p>
+                                  <p className="font-mono text-xs text-muted-foreground">{c.code}</p>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  c.is_used ? "bg-muted text-muted-foreground" : expired ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                                }`}>
+                                  {c.is_used ? "Usado" : expired ? "Expirado" : "Ativo"}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-xs text-muted-foreground font-body">
+                                <span>Criado: {new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
+                                <span>Expira: {new Date(c.expires_at).toLocaleDateString("pt-BR")}</span>
+                              </div>
+                              {!c.is_used && !expired && (
+                                <button
+                                  onClick={() => handleMarkUsed(c.id)}
+                                  disabled={markingUsed === c.id}
+                                  className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-body text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+                                >
+                                  {markingUsed === c.id ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
+                                  Marcar como Usado
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </TabsContent>
                   </div>
                 </ScrollArea>
