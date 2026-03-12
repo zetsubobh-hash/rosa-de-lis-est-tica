@@ -121,7 +121,29 @@ const Agendar = () => {
         notes: planPrice > 0 ? JSON.stringify({ plan: planName, price_cents: planPrice }) : null,
       }));
       const { data, error } = await supabase.from("appointments").insert(inserts).select("id");
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          toast({
+            title: "Horário indisponível",
+            description: "Alguém acabou de agendar nesse mesmo horário. Por favor, escolha outro.",
+            variant: "destructive",
+          });
+          // Refresh booked slots
+          if (selectedDate) {
+            const dateStr = format(selectedDate, "yyyy-MM-dd");
+            const { data: fresh } = await supabase
+              .from("appointments")
+              .select("appointment_time")
+              .eq("appointment_date", dateStr)
+              .in("status", ["confirmed", "pending"]);
+            setBookedSlots(fresh?.map((d: any) => d.appointment_time) || []);
+          }
+          setStep("time");
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
       const ids = data?.map((d: any) => d.id).join(",") || "";
       clearCart();
       navigate(`/checkout?ids=${ids}`);
