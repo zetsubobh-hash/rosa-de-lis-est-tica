@@ -4,9 +4,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Calendar, Clock, CalendarCheck, CalendarClock, CalendarIcon,
-  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift, UserPlus, User
+  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift, User
 } from "lucide-react";
-import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
@@ -16,6 +15,7 @@ import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
+import QuickBookModal from "@/components/admin/QuickBookModal";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 
 interface SessionInfo {
