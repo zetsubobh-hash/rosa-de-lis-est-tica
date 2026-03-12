@@ -295,7 +295,9 @@ const AdminCounterSales = () => {
       setNewClient(emptyNewClient);
       setAvatarSrc(null);
       setAvatarBlob(null);
-      toast.success("Cliente criado com sucesso!");
+      // Send credentials via WhatsApp
+      sendWhatsAppCredentials(rawPhone, full_name.trim(), username, password);
+      toast.success("Cliente criado! Login enviado via WhatsApp 📲");
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar cliente");
     } finally {
