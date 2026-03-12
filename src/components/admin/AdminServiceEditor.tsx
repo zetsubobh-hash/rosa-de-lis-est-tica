@@ -183,14 +183,31 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
     // Save price changes
     if (!saveError) {
-      for (const [id, changes] of Object.entries(editedPrices)) {
+      const changedPlanIds = Array.from(
+        new Set([
+          ...Object.keys(editedPrices),
+          ...Object.keys(rawPriceInputs).filter((id) => rawPriceInputs[id]?.pps !== undefined),
+        ])
+      );
+
+      for (const id of changedPlanIds) {
         const original = prices.find((p) => p.id === id);
         if (!original) continue;
+
+        const changes = editedPrices[id] || {};
+        const rawPps = rawPriceInputs[id]?.pps;
+        const parsedRawPps = rawPps !== undefined ? parseMoneyInput(rawPps).cents : undefined;
+
         const sessions = changes.sessions ?? original.sessions;
-        const pps = changes.price_per_session_cents ?? original.price_per_session_cents;
-        const total = changes.total_price_cents ?? pps * sessions;
-        await supabase.from("service_prices").update({ sessions, price_per_session_cents: pps, total_price_cents: total }).eq("id", id);
+        const pps = parsedRawPps ?? changes.price_per_session_cents ?? original.price_per_session_cents;
+        const total = pps * sessions;
+
+        await supabase
+          .from("service_prices")
+          .update({ sessions, price_per_session_cents: pps, total_price_cents: total })
+          .eq("id", id);
       }
+
       toast({ title: "Serviço salvo com sucesso! ✅" });
       setHasChanges(false);
       setEditedPrices({});
