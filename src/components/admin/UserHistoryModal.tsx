@@ -68,7 +68,7 @@ const METHOD_MAP: Record<string, string> = {
 
 const getStatus = (status: string) => STATUS_MAP[status] || { label: status, class: "bg-muted text-muted-foreground" };
 
-const UserHistoryModal = ({ open, onClose, userId, userName }: Props) => {
+const UserHistoryModal = ({ open, onClose, userId, userName, hidePayments = false }: Props) => {
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
