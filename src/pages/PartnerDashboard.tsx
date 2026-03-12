@@ -881,6 +881,10 @@ const PartnerDashboard = () => {
                   const fullApt = appointments.find(a => a.id === apt.id);
                   return fullApt ? isAppointmentOverdue(fullApt, referenceNow) : false;
                 }}
+                {...(canManageAgenda ? {
+                  onDragReschedule: handleDragReschedule,
+                  onCancel: handleCancelAppointment,
+                } : {})}
               />
             ) : (
               Object.entries(grouped).map(([date, apts]) => (
