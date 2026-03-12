@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Save, QrCode, CreditCard, Eye, EyeOff, ChevronDown, RefreshCw, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { generatePixPayload } from "@/lib/pixPayload";
 
 interface Props {
   initialSettings: Record<string, string>;
