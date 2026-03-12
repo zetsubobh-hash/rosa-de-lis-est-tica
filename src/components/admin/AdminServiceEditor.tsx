@@ -359,6 +359,19 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     setSavingPlanId(null);
   };
 
+  const isPlanEditLocked = editingSection?.startsWith("plan-") || editingSection === "new-plan";
+
+  const handleRootPointerDownCapture = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPlanEditLocked) return;
+    const activeEditor = activePlanEditorRef.current;
+    if (!activeEditor) return;
+
+    if (!activeEditor.contains(e.target as Node)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
   const EditableWrapper = ({ section, children, className = "" }: { section: EditingSection; children: React.ReactNode; className?: string }) => (
     <div
       className={`group relative cursor-pointer rounded-xl transition-all ${
@@ -366,6 +379,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
       } ${className}`}
       onClick={(e) => {
         e.stopPropagation();
+        if (isPlanEditLocked && editingSection !== section) return;
         if (editingSection !== section) setEditingSection(section);
       }}
     >
