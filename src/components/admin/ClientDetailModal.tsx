@@ -163,7 +163,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
         phone: p.phone || "",
         email: p.email || "",
         address: p.address || "",
-        sex: p.sex || "",
+        sex: (p.sex || "").toLowerCase(),
         birth_date: p.birth_date || "",
       });
     }
