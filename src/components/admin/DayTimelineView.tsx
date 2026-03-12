@@ -583,7 +583,7 @@ const DayTimelineView = ({
                     )}
 
                     {/* Actions */}
-                    {!readOnly && (
+                    {!readOnly && !isCompleted && (
                       <div className={cn("flex gap-2", isMobile ? "grid grid-cols-2" : "flex-wrap")}>
                         {block.status === "pending" && onConfirmPayment && (
                           <button onClick={() => onConfirmPayment(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-emerald-400/40 text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all">
@@ -614,6 +614,12 @@ const DayTimelineView = ({
                             <CalendarX className="w-3.5 h-3.5" />Cancelar
                           </button>
                         )}
+                      </div>
+                    )}
+                    {isCompleted && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-[12px] font-bold text-emerald-700 dark:text-emerald-300">Procedimento realizado com sucesso</span>
                       </div>
                     )}
                   </motion.div>
