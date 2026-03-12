@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
+import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 
 interface SessionInfo {
