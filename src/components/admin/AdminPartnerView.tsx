@@ -510,7 +510,7 @@ const AdminPartnerView = () => {
                   >
                     Todos
                   </button>
-                  {Object.keys(grouped).map((date) => (
+                  {[...new Set([today, ...Object.keys(grouped)])].sort().map((date) => (
                     <button
                       key={date}
                       onClick={() => setFilterDate(filterDate === date ? null : date)}
