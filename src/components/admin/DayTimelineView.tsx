@@ -70,6 +70,7 @@ interface DayTimelineViewProps {
   getAppointmentPrice?: (apt: TimelineAppointment, prices: any[]) => string;
   getInitials?: (name: string) => string;
   onAnamnesis?: (userId: string, name: string) => void;
+  onHistory?: (userId: string, name: string) => void;
   /** Called when an empty time slot is clicked */
   onSlotClick?: (time: string) => void;
   /** Called when an appointment is dragged to a new time slot */
