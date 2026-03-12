@@ -48,6 +48,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const [editedPrices, setEditedPrices] = useState<Record<string, Partial<ServicePrice>>>({});
   const [newPlan, setNewPlan] = useState({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activePlanEditorRef = useRef<HTMLDivElement | null>(null);
   const [rawPriceInputs, setRawPriceInputs] = useState<Record<string, { pps?: string; total?: string }>>({});
   const [newPlanRaw, setNewPlanRaw] = useState({ pps: "0,00", total: "0,00" });
 
@@ -358,6 +359,19 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     setSavingPlanId(null);
   };
 
+  const isPlanEditLocked = editingSection?.startsWith("plan-") || editingSection === "new-plan";
+
+  const handleRootPointerDownCapture = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPlanEditLocked) return;
+    const activeEditor = activePlanEditorRef.current;
+    if (!activeEditor) return;
+
+    if (!activeEditor.contains(e.target as Node)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
   const EditableWrapper = ({ section, children, className = "" }: { section: EditingSection; children: React.ReactNode; className?: string }) => (
     <div
       className={`group relative cursor-pointer rounded-xl transition-all ${
@@ -365,6 +379,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
       } ${className}`}
       onClick={(e) => {
         e.stopPropagation();
+        if (isPlanEditLocked && editingSection !== section) return;
         if (editingSection !== section) setEditingSection(section);
       }}
     >
@@ -383,7 +398,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const sortedPrices = [...prices].sort((a, b) => planOrder.indexOf(a.plan_name) - planOrder.indexOf(b.plan_name));
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background overflow-y-auto">
+    <div className="fixed inset-0 z-[60] bg-background overflow-y-auto" onPointerDownCapture={handleRootPointerDownCapture}>
       {/* Top toolbar */}
       <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between gap-3">
         <button onClick={onClose} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-body text-sm">
@@ -737,6 +752,9 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
                       {isEditingPlan ? (
                         <div
+                          ref={(node) => {
+                            if (isEditingPlan) activePlanEditorRef.current = node;
+                          }}
                           className="space-y-3"
                           onClick={(e) => e.stopPropagation()}
                           onMouseDown={(e) => e.stopPropagation()}
@@ -865,6 +883,9 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                 <EditableWrapper section="new-plan">
                   {editingSection === "new-plan" ? (
                     <div
+                      ref={(node) => {
+                        if (editingSection === "new-plan") activePlanEditorRef.current = node;
+                      }}
                       className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3"
                       onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => e.stopPropagation()}
