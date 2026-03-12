@@ -116,6 +116,13 @@ const PartnerDashboard = () => {
   const [showDemoRoulette, setShowDemoRoulette] = useState(false);
   const [filterDate, setFilterDate] = useState<string | null>(formatLocalDate(new Date()));
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
+  const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
+  const [qbUserId, setQbUserId] = useState("");
+  const [qbServiceSlug, setQbServiceSlug] = useState("");
+  const [qbSaving, setQbSaving] = useState(false);
+  const [qbShowNewClient, setQbShowNewClient] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
   const [scheduleModal, setScheduleModal] = useState<{
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
