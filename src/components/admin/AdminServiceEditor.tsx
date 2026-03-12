@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Save, Pencil, X, Plus, Trash2, Upload, Check,
@@ -79,6 +79,32 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
     return { display, cents };
   };
+
+  useEffect(() => {
+    if (!editingSection?.startsWith("plan-")) return;
+
+    const planId = editingSection.replace("plan-", "");
+    const plan = prices.find((item) => item.id === planId);
+    if (!plan) return;
+
+    const edited = editedPrices[planId];
+    const sessions = edited?.sessions ?? plan.sessions;
+    const pps = edited?.price_per_session_cents ?? plan.price_per_session_cents;
+    const total = edited?.total_price_cents ?? pps * sessions;
+
+    setRawPriceInputs((prev) => {
+      if (prev[planId]?.pps !== undefined) return prev;
+
+      return {
+        ...prev,
+        [planId]: {
+          ...prev[planId],
+          pps: centsToStr(pps),
+          total: centsToStr(total),
+        },
+      };
+    });
+  }, [editingSection, prices, editedPrices]);
 
   const Icon = getIconByName(service.icon_name);
 
@@ -723,7 +749,10 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               }}
                               onBlur={() => {
                                 const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
-                                const currentPps = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
+                                const rawPps = rawPriceInputs[plan.id]?.pps;
+                                const currentPps = rawPps !== undefined
+                                  ? parseMoneyInput(rawPps).cents
+                                  : editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
                                 const recalculatedTotal = currentPps * currentSessions;
                                 setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: recalculatedTotal } }));
                                 setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(recalculatedTotal) } }));
