@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { User, Clock, Phone, MessageCircle } from "lucide-react";
+import { User, Phone, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
