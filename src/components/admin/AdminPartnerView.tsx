@@ -83,7 +83,7 @@ const AdminPartnerView = () => {
   const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
   const [scheduleModal, setScheduleModal] = useState<{
-    planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string;
+    planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
@@ -798,6 +798,7 @@ const AdminPartnerView = () => {
           serviceSlug={scheduleModal.serviceSlug}
           serviceTitle={scheduleModal.serviceTitle}
           userId={scheduleModal.userId}
+          partnerId={scheduleModal.partnerId || selectedPartner}
         />
       )}
 

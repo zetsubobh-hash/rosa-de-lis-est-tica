@@ -22,6 +22,7 @@ interface SessionScheduleModalProps {
   serviceSlug: string;
   serviceTitle: string;
   userId: string;
+  partnerId?: string | null;
 }
 
 const SessionScheduleModal = ({
@@ -33,6 +34,7 @@ const SessionScheduleModal = ({
   serviceSlug,
   serviceTitle,
   userId,
+  partnerId,
 }: SessionScheduleModalProps) => {
   const { toast } = useToast();
   const [step, setStep] = useState<"calendar" | "time">("calendar");
@@ -54,21 +56,34 @@ const SessionScheduleModal = ({
     }
   }, [open]);
 
-  // Fetch booked slots when date changes
+  // Fetch booked slots when date changes — filtered by partner if available
   useEffect(() => {
     if (!selectedDate || !open) return;
     const fetchBooked = async () => {
       await supabase.rpc("cleanup_stale_pending_appointments");
       const dateStr = format(selectedDate, "yyyy-MM-dd");
-      const { data } = await supabase
-        .from("appointments")
-        .select("appointment_time")
-        .eq("appointment_date", dateStr)
-        .in("status", ["confirmed", "pending"]);
-      setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
+
+      if (partnerId) {
+        // Only show slots booked by THIS partner
+        const { data } = await supabase
+          .from("appointments")
+          .select("appointment_time")
+          .eq("appointment_date", dateStr)
+          .eq("partner_id", partnerId)
+          .in("status", ["confirmed", "pending"]);
+        setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
+      } else {
+        // No partner context — show all booked slots globally
+        const { data } = await supabase
+          .from("appointments")
+          .select("appointment_time")
+          .eq("appointment_date", dateStr)
+          .in("status", ["confirmed", "pending"]);
+        setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
+      }
     };
     fetchBooked();
-  }, [selectedDate, open]);
+  }, [selectedDate, open, partnerId]);
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);

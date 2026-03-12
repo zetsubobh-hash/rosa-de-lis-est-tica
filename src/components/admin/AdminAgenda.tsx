@@ -112,7 +112,7 @@ const AdminAgenda = () => {
 
   // Schedule modal state (for admin scheduling sessions)
   const [scheduleModal, setScheduleModal] = useState<{
-    planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string;
+    planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
 
   // Reschedule state
@@ -1071,6 +1071,7 @@ const AdminAgenda = () => {
           serviceSlug={scheduleModal.serviceSlug}
           serviceTitle={scheduleModal.serviceTitle}
           userId={scheduleModal.userId}
+          partnerId={scheduleModal.partnerId}
         />
       )}
 

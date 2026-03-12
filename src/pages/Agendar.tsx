@@ -73,12 +73,39 @@ const Agendar = () => {
       await supabase.rpc("cleanup_stale_pending_appointments");
 
       const dateStr = format(selectedDate, "yyyy-MM-dd");
+      // Fetch all booked slots with partner info
       const { data } = await supabase
         .from("appointments")
-        .select("appointment_time")
+        .select("appointment_time, partner_id")
         .eq("appointment_date", dateStr)
         .in("status", ["confirmed", "pending"]);
-      setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
+
+      // Fetch active partner count
+      const { count: partnerCount } = await supabase
+        .from("partners")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
+
+      const totalPartners = partnerCount || 1;
+
+      // A slot is fully booked only when ALL partners are occupied at that time
+      // (or when unassigned appointments fill the slot)
+      const slotCounts: Record<string, Set<string>> = {};
+      data?.forEach((d: any) => {
+        if (!slotCounts[d.appointment_time]) slotCounts[d.appointment_time] = new Set();
+        slotCounts[d.appointment_time].add(d.partner_id || "__unassigned__");
+      });
+
+      const fullyBooked = Object.entries(slotCounts)
+        .filter(([_, partners]) => {
+          // If there's an unassigned appointment, count it as blocking one slot
+          const hasUnassigned = partners.has("__unassigned__");
+          const assignedCount = partners.size - (hasUnassigned ? 1 : 0);
+          return (assignedCount + (hasUnassigned ? 1 : 0)) >= totalPartners;
+        })
+        .map(([time]) => time);
+
+      setBookedSlots(fullyBooked);
     };
     fetchBooked();
   }, [selectedDate]);
