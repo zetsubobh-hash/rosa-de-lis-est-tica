@@ -109,7 +109,7 @@ const AdminPricing = () => {
     const rawValue = rawPriceInputs[id]?.[field];
     if (rawValue === undefined) return;
 
-    const cents = parseCurrencyToCents(rawValue);
+    const { cents } = parseMoneyInput(rawValue);
 
     setEditedPrices((prev) => {
       const original = prices.find((p) => p.id === id);
