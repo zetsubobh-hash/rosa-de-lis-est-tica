@@ -520,6 +520,9 @@ const AdminPromoBroadcast = () => {
               <Server className="w-5 h-5 text-primary" />
               Instâncias Evolution API
               <Badge variant="outline" className="ml-2">{instances.length}</Badge>
+              <Badge variant={connectedInstancesCount > 0 ? "default" : "secondary"}>
+                {connectedInstancesCount} conectada{connectedInstancesCount === 1 ? "" : "s"}
+              </Badge>
             </CardTitle>
             {expandedInstances ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </div>
