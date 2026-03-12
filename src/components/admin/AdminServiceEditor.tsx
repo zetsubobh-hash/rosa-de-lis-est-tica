@@ -749,7 +749,10 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               }}
                               onBlur={() => {
                                 const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
-                                const currentPps = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
+                                const rawPps = rawPriceInputs[plan.id]?.pps;
+                                const currentPps = rawPps !== undefined
+                                  ? parseMoneyInput(rawPps).cents
+                                  : editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
                                 const recalculatedTotal = currentPps * currentSessions;
                                 setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: recalculatedTotal } }));
                                 setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(recalculatedTotal) } }));
