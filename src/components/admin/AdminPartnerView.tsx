@@ -626,96 +626,86 @@ const AdminPartnerView = () => {
             {/* Agenda tab */}
             {activeTab === "agenda" && (
               <div className="space-y-4">
-                {/* Date filter buttons */}
-                <div className="flex gap-2 flex-wrap">
+                {/* Date filter with calendar */}
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={() => setFilterDate(null)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      !filterDate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                    onClick={() => setFilterDate(new Date())}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-body border transition-all ${
+                      format(filterDate, "yyyy-MM-dd") === today
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}
                   >
-                    Todos
+                    Hoje
                   </button>
-                  {[...new Set([today, ...Object.keys(grouped)])].sort().map((date) => (
-                    <button
-                      key={date}
-                      onClick={() => setFilterDate(filterDate === date ? null : date)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        filterDate === date ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {formatDate(date)}
-                      {date === today && " (Hoje)"}
-                    </button>
-                  ))}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium font-body border border-border text-foreground hover:bg-muted transition-colors">
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        {format(filterDate, "dd/MM/yyyy")}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={filterDate}
+                        onSelect={(d) => { if (d) setFilterDate(d); }}
+                        locale={ptBR}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
-                {appointments.length === 0 ? (
-                  <div className="bg-card rounded-2xl border border-border p-12 text-center">
-                    <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="font-body text-muted-foreground">Nenhum agendamento próximo.</p>
-                  </div>
-                ) : filterDate ? (
-                  /* Timeline view for selected date */
-                  <DayTimelineView
-                    appointments={appointments.filter((a) => a.appointment_date === filterDate).map((a) => ({
-                      ...a,
-                      service_slug: a.service_slug || "",
-                      partner_id: null,
-                      total_sessions: a.total_sessions || null,
-                      completed_sessions: a.completed_sessions || null,
-                      planSessions: a.planSessions || [],
-                      profiles: a.profile ? { ...a.profile, phone: (a.profile as any).phone || "", email: null } : null,
-                    }))}
-                    expandedAptId={expandedAptId}
-                    onSelectAppointment={(id) => setExpandedAptId(expandedAptId === id ? null : id)}
-                    clientPlans={clientPlans.map(p => ({
-                      id: p.id,
-                      user_id: p.user_id,
-                      service_slug: p.service_slug,
-                      service_title: p.service_title,
-                      plan_name: p.plan_name,
-                      total_sessions: p.total_sessions,
-                      completed_sessions: p.completed_sessions,
-                      status: p.status,
-                    }))}
-                    isRescheduled={(apt) => {
-                      if (!apt.notes) return false;
-                      try { return !!JSON.parse(apt.notes).rescheduled; } catch { return false; }
-                    }}
-                    onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
-                    onHistory={(userId, name) => setHistoryClient({ userId, name })}
-                    onScheduleSession={undefined}
-                    onComplete={(apt) => {
-                      const fullApt = appointments.find((a) => a.id === apt.id);
-                      if (fullApt) openDecisionModal(fullApt, "completed");
-                    }}
-                    onMarkNoShow={(apt) => {
-                      const fullApt = appointments.find((a) => a.id === apt.id);
-                      if (fullApt) openDecisionModal(fullApt, "cancelled");
-                    }}
-                    markingAppointmentId={completingId}
-                    isOverdue={(apt) => {
-                      const fullApt = appointments.find(a => a.id === apt.id);
-                      return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
-                    }}
-                  />
-                ) : (
-                  Object.entries(grouped).map(([date, apts]) => (
-                    <div key={date}>
-                      <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        {formatDate(date)}
-                        {date === today && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">Hoje</span>
-                        )}
-                      </h3>
-                      <div className="space-y-3">
-                        {apts.map(renderAppointmentCard)}
-                      </div>
-                    </div>
-                  ))
-                )}
+                {(() => {
+                  const dateStr = format(filterDate, "yyyy-MM-dd");
+                  const dayApts = appointments.filter((a) => a.appointment_date === dateStr);
+                  return (
+                    <DayTimelineView
+                      appointments={dayApts.map((a) => ({
+                        ...a,
+                        service_slug: a.service_slug || "",
+                        partner_id: null,
+                        total_sessions: a.total_sessions || null,
+                        completed_sessions: a.completed_sessions || null,
+                        planSessions: a.planSessions || [],
+                        profiles: a.profile ? { ...a.profile, phone: (a.profile as any).phone || "", email: null } : null,
+                      }))}
+                      expandedAptId={expandedAptId}
+                      onSelectAppointment={(id) => setExpandedAptId(expandedAptId === id ? null : id)}
+                      clientPlans={clientPlans.map(p => ({
+                        id: p.id,
+                        user_id: p.user_id,
+                        service_slug: p.service_slug,
+                        service_title: p.service_title,
+                        plan_name: p.plan_name,
+                        total_sessions: p.total_sessions,
+                        completed_sessions: p.completed_sessions,
+                        status: p.status,
+                      }))}
+                      isRescheduled={(apt) => {
+                        if (!apt.notes) return false;
+                        try { return !!JSON.parse(apt.notes).rescheduled; } catch { return false; }
+                      }}
+                      onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
+                      onHistory={(userId, name) => setHistoryClient({ userId, name })}
+                      onScheduleSession={undefined}
+                      onComplete={(apt) => {
+                        const fullApt = appointments.find((a) => a.id === apt.id);
+                        if (fullApt) openDecisionModal(fullApt, "completed");
+                      }}
+                      onMarkNoShow={(apt) => {
+                        const fullApt = appointments.find((a) => a.id === apt.id);
+                        if (fullApt) openDecisionModal(fullApt, "cancelled");
+                      }}
+                      markingAppointmentId={completingId}
+                      isOverdue={(apt) => {
+                        const fullApt = appointments.find(a => a.id === apt.id);
+                        return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
+                      }}
+                    />
+                  );
+                })()}
               </div>
             )}
 
