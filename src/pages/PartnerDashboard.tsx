@@ -474,10 +474,33 @@ const PartnerDashboard = () => {
               </p>
             </div>
           )}
+
+          {/* Action buttons for overdue appointments */}
+          {overdue && (
+            <div className="mt-3 pt-3 border-t border-border flex gap-2 flex-wrap">
+              <button
+                onClick={() => handleMarkAppointment(apt, true)}
+                disabled={completingId === apt.id}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-all disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {completingId === apt.id ? "Salvando..." : "Sessão Realizada"}
+              </button>
+              <button
+                onClick={() => handleMarkAppointment(apt, false)}
+                disabled={completingId === apt.id}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all disabled:opacity-50"
+              >
+                <XCircle className="w-4 h-4" />
+                Não Realizada
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
   );
+  };
 
   return (
     <>
