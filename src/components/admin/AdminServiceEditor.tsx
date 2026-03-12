@@ -740,7 +740,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
-                                  commitPlanPricePerSession(plan.id, plan.price_per_session_cents, plan.sessions);
+                                  commitPlanPricePerSession(plan.id, plan.sessions);
                                   (e.currentTarget as HTMLInputElement).blur();
                                 }
                               }}
