@@ -713,7 +713,6 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               type="text"
                               inputMode="decimal"
                               value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
-                              onFocus={(e) => e.currentTarget.select()}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
@@ -722,8 +721,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                                 }
                               }}
                               onChange={(e) => {
-                                const parsed = parseMoneyInput(e.target.value);
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: parsed.display } }));
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: e.target.value } }));
                                 setHasChanges(true);
                               }}
                               onBlur={() => {
