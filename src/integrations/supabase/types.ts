@@ -473,7 +473,11 @@ export type Database = {
       partners: {
         Row: {
           avatar_url: string | null
+          can_cancel: boolean
+          can_complete: boolean
+          can_create_appointments: boolean
           can_manage_agenda: boolean
+          can_reschedule: boolean
           commission_pct: number
           created_at: string
           full_name: string
@@ -489,7 +493,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          can_cancel?: boolean
+          can_complete?: boolean
+          can_create_appointments?: boolean
           can_manage_agenda?: boolean
+          can_reschedule?: boolean
           commission_pct?: number
           created_at?: string
           full_name: string
@@ -505,7 +513,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          can_cancel?: boolean
+          can_complete?: boolean
+          can_create_appointments?: boolean
           can_manage_agenda?: boolean
+          can_reschedule?: boolean
           commission_pct?: number
           created_at?: string
           full_name?: string
