@@ -378,7 +378,7 @@ const PartnerDashboard = () => {
   }
 
   const renderAppointmentCard = (apt: Appointment) => {
-    const overdue = isAppointmentOverdue(apt);
+    const overdue = isAppointmentOverdue(apt, referenceNow);
     return (
     <motion.div
       key={apt.id}
