@@ -10,10 +10,13 @@ export const useBrandingLogos = () => {
 
   useEffect(() => {
     const loadLogo = async (fileName: string, setter: (url: string) => void) => {
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
       try {
-        const res = await fetch(data.publicUrl, { method: "HEAD" });
-        if (res.ok) {
+        const { data: files } = await supabase.storage.from(BUCKET).list("", {
+          search: fileName,
+          limit: 1,
+        });
+        if (files && files.some((f) => f.name === fileName)) {
+          const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
           setter(data.publicUrl + "?t=" + Date.now());
         }
       } catch {
