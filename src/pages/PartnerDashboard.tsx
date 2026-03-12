@@ -518,8 +518,17 @@ const PartnerDashboard = () => {
               <DayTimelineView
                 appointments={appointments.filter((a) => a.appointment_date === filterDate).map((a) => ({
                   ...a,
+                  service_slug: a.service_slug || "",
+                  total_sessions: a.total_sessions || null,
+                  completed_sessions: a.completed_sessions || null,
+                  planSessions: a.planSessions || [],
                   profiles: a.profile ? { ...a.profile, phone: "", email: null } : null,
                 }))}
+                isRescheduled={(apt) => {
+                  if (!apt.notes) return false;
+                  try { return !!JSON.parse(apt.notes).rescheduled; } catch { return false; }
+                }}
+                onAnamnesis={partnerId ? (userId, name) => setAnamnesisClient({ userId, name }) : undefined}
                 readOnly
               />
             ) : (
