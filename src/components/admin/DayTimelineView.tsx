@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
-import { Progress } from "@/components/ui/progress";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Profile {
