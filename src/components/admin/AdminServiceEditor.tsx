@@ -80,6 +80,32 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     return { display, cents };
   };
 
+  useEffect(() => {
+    if (!editingSection?.startsWith("plan-")) return;
+
+    const planId = editingSection.replace("plan-", "");
+    const plan = prices.find((item) => item.id === planId);
+    if (!plan) return;
+
+    const edited = editedPrices[planId];
+    const sessions = edited?.sessions ?? plan.sessions;
+    const pps = edited?.price_per_session_cents ?? plan.price_per_session_cents;
+    const total = edited?.total_price_cents ?? pps * sessions;
+
+    setRawPriceInputs((prev) => {
+      if (prev[planId]?.pps !== undefined) return prev;
+
+      return {
+        ...prev,
+        [planId]: {
+          ...prev[planId],
+          pps: centsToStr(pps),
+          total: centsToStr(total),
+        },
+      };
+    });
+  }, [editingSection, prices, editedPrices]);
+
   const Icon = getIconByName(service.icon_name);
 
   const updateField = <K extends keyof DBService>(field: K, value: DBService[K]) => {
