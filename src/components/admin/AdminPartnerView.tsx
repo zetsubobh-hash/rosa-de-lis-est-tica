@@ -565,6 +565,7 @@ const AdminPartnerView = () => {
                     }}
                     onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
                     onHistory={(userId, name) => setHistoryClient({ userId, name })}
+                    onScheduleSession={(params) => setScheduleModal(params)}
                     readOnly
                   />
                 ) : (
