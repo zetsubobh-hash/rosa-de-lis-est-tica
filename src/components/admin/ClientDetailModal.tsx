@@ -191,13 +191,20 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       toast.error("Nome é obrigatório");
       return;
     }
+
+    const sexValue = editData.sex.trim().toLowerCase();
+    if (!["feminino", "masculino"].includes(sexValue)) {
+      toast.error("Selecione um sexo válido (feminino ou masculino)");
+      return;
+    }
+
     setSaving(true);
     const updateData: any = {
       full_name: editData.full_name.trim(),
       phone: editData.phone.trim(),
       email: editData.email.trim() || null,
       address: editData.address.trim(),
-      sex: editData.sex.trim(),
+      sex: sexValue,
     };
     if (editData.birth_date) {
       updateData.birth_date = editData.birth_date;
