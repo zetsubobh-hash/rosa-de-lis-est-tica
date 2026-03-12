@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL } from "@/lib/supabaseUrl";
 import { toast } from "@/hooks/use-toast";
-import { LogIn, UserPlus, Loader2, Eye, EyeOff, Camera, X, Check } from "lucide-react";
+import { LogIn, UserPlus, Loader2, Eye, EyeOff, Camera, X, Check, Phone } from "lucide-react";
 import Cropper, { Area } from "react-easy-crop";
 import { AnimatePresence, motion } from "framer-motion";
 
