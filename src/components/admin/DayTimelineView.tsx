@@ -81,6 +81,10 @@ interface DayTimelineViewProps {
   readOnly?: boolean;
   /** Callback to check if an appointment is overdue and needs attention */
   isOverdue?: (apt: TimelineAppointment) => boolean;
+  /** Mark overdue appointment as not completed */
+  onMarkNoShow?: (apt: TimelineAppointment) => void;
+  /** Current appointment id being persisted */
+  markingAppointmentId?: string | null;
 }
 
 const PALETTE = [
