@@ -1111,6 +1111,117 @@ const PartnerDashboard = () => {
     {showDemoRoulette && (
       <WelcomeRoulette testMode onClose={() => setShowDemoRoulette(false)} />
     )}
+
+    {/* Decision Modal — Sessão Realizada / Não Realizada */}
+    <AnimatePresence>
+      {decisionModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm p-4 flex items-center justify-center"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDecisionModal(null); }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-base font-bold text-foreground">
+                {decisionModal.type === "completed" ? "✅ Sessão Realizada" : "❌ Sessão Não Realizada"}
+              </h3>
+              <button onClick={() => setDecisionModal(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-0.5">
+              <p className="font-heading text-sm font-bold text-foreground">
+                {decisionModal.apt.profile?.full_name || "Cliente"}
+              </p>
+              <p className="font-body text-xs text-muted-foreground">
+                {decisionModal.apt.service_title} • {formatDate(decisionModal.apt.appointment_date)} às {decisionModal.apt.appointment_time}
+              </p>
+            </div>
+
+            {decisionModal.type === "completed" ? (
+              <div className="space-y-2">
+                <label className="font-body text-xs font-semibold text-foreground">
+                  Observação do atendimento <span className="text-muted-foreground font-normal">(opcional)</span>
+                </label>
+                <textarea
+                  value={decisionNotes}
+                  onChange={(e) => setDecisionNotes(e.target.value)}
+                  placeholder="Ex: Pele sensível, aplicar hidratação extra na próxima..."
+                  maxLength={500}
+                  className="w-full min-h-[80px] rounded-xl border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none resize-none"
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <label className="font-body text-xs font-semibold text-foreground">
+                  Motivo do cancelamento <span className="text-destructive">*</span>
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cancel-reason"
+                      checked={cancelReason === "no_show"}
+                      onChange={() => setCancelReason("no_show")}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    <span className="font-body text-sm text-foreground">Cliente não apareceu</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cancel-reason"
+                      checked={cancelReason === "other"}
+                      onChange={() => setCancelReason("other")}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    <span className="font-body text-sm text-foreground">Outro motivo</span>
+                  </label>
+                </div>
+                {cancelReason === "other" && (
+                  <textarea
+                    value={cancelReasonText}
+                    onChange={(e) => setCancelReasonText(e.target.value)}
+                    placeholder="Descreva o motivo..."
+                    maxLength={500}
+                    className="w-full min-h-[70px] rounded-xl border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none resize-none"
+                  />
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={() => setDecisionModal(null)}
+                className="h-11 rounded-xl border border-border font-body text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDecision}
+                disabled={completingId === decisionModal.apt.id}
+                className={`h-11 rounded-xl font-body text-sm font-bold transition-all disabled:opacity-50 ${
+                  decisionModal.type === "completed"
+                    ? "bg-primary text-primary-foreground hover:opacity-90"
+                    : "bg-destructive text-destructive-foreground hover:opacity-90"
+                }`}
+              >
+                {completingId === decisionModal.apt.id ? "Salvando..." : "Confirmar"}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     </>
   );
 };
