@@ -70,6 +70,8 @@ interface DayTimelineViewProps {
   getAppointmentPrice?: (apt: TimelineAppointment, prices: any[]) => string;
   getInitials?: (name: string) => string;
   onAnamnesis?: (userId: string, name: string) => void;
+  /** Called when an empty time slot is clicked */
+  onSlotClick?: (time: string) => void;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
 }
