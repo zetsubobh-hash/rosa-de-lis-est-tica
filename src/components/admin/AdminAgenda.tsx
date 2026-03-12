@@ -493,10 +493,12 @@ const AdminAgenda = () => {
           <p className="font-body text-muted-foreground">Nenhum agendamento para esta data.</p>
         </div>
       ) : filterDate ? (
-        <DayTimelineView
-          appointments={filtered}
-          onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
-        />
+        <>
+          <DayTimelineView
+            appointments={filtered}
+            onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
+          />
+        </>
       ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {groupedEntries.map((group, i) => {
