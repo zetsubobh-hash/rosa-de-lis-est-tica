@@ -86,7 +86,7 @@ const DayTimelineView = ({ appointments, onSelectAppointment }: DayTimelineViewP
   for (const apt of sorted) {
     const startMin = timeToMinutes(apt.appointment_time);
     const duration = estimateDuration(apt.service_slug);
-    const endMin_ = startMin + duration;
+    const _endMin = startMin + duration;
 
     let placed = false;
     for (let col = 0; col < columns.length; col++) {
