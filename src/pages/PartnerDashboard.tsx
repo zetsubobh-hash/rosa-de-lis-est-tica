@@ -348,13 +348,24 @@ const PartnerDashboard = () => {
     );
   }
 
-  const renderAppointmentCard = (apt: Appointment) => (
+  const renderAppointmentCard = (apt: Appointment) => {
+    const overdue = isAppointmentOverdue(apt);
+    return (
     <motion.div
       key={apt.id}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-card rounded-2xl border border-border p-4"
+      className={`bg-card rounded-2xl border p-4 ${overdue ? "border-destructive/50 ring-1 ring-destructive/20" : "border-border"}`}
     >
+      {/* Overdue blinking alert */}
+      {overdue && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-destructive/10 animate-pulse">
+          <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+          <p className="font-body text-xs font-semibold text-destructive">
+            Horário passou! Confirme se a sessão foi realizada.
+          </p>
+        </div>
+      )}
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
           {apt.profile?.avatar_url ? (
