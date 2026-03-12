@@ -91,7 +91,27 @@ const SessionScheduleModal = ({
         plan_id: planId,
         session_number: sessionNumber,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          toast({
+            title: "Horário indisponível",
+            description: "Esse horário já foi reservado. Escolha outro.",
+            variant: "destructive",
+          });
+          // Refresh booked slots
+          const { data: fresh } = await supabase
+            .from("appointments")
+            .select("appointment_time")
+            .eq("appointment_date", dateStr)
+            .in("status", ["confirmed", "pending"]);
+          setBookedSlots(fresh?.map((d: any) => d.appointment_time) || []);
+          setSelectedTime(undefined);
+          setStep("time");
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Sessão agendada!",
