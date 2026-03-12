@@ -43,6 +43,19 @@ interface PromoCampaign {
   created_at: string;
 }
 
+interface CampaignReportRow {
+  id: string;
+  user_id: string;
+  phone: string;
+  status: string;
+  sent_at: string | null;
+  created_at: string;
+  error_message: string | null;
+  instance_id: string | null;
+  recipient_name: string;
+  instance_label: string;
+}
+
 interface ServiceOption {
   slug: string;
   title: string;
@@ -92,16 +105,95 @@ const AdminPromoBroadcast = () => {
   const [savingCamp, setSavingCamp] = useState(false);
   const [sendingCampId, setSendingCampId] = useState<string | null>(null);
   const [expandedInstances, setExpandedInstances] = useState(true);
+  const [campaignReportOpen, setCampaignReportOpen] = useState<Record<string, boolean>>({});
+  const [campaignReportLoading, setCampaignReportLoading] = useState<Record<string, boolean>>({});
+  const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
+
+  /* ───────── call evolution-instance edge function ───────── */
+  const callInstanceAction = useCallback(async (instanceId: string, action: string) => {
+    const { data, error } = await supabase.functions.invoke("evolution-instance", {
+      body: { instance_id: instanceId, action },
+    });
+    if (error) throw new Error(error.message || "Erro na chamada");
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }, []);
 
   /* ───────── fetch ───────── */
+  const checkAllStatuses = useCallback(async (insts: EvolutionInstance[]) => {
+    if (insts.length === 0) return;
+
+    await Promise.all(
+      insts.map(async (inst) => {
+        try {
+          const data = await callInstanceAction(inst.id, "check_status");
+          const state = data?.instance?.state || data?.state || "unknown";
+          setInstanceStatus((p) => ({ ...p, [inst.id]: state }));
+        } catch {
+          setInstanceStatus((p) => ({ ...p, [inst.id]: "unknown" }));
+        }
+      })
+    );
+  }, [callInstanceAction]);
+
   const fetchInstances = useCallback(async () => {
-    const { data } = await supabase
+    setLoadingInstances(true);
+
+    const { data: existingInstances, error: listError } = await supabase
       .from("evolution_instances")
       .select("*")
       .order("sort_order");
-    if (data) setInstances(data as EvolutionInstance[]);
+
+    if (listError) {
+      setLoadingInstances(false);
+      console.error("Erro ao carregar instâncias:", listError.message);
+      return;
+    }
+
+    let finalInstances = (existingInstances || []) as EvolutionInstance[];
+
+    // Importa automaticamente a instância principal já configurada no módulo antigo
+    if (finalInstances.length === 0) {
+      const { data: legacyRows } = await supabase
+        .from("payment_settings")
+        .select("key, value")
+        .in("key", ["evolution_api_url", "evolution_api_key", "evolution_instance_name", "evolution_enabled"]);
+
+      const legacyMap: Record<string, string> = {};
+      (legacyRows || []).forEach((row: { key: string; value: string }) => {
+        legacyMap[row.key] = row.value;
+      });
+
+      const legacyUrl = (legacyMap.evolution_api_url || "").trim().replace(/\/+$/, "");
+      const legacyKey = (legacyMap.evolution_api_key || "").trim();
+      const legacyName = (legacyMap.evolution_instance_name || "").trim();
+
+      if (legacyUrl && legacyKey && legacyName) {
+        const { error: importError } = await supabase.from("evolution_instances").insert({
+          name: "Instância Principal",
+          api_url: legacyUrl,
+          api_key: legacyKey,
+          instance_name: legacyName,
+          is_active: legacyMap.evolution_enabled !== "false",
+          sort_order: 0,
+          msgs_per_cycle: 10,
+        });
+
+        if (!importError) {
+          const { data: importedInstances } = await supabase
+            .from("evolution_instances")
+            .select("*")
+            .order("sort_order");
+
+          finalInstances = (importedInstances || []) as EvolutionInstance[];
+        }
+      }
+    }
+
+    setInstances(finalInstances);
+    await checkAllStatuses(finalInstances);
     setLoadingInstances(false);
-  }, []);
+  }, [checkAllStatuses]);
 
   const fetchCampaigns = useCallback(async () => {
     const { data } = await supabase
@@ -121,44 +213,11 @@ const AdminPromoBroadcast = () => {
     if (data) setServices(data);
   }, []);
 
-  // Auto-check status for all instances on load
-  const checkAllStatuses = useCallback(async (insts: EvolutionInstance[]) => {
-    for (const inst of insts) {
-      try {
-        const data = await callInstanceAction(inst.id, "check_status");
-        const state = data?.instance?.state || data?.state || "unknown";
-        setInstanceStatus(p => ({ ...p, [inst.id]: state }));
-      } catch {
-        // silent — instance may not be provisioned yet
-      }
-    }
-  }, []);
-
   useEffect(() => {
-    const init = async () => {
-      await Promise.all([fetchCampaigns(), fetchServices()]);
-      const { data } = await supabase
-        .from("evolution_instances")
-        .select("*")
-        .order("sort_order");
-      if (data) {
-        setInstances(data as EvolutionInstance[]);
-        checkAllStatuses(data as EvolutionInstance[]);
-      }
-      setLoadingInstances(false);
-    };
-    init();
-  }, [fetchCampaigns, fetchServices, checkAllStatuses]);
-
-  /* ───────── call evolution-instance edge function ───────── */
-  const callInstanceAction = async (instanceId: string, action: string) => {
-    const { data, error } = await supabase.functions.invoke("evolution-instance", {
-      body: { instance_id: instanceId, action },
-    });
-    if (error) throw new Error(error.message || "Erro na chamada");
-    if (data?.error) throw new Error(data.error);
-    return data;
-  };
+    fetchInstances();
+    fetchCampaigns();
+    fetchServices();
+  }, [fetchInstances, fetchCampaigns, fetchServices]);
 
   /* ───────── instance connection actions ───────── */
   const handleInstanceConnect = async (instId: string) => {
@@ -303,6 +362,71 @@ const AdminPromoBroadcast = () => {
     fetchCampaigns();
   };
 
+  const fetchCampaignReport = useCallback(async (campaignId: string) => {
+    setCampaignReportLoading((prev) => ({ ...prev, [campaignId]: true }));
+
+    try {
+      const { data: sends, error: sendsError } = await supabase
+        .from("promo_sends")
+        .select("id, user_id, phone, status, sent_at, created_at, error_message, instance_id")
+        .eq("campaign_id", campaignId)
+        .order("created_at", { ascending: false })
+        .range(0, 4999);
+
+      if (sendsError) throw sendsError;
+
+      const safeSends = sends || [];
+      const userIds = Array.from(new Set(safeSends.map((row) => row.user_id).filter(Boolean)));
+      const instanceIds = Array.from(new Set(safeSends.map((row) => row.instance_id).filter(Boolean))) as string[];
+
+      const [profilesRes, instancesRes] = await Promise.all([
+        userIds.length > 0
+          ? supabase.from("profiles").select("user_id, full_name, phone").in("user_id", userIds)
+          : Promise.resolve({ data: [], error: null }),
+        instanceIds.length > 0
+          ? supabase.from("evolution_instances").select("id, name, instance_name").in("id", instanceIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (profilesRes.error) throw profilesRes.error;
+      if (instancesRes.error) throw instancesRes.error;
+
+      const profileMap = new Map(
+        (profilesRes.data || []).map((p: { user_id: string; full_name: string; phone: string }) => [p.user_id, p])
+      );
+      const instanceMap = new Map(
+        (instancesRes.data || []).map((i: { id: string; name: string; instance_name: string }) => [i.id, i])
+      );
+
+      const reportRows: CampaignReportRow[] = safeSends.map((row) => {
+        const profile = profileMap.get(row.user_id);
+        const inst = row.instance_id ? instanceMap.get(row.instance_id) : null;
+
+        return {
+          ...row,
+          recipient_name: profile?.full_name || "Cliente sem nome",
+          phone: row.phone || profile?.phone || "-",
+          instance_label: inst ? `${inst.name} (${inst.instance_name})` : "-",
+        };
+      });
+
+      setCampaignReports((prev) => ({ ...prev, [campaignId]: reportRows }));
+    } catch (err: any) {
+      toast({ title: "Erro ao carregar relatório", description: err.message, variant: "destructive" });
+    } finally {
+      setCampaignReportLoading((prev) => ({ ...prev, [campaignId]: false }));
+    }
+  }, [toast]);
+
+  const toggleCampaignReport = async (campaignId: string) => {
+    const willOpen = !campaignReportOpen[campaignId];
+    setCampaignReportOpen((prev) => ({ ...prev, [campaignId]: willOpen }));
+
+    if (willOpen && !campaignReports[campaignId]) {
+      await fetchCampaignReport(campaignId);
+    }
+  };
+
   /* ───────── send campaign ───────── */
   const sendCampaign = async (campaign: PromoCampaign) => {
     const activeInstances = instances.filter(i => i.is_active);
@@ -317,10 +441,12 @@ const AdminPromoBroadcast = () => {
       });
       if (error) throw error;
       toast({
-        title: "Disparo iniciado!",
-        description: `${data?.queued || 0} mensagens enfileiradas para envio.`,
+        title: "Disparo concluído!",
+        description: `${data?.sent || 0} enviadas · ${data?.failed || 0} falhas.`,
       });
-      fetchCampaigns();
+      await fetchCampaigns();
+      setCampaignReportOpen((prev) => ({ ...prev, [campaign.id]: true }));
+      await fetchCampaignReport(campaign.id);
     } catch (err: any) {
       toast({ title: "Erro ao disparar", description: err.message, variant: "destructive" });
     } finally {
@@ -355,6 +481,24 @@ const AdminPromoBroadcast = () => {
     return null;
   };
 
+  const reportStatusBadge = (status: string) => {
+    if (status === "sent") return <Badge variant="outline">Enviada</Badge>;
+    if (status === "failed") return <Badge variant="destructive">Falha</Badge>;
+    return <Badge variant="secondary">Pendente</Badge>;
+  };
+
+  const formatDateTime = (iso: string | null) => {
+    if (!iso) return "-";
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const connectedInstancesCount = Object.values(instanceStatus).filter((st) => st === "open").length;
   const loading = loadingInstances || loadingCampaigns;
 
   if (loading) {
@@ -375,6 +519,9 @@ const AdminPromoBroadcast = () => {
               <Server className="w-5 h-5 text-primary" />
               Instâncias Evolution API
               <Badge variant="outline" className="ml-2">{instances.length}</Badge>
+              <Badge variant={connectedInstancesCount > 0 ? "default" : "secondary"}>
+                {connectedInstancesCount} conectada{connectedInstancesCount === 1 ? "" : "s"}
+              </Badge>
             </CardTitle>
             {expandedInstances ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </div>
@@ -668,45 +815,110 @@ const AdminPromoBroadcast = () => {
             </div>
           )}
 
-          {campaigns.map((camp) => (
-            <div key={camp.id} className="p-4 rounded-xl border border-border bg-card space-y-3">
-              <div className="flex items-start justify-between gap-2 flex-wrap">
-                <div>
-                  <h3 className="font-semibold text-sm">{camp.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Início: {camp.start_time} · Intervalo: {camp.interval_seconds}s
-                    {camp.service_slug && ` · Serviço: ${services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug}`}
-                  </p>
+          {campaigns.map((camp) => {
+            const reportRows = campaignReports[camp.id] || [];
+            const reportSent = reportRows.filter((r) => r.status === "sent").length;
+            const reportFailed = reportRows.filter((r) => r.status === "failed").length;
+
+            return (
+              <div key={camp.id} className="p-4 rounded-xl border border-border bg-card space-y-3">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div>
+                    <h3 className="font-semibold text-sm">{camp.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Início: {camp.start_time} · Intervalo: {camp.interval_seconds}s
+                      {camp.service_slug && ` · Serviço: ${services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug}`}
+                    </p>
+                  </div>
+                  {statusBadge(camp.status)}
                 </div>
-                {statusBadge(camp.status)}
-              </div>
 
-              <div className="bg-muted/50 rounded-lg p-3 text-xs whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
-                {camp.message_template}
-              </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-xs whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
+                  {camp.message_template}
+                </div>
 
-              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> {camp.total_sent} enviadas</span>
-                <span className="flex items-center gap-1"><XCircle className="w-3 h-3 text-destructive" /> {camp.total_failed} falhas</span>
-                <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {camp.total_target} alvo</span>
-              </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> {camp.total_sent} enviadas</span>
+                  <span className="flex items-center gap-1"><XCircle className="w-3 h-3 text-destructive" /> {camp.total_failed} falhas</span>
+                  <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {camp.total_target} alvo</span>
+                </div>
 
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  size="sm"
-                  className="gap-2"
-                  disabled={sendingCampId === camp.id || camp.status === "sending"}
-                  onClick={() => sendCampaign(camp)}
-                >
-                  {sendingCampId === camp.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {camp.status === "completed" ? "Reenviar" : "Disparar"}
-                </Button>
-                <Button size="sm" variant="destructive" className="gap-2" onClick={() => deleteCampaign(camp.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    disabled={sendingCampId === camp.id || camp.status === "sending"}
+                    onClick={() => sendCampaign(camp)}
+                  >
+                    {sendingCampId === camp.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {camp.status === "completed" ? "Reenviar" : "Disparar"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => toggleCampaignReport(camp.id)}
+                  >
+                    {campaignReportOpen[camp.id] ? "Ocultar relatório" : "Ver relatório"}
+                  </Button>
+                  <Button size="sm" variant="destructive" className="gap-2" onClick={() => deleteCampaign(camp.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <AnimatePresence>
+                  {campaignReportOpen[camp.id] && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="rounded-xl border border-border bg-background p-3 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                          <div className="rounded-lg bg-muted/50 px-3 py-2">Total histórico: <span className="font-semibold">{reportRows.length}</span></div>
+                          <div className="rounded-lg bg-muted/50 px-3 py-2">Enviadas: <span className="font-semibold">{reportSent}</span></div>
+                          <div className="rounded-lg bg-muted/50 px-3 py-2">Falhas: <span className="font-semibold">{reportFailed}</span></div>
+                        </div>
+
+                        {campaignReportLoading[camp.id] ? (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Carregando histórico...
+                          </div>
+                        ) : reportRows.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Ainda não há registros de envio para esta campanha.</p>
+                        ) : (
+                          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                            {reportRows.map((row) => (
+                              <div key={row.id} className="rounded-lg border border-border p-3 space-y-2">
+                                <div className="flex items-start justify-between gap-2 flex-wrap">
+                                  <div>
+                                    <p className="text-sm font-semibold text-foreground">{row.recipient_name}</p>
+                                    <p className="text-xs text-muted-foreground">{row.phone}</p>
+                                  </div>
+                                  {reportStatusBadge(row.status)}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                                  <p>Horário: {formatDateTime(row.sent_at || row.created_at)}</p>
+                                  <p>Instância: {row.instance_label}</p>
+                                </div>
+
+                                {row.error_message && (
+                                  <p className="text-xs text-destructive break-words">Erro: {row.error_message}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
