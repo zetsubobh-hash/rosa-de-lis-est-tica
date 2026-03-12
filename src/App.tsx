@@ -93,6 +93,7 @@ const App = () => (
                 <Route path="/parceiro" element={<PartnerDashboard />} />
                 <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
                 <Route path="/instalar" element={<Instalar />} />
+                <Route path="/cancelar" element={<Cancelar />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
