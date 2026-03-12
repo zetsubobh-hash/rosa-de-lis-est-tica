@@ -287,8 +287,8 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                   )}
                 </TabsList>
 
-                <ScrollArea className="flex-1 min-h-0">
-                  <div className="p-5">
+                <ScrollArea className="flex-1 min-h-0 overflow-auto">
+                  <div className="p-5 pb-8">
                     {/* Dados Pessoais */}
                     <TabsContent value="dados" className="mt-0">
                       {editing ? (
