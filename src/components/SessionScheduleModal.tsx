@@ -105,6 +105,7 @@ const SessionScheduleModal = ({
         status: "confirmed",
         plan_id: planId,
         session_number: sessionNumber,
+        partner_id: partnerId || null,
       });
       if (error) {
         if (error.code === "23505") {
