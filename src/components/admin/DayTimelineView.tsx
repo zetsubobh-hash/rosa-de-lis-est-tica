@@ -251,7 +251,8 @@ const DayTimelineView = ({
                 i % 2 === 0 ? "border-border" : "border-border/30 border-dashed",
                 dragOverSlot === i && "bg-primary/15 ring-1 ring-primary/30",
                 mobileMovingId && "cursor-pointer",
-                onSlotClick && !readOnly && !mobileMovingId && "cursor-pointer hover:bg-primary/5"
+                onSlotClick && !readOnly && !mobileMovingId && !isSlotInPast(label) && "cursor-pointer hover:bg-primary/5",
+                isSlotInPast(label) && "opacity-40"
               )}
               onClick={() => {
                 if (mobileMovingId && onDragReschedule) {
@@ -263,6 +264,7 @@ const DayTimelineView = ({
                   setMobileMovingId(null);
                   return;
                 }
+                if (isSlotInPast(label)) return;
                 if (onSlotClick && !readOnly) onSlotClick(label);
               }}
               onDragOver={(e) => {
