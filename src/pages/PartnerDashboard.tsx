@@ -757,6 +757,14 @@ const PartnerDashboard = () => {
         partnerId={partnerId}
       />
     )}
+    {historyClient && (
+      <UserHistoryModal
+        open={!!historyClient}
+        onClose={() => setHistoryClient(null)}
+        userId={historyClient.userId}
+        userName={historyClient.name}
+      />
+    )}
 
     {/* Install QR Code Modal */}
     <AnimatePresence>
