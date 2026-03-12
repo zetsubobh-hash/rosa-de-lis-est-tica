@@ -12,6 +12,13 @@ interface Profile {
   avatar_url: string | null;
 }
 
+interface PlanSessionInfo {
+  date: string;
+  time: string;
+  session_number: number;
+  status: string;
+}
+
 interface TimelineAppointment {
   id: string;
   service_title: string;
@@ -23,6 +30,9 @@ interface TimelineAppointment {
   notes?: string | null;
   partner_id?: string | null;
   plan_id: string | null;
+  total_sessions?: number | null;
+  completed_sessions?: number | null;
+  planSessions?: PlanSessionInfo[];
   profiles?: Profile | null;
 }
 
