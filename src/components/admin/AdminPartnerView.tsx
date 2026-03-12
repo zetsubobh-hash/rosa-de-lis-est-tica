@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
-  Calendar, Clock, CalendarCheck, CalendarClock,
+  Calendar, Clock, CalendarCheck, CalendarClock, CalendarIcon,
   Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
@@ -102,7 +106,7 @@ const AdminPartnerView = () => {
   const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
   const [historyClient, setHistoryClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
-  const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
+  const [filterDate, setFilterDate] = useState<Date>(new Date());
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
   const [scheduleModal, setScheduleModal] = useState<{
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
@@ -373,11 +377,6 @@ const AdminPartnerView = () => {
     }
   };
 
-  const grouped = appointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
-    if (!acc[apt.appointment_date]) acc[apt.appointment_date] = [];
-    acc[apt.appointment_date].push(apt);
-    return acc;
-  }, {});
 
   const pastGrouped = pastAppointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
     if (!acc[apt.appointment_date]) acc[apt.appointment_date] = [];
@@ -412,128 +411,6 @@ const AdminPartnerView = () => {
     );
   }
 
-  const renderAppointmentCard = (apt: Appointment) => (
-    <motion.div
-      key={apt.id}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-card rounded-2xl border border-border p-4"
-    >
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-          {apt.profile?.avatar_url ? (
-            <img src={apt.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <span className="font-heading text-xs font-bold text-primary">
-              {apt.profile ? getInitials(apt.profile.full_name) : "?"}
-            </span>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="font-heading text-sm font-bold text-foreground">{apt.service_title}</p>
-              <p className="font-body text-xs text-muted-foreground mt-0.5">{apt.profile?.full_name || "Cliente"}</p>
-            </div>
-            {apt.profile && (
-              <div className="flex gap-1 shrink-0">
-                <button
-                  onClick={() => setHistoryClient({ userId: apt.user_id, name: apt.profile?.full_name || "Cliente" })}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors border border-border"
-                  title="Ficha Completa"
-                >
-                  <ClipboardList className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Ficha</span>
-                </button>
-                <button
-                  onClick={() => setAnamnesisClient({ userId: apt.user_id, name: apt.profile?.full_name || "Cliente" })}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
-                  title="Ficha de Anamnese"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Anamnese</span>
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs font-body text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              {apt.appointment_time}
-            </span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-              apt.status === "confirmed" ? "bg-primary/10 text-primary"
-                : apt.status === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
-                : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
-            }`}>
-              {apt.status === "confirmed" ? "Confirmado" : apt.status === "completed" ? "Concluído" : "Pendente"}
-            </span>
-            {apt.session_number && apt.total_sessions && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-accent text-accent-foreground">
-                Sessão {apt.session_number}/{apt.total_sessions}
-              </span>
-            )}
-            {isRescheduled(apt) && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
-                <CalendarClock className="w-3 h-3" />
-                Remarcado
-              </span>
-            )}
-          </div>
-
-          {apt.plan_id && apt.total_sessions && apt.total_sessions > 0 && (
-            <div className="mt-3 pt-3 border-t border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                  Progresso do plano — {apt.completed_sessions || 0}/{apt.total_sessions} sessões
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {Array.from({ length: apt.total_sessions }, (_, i) => {
-                  const sessionNum = i + 1;
-                  const sessionApt = apt.planSessions?.find((s) => s.session_number === sessionNum);
-                  const isDoneByRecord = sessionApt?.status === "completed";
-                  const isDoneByCounter = !sessionApt && sessionNum <= (apt.completed_sessions || 0);
-                  const isDone = isDoneByRecord || isDoneByCounter;
-                  const isScheduled = sessionApt && sessionApt.status !== "completed";
-                  const isCurrent = apt.session_number === sessionNum;
-
-                  return (
-                    <div key={sessionNum} className="flex flex-col items-center">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all ${
-                        isCurrent
-                          ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
-                          : isDone
-                          ? "border-emerald-500 bg-emerald-500 text-white"
-                          : isScheduled
-                          ? "border-primary/50 bg-primary/10 text-primary"
-                          : "border-muted-foreground/20 bg-muted text-muted-foreground"
-                      }`}>
-                        {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
-                      </div>
-                      {sessionApt && (
-                        <span className="font-body text-[8px] text-muted-foreground mt-0.5 text-center leading-tight">
-                          {formatDate(sessionApt.date)}
-                        </span>
-                      )}
-                      {isDoneByCounter && !sessionApt && (
-                        <span className="font-body text-[8px] text-muted-foreground mt-0.5 text-center leading-tight">
-                          Realizada
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="font-body text-[10px] text-muted-foreground mt-2">
-                Restam <span className="font-semibold text-foreground">{(apt.total_sessions || 0) - (apt.completed_sessions || 0)}</span> sessão(ões)
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
 
   return (
     <div className="space-y-6">
@@ -626,96 +503,86 @@ const AdminPartnerView = () => {
             {/* Agenda tab */}
             {activeTab === "agenda" && (
               <div className="space-y-4">
-                {/* Date filter buttons */}
-                <div className="flex gap-2 flex-wrap">
+                {/* Date filter with calendar */}
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={() => setFilterDate(null)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      !filterDate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                    onClick={() => setFilterDate(new Date())}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold font-body border transition-all ${
+                      format(filterDate, "yyyy-MM-dd") === today
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}
                   >
-                    Todos
+                    Hoje
                   </button>
-                  {[...new Set([today, ...Object.keys(grouped)])].sort().map((date) => (
-                    <button
-                      key={date}
-                      onClick={() => setFilterDate(filterDate === date ? null : date)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        filterDate === date ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {formatDate(date)}
-                      {date === today && " (Hoje)"}
-                    </button>
-                  ))}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium font-body border border-border text-foreground hover:bg-muted transition-colors">
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        {format(filterDate, "dd/MM/yyyy")}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={filterDate}
+                        onSelect={(d) => { if (d) setFilterDate(d); }}
+                        locale={ptBR}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
-                {appointments.length === 0 ? (
-                  <div className="bg-card rounded-2xl border border-border p-12 text-center">
-                    <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="font-body text-muted-foreground">Nenhum agendamento próximo.</p>
-                  </div>
-                ) : filterDate ? (
-                  /* Timeline view for selected date */
-                  <DayTimelineView
-                    appointments={appointments.filter((a) => a.appointment_date === filterDate).map((a) => ({
-                      ...a,
-                      service_slug: a.service_slug || "",
-                      partner_id: null,
-                      total_sessions: a.total_sessions || null,
-                      completed_sessions: a.completed_sessions || null,
-                      planSessions: a.planSessions || [],
-                      profiles: a.profile ? { ...a.profile, phone: (a.profile as any).phone || "", email: null } : null,
-                    }))}
-                    expandedAptId={expandedAptId}
-                    onSelectAppointment={(id) => setExpandedAptId(expandedAptId === id ? null : id)}
-                    clientPlans={clientPlans.map(p => ({
-                      id: p.id,
-                      user_id: p.user_id,
-                      service_slug: p.service_slug,
-                      service_title: p.service_title,
-                      plan_name: p.plan_name,
-                      total_sessions: p.total_sessions,
-                      completed_sessions: p.completed_sessions,
-                      status: p.status,
-                    }))}
-                    isRescheduled={(apt) => {
-                      if (!apt.notes) return false;
-                      try { return !!JSON.parse(apt.notes).rescheduled; } catch { return false; }
-                    }}
-                    onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
-                    onHistory={(userId, name) => setHistoryClient({ userId, name })}
-                    onScheduleSession={undefined}
-                    onComplete={(apt) => {
-                      const fullApt = appointments.find((a) => a.id === apt.id);
-                      if (fullApt) openDecisionModal(fullApt, "completed");
-                    }}
-                    onMarkNoShow={(apt) => {
-                      const fullApt = appointments.find((a) => a.id === apt.id);
-                      if (fullApt) openDecisionModal(fullApt, "cancelled");
-                    }}
-                    markingAppointmentId={completingId}
-                    isOverdue={(apt) => {
-                      const fullApt = appointments.find(a => a.id === apt.id);
-                      return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
-                    }}
-                  />
-                ) : (
-                  Object.entries(grouped).map(([date, apts]) => (
-                    <div key={date}>
-                      <h3 className="font-heading text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        {formatDate(date)}
-                        {date === today && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">Hoje</span>
-                        )}
-                      </h3>
-                      <div className="space-y-3">
-                        {apts.map(renderAppointmentCard)}
-                      </div>
-                    </div>
-                  ))
-                )}
+                {(() => {
+                  const dateStr = format(filterDate, "yyyy-MM-dd");
+                  const dayApts = appointments.filter((a) => a.appointment_date === dateStr);
+                  return (
+                    <DayTimelineView
+                      appointments={dayApts.map((a) => ({
+                        ...a,
+                        service_slug: a.service_slug || "",
+                        partner_id: null,
+                        total_sessions: a.total_sessions || null,
+                        completed_sessions: a.completed_sessions || null,
+                        planSessions: a.planSessions || [],
+                        profiles: a.profile ? { ...a.profile, phone: (a.profile as any).phone || "", email: null } : null,
+                      }))}
+                      expandedAptId={expandedAptId}
+                      onSelectAppointment={(id) => setExpandedAptId(expandedAptId === id ? null : id)}
+                      clientPlans={clientPlans.map(p => ({
+                        id: p.id,
+                        user_id: p.user_id,
+                        service_slug: p.service_slug,
+                        service_title: p.service_title,
+                        plan_name: p.plan_name,
+                        total_sessions: p.total_sessions,
+                        completed_sessions: p.completed_sessions,
+                        status: p.status,
+                      }))}
+                      isRescheduled={(apt) => {
+                        if (!apt.notes) return false;
+                        try { return !!JSON.parse(apt.notes).rescheduled; } catch { return false; }
+                      }}
+                      onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
+                      onHistory={(userId, name) => setHistoryClient({ userId, name })}
+                      onScheduleSession={undefined}
+                      onComplete={(apt) => {
+                        const fullApt = appointments.find((a) => a.id === apt.id);
+                        if (fullApt) openDecisionModal(fullApt, "completed");
+                      }}
+                      onMarkNoShow={(apt) => {
+                        const fullApt = appointments.find((a) => a.id === apt.id);
+                        if (fullApt) openDecisionModal(fullApt, "cancelled");
+                      }}
+                      markingAppointmentId={completingId}
+                      isOverdue={(apt) => {
+                        const fullApt = appointments.find(a => a.id === apt.id);
+                        return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
+                      }}
+                    />
+                  );
+                })()}
               </div>
             )}
 
