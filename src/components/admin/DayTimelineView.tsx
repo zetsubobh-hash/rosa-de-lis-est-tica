@@ -181,16 +181,17 @@ const DayTimelineView = ({
       className="bg-card rounded-2xl border border-border overflow-auto relative"
     >
       <div className="relative" style={{ height: `${TOTAL_SLOTS * ROW_HEIGHT}px` }}>
-        {/* Grid rows */}
+        {/* Grid rows - narrower time labels on mobile */}
         {slots.map((label, i) => (
           <div
             key={i}
             className="absolute left-0 right-0 flex"
             style={{ top: `${i * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}
           >
-            <div className="w-[52px] shrink-0 flex items-start justify-end pr-2 pt-0.5">
+            <div className={cn("shrink-0 flex items-start justify-end pr-1.5 pt-0.5", isMobile ? "w-[40px]" : "w-[52px]")}>
               <span className={cn(
-                "font-body text-[11px]",
+                "font-body",
+                isMobile ? "text-[9px]" : "text-[11px]",
                 i % 2 === 0 ? "text-muted-foreground font-medium" : "text-muted-foreground/40"
               )}>
                 {label}
