@@ -317,6 +317,78 @@ const PartnerDashboard = () => {
     setCancelReasonText("");
   };
 
+  /* ── Agenda management (when canManageAgenda is true) ── */
+  const [dragConfirm, setDragConfirm] = useState<{
+    appointmentId: string;
+    newTime: string;
+    apt: Appointment;
+  } | null>(null);
+
+  const handleDragReschedule = (appointmentId: string, newTime: string) => {
+    if (!canManageAgenda) return;
+    const apt = appointments.find((a) => a.id === appointmentId);
+    if (!apt) return;
+    if (apt.appointment_time === newTime) return;
+    if (apt.status === "completed") {
+      toast.error("Não é possível remarcar um procedimento concluído.");
+      return;
+    }
+    const now = new Date();
+    const [th, tm] = newTime.split(":").map(Number);
+    if (th * 60 + tm < now.getHours() * 60 + now.getMinutes()) {
+      toast.error("Não é possível remarcar para um horário que já passou.");
+      return;
+    }
+    const conflict = appointments.find(
+      (a) => a.id !== appointmentId && a.appointment_date === apt.appointment_date && a.appointment_time === newTime
+    );
+    if (conflict) {
+      toast.error(`Já existe um agendamento às ${newTime}.`);
+      return;
+    }
+    setDragConfirm({ appointmentId, newTime, apt });
+  };
+
+  const confirmDragReschedule = async () => {
+    if (!dragConfirm) return;
+    const { appointmentId, newTime, apt } = dragConfirm;
+    setDragConfirm(null);
+    let noteData: any = {};
+    try { if (apt.notes) noteData = JSON.parse(apt.notes); } catch { /* ignore */ }
+    noteData.rescheduled = true;
+    const updatedNotes = JSON.stringify(noteData);
+    const { error } = await supabase
+      .from("appointments")
+      .update({ appointment_time: newTime, notes: updatedNotes })
+      .eq("id", appointmentId);
+    if (error) {
+      toast.error("Erro ao remarcar.");
+      return;
+    }
+    toast.success(`Remarcado para ${newTime} ✅`);
+    setAppointments((prev) =>
+      prev.map((a) => a.id === appointmentId ? { ...a, appointment_time: newTime, notes: updatedNotes } : a)
+    );
+    // WhatsApp notification (fire-and-forget)
+    const { data: { session } } = await supabase.auth.getSession();
+    fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}`, apikey: SUPABASE_ANON_KEY },
+      body: JSON.stringify({ appointment_ids: [appointmentId], type: "reschedule" }),
+    }).catch(() => {});
+  };
+
+  const handleCancelAppointment = async (id: string) => {
+    if (!canManageAgenda) return;
+    const { error } = await supabase.from("appointments").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao cancelar agendamento.");
+      return;
+    }
+    setAppointments((prev) => prev.filter((a) => a.id !== id));
+    toast.success("Agendamento cancelado ✅");
+  };
+
   const handleConfirmDecision = async () => {
     if (!decisionModal) return;
     const { apt, type } = decisionModal;
