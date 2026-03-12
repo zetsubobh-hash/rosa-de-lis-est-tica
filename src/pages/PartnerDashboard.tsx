@@ -393,7 +393,7 @@ const PartnerDashboard = () => {
   };
 
   const handleCancelAppointment = async (id: string) => {
-    if (!canManageAgenda) return;
+    if (!permissions.can_cancel) return;
     const { error } = await supabase.from("appointments").delete().eq("id", id);
     if (error) {
       toast.error("Erro ao cancelar agendamento.");
