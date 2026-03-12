@@ -141,6 +141,7 @@ const DayTimelineView = ({
   getAppointmentPrice,
   getInitials = defaultGetInitials,
   onAnamnesis,
+  onHistory,
   onSlotClick,
   onDragReschedule,
   readOnly = false,
