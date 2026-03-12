@@ -113,7 +113,7 @@ const estimateDuration = (serviceSlug: string): number => {
 };
 
 const START_HOUR = 8;
-const END_HOUR = 20;
+const END_HOUR = 21;
 const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 2;
 const ROW_HEIGHT = 40;
 
