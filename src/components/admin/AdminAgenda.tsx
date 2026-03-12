@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle, Handshake, ChevronDown, Hash, MinusCircle, PlusCircle, CheckCircle2, CalendarPlus, Banknote } from "lucide-react";
+import { CalendarX, Trash2, Phone, MapPin, Calendar, Clock, User, CalendarClock, X, CalendarIcon, MessageCircle, Handshake, ChevronDown, Hash, MinusCircle, PlusCircle, CheckCircle2, CalendarPlus, Banknote, UserPlus } from "lucide-react";
+import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
