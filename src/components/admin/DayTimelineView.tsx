@@ -3,6 +3,7 @@ import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, Ch
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Profile {
   full_name: string;
