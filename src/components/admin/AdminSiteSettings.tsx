@@ -3,12 +3,12 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, MapPin, Phone, Instagram, Building2, Clock, MessageCircle } from "lucide-react";
+import { Save, MapPin, Phone, Instagram, Building2, Clock, MessageCircle, CalendarCheck } from "lucide-react";
 
 const formatWhatsApp = (value: string) => {
   const digits = value.replace(/\D/g, "");
-  // Remove leading 55 if user types it (we add it automatically)
   const local = digits.startsWith("55") ? digits.slice(2) : digits;
   const d = local.slice(0, 11);
   if (d.length === 0) return "";
@@ -31,7 +31,6 @@ const AdminSiteSettings = () => {
 
   if (!initialized && !loading && Object.keys(settings).length > 0) {
     const formatted = { ...settings };
-    // Display whatsapp as masked
     if (formatted.whatsapp_number) {
       formatted.whatsapp_number = formatWhatsApp(formatted.whatsapp_number);
     }
@@ -54,6 +53,12 @@ const AdminSiteSettings = () => {
       toast.error("Erro ao salvar configurações");
     }
     setSaving(false);
+  };
+
+  const isBookingEnabled = (form.online_booking_enabled ?? settings.online_booking_enabled ?? "true") === "true";
+
+  const handleToggleBooking = (checked: boolean) => {
+    setForm((prev) => ({ ...prev, online_booking_enabled: checked ? "true" : "false" }));
   };
 
   if (loading) {
@@ -80,6 +85,22 @@ const AdminSiteSettings = () => {
       <p className="font-body text-sm text-muted-foreground">
         Essas informações aparecem no rodapé do site e em outros locais públicos.
       </p>
+
+      {/* Online Booking Toggle */}
+      <div className="rounded-xl border border-border p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <CalendarCheck className="w-5 h-5 text-primary" />
+          <div>
+            <p className="font-body text-sm font-semibold text-foreground">Agendamento Online</p>
+            <p className="font-body text-xs text-muted-foreground">
+              {isBookingEnabled
+                ? "Clientes podem agendar e comprar pacotes diretamente pelo site."
+                : "Desativado — botões de agendar direcionam para o WhatsApp."}
+            </p>
+          </div>
+        </div>
+        <Switch checked={isBookingEnabled} onCheckedChange={handleToggleBooking} />
+      </div>
 
       <div className="space-y-4">
         {fields.map((field) => (

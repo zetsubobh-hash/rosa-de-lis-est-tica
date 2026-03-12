@@ -6,6 +6,7 @@ import { useServices } from "@/hooks/useServices";
 import { getIconByName } from "@/lib/iconMap";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
+import { useOnlineBooking } from "@/hooks/useOnlineBooking";
 
 const Services = () => {
   const [clicked, setClicked] = useState<string | null>(null);
@@ -13,12 +14,20 @@ const Services = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { services, loading } = useServices();
+  const { isEnabled, getWhatsAppUrl } = useOnlineBooking();
 
-  const handleClick = (slug: string) => {
+  const handleClick = (slug: string, title: string) => {
     setClicked(slug);
-    setTimeout(() => {
-      navigate(`/servico/${slug}`);
-    }, 400);
+    if (isEnabled) {
+      setTimeout(() => {
+        navigate(`/servico/${slug}`);
+      }, 400);
+    } else {
+      setTimeout(() => {
+        window.open(getWhatsAppUrl(title), "_blank");
+        setClicked(null);
+      }, 400);
+    }
   };
 
   return (
@@ -67,7 +76,7 @@ const Services = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
-                onClick={() => handleClick(service.slug)}
+                onClick={() => handleClick(service.slug, service.title)}
                 className={`group relative rounded-2xl p-5 md:p-6 cursor-pointer overflow-hidden border-2 transition-all duration-300 h-full select-none ${
                   isSelected
                     ? "bg-primary/10 border-primary shadow-inner scale-[0.97]"
