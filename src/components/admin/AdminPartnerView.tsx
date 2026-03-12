@@ -80,6 +80,7 @@ const AdminPartnerView = () => {
   const [historyClient, setHistoryClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
   const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
+  const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
   useEffect(() => {
@@ -126,7 +127,7 @@ const AdminPartnerView = () => {
 
     const [{ data: profiles }, planByIdResult, clientPlansResult] = await Promise.all([
       userIds.length > 0
-        ? supabase.from("profiles").select("user_id, full_name, avatar_url").in("user_id", userIds)
+        ? supabase.from("profiles").select("user_id, full_name, avatar_url, phone").in("user_id", userIds)
         : Promise.resolve({ data: [] as any[] }),
       planIds.length > 0
         ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("id", planIds)
@@ -540,8 +541,10 @@ const AdminPartnerView = () => {
                       total_sessions: a.total_sessions || null,
                       completed_sessions: a.completed_sessions || null,
                       planSessions: a.planSessions || [],
-                      profiles: a.profile ? { ...a.profile, phone: "", email: null } : null,
+                      profiles: a.profile ? { ...a.profile, phone: (a.profile as any).phone || "", email: null } : null,
                     }))}
+                    expandedAptId={expandedAptId}
+                    onSelectAppointment={(id) => setExpandedAptId(expandedAptId === id ? null : id)}
                     clientPlans={clientPlans.map(p => ({
                       id: p.id,
                       user_id: p.user_id,
