@@ -682,25 +682,22 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
                         <Input type="text" value={newPlanRaw.pps}
                           onChange={(e) => {
-                            const raw = e.target.value;
-                            setNewPlanRaw(p => ({ ...p, pps: raw }));
-                            const v = strToCents(raw);
+                            const masked = maskBRL(e.target.value);
+                            const v = strToCents(e.target.value);
+                            setNewPlanRaw({ pps: masked, total: centsToStr(v * newPlan.sessions) });
                             setNewPlan(p => ({ ...p, price_per_session_cents: v, total_price_cents: v * p.sessions }));
-                            setNewPlanRaw(p => ({ ...p, total: centsToStr(v * newPlan.sessions) }));
                           }}
-                          onBlur={() => setNewPlanRaw(p => ({ ...p, pps: centsToStr(newPlan.price_per_session_cents) }))}
                           className="h-8 font-body text-sm" />
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
                         <Input type="text" value={newPlanRaw.total}
                           onChange={(e) => {
-                            const raw = e.target.value;
-                            setNewPlanRaw(p => ({ ...p, total: raw }));
-                            const v = strToCents(raw);
+                            const masked = maskBRL(e.target.value);
+                            const v = strToCents(e.target.value);
+                            setNewPlanRaw(p => ({ ...p, total: masked }));
                             setNewPlan(p => ({ ...p, total_price_cents: v }));
                           }}
-                          onBlur={() => setNewPlanRaw(p => ({ ...p, total: centsToStr(newPlan.total_price_cents) }))}
                           className="h-8 font-body text-sm" />
                       </div>
                       <Button onClick={handleAddPlan} size="sm" className="w-full gap-1.5" disabled={!newPlan.plan_name}>
