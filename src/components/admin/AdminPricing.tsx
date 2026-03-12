@@ -93,14 +93,6 @@ const AdminPricing = () => {
         [field]: parsed.display,
       },
     }));
-
-    setEditedPrices((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        [field]: parsed.cents,
-      },
-    }));
   };
 
   const commitMoneyInput = (id: string, field: "price_per_session_cents" | "total_price_cents") => {
@@ -113,12 +105,12 @@ const AdminPricing = () => {
       const original = prices.find((p) => p.id === id);
       if (!original) return prev;
 
-      const next = {
+      const next: Partial<ServicePrice> = {
         ...prev[id],
         [field]: cents,
       };
 
-      if (field === "price_per_session_cents" && prev[id]?.total_price_cents === undefined) {
+      if (field === "price_per_session_cents") {
         const currentSessions = next.sessions ?? original.sessions;
         next.total_price_cents = cents * currentSessions;
       }
@@ -137,6 +129,10 @@ const AdminPricing = () => {
       },
     }));
   };
+
+  const hasPendingRawChanges = Object.values(rawPriceInputs).some(
+    (raw) => raw.price_per_session_cents !== undefined
+  );
 
   const handleSaveAll = async () => {
     const entries = Object.entries(editedPrices);
