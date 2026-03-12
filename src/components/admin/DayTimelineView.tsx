@@ -651,7 +651,7 @@ const DayTimelineView = ({
                             <Banknote className="w-3.5 h-3.5" />Confirmar PIX
                           </button>
                         )}
-                        {!isCompleted && onComplete && (
+                        {!isCompleted && !hasOverdueDecisionActions && onComplete && (
                           <button onClick={() => onComplete(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all">
                             <CheckCircle2 className="w-3.5 h-3.5" />Finalizar
                           </button>
