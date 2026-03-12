@@ -298,6 +298,12 @@ const DayTimelineView = ({
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
+                    {/* Mobile drag handle */}
+                    {isMobile && (
+                      <div className="flex justify-center pb-2 -mt-1">
+                        <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+                      </div>
+                    )}
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <h3 className="font-heading text-sm font-bold text-foreground">{block.service_title}</h3>
