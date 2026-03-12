@@ -96,6 +96,12 @@ const PartnerDashboard = () => {
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState("");
   const [canManageAgenda, setCanManageAgenda] = useState(false);
+  const [permissions, setPermissions] = useState({
+    can_create_appointments: false,
+    can_reschedule: false,
+    can_cancel: false,
+    can_complete: false,
+  });
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [pastAppointments, setPastAppointments] = useState<Appointment[]>([]);
   const [clientPlans, setClientPlans] = useState<ClientPlan[]>([]);
