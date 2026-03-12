@@ -99,6 +99,7 @@ const PartnerDashboard = () => {
   const [partnerName, setPartnerName] = useState("");
   
   const [permissions, setPermissions] = useState({
+    can_manage_agenda: false,
     can_create_appointments: false,
     can_reschedule: false,
     can_cancel: false,
@@ -157,11 +158,13 @@ const PartnerDashboard = () => {
       setPartnerId(partner.id);
       setPartnerName(partner.full_name);
       const p = partner as any;
+      const canManageAgenda = !!p.can_manage_agenda;
       const perms = {
-        can_create_appointments: !!p.can_create_appointments,
-        can_reschedule: !!p.can_reschedule,
-        can_cancel: !!p.can_cancel,
-        can_complete: !!p.can_complete,
+        can_manage_agenda: canManageAgenda,
+        can_create_appointments: canManageAgenda || !!p.can_create_appointments,
+        can_reschedule: canManageAgenda || !!p.can_reschedule,
+        can_cancel: canManageAgenda || !!p.can_cancel,
+        can_complete: canManageAgenda || !!p.can_complete,
       };
       setPermissions(perms);
 
@@ -524,6 +527,8 @@ const PartnerDashboard = () => {
     { key: "historico", label: "Histórico", icon: History, count: pastAppointments.length },
   ];
 
+  const selectedAgendaDate = filterDate || today;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -863,24 +868,26 @@ const PartnerDashboard = () => {
               >
                 Hoje
               </button>
-              <button
-                onClick={() => setFilterDate(null)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  !filterDate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Todos
-              </button>
+              {!permissions.can_create_appointments && (
+                <button
+                  onClick={() => setFilterDate(null)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    !filterDate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  Todos
+                </button>
+              )}
             </div>
 
-            {(!filterDate && appointments.length === 0) ? (
+            {(!permissions.can_create_appointments && !filterDate && appointments.length === 0) ? (
               <div className="bg-card rounded-2xl border border-border p-12 text-center">
                 <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="font-body text-muted-foreground">Nenhum agendamento próximo.</p>
               </div>
-            ) : filterDate ? (
+            ) : (filterDate || permissions.can_create_appointments) ? (
               <DayTimelineView
-                appointments={appointments.filter((a) => a.appointment_date === filterDate).map((a) => ({
+                appointments={appointments.filter((a) => a.appointment_date === selectedAgendaDate).map((a) => ({
                   ...a,
                   service_slug: a.service_slug || "",
                   total_sessions: a.total_sessions || null,
