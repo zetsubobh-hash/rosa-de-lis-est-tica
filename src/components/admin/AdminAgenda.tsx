@@ -211,6 +211,21 @@ const AdminAgenda = () => {
 
   useEffect(() => {
     fetchAll();
+
+    const channel = supabase
+      .channel("admin-agenda-appointments-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments" },
+        () => {
+          fetchAll();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleCancel = async (id: string) => {
