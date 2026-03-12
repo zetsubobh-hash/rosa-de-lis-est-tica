@@ -264,7 +264,7 @@ const AdminPricing = () => {
           </button>
           <button
             onClick={handleSaveAll}
-            disabled={saving || Object.keys(editedPrices).length === 0}
+            disabled={saving || (Object.keys(editedPrices).length === 0 && !hasPendingRawChanges)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
