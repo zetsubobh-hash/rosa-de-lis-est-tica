@@ -647,14 +647,20 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Preço/sessão (R$)</label>
                             <Input
                               type="text"
+                              inputMode="decimal"
                               value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
+                              onFocus={(e) => e.currentTarget.select()}
                               onChange={(e) => {
-                                const masked = maskBRL(e.target.value);
-                                const v = strToCents(e.target.value);
+                                const raw = e.target.value;
+                                const v = strToCents(raw);
                                 const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { pps: masked, total: centsToStr(v * currentSessions) } }));
-                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: v, total_price_cents: v * currentSessions } }));
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: raw, total: centsToStr(v * currentSessions) } }));
+                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: v, total_price_cents: v * currentSessions } }));
                                 setHasChanges(true);
+                              }}
+                              onBlur={() => {
+                                const current = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(current) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -663,24 +669,46 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Total (R$)</label>
                             <Input
                               type="text"
+                              inputMode="decimal"
                               value={rawPriceInputs[plan.id]?.total ?? centsToStr(total)}
+                              onFocus={(e) => e.currentTarget.select()}
                               onChange={(e) => {
-                                const masked = maskBRL(e.target.value);
-                                const v = strToCents(e.target.value);
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: masked } }));
-                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: v } }));
+                                const raw = e.target.value;
+                                const v = strToCents(raw);
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: raw } }));
+                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: v } }));
                                 setHasChanges(true);
+                              }}
+                              onBlur={() => {
+                                const current = editedPrices[plan.id]?.total_price_cents ?? plan.total_price_cents;
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(current) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
                           </div>
-                          <button
-                            onClick={() => handleDeletePlan(plan.id)}
-                            className={`flex items-center gap-1 text-xs font-body ${isHighlight ? "text-primary-foreground/60 hover:text-primary-foreground" : "text-destructive hover:underline"}`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Excluir plano
-                          </button>
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <Button
+                              type="button"
+                              onClick={() => handleSavePlan(plan.id)}
+                              disabled={savingPlanId === plan.id}
+                              size="sm"
+                              className={`gap-1.5 h-8 ${isHighlight ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90" : ""}`}
+                            >
+                              {savingPlanId === plan.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                              Salvar
+                            </Button>
+                            <button
+                              onClick={() => handleDeletePlan(plan.id)}
+                              className={`h-8 rounded-lg border font-body text-xs font-medium flex items-center justify-center gap-1 ${
+                                isHighlight
+                                  ? "border-primary-foreground/30 text-primary-foreground/90 hover:bg-primary-foreground/10"
+                                  : "border-destructive/30 text-destructive hover:bg-destructive/10"
+                              }`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Excluir
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <>
