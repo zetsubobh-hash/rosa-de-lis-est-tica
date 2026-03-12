@@ -143,6 +143,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     address: "",
     sex: "",
     birth_date: "",
+    username: "",
   });
 
   const loadData = async () => {
