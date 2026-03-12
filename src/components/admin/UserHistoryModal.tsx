@@ -44,6 +44,7 @@ interface Props {
   onClose: () => void;
   userId: string;
   userName: string;
+  hidePayments?: boolean;
 }
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
