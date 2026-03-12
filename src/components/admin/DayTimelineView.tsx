@@ -325,9 +325,20 @@ const DayTimelineView = ({
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <h3 className="font-heading text-sm font-bold text-foreground">{block.service_title}</h3>
-                      <button onClick={() => onSelectAppointment?.(block.id)} className="text-muted-foreground hover:text-foreground">
-                        <X className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {onAnamnesis && profile && (
+                          <button
+                            onClick={() => onAnamnesis(block.user_id, profile.full_name)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            Anamnese
+                          </button>
+                        )}
+                        <button onClick={() => onSelectAppointment?.(block.id)} className="text-muted-foreground hover:text-foreground">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Client info */}
