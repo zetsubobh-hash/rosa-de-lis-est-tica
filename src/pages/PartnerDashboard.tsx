@@ -65,16 +65,25 @@ const formatDate = (dateStr: string) => {
   return `${d}/${m}/${y}`;
 };
 
-const isAppointmentOverdue = (apt: { appointment_date: string; appointment_time: string; status: string }) => {
-  if (apt.status !== "confirmed") return false;
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
+const formatLocalDate = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const isAppointmentOverdue = (
+  apt: { appointment_date: string; appointment_time: string; status: string },
+  referenceDate: Date
+) => {
+  if (!["confirmed", "pending"].includes(apt.status)) return false;
+  const todayStr = formatLocalDate(referenceDate);
   if (apt.appointment_date > todayStr) return false;
   if (apt.appointment_date < todayStr) return true;
   // Same day — check if time has passed (add 30min buffer for the session itself)
   const [h, m] = apt.appointment_time.split(":").map(Number);
   const aptMinutes = h * 60 + m + 30; // 30min after start
-  const nowMinutes = today.getHours() * 60 + today.getMinutes();
+  const nowMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
   return nowMinutes >= aptMinutes;
 };
 
@@ -94,13 +103,19 @@ const PartnerDashboard = () => {
   const [historyClient, setHistoryClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
   const [showDemoRoulette, setShowDemoRoulette] = useState(false);
-  const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
+  const [filterDate, setFilterDate] = useState<string | null>(formatLocalDate(new Date()));
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
   const [scheduleModal, setScheduleModal] = useState<{
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowTick(Date.now()), 30000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -124,7 +139,7 @@ const PartnerDashboard = () => {
       setPartnerId(partner.id);
       setPartnerName(partner.full_name);
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatLocalDate(new Date());
 
       // Fetch upcoming and past appointments in parallel
       const [{ data: upcoming }, { data: past }] = await Promise.all([
@@ -341,9 +356,10 @@ const PartnerDashboard = () => {
     return acc;
   }, {});
 
-  const today = new Date().toISOString().split("T")[0];
+  const referenceNow = new Date(nowTick);
+  const today = formatLocalDate(referenceNow);
   const todayCount = appointments.filter((a) => a.appointment_date === today).length;
-  const overdueAppointments = appointments.filter((a) => isAppointmentOverdue(a));
+  const overdueAppointments = appointments.filter((a) => isAppointmentOverdue(a, referenceNow));
   const overdueCount = overdueAppointments.length;
   const nextOverdueAppointment = overdueAppointments[0] ?? null;
 
@@ -362,7 +378,7 @@ const PartnerDashboard = () => {
   }
 
   const renderAppointmentCard = (apt: Appointment) => {
-    const overdue = isAppointmentOverdue(apt);
+    const overdue = isAppointmentOverdue(apt, referenceNow);
     return (
     <motion.div
       key={apt.id}
@@ -741,7 +757,7 @@ const PartnerDashboard = () => {
                 }}
                 isOverdue={(apt) => {
                   const fullApt = appointments.find(a => a.id === apt.id);
-                  return fullApt ? isAppointmentOverdue(fullApt) : false;
+                  return fullApt ? isAppointmentOverdue(fullApt, referenceNow) : false;
                 }}
               />
             ) : (
