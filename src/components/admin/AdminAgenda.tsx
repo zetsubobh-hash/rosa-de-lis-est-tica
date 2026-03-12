@@ -260,7 +260,7 @@ const AdminAgenda = () => {
         setClientPlans((prev) => prev.map((p) => p.id === plan.id ? { ...p, completed_sessions: newCompleted, status: newStatus } : p));
       }
       toast({ title: "Procedimento finalizado ✅" });
-      setAppointments((prev) => prev.filter((a) => a.id !== apt.id));
+      setAppointments((prev) => prev.map((a) => a.id === apt.id ? { ...a, status: "completed" } : a));
     }
   };
 
