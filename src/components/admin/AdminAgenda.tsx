@@ -1109,17 +1109,38 @@ const AdminAgenda = () => {
 
               {/* Client select */}
               <div>
-                <label className="font-body text-xs font-semibold text-foreground block mb-1.5">Cliente</label>
-                <select
-                  value={qbUserId}
-                  onChange={(e) => setQbUserId(e.target.value)}
-                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">Selecione o cliente...</option>
-                  {allProfiles.map((p) => (
-                    <option key={p.user_id} value={p.user_id}>{p.full_name}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="font-body text-xs font-semibold text-foreground">Cliente</label>
+                  <button
+                    type="button"
+                    onClick={() => setQbShowNewClient(!qbShowNewClient)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    {qbShowNewClient ? <><X className="w-3 h-3" /> Cancelar</> : <><UserPlus className="w-3 h-3" /> Novo Cliente</>}
+                  </button>
+                </div>
+
+                {qbShowNewClient ? (
+                  <NewClientInlineForm
+                    onClientCreated={(client) => {
+                      setAllProfiles(prev => [{ user_id: client.user_id, full_name: client.full_name }, ...prev]);
+                      setQbUserId(client.user_id);
+                      setQbShowNewClient(false);
+                    }}
+                    onCancel={() => setQbShowNewClient(false)}
+                  />
+                ) : (
+                  <select
+                    value={qbUserId}
+                    onChange={(e) => setQbUserId(e.target.value)}
+                    className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="">Selecione o cliente...</option>
+                    {allProfiles.map((p) => (
+                      <option key={p.user_id} value={p.user_id}>{p.full_name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Service select */}
