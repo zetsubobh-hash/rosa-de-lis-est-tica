@@ -147,7 +147,15 @@ const PartnerDashboard = () => {
 
       setPartnerId(partner.id);
       setPartnerName(partner.full_name);
-      setCanManageAgenda(!!(partner as any).can_manage_agenda);
+      const p = partner as any;
+      const perms = {
+        can_create_appointments: !!p.can_create_appointments,
+        can_reschedule: !!p.can_reschedule,
+        can_cancel: !!p.can_cancel,
+        can_complete: !!p.can_complete,
+      };
+      setPermissions(perms);
+      setCanManageAgenda(perms.can_create_appointments || perms.can_reschedule || perms.can_cancel || perms.can_complete);
 
       const today = formatLocalDate(new Date());
 
