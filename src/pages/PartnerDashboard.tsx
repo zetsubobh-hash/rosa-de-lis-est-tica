@@ -795,11 +795,11 @@ const PartnerDashboard = () => {
                 onScheduleSession={(params) => setScheduleModal(params)}
                 onComplete={(apt) => {
                   const fullApt = appointments.find(a => a.id === apt.id);
-                  if (fullApt) handleMarkAppointment(fullApt, true);
+                  if (fullApt) openDecisionModal(fullApt, "completed");
                 }}
                 onMarkNoShow={(apt) => {
                   const fullApt = appointments.find(a => a.id === apt.id);
-                  if (fullApt) handleMarkAppointment(fullApt, false);
+                  if (fullApt) openDecisionModal(fullApt, "cancelled");
                 }}
                 markingAppointmentId={completingId}
                 isOverdue={(apt) => {
