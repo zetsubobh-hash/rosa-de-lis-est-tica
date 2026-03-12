@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift } from "lucide-react";
