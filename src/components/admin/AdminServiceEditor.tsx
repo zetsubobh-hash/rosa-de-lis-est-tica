@@ -605,16 +605,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               type="text"
                               value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
                               onChange={(e) => {
-                                const raw = e.target.value;
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: raw } }));
-                                const v = strToCents(raw);
+                                const masked = maskBRL(e.target.value);
+                                const v = strToCents(e.target.value);
                                 const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { pps: masked, total: centsToStr(v * currentSessions) } }));
                                 setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: v, total_price_cents: v * currentSessions } }));
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: raw, total: centsToStr(v * currentSessions) } }));
                                 setHasChanges(true);
-                              }}
-                              onBlur={() => {
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -625,14 +621,11 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               type="text"
                               value={rawPriceInputs[plan.id]?.total ?? centsToStr(total)}
                               onChange={(e) => {
-                                const raw = e.target.value;
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: raw } }));
-                                const v = strToCents(raw);
+                                const masked = maskBRL(e.target.value);
+                                const v = strToCents(e.target.value);
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: masked } }));
                                 setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: v } }));
                                 setHasChanges(true);
-                              }}
-                              onBlur={() => {
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(editedPrices[plan.id]?.total_price_cents ?? plan.total_price_cents) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
