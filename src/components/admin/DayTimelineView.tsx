@@ -155,6 +155,8 @@ const DayTimelineView = ({
   onDragReschedule,
   readOnly = false,
   isOverdue: isOverdueFn,
+  onMarkNoShow,
+  markingAppointmentId = null,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
