@@ -109,6 +109,7 @@ const AdminAgenda = () => {
   const [updatingPlan, setUpdatingPlan] = useState<string | null>(null);
   const [cancelAllPlanId, setCancelAllPlanId] = useState<string | null>(null);
   const [activeSession, setActiveSession] = useState<{ planId: string; sessionNum: number } | null>(null);
+  const [dragConfirm, setDragConfirm] = useState<{ appointmentId: string; newTime: string; apt: Appointment } | null>(null);
 
   // Schedule modal state (for admin scheduling sessions)
   const [scheduleModal, setScheduleModal] = useState<{
@@ -438,8 +439,8 @@ const AdminAgenda = () => {
     setSaving(false);
   };
 
-  /** Drag-and-drop reschedule: update time within the same day */
-  const handleDragReschedule = async (appointmentId: string, newTime: string) => {
+  /** Drag-and-drop reschedule: show confirmation first */
+  const handleDragReschedule = (appointmentId: string, newTime: string) => {
     const apt = appointments.find((a) => a.id === appointmentId);
     if (!apt) return;
 
@@ -455,6 +456,15 @@ const AdminAgenda = () => {
       toast({ title: "Horário ocupado", description: `Já existe um agendamento às ${newTime}.`, variant: "destructive" });
       return;
     }
+
+    // Show confirmation popup
+    setDragConfirm({ appointmentId, newTime, apt });
+  };
+
+  const confirmDragReschedule = async () => {
+    if (!dragConfirm) return;
+    const { appointmentId, newTime, apt } = dragConfirm;
+    setDragConfirm(null);
 
     // Build notes with rescheduled flag
     let noteData: any = {};
@@ -1203,6 +1213,71 @@ const AdminAgenda = () => {
               >
                 {qbSaving ? "Agendando..." : "Confirmar Agendamento"}
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Drag reschedule confirmation modal */}
+      <AnimatePresence>
+        {dragConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setDragConfirm(null); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2 rounded-xl bg-primary/10">
+                  <CalendarClock className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-foreground">Confirmar alteração de horário?</h3>
+                  <p className="font-body text-sm text-muted-foreground mt-1">
+                    Uma notificação será enviada via WhatsApp para o cliente e o parceiro.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2 mb-5">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="font-heading text-sm font-bold text-foreground">
+                    {dragConfirm.apt.profiles?.full_name || "Cliente"}
+                  </span>
+                </div>
+                <p className="font-body text-xs text-muted-foreground">
+                  {dragConfirm.apt.service_title} — {formatDate(dragConfirm.apt.appointment_date)}
+                </p>
+                <div className="flex items-center gap-2 font-body text-sm">
+                  <span className="text-muted-foreground">{dragConfirm.apt.appointment_time}</span>
+                  <span className="text-primary font-bold">→</span>
+                  <span className="font-bold text-primary">{dragConfirm.newTime}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setDragConfirm(null)}
+                  className="h-12 rounded-xl border border-border text-muted-foreground font-body text-sm font-bold hover:bg-muted transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDragReschedule}
+                  className="h-12 rounded-xl bg-primary text-primary-foreground font-body text-sm font-bold hover:opacity-90 transition-opacity"
+                >
+                  Confirmar Alteração
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
