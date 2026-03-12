@@ -861,7 +861,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
               {!isNew && (
                 <EditableWrapper section="new-plan">
                   {editingSection === "new-plan" ? (
-                    <div className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
                       <h3 className="font-heading text-lg font-bold text-foreground">Novo Plano</h3>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Nome</label>
