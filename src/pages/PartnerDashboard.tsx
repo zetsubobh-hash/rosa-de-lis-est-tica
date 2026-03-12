@@ -155,7 +155,6 @@ const PartnerDashboard = () => {
         can_complete: !!p.can_complete,
       };
       setPermissions(perms);
-      setCanManageAgenda(perms.can_create_appointments || perms.can_reschedule || perms.can_cancel || perms.can_complete);
 
       const today = formatLocalDate(new Date());
 
