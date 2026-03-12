@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar, Clock, CalendarCheck, CalendarClock,
+  Calendar, Clock, CalendarCheck, CalendarClock, CalendarIcon,
   Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X
 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
+import DayTimelineView from "@/components/admin/DayTimelineView";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface SessionInfo {
   date: string;
