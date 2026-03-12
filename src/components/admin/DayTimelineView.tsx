@@ -402,6 +402,15 @@ const DayTimelineView = ({
                     <div className="flex items-center justify-between">
                       <h3 className="font-heading text-sm font-bold text-foreground">{block.service_title}</h3>
                       <div className="flex items-center gap-2">
+                        {onHistory && profile && (
+                          <button
+                            onClick={() => onHistory(block.user_id, profile.full_name)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors border border-border"
+                          >
+                            <ClipboardList className="w-3.5 h-3.5" />
+                            Ficha
+                          </button>
+                        )}
                         {onAnamnesis && profile && (
                           <button
                             onClick={() => onAnamnesis(block.user_id, profile.full_name)}
