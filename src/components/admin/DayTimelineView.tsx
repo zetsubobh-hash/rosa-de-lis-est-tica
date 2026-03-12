@@ -482,6 +482,13 @@ const DayTimelineView = ({
                       {getAppointmentPrice && <span className="font-heading text-xs font-bold text-primary">{getAppointmentPrice(block, allPrices)}</span>}
                     </div>
 
+                    {/* Overdue alert */}
+                    {blockOverdue && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-destructive/10 animate-pulse">
+                        <span className="text-xs font-semibold text-destructive">⚠️ Horário passou! Confirme se a sessão foi realizada.</span>
+                      </div>
+                    )}
+
                     {/* Plan progress - full session tracker */}
                     {(() => {
                       const totalSess = plan?.total_sessions || block.total_sessions || 0;
