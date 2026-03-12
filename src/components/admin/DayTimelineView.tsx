@@ -230,9 +230,17 @@ const DayTimelineView = ({
                 "flex-1 border-t transition-colors",
                 i % 2 === 0 ? "border-border" : "border-border/30 border-dashed",
                 dragOverSlot === i && "bg-primary/15 ring-1 ring-primary/30",
-                onSlotClick && !readOnly && "cursor-pointer hover:bg-primary/5"
+                mobileMovingId && "cursor-pointer",
+                onSlotClick && !readOnly && !mobileMovingId && "cursor-pointer hover:bg-primary/5"
               )}
-              onClick={() => onSlotClick && !readOnly && onSlotClick(label)}
+              onClick={() => {
+                if (mobileMovingId && onDragReschedule) {
+                  onDragReschedule(mobileMovingId, label);
+                  setMobileMovingId(null);
+                  return;
+                }
+                if (onSlotClick && !readOnly) onSlotClick(label);
+              }}
               onDragOver={(e) => {
                 if (!onDragReschedule || readOnly) return;
                 e.preventDefault();
