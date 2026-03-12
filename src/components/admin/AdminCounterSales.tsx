@@ -103,15 +103,64 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
 
 interface NewClientForm {
   full_name: string;
-  username: string;
-  password: string;
   phone: string;
   email: string;
   sex: string;
   address: string;
+  birth_date: string;
 }
 
-const emptyNewClient: NewClientForm = { full_name: "", username: "", password: "", phone: "", email: "", sex: "", address: "" };
+const emptyNewClient: NewClientForm = { full_name: "", phone: "", email: "", sex: "", address: "", birth_date: "" };
+
+const generateUsername = (name: string): string => {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(".")
+    + "." + Math.floor(Math.random() * 900 + 100);
+};
+
+const generatePassword = (): string => {
+  const chars = "abcdefghijkmnpqrstuvwxyz23456789";
+  let pass = "";
+  for (let i = 0; i < 6; i++) {
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pass;
+};
+
+const sendWhatsAppCredentials = async (phone: string, fullName: string, username: string, password: string) => {
+  try {
+    const { data: settingsData } = await supabase
+      .from("payment_settings")
+      .select("key, value")
+      .in("key", ["evolution_enabled", "evolution_api_url", "evolution_api_key", "evolution_instance_name"]);
+    const cfg: Record<string, string> = {};
+    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
+    if (cfg.evolution_enabled !== "true") return;
+    const apiUrl = cfg.evolution_api_url?.replace(/\/+$/, "");
+    const apiKey = cfg.evolution_api_key;
+    const instanceName = cfg.evolution_instance_name;
+    if (!apiUrl || !apiKey || !instanceName) return;
+    const { data: siteData } = await supabase.from("site_settings").select("value").eq("key", "business_name").maybeSingle();
+    const businessName = siteData?.value || "Rosa de Lis Estética";
+    const cleanPhone = phone.replace(/\D/g, "");
+    const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    const text = `Olá *${fullName}*! 👋\n\nSeu cadastro na *${businessName}* foi criado com sucesso! ✨\n\nAcesse nosso app com os dados abaixo:\n\n👤 *Usuário:* ${username}\n🔑 *Senha:* ${password}\n\nRecomendamos alterar sua senha no primeiro acesso. 💕`;
+    await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
+      method: "POST",
+      headers: { apikey: apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ number, text }),
+    });
+  } catch (e) {
+    console.error("Failed to send WhatsApp credentials:", e);
+  }
+};
 
 /* ─── Component ─── */
 const AdminCounterSales = () => {
