@@ -155,6 +155,7 @@ const DayTimelineView = ({
   onScheduleSession,
   onSlotClick,
   onDragReschedule,
+  timelineDate,
   readOnly = false,
   isOverdue: isOverdueFn,
   onMarkNoShow,
