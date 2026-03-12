@@ -271,15 +271,20 @@ const DayTimelineView = ({
 
               {/* Expanded detail card - positioned right below the block */}
               <AnimatePresence>
-                {isExpanded && (
+              {isExpanded && (
                   <motion.div
-                    initial={{ opacity: 0, scaleY: 0.9 }}
-                    animate={{ opacity: 1, scaleY: 1 }}
-                    exit={{ opacity: 0, scaleY: 0.9 }}
-                    className="absolute z-40 bg-card rounded-xl border border-border shadow-xl p-4 space-y-3"
-                    style={{
+                    initial={isMobile ? { opacity: 0, y: 100 } : { opacity: 0, scaleY: 0.9 }}
+                    animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scaleY: 1 }}
+                    exit={isMobile ? { opacity: 0, y: 100 } : { opacity: 0, scaleY: 0.9 }}
+                    className={cn(
+                      "bg-card border border-border shadow-xl space-y-3 z-[60]",
+                      isMobile
+                        ? "fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 max-h-[75vh] overflow-y-auto"
+                        : "absolute rounded-xl p-4"
+                    )}
+                    style={isMobile ? {} : {
                       top: `${top + height + 6}px`,
-                      left: "52px",
+                      left: `${timeCol}px`,
                       right: "8px",
                     }}
                     onClick={(e) => e.stopPropagation()}
