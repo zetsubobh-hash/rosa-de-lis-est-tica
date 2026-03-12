@@ -146,7 +146,6 @@ const DayTimelineView = ({
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
   const colorMap = useMemo(() => {
     const map: Record<string, { bg: string; text: string }> = {};
     const slugs = [...new Set(appointments.map((a) => a.service_slug))];
