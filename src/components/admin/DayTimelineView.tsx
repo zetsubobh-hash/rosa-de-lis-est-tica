@@ -3,6 +3,7 @@ import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, Ch
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Profile {
   full_name: string;
@@ -119,6 +120,7 @@ const DayTimelineView = ({
   getAppointmentPrice,
   getInitials,
 }: DayTimelineViewProps) => {
+  const isMobile = useIsMobile();
   const colorMap = useMemo(() => {
     const map: Record<string, { bg: string; text: string }> = {};
     const slugs = [...new Set(appointments.map((a) => a.service_slug))];
@@ -179,16 +181,17 @@ const DayTimelineView = ({
       className="bg-card rounded-2xl border border-border overflow-auto relative"
     >
       <div className="relative" style={{ height: `${TOTAL_SLOTS * ROW_HEIGHT}px` }}>
-        {/* Grid rows */}
+        {/* Grid rows - narrower time labels on mobile */}
         {slots.map((label, i) => (
           <div
             key={i}
             className="absolute left-0 right-0 flex"
             style={{ top: `${i * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}
           >
-            <div className="w-[52px] shrink-0 flex items-start justify-end pr-2 pt-0.5">
+            <div className={cn("shrink-0 flex items-start justify-end pr-1.5 pt-0.5", isMobile ? "w-[40px]" : "w-[52px]")}>
               <span className={cn(
-                "font-body text-[11px]",
+                "font-body",
+                isMobile ? "text-[9px]" : "text-[11px]",
                 i % 2 === 0 ? "text-muted-foreground font-medium" : "text-muted-foreground/40"
               )}>
                 {label}
@@ -204,7 +207,7 @@ const DayTimelineView = ({
         {/* Current time line */}
         {showNowLine && (
           <div
-            className="absolute left-[48px] right-0 z-30 flex items-center pointer-events-none"
+            className={cn("absolute right-0 z-30 flex items-center pointer-events-none", isMobile ? "left-[36px]" : "left-[48px]")}
             style={{ top: `${nowSlot * ROW_HEIGHT}px` }}
           >
             <div className="w-2.5 h-2.5 rounded-full bg-destructive -ml-1 shrink-0" />
@@ -217,8 +220,9 @@ const DayTimelineView = ({
           const color = colorMap[block.service_slug] || PALETTE[0];
           const profile = block.profiles;
           const col = aptCol.get(block.id) || 0;
-          const colWidth = `calc((100% - 52px) / ${totalCols})`;
-          const colLeft = `calc(52px + ${col} * (100% - 52px) / ${totalCols})`;
+          const timeCol = isMobile ? 40 : 52;
+          const colWidth = `calc((100% - ${timeCol}px) / ${totalCols})`;
+          const colLeft = `calc(${timeCol}px + ${col} * (100% - ${timeCol}px) / ${totalCols})`;
           const top = block.startSlot * ROW_HEIGHT;
           const height = Math.max(block.spanSlots * ROW_HEIGHT - 2, ROW_HEIGHT - 2);
           const timeRange = formatTimeRange(block.appointment_time, block.duration);
@@ -265,21 +269,41 @@ const DayTimelineView = ({
                 )}
               </motion.div>
 
-              {/* Expanded detail card - positioned right below the block */}
+              {/* Expanded detail card */}
               <AnimatePresence>
-                {isExpanded && (
+              {isExpanded && isMobile && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/40 z-[55]"
+                  onClick={() => onSelectAppointment(block.id)}
+                />
+              )}
+              {isExpanded && (
                   <motion.div
-                    initial={{ opacity: 0, scaleY: 0.9 }}
-                    animate={{ opacity: 1, scaleY: 1 }}
-                    exit={{ opacity: 0, scaleY: 0.9 }}
-                    className="absolute z-40 bg-card rounded-xl border border-border shadow-xl p-4 space-y-3"
-                    style={{
+                    initial={isMobile ? { opacity: 0, y: 100 } : { opacity: 0, scaleY: 0.9 }}
+                    animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scaleY: 1 }}
+                    exit={isMobile ? { opacity: 0, y: 100 } : { opacity: 0, scaleY: 0.9 }}
+                    className={cn(
+                      "bg-card border border-border shadow-xl space-y-3 z-[60]",
+                      isMobile
+                        ? "fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 max-h-[75vh] overflow-y-auto"
+                        : "absolute rounded-xl p-4"
+                    )}
+                    style={isMobile ? {} : {
                       top: `${top + height + 6}px`,
-                      left: "52px",
+                      left: `${timeCol}px`,
                       right: "8px",
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
+                    {/* Mobile drag handle */}
+                    {isMobile && (
+                      <div className="flex justify-center pb-2 -mt-1">
+                        <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+                      </div>
+                    )}
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <h3 className="font-heading text-sm font-bold text-foreground">{block.service_title}</h3>
@@ -357,7 +381,7 @@ const DayTimelineView = ({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2 flex-wrap">
+                    <div className={cn("flex gap-2", isMobile ? "grid grid-cols-2" : "flex-wrap")}>
                       {block.status === "pending" && (
                         <button onClick={() => onConfirmPayment(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-emerald-400/40 text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all">
                           <Banknote className="w-3.5 h-3.5" />Confirmar PIX
