@@ -200,10 +200,10 @@ const AdminAgenda = () => {
       if (newStatus === "completed") {
         await supabase.from("appointments").update({ status: "completed" }).eq("plan_id", planId).in("status", ["confirmed", "pending"]);
         await supabase.from("appointments").update({ status: "completed" }).eq("user_id", plan.user_id).eq("service_slug", plan.service_slug).in("status", ["confirmed", "pending"]);
-        setAppointments((prev) => prev.filter((a) => {
-          if (a.plan_id === planId) return false;
-          if (a.user_id === plan.user_id && a.service_slug === plan.service_slug) return false;
-          return true;
+        setAppointments((prev) => prev.map((a) => {
+          if (a.plan_id === planId) return { ...a, status: "completed" };
+          if (a.user_id === plan.user_id && a.service_slug === plan.service_slug) return { ...a, status: "completed" };
+          return a;
         }));
       }
     }
