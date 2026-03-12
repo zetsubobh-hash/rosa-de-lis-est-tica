@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
+import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 
 interface SessionInfo {
@@ -79,6 +80,9 @@ const PartnerDashboard = () => {
   const [showInstallQR, setShowInstallQR] = useState(false);
   const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
+  const [scheduleModal, setScheduleModal] = useState<{
+    planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string;
+  } | null>(null);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
 
@@ -556,6 +560,7 @@ const PartnerDashboard = () => {
                 }}
                 onAnamnesis={partnerId ? (userId, name) => setAnamnesisClient({ userId, name }) : undefined}
                 onHistory={(userId, name) => setHistoryClient({ userId, name })}
+                onScheduleSession={(params) => setScheduleModal(params)}
                 readOnly
               />
             ) : (
@@ -778,6 +783,19 @@ const PartnerDashboard = () => {
         onClose={() => setHistoryClient(null)}
         userId={historyClient.userId}
         userName={historyClient.name}
+      />
+    )}
+
+    {scheduleModal && (
+      <SessionScheduleModal
+        open={!!scheduleModal}
+        onClose={() => setScheduleModal(null)}
+        onScheduled={() => { setScheduleModal(null); window.location.reload(); }}
+        planId={scheduleModal.planId}
+        sessionNumber={scheduleModal.sessionNumber}
+        serviceSlug={scheduleModal.serviceSlug}
+        serviceTitle={scheduleModal.serviceTitle}
+        userId={scheduleModal.userId}
       />
     )}
 
