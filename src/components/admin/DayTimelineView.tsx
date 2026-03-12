@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -146,6 +146,9 @@ const DayTimelineView = ({
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
+  // Mobile: long-press to pick an appointment, then tap a slot to move it
+  const [mobileMovingId, setMobileMovingId] = useState<string | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const colorMap = useMemo(() => {
     const map: Record<string, { bg: string; text: string }> = {};
     const slugs = [...new Set(appointments.map((a) => a.service_slug))];
@@ -227,9 +230,17 @@ const DayTimelineView = ({
                 "flex-1 border-t transition-colors",
                 i % 2 === 0 ? "border-border" : "border-border/30 border-dashed",
                 dragOverSlot === i && "bg-primary/15 ring-1 ring-primary/30",
-                onSlotClick && !readOnly && "cursor-pointer hover:bg-primary/5"
+                mobileMovingId && "cursor-pointer",
+                onSlotClick && !readOnly && !mobileMovingId && "cursor-pointer hover:bg-primary/5"
               )}
-              onClick={() => onSlotClick && !readOnly && onSlotClick(label)}
+              onClick={() => {
+                if (mobileMovingId && onDragReschedule) {
+                  onDragReschedule(mobileMovingId, label);
+                  setMobileMovingId(null);
+                  return;
+                }
+                if (onSlotClick && !readOnly) onSlotClick(label);
+              }}
               onDragOver={(e) => {
                 if (!onDragReschedule || readOnly) return;
                 e.preventDefault();
@@ -275,13 +286,14 @@ const DayTimelineView = ({
           const plan = clientPlans.find((p) => p.user_id === block.user_id && p.service_slug === block.service_slug);
           
           const isComplete = plan ? plan.completed_sessions >= plan.total_sessions : false;
+          const isMoving = mobileMovingId === block.id;
 
           return (
             <div key={block.id}>
               {/* Colored block */}
               <motion.div
                 initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
+                animate={{ opacity: isMoving ? 0.5 : 1, x: 0, scale: isMoving ? 0.95 : 1 }}
                 transition={{ delay: 0.05 }}
                 draggable={!readOnly && !!onDragReschedule && !isMobile}
                 onDragStart={(e: any) => {
@@ -290,10 +302,31 @@ const DayTimelineView = ({
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 onDragEnd={() => setDragOverSlot(null)}
+                onTouchStart={() => {
+                  if (!onDragReschedule || readOnly || !isMobile) return;
+                  longPressTimer.current = setTimeout(() => {
+                    setMobileMovingId(block.id);
+                    // Close any expanded card
+                    if (expandedAptId) onSelectAppointment?.(expandedAptId);
+                  }, 500);
+                }}
+                onTouchEnd={() => {
+                  if (longPressTimer.current) {
+                    clearTimeout(longPressTimer.current);
+                    longPressTimer.current = null;
+                  }
+                }}
+                onTouchMove={() => {
+                  if (longPressTimer.current) {
+                    clearTimeout(longPressTimer.current);
+                    longPressTimer.current = null;
+                  }
+                }}
                 className={cn(
                   "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
                   isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
-                  !readOnly && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing"
+                  !readOnly && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing",
+                  isMoving && "ring-2 ring-primary animate-pulse"
                 )}
                 style={{
                   top: `${top + 1}px`,
@@ -303,7 +336,13 @@ const DayTimelineView = ({
                   backgroundColor: color.bg,
                   color: color.text,
                 }}
-                onClick={() => onSelectAppointment?.(block.id)}
+                onClick={() => {
+                  if (mobileMovingId) {
+                    setMobileMovingId(null);
+                    return;
+                  }
+                  onSelectAppointment?.(block.id);
+                }}
               >
                 <p className="text-[11px] font-bold leading-tight truncate">{timeRange}</p>
                 <div className="flex items-center gap-1 mt-0.5">
@@ -536,15 +575,37 @@ const DayTimelineView = ({
         })}
       </div>
 
+      {/* Mobile moving mode banner */}
+      <AnimatePresence>
+        {mobileMovingId && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="sticky bottom-3 mx-3 mb-2 flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground shadow-lg z-40"
+          >
+            <p className="text-xs font-bold">📌 Toque no horário desejado para mover</p>
+            <button
+              onClick={() => setMobileMovingId(null)}
+              className="px-3 py-1 rounded-lg text-xs font-semibold bg-primary-foreground/20 hover:bg-primary-foreground/30 transition-colors"
+            >
+              Cancelar
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* "Hoje" button */}
-      <div className="sticky bottom-3 flex justify-end pr-3 pb-2 pointer-events-none">
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="pointer-events-auto px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg hover:bg-primary/90 transition-colors"
-        >
-          Hoje
-        </button>
-      </div>
+      {!mobileMovingId && (
+        <div className="sticky bottom-3 flex justify-end pr-3 pb-2 pointer-events-none">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="pointer-events-auto px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg hover:bg-primary/90 transition-colors"
+          >
+            Hoje
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 };
