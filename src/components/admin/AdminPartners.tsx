@@ -275,6 +275,7 @@ const AdminPartners = () => {
           work_start: editing.work_start,
           work_end: editing.work_end,
           is_active: editing.is_active,
+          can_manage_agenda: editing.can_manage_agenda,
         })
         .eq("id", editing.id);
 
