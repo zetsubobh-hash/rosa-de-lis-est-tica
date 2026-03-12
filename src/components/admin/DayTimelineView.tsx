@@ -390,6 +390,12 @@ const DayTimelineView = ({
                     <span className="text-[10px] font-medium truncate opacity-80">{block.service_title}</span>
                   </div>
                 )}
+                {needsDecision && (
+                  <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-destructive animate-pulse">
+                    <BellRing className="w-3 h-3" />
+                    <span className="text-[9px] font-bold">Pendente</span>
+                  </div>
+                )}
                 {isCompleted && (
                   <div className="flex items-center gap-1 mt-0.5">
                     <CheckCircle2 className="w-3 h-3 shrink-0" />
