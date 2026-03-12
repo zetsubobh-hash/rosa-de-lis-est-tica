@@ -152,7 +152,7 @@ const AdminPartnerView = () => {
         .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id, notes")
         .eq("partner_id", partnerId)
         .gte("appointment_date", today)
-        .in("status", ["confirmed", "pending"])
+        .in("status", ["confirmed", "pending", "completed"])
         .order("appointment_date")
         .order("appointment_time"),
       supabase
