@@ -507,18 +507,18 @@ const PartnerDashboard = () => {
               >
                 Todos
               </button>
-              {Object.keys(grouped).map((date) => (
-                <button
-                  key={date}
-                  onClick={() => setFilterDate(filterDate === date ? null : date)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filterDate === date ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {formatDate(date)}
-                  {date === today && " (Hoje)"}
-                </button>
-              ))}
+                {[...new Set([today, ...Object.keys(grouped)])].sort().map((date) => (
+                  <button
+                    key={date}
+                    onClick={() => setFilterDate(filterDate === date ? null : date)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      filterDate === date ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {formatDate(date)}
+                    {date === today && " (Hoje)"}
+                  </button>
+                ))}
             </div>
 
             {appointments.length === 0 ? (
