@@ -246,7 +246,7 @@ const DayTimelineView = ({
           const timeRange = formatTimeRange(block.appointment_time, block.duration);
           const isExpanded = expandedAptId === block.id;
           const plan = clientPlans.find((p) => p.user_id === block.user_id && p.service_slug === block.service_slug);
-          const progress = plan && plan.total_sessions > 0 ? (plan.completed_sessions / plan.total_sessions) * 100 : 0;
+          
           const isComplete = plan ? plan.completed_sessions >= plan.total_sessions : false;
 
           return (
