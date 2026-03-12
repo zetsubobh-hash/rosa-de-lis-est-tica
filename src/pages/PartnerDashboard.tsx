@@ -868,14 +868,16 @@ const PartnerDashboard = () => {
               >
                 Hoje
               </button>
-              <button
-                onClick={() => setFilterDate(null)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  !filterDate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Todos
-              </button>
+              {!permissions.can_create_appointments && (
+                <button
+                  onClick={() => setFilterDate(null)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    !filterDate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  Todos
+                </button>
+              )}
             </div>
 
             {(!filterDate && appointments.length === 0) ? (
