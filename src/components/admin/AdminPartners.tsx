@@ -179,6 +179,7 @@ const AdminPartners = () => {
       work_start: "08:00",
       work_end: "18:00",
       is_active: true,
+      can_manage_agenda: false,
       specialties: [],
     });
     setIsNew(true);
