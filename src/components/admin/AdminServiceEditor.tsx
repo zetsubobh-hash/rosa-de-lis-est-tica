@@ -456,7 +456,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
       </AnimatePresence>
 
       {/* ===== VISUAL PAGE PREVIEW ===== */}
-      <div onClick={() => setEditingSection(null)}>
+      <div>
 
         {/* Hero banner */}
         <section className="relative pt-4 overflow-hidden">
