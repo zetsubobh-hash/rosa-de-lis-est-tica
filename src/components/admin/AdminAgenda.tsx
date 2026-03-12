@@ -1014,6 +1014,99 @@ const AdminAgenda = () => {
           userId={scheduleModal.userId}
         />
       )}
+
+      {/* Quick Book Modal */}
+      <AnimatePresence>
+        {quickBook && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setQuickBook(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card rounded-2xl border border-border shadow-xl w-full max-w-md p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-heading text-base font-bold text-foreground">
+                  Agendar às {quickBook.time}
+                </h3>
+                <button onClick={() => setQuickBook(null)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="font-body text-sm text-muted-foreground">
+                {filterDate ? format(filterDate, "dd/MM/yyyy") : ""}
+              </p>
+
+              {/* Client select */}
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground block mb-1.5">Cliente</label>
+                <select
+                  value={qbUserId}
+                  onChange={(e) => setQbUserId(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Selecione o cliente...</option>
+                  {allProfiles.map((p) => (
+                    <option key={p.user_id} value={p.user_id}>{p.full_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Service select */}
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground block mb-1.5">Procedimento</label>
+                <select
+                  value={qbServiceSlug}
+                  onChange={(e) => setQbServiceSlug(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Selecione o procedimento...</option>
+                  {allServices.map((s) => (
+                    <option key={s.slug} value={s.slug}>{s.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                disabled={qbSaving || !qbUserId || !qbServiceSlug || !filterDate}
+                onClick={async () => {
+                  if (!filterDate || !qbUserId || !qbServiceSlug) return;
+                  setQbSaving(true);
+                  const service = allServices.find((s) => s.slug === qbServiceSlug);
+                  const dateStr = format(filterDate, "yyyy-MM-dd");
+                  const { error } = await supabase.from("appointments").insert({
+                    user_id: qbUserId,
+                    service_slug: qbServiceSlug,
+                    service_title: service?.title || qbServiceSlug,
+                    appointment_date: dateStr,
+                    appointment_time: quickBook.time,
+                    status: "confirmed",
+                  });
+                  setQbSaving(false);
+                  if (error) {
+                    toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
+                  } else {
+                    toast({ title: "Agendamento criado ✅" });
+                    setQuickBook(null);
+                    fetchAll();
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {qbSaving ? "Agendando..." : "Confirmar Agendamento"}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
