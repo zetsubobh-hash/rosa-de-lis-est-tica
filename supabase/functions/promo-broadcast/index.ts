@@ -54,10 +54,23 @@ Deno.serve(async (req) => {
     if (!instances || instances.length === 0) return json({ error: "No active instances" }, 400);
 
     // Fetch all clients with phone
-    const { data: profiles } = await supabase
+    const { data: allProfiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, phone");
-    if (!profiles || profiles.length === 0) return json({ error: "No clients found" }, 400);
+    if (!allProfiles || allProfiles.length === 0) return json({ error: "No clients found" }, 400);
+
+    // Fetch unsubscribed phones
+    const { data: unsubRows } = await supabase
+      .from("promo_unsubscribes")
+      .select("phone");
+    const unsubPhones = new Set((unsubRows || []).map((r: any) => r.phone));
+
+    // Filter out unsubscribed
+    const profiles = allProfiles.filter((p: any) => {
+      const normalized = normalizePhone(p.phone || "");
+      return normalized && !unsubPhones.has(normalized);
+    });
+    if (profiles.length === 0) return json({ error: "Todos os clientes cancelaram o recebimento de promoções" }, 400);
 
     // Get business name
     const { data: siteSettings } = await supabase
