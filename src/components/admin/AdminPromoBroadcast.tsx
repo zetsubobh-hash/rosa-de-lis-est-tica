@@ -193,7 +193,7 @@ const AdminPromoBroadcast = () => {
     setInstances(finalInstances);
     await checkAllStatuses(finalInstances);
     setLoadingInstances(false);
-  }, [checkAllStatuses, toast]);
+  }, [checkAllStatuses]);
 
   const fetchCampaigns = useCallback(async () => {
     const { data } = await supabase
