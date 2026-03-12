@@ -27,6 +27,7 @@ import AdminSEO from "@/components/admin/AdminSEO";
 import AdminAuditLog from "@/components/admin/AdminAuditLog";
 import AdminDebugMonitor from "@/components/admin/AdminDebugMonitor";
 import AdminWelcomeRoulette from "@/components/admin/AdminWelcomeRoulette";
+import AdminPromoBroadcast from "@/components/admin/AdminPromoBroadcast";
 import PasswordGate from "@/components/admin/PasswordGate";
 
 type Tab = "dashboard" | "agenda" | "counter-sales" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette";
