@@ -304,6 +304,7 @@ const Admin = () => {
           {activeTab === "client-plans" && <AdminClientPlans />}
           {activeTab === "welcome-roulette" && <AdminWelcomeRoulette />}
           {activeTab === "history" && <AdminHistory />}
+          {activeTab === "promo-broadcast" && <AdminPromoBroadcast />}
           {activeTab === "users" && (
             <PasswordGate unlocked={usersUnlocked} onUnlock={() => setUsersUnlocked(true)} description="Digite sua senha para acessar o gerenciamento de usuários.">
               <AdminUsers />
