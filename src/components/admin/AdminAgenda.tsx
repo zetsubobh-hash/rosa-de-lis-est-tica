@@ -121,7 +121,7 @@ const AdminAgenda = () => {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [saving, setSaving] = useState(false);
-  const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
+  const [filterDate, setFilterDate] = useState<Date>(new Date());
 
   // Quick-book from timeline slot
   const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
@@ -534,11 +534,8 @@ const AdminAgenda = () => {
     );
   }
 
-  const filterDateStr = filterDate ? format(filterDate, "yyyy-MM-dd") : "";
-  const filtered = (filterDateStr
-    ? appointments.filter((a) => a.appointment_date === filterDateStr)
-    : appointments
-  ).filter((a) => {
+  const filterDateStr = format(filterDate, "yyyy-MM-dd");
+  const filtered = appointments.filter((a) => a.appointment_date === filterDateStr).filter((a) => {
     // Only hide appointments that are explicitly linked to a completed plan
     if (a.plan_id) {
       const linkedPlan = clientPlans.find((p) => p.id === a.plan_id);
@@ -567,444 +564,73 @@ const AdminAgenda = () => {
           Agendamentos ({filtered.length})
         </h2>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setFilterDate(new Date())}
+            className={cn(
+              "h-9 px-3 rounded-lg text-xs font-semibold font-body border transition-colors",
+              format(filterDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            Hoje
+          </button>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className={cn(
-                  "h-9 px-3 text-xs font-body justify-start",
-                  !filterDate && "text-muted-foreground"
-                )}
+                className="h-9 px-3 text-xs font-body justify-start"
               >
                 <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
-                {filterDate ? format(filterDate, "dd/MM/yyyy") : "Filtrar por data"}
+                {format(filterDate, "dd/MM/yyyy")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
               <CalendarComponent
                 mode="single"
                 selected={filterDate}
-                onSelect={setFilterDate}
+                onSelect={(d) => { if (d) setFilterDate(d); }}
                 locale={ptBR}
                 className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
-          {filterDate && (
-            <button
-              onClick={() => setFilterDate(undefined)}
-              className="h-9 px-3 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              Limpar
-            </button>
-          )}
         </div>
       </div>
 
-      {filterDate ? (
-        <DayTimelineView
-          appointments={filtered}
-          expandedAptId={expandedApt}
-          onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
-          clientPlans={clientPlans}
-          partnerOptions={partnerOptions}
-          allPrices={allPrices}
-          updatingPlan={updatingPlan}
-          onConfirmPayment={handleConfirmPayment}
-          onComplete={handleComplete}
-          onReschedule={openReschedule}
-          onCancel={handleCancel}
-          onPartnerAssign={handlePartnerAssign}
-          onUpdateSessions={updateSessions}
-          isRescheduled={isRescheduled}
-          getAppointmentPrice={getAppointmentPrice}
-          getInitials={getInitials}
-          onSlotClick={(time) => {
-            setQuickBook({ time });
-            setQbUserId("");
-            setQbServiceSlug("");
-            setQbShowNewClient(false);
-          }}
-          onDragReschedule={handleDragReschedule}
-          onScheduleSession={(params) => setScheduleModal(params)}
-        />
-      ) : groupedEntries.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
           <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="font-body text-muted-foreground">Nenhum agendamento encontrado.</p>
+          <p className="font-body text-muted-foreground">Nenhum agendamento para {format(filterDate, "dd/MM/yyyy")}.</p>
         </div>
-      ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {groupedEntries.map((group, i) => {
-          const first = group[0];
-          const profile = first.profiles;
+      ) : null}
 
-          return (
-            <motion.div
-              key={`${first.user_id}_${first.appointment_date}`}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-              className="bg-muted rounded-2xl border border-border overflow-hidden hover:shadow-md transition-shadow"
-            >
-              {/* Header with date */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30">
-                <span className="font-heading text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {formatDate(first.appointment_date)}
-                </span>
-                <span className="font-body text-xs text-muted-foreground">
-                  {group.length} {group.length === 1 ? "serviço" : "serviços"}
-                </span>
-              </div>
-
-              <div className="p-5">
-                {/* Client info */}
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                    {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
-                    ) : profile ? (
-                      <span className="font-heading text-sm font-bold text-primary">
-                        {getInitials(profile.full_name)}
-                      </span>
-                    ) : (
-                      <User className="w-5 h-5 text-primary/50" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-heading text-sm font-semibold text-foreground truncate">
-                      {profile?.full_name || "Cliente não identificado"}
-                    </p>
-                    {profile?.phone && (
-                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Phone className="w-3 h-3" />
-                        {profile.phone}
-                      </p>
-                    )}
-                    {profile?.email && (
-                      <p className="font-body text-xs text-muted-foreground truncate mt-0.5">
-                        {profile.email}
-                      </p>
-                    )}
-                    {profile?.address && (
-                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
-                        <MapPin className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{profile.address}</span>
-                      </p>
-                    )}
-                  </div>
-                  {profile?.phone && (
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                      <a
-                        href={`tel:${profile.phone.replace(/\D/g, "")}`}
-                        className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-                        title={`Ligar para ${profile.full_name}`}
-                      >
-                        <Phone className="w-4 h-4" />
-                      </a>
-                      <a
-                        href={`https://wa.me/55${profile.phone.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all"
-                        title={`WhatsApp de ${profile.full_name}`}
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                {/* Services list */}
-                <div className="space-y-3 mb-4">
-                  {group.map((apt) => {
-                    const plan = clientPlans.find((p) => p.user_id === apt.user_id && p.service_slug === apt.service_slug);
-                    const isExpanded = expandedApt === apt.id;
-                    const progress = plan && plan.total_sessions > 0 ? (plan.completed_sessions / plan.total_sessions) * 100 : 0;
-                    const isComplete = plan ? plan.completed_sessions >= plan.total_sessions : false;
-
-                    return (
-                    <div key={apt.id} className="rounded-xl border border-border overflow-hidden">
-                      {/* Clickable header */}
-                      <div
-                        onClick={() => setExpandedApt(isExpanded ? null : apt.id)}
-                        className="p-3 cursor-pointer hover:bg-muted/30 transition-colors"
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="font-heading text-sm font-bold text-foreground">
-                            {apt.service_title}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            {plan && (
-                              <span className="font-heading text-[11px] font-bold text-primary">
-                                {plan.completed_sessions}/{plan.total_sessions}
-                              </span>
-                            )}
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-                          </div>
-                        </div>
-                        {plan && <Progress value={progress} className="h-1.5 mb-2" />}
-                        <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              apt.status === "confirmed"
-                                ? "bg-primary/10 text-primary"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {apt.status === "confirmed" ? "Confirmado" : "Pendente"}
-                          </span>
-                          {isRescheduled(apt) && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700">
-                              Remarcado
-                            </span>
-                          )}
-                          {isComplete && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
-                              Plano Completo
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-xs font-body text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {formatDate(apt.appointment_date)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" />
-                            {apt.appointment_time}
-                          </span>
-                          <span className="font-heading font-bold text-primary">
-                            {getAppointmentPrice(apt, allPrices)}
-                          </span>
-                        </div>
-                        {/* Partner assignment - always visible */}
-                        <div className="flex items-center gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
-                          <Handshake className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <select
-                            value={apt.partner_id || ""}
-                            onChange={(e) => handlePartnerAssign(apt.id, e.target.value || null)}
-                            className="flex-1 h-7 rounded-lg border border-border bg-background px-2 text-[11px] font-body text-foreground focus:ring-1 focus:ring-primary"
-                          >
-                            <option value="">Sem parceiro</option>
-                            {partnerOptions.map((p) => (
-                              <option key={p.id} value={p.id}>{p.full_name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        {/* Action buttons - always visible */}
-                        <div className="flex gap-2 mt-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                          {apt.status === "pending" && (
-                            <button
-                              onClick={() => handleConfirmPayment(apt)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-emerald-400/40 text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all"
-                            >
-                              <Banknote className="w-3.5 h-3.5" />
-                              Confirmar PIX
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleComplete(apt)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Finalizar
-                          </button>
-                          <button
-                            onClick={() => openReschedule(apt)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all"
-                          >
-                            <CalendarClock className="w-3.5 h-3.5" />
-                            Remarcar
-                          </button>
-                          <button
-                            onClick={() => handleCancel(apt.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all"
-                          >
-                            <CalendarX className="w-3.5 h-3.5" />
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Expandable section */}
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="px-3 pb-3 pt-2 border-t border-border space-y-3">
-                              {/* Session progress tracker */}
-                              {plan ? (
-                                <div>
-                                  <p className="font-body text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
-                                    <Hash className="w-3.5 h-3.5 text-primary" />
-                                    {plan.plan_name} — {plan.service_title} ({plan.completed_sessions}/{plan.total_sessions})
-                                  </p>
-                                  <div className="flex gap-1.5 flex-wrap mb-3">
-                                    {Array.from({ length: plan.total_sessions }).map((_, i) => {
-                                      const sessionNum = i + 1;
-                                      const sessionApt = appointments.find(
-                                        (a) => a.plan_id === plan.id && a.session_number === sessionNum && a.status !== "cancelled"
-                                      );
-                                      const isSessionCompleted = i < plan.completed_sessions;
-                                      const isSelected = activeSession?.planId === plan.id && activeSession?.sessionNum === sessionNum;
-
-                                      return (
-                                        <button
-                                          key={i}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveSession(isSelected ? null : { planId: plan.id, sessionNum: sessionNum });
-                                          }}
-                                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
-                                            isSessionCompleted
-                                              ? "bg-primary text-primary-foreground"
-                                              : sessionApt
-                                              ? "bg-primary/30 text-primary ring-2 ring-primary/40"
-                                              : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                                          } ${isSelected ? "ring-2 ring-primary scale-110" : ""}`}
-                                        >
-                                          {isSessionCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-
-                                  {/* Inline session detail */}
-                                  {activeSession?.planId === plan.id && (() => {
-                                    const sNum = activeSession.sessionNum;
-                                    const sApt = appointments.find(
-                                      (a) => a.plan_id === plan.id && a.session_number === sNum && a.status !== "cancelled"
-                                    );
-                                    const sCompleted = (sNum - 1) < plan.completed_sessions;
-                                    const canSched = !sCompleted && !sApt && plan.completed_sessions < plan.total_sessions;
-
-                                    return (
-                                      <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        className="rounded-xl border border-border bg-background p-3 mb-3 space-y-2"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <p className="font-heading text-xs font-bold text-foreground">
-                                          Sessão {sNum} {sCompleted ? "— Realizada ✅" : ""}
-                                        </p>
-                                        {(sApt || (!sApt && plan.total_sessions === 1)) && (
-                                          <p className="font-body text-[11px] text-muted-foreground flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {formatDate((sApt || apt).appointment_date)} • {(sApt || apt).appointment_time}
-                                            {isRescheduled(sApt || apt) && (
-                                              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase">Remarcado</span>
-                                            )}
-                                          </p>
-                                        )}
-                                        <div className="flex gap-2 flex-wrap">
-                                          {canSched && (
-                                            <button
-                                              onClick={() => setScheduleModal({ planId: plan.id, sessionNumber: sNum, serviceSlug: apt.service_slug, serviceTitle: apt.service_title, userId: apt.user_id })}
-                                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all"
-                                            >
-                                              <CalendarPlus className="w-3.5 h-3.5" /> Agendar
-                                            </button>
-                                          )}
-                                          {sApt && (
-                                            <>
-                                              <button
-                                                onClick={() => openReschedule(sApt)}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all"
-                                              >
-                                                <CalendarClock className="w-3.5 h-3.5" /> Reagendar
-                                              </button>
-                                              <button
-                                                onClick={() => { handleCancel(sApt.id); setActiveSession(null); }}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition-all"
-                                              >
-                                                <CalendarX className="w-3.5 h-3.5" /> Cancelar
-                                              </button>
-                                            </>
-                                          )}
-                                        </div>
-                                      </motion.div>
-                                    );
-                                  })()}
-
-                                  {/* Admin controls */}
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); updateSessions(plan.id, -1); }}
-                                      disabled={updatingPlan === plan.id || plan.completed_sessions === 0}
-                                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all disabled:opacity-30"
-                                    >
-                                      <MinusCircle className="w-3.5 h-3.5" />
-                                      Remover
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateSessions(plan.id, 1);
-                                        handleComplete(apt);
-                                      }}
-                                      disabled={updatingPlan === plan.id}
-                                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all disabled:opacity-30"
-                                    >
-                                      <PlusCircle className="w-3.5 h-3.5" />
-                                      Sessão Realizada
-                                    </button>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); updateSessions(plan.id, 1, "Sessão cancelada (cliente faltou) ⚠️"); }}
-                                      disabled={updatingPlan === plan.id || isComplete}
-                                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 transition-all disabled:opacity-30"
-                                    >
-                                      <CalendarX className="w-3.5 h-3.5" />
-                                      Cancelar Sessão
-                                    </button>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setCancelAllPlanId(plan.id); }}
-                                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                      Cancelar Tudo
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <p className="font-body text-xs text-muted-foreground italic">Nenhum plano vinculado a este serviço.</p>
-                              )}
-
-                              {/* Partner assignment */}
-                              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                <Handshake className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                <select
-                                  value={apt.partner_id || ""}
-                                  onChange={(e) => handlePartnerAssign(apt.id, e.target.value || null)}
-                                  className="flex-1 h-7 rounded-lg border border-border bg-background px-2 text-[11px] font-body text-foreground focus:ring-1 focus:ring-primary"
-                                >
-                                  <option value="">Sem parceiro</option>
-                                  {partnerOptions.map((p) => (
-                                    <option key={p.id} value={p.id}>{p.full_name}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-      )}
+      <DayTimelineView
+        appointments={filtered}
+        expandedAptId={expandedApt}
+        onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
+        clientPlans={clientPlans}
+        partnerOptions={partnerOptions}
+        allPrices={allPrices}
+        updatingPlan={updatingPlan}
+        onConfirmPayment={handleConfirmPayment}
+        onComplete={handleComplete}
+        onReschedule={openReschedule}
+        onCancel={handleCancel}
+        onPartnerAssign={handlePartnerAssign}
+        onUpdateSessions={updateSessions}
+        isRescheduled={isRescheduled}
+        getAppointmentPrice={getAppointmentPrice}
+        getInitials={getInitials}
+        onSlotClick={(time) => {
+          setQuickBook({ time });
+          setQbUserId("");
+          setQbServiceSlug("");
+          setQbShowNewClient(false);
+        }}
+        onDragReschedule={handleDragReschedule}
+        onScheduleSession={(params) => setScheduleModal(params)}
+      />
 
       <AnimatePresence>
         {rescheduleId && (
