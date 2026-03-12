@@ -749,7 +749,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                                 setHasChanges(true);
                               }}
                               onBlur={() => {
-                                commitPlanPricePerSession(plan.id, plan.price_per_session_cents, plan.sessions);
+                                commitPlanPricePerSession(plan.id, plan.sessions);
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
