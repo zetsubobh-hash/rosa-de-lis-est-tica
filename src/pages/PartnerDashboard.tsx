@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
-  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle
+  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle, UserPlus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
