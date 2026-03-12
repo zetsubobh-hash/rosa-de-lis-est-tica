@@ -41,27 +41,35 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const [service, setService] = useState<DBService>({ ...initialService, benefits: [...initialService.benefits] });
   const [editingSection, setEditingSection] = useState<EditingSection>(null);
   const [saving, setSaving] = useState(false);
+  const [savingPlanId, setSavingPlanId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(isNew);
   const { prices, loading: pricesLoading, refetch: refetchPrices } = useServicePrices(isNew ? undefined : service.slug);
   const [editedPrices, setEditedPrices] = useState<Record<string, Partial<ServicePrice>>>({});
   const [newPlan, setNewPlan] = useState({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Raw string states for price inputs so user can type freely
   const [rawPriceInputs, setRawPriceInputs] = useState<Record<string, { pps?: string; total?: string }>>({});
   const [newPlanRaw, setNewPlanRaw] = useState({ pps: "0,00", total: "0,00" });
 
   const centsToStr = (cents: number) => {
     return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
+
   const strToCents = (str: string) => {
-    const digits = str.replace(/\D/g, "");
-    return parseInt(digits, 10) || 0;
-  };
-  const maskBRL = (raw: string) => {
-    const digits = raw.replace(/\D/g, "");
-    const cents = parseInt(digits, 10) || 0;
-    return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const clean = str.replace(/[^\d,.-]/g, "").trim();
+    if (!clean) return 0;
+
+    if (!clean.includes(",") && !clean.includes(".")) {
+      const intValue = parseInt(clean.replace(/\D/g, ""), 10) || 0;
+      return intValue * 100;
+    }
+
+    const normalized = clean.includes(",")
+      ? clean.replace(/\./g, "").replace(",", ".")
+      : clean.replace(/,/g, "");
+
+    const num = parseFloat(normalized);
+    return Number.isFinite(num) ? Math.max(0, Math.round(num * 100)) : 0;
   };
 
   const Icon = getIconByName(service.icon_name);
@@ -198,6 +206,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     } else {
       toast({ title: "Plano adicionado ✅" });
       setNewPlan({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
+      setNewPlanRaw({ pps: "0,00", total: "0,00" });
       setEditingSection(null);
       refetchPrices();
     }
@@ -206,6 +215,42 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const handleDeletePlan = async (id: string) => {
     const { error } = await supabase.from("service_prices").delete().eq("id", id);
     if (!error) { refetchPrices(); toast({ title: "Plano removido ✅" }); }
+  };
+
+  const handleSavePlan = async (planId: string) => {
+    const original = prices.find((p) => p.id === planId);
+    if (!original) return;
+
+    const changes = editedPrices[planId] || {};
+    const sessions = changes.sessions ?? original.sessions;
+    const pps = changes.price_per_session_cents ?? original.price_per_session_cents;
+    const total = changes.total_price_cents ?? pps * sessions;
+
+    setSavingPlanId(planId);
+    const { error } = await supabase
+      .from("service_prices")
+      .update({ sessions, price_per_session_cents: pps, total_price_cents: total })
+      .eq("id", planId);
+
+    if (error) {
+      toast({ title: "Erro ao salvar plano", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Plano salvo com sucesso ✅" });
+      setEditedPrices((prev) => {
+        const next = { ...prev };
+        delete next[planId];
+        return next;
+      });
+      setRawPriceInputs((prev) => {
+        const next = { ...prev };
+        delete next[planId];
+        return next;
+      });
+      setEditingSection(null);
+      await refetchPrices();
+    }
+
+    setSavingPlanId(null);
   };
 
   const EditableWrapper = ({ section, children, className = "" }: { section: EditingSection; children: React.ReactNode; className?: string }) => (
@@ -603,14 +648,20 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Preço/sessão (R$)</label>
                             <Input
                               type="text"
+                              inputMode="decimal"
                               value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
+                              onFocus={(e) => e.currentTarget.select()}
                               onChange={(e) => {
-                                const masked = maskBRL(e.target.value);
-                                const v = strToCents(e.target.value);
+                                const raw = e.target.value;
+                                const v = strToCents(raw);
                                 const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { pps: masked, total: centsToStr(v * currentSessions) } }));
-                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: v, total_price_cents: v * currentSessions } }));
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: raw, total: centsToStr(v * currentSessions) } }));
+                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: v, total_price_cents: v * currentSessions } }));
                                 setHasChanges(true);
+                              }}
+                              onBlur={() => {
+                                const current = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(current) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -619,24 +670,46 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Total (R$)</label>
                             <Input
                               type="text"
+                              inputMode="decimal"
                               value={rawPriceInputs[plan.id]?.total ?? centsToStr(total)}
+                              onFocus={(e) => e.currentTarget.select()}
                               onChange={(e) => {
-                                const masked = maskBRL(e.target.value);
-                                const v = strToCents(e.target.value);
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: masked } }));
-                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: v } }));
+                                const raw = e.target.value;
+                                const v = strToCents(raw);
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: raw } }));
+                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: v } }));
                                 setHasChanges(true);
+                              }}
+                              onBlur={() => {
+                                const current = editedPrices[plan.id]?.total_price_cents ?? plan.total_price_cents;
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(current) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
                           </div>
-                          <button
-                            onClick={() => handleDeletePlan(plan.id)}
-                            className={`flex items-center gap-1 text-xs font-body ${isHighlight ? "text-primary-foreground/60 hover:text-primary-foreground" : "text-destructive hover:underline"}`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Excluir plano
-                          </button>
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <Button
+                              type="button"
+                              onClick={() => handleSavePlan(plan.id)}
+                              disabled={savingPlanId === plan.id}
+                              size="sm"
+                              className={`gap-1.5 h-8 ${isHighlight ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90" : ""}`}
+                            >
+                              {savingPlanId === plan.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                              Salvar
+                            </Button>
+                            <button
+                              onClick={() => handleDeletePlan(plan.id)}
+                              className={`h-8 rounded-lg border font-body text-xs font-medium flex items-center justify-center gap-1 ${
+                                isHighlight
+                                  ? "border-primary-foreground/30 text-primary-foreground/90 hover:bg-primary-foreground/10"
+                                  : "border-destructive/30 text-destructive hover:bg-destructive/10"
+                              }`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Excluir
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <>
@@ -680,25 +753,37 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
-                        <Input type="text" value={newPlanRaw.pps}
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={newPlanRaw.pps}
+                          onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) => {
-                            const masked = maskBRL(e.target.value);
-                            const v = strToCents(e.target.value);
-                            setNewPlanRaw({ pps: masked, total: centsToStr(v * newPlan.sessions) });
-                            setNewPlan(p => ({ ...p, price_per_session_cents: v, total_price_cents: v * p.sessions }));
+                            const raw = e.target.value;
+                            const v = strToCents(raw);
+                            setNewPlanRaw({ pps: raw, total: centsToStr(v * newPlan.sessions) });
+                            setNewPlan((p) => ({ ...p, price_per_session_cents: v, total_price_cents: v * p.sessions }));
                           }}
-                          className="h-8 font-body text-sm" />
+                          onBlur={() => setNewPlanRaw((p) => ({ ...p, pps: centsToStr(newPlan.price_per_session_cents) }))}
+                          className="h-8 font-body text-sm"
+                        />
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
-                        <Input type="text" value={newPlanRaw.total}
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={newPlanRaw.total}
+                          onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) => {
-                            const masked = maskBRL(e.target.value);
-                            const v = strToCents(e.target.value);
-                            setNewPlanRaw(p => ({ ...p, total: masked }));
-                            setNewPlan(p => ({ ...p, total_price_cents: v }));
+                            const raw = e.target.value;
+                            const v = strToCents(raw);
+                            setNewPlanRaw((p) => ({ ...p, total: raw }));
+                            setNewPlan((p) => ({ ...p, total_price_cents: v }));
                           }}
-                          className="h-8 font-body text-sm" />
+                          onBlur={() => setNewPlanRaw((p) => ({ ...p, total: centsToStr(newPlan.total_price_cents) }))}
+                          className="h-8 font-body text-sm"
+                        />
                       </div>
                       <Button onClick={handleAddPlan} size="sm" className="w-full gap-1.5" disabled={!newPlan.plan_name}>
                         <Check className="w-3.5 h-3.5" />
