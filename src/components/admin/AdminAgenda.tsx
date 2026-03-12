@@ -534,7 +534,7 @@ const AdminAgenda = () => {
     );
   }
 
-  const filterDateStr = filterDate ? format(filterDate, "yyyy-MM-dd") : "";
+  const filterDateStr = format(filterDate, "yyyy-MM-dd");
   const filtered = (filterDateStr
     ? appointments.filter((a) => a.appointment_date === filterDateStr)
     : appointments
