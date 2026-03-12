@@ -421,6 +421,60 @@ const AdminAgenda = () => {
     setSaving(false);
   };
 
+  /** Drag-and-drop reschedule: update time within the same day */
+  const handleDragReschedule = async (appointmentId: string, newTime: string) => {
+    const apt = appointments.find((a) => a.id === appointmentId);
+    if (!apt) return;
+
+    // Don't do anything if dropped on the same time
+    if (apt.appointment_time === newTime) return;
+
+    // Check if slot is already occupied
+    const dateStr = filterDate ? format(filterDate, "yyyy-MM-dd") : apt.appointment_date;
+    const conflict = appointments.find(
+      (a) => a.id !== appointmentId && a.appointment_date === dateStr && a.appointment_time === newTime
+    );
+    if (conflict) {
+      toast({ title: "Horário ocupado", description: `Já existe um agendamento às ${newTime}.`, variant: "destructive" });
+      return;
+    }
+
+    // Build notes with rescheduled flag
+    let noteData: any = {};
+    try { if (apt.notes) noteData = JSON.parse(apt.notes); } catch { /* ignore */ }
+    noteData.rescheduled = true;
+    const updatedNotes = JSON.stringify(noteData);
+
+    const { error } = await supabase
+      .from("appointments")
+      .update({ appointment_time: newTime, notes: updatedNotes })
+      .eq("id", appointmentId);
+
+    if (error) {
+      toast({ title: "Erro ao remarcar", variant: "destructive" });
+      return;
+    }
+
+    toast({ title: `Remarcado para ${newTime} ✅` });
+    setAppointments((prev) =>
+      prev.map((a) =>
+        a.id === appointmentId ? { ...a, appointment_time: newTime, notes: updatedNotes } : a
+      )
+    );
+
+    // Fire reschedule WhatsApp notification (fire-and-forget)
+    const { data: { session } } = await supabase.auth.getSession();
+    fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ appointment_ids: [appointmentId], type: "reschedule" }),
+    }).catch((e) => console.warn("Drag reschedule WhatsApp notification failed:", e));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
