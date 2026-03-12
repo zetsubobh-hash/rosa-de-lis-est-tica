@@ -7,6 +7,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
+import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 
 interface SessionInfo {
@@ -75,6 +76,7 @@ const AdminPartnerView = () => {
   const [dataLoading, setDataLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("agenda");
   const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
+  const [historyClient, setHistoryClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
   const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
@@ -308,14 +310,24 @@ const AdminPartnerView = () => {
               <p className="font-body text-xs text-muted-foreground mt-0.5">{apt.profile?.full_name || "Cliente"}</p>
             </div>
             {apt.profile && (
-              <button
-                onClick={() => setAnamnesisClient({ userId: apt.user_id, name: apt.profile?.full_name || "Cliente" })}
-                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
-                title="Ficha de Anamnese"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Anamnese</span>
-              </button>
+              <div className="flex gap-1 shrink-0">
+                <button
+                  onClick={() => setHistoryClient({ userId: apt.user_id, name: apt.profile?.full_name || "Cliente" })}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors border border-border"
+                  title="Ficha Completa"
+                >
+                  <ClipboardList className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Ficha</span>
+                </button>
+                <button
+                  onClick={() => setAnamnesisClient({ userId: apt.user_id, name: apt.profile?.full_name || "Cliente" })}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
+                  title="Ficha de Anamnese"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Anamnese</span>
+                </button>
+              </div>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs font-body text-muted-foreground">
@@ -593,14 +605,24 @@ const AdminPartnerView = () => {
                                 <p className="font-body text-xs text-muted-foreground mt-0.5">{plan.service_title} · {plan.plan_name}</p>
                               </div>
                               {plan.profile && (
-                                <button
-                                  onClick={() => setAnamnesisClient({ userId: plan.user_id, name: plan.profile?.full_name || "Cliente" })}
-                                  className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
-                                  title="Ficha de Anamnese"
-                                >
-                                  <FileText className="w-3.5 h-3.5" />
-                                  <span className="hidden sm:inline">Anamnese</span>
-                                </button>
+                                <div className="flex gap-1 shrink-0">
+                                  <button
+                                    onClick={() => setHistoryClient({ userId: plan.user_id, name: plan.profile?.full_name || "Cliente" })}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors border border-border"
+                                    title="Ficha Completa"
+                                  >
+                                    <ClipboardList className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Ficha</span>
+                                  </button>
+                                  <button
+                                    onClick={() => setAnamnesisClient({ userId: plan.user_id, name: plan.profile?.full_name || "Cliente" })}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
+                                    title="Ficha de Anamnese"
+                                  >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Anamnese</span>
+                                  </button>
+                                </div>
                               )}
                             </div>
 
@@ -737,8 +759,15 @@ const AdminPartnerView = () => {
           partnerId={selectedPartner}
         />
       )}
+      {historyClient && (
+        <UserHistoryModal
+          open={!!historyClient}
+          onClose={() => setHistoryClient(null)}
+          userId={historyClient.userId}
+          userName={historyClient.name}
+        />
+      )}
 
-      {/* Install QR Code Modal */}
       <AnimatePresence>
         {showInstallQR && (
           <motion.div
