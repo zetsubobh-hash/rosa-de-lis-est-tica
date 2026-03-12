@@ -269,8 +269,17 @@ const DayTimelineView = ({
                 )}
               </motion.div>
 
-              {/* Expanded detail card - positioned right below the block */}
+              {/* Expanded detail card */}
               <AnimatePresence>
+              {isExpanded && isMobile && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/40 z-[55]"
+                  onClick={() => onSelectAppointment(block.id)}
+                />
+              )}
               {isExpanded && (
                   <motion.div
                     initial={isMobile ? { opacity: 0, y: 100 } : { opacity: 0, scaleY: 0.9 }}
