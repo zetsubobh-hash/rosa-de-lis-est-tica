@@ -7,6 +7,7 @@ import {
   Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import CalendarPopoverFilter from "@/components/admin/CalendarPopoverFilter";
@@ -120,6 +121,7 @@ const AdminPartnerView = () => {
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [clientSearchName, setClientSearchName] = useState("");
   const [clientSearchService, setClientSearchService] = useState("");
+  const [dragConfirm, setDragConfirm] = useState<{ appointmentId: string; newTime: string; apt: Appointment } | null>(null);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
 
@@ -378,6 +380,69 @@ const AdminPartnerView = () => {
     }
   };
 
+  /* ── Drag-reschedule for admin partner view ── */
+  const handleDragReschedule = (appointmentId: string, newTime: string) => {
+    const apt = appointments.find((a) => a.id === appointmentId);
+    if (!apt) return;
+    if (apt.appointment_time === newTime) return;
+    if (apt.status === "completed") {
+      toast.error("Não é possível remarcar um procedimento concluído.");
+      return;
+    }
+    const now = new Date();
+    const [th, tm] = newTime.split(":").map(Number);
+    if (th * 60 + tm < now.getHours() * 60 + now.getMinutes()) {
+      toast.error("Não é possível remarcar para um horário que já passou.");
+      return;
+    }
+    const conflict = appointments.find(
+      (a) => a.id !== appointmentId && a.appointment_date === apt.appointment_date && a.appointment_time === newTime
+    );
+    if (conflict) {
+      toast.error(`Já existe um agendamento às ${newTime}.`);
+      return;
+    }
+    setDragConfirm({ appointmentId, newTime, apt });
+  };
+
+  const confirmDragReschedule = async () => {
+    if (!dragConfirm) return;
+    const { appointmentId, newTime, apt } = dragConfirm;
+    setDragConfirm(null);
+    let noteData: any = {};
+    try { if (apt.notes) noteData = JSON.parse(apt.notes); } catch { /* ignore */ }
+    noteData.rescheduled = true;
+    const updatedNotes = JSON.stringify(noteData);
+    const { error } = await supabase
+      .from("appointments")
+      .update({ appointment_time: newTime, notes: updatedNotes })
+      .eq("id", appointmentId);
+    if (error) {
+      toast.error("Erro ao remarcar.");
+      return;
+    }
+    toast.success(`Remarcado para ${newTime} ✅`);
+    setAppointments((prev) =>
+      prev.map((a) => a.id === appointmentId ? { ...a, appointment_time: newTime, notes: updatedNotes } : a)
+    );
+    // WhatsApp notification
+    const { data: { session } } = await supabase.auth.getSession();
+    fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}`, apikey: SUPABASE_ANON_KEY },
+      body: JSON.stringify({ appointment_ids: [appointmentId], type: "reschedule" }),
+    }).catch(() => {});
+  };
+
+  const handleCancelAppointment = async (id: string) => {
+    const { error } = await supabase.from("appointments").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao cancelar agendamento.");
+      return;
+    }
+    setAppointments((prev) => prev.filter((a) => a.id !== id));
+    toast.success("Agendamento cancelado ✅");
+  };
 
   const pastGrouped = pastAppointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
     if (!acc[apt.appointment_date]) acc[apt.appointment_date] = [];
@@ -568,6 +633,8 @@ const AdminPartnerView = () => {
                         const fullApt = appointments.find(a => a.id === apt.id);
                         return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
                       }}
+                      onDragReschedule={handleDragReschedule}
+                      onCancel={handleCancelAppointment}
                     />
                   );
                 })()}
@@ -814,6 +881,53 @@ const AdminPartnerView = () => {
           partnerId={scheduleModal.partnerId || selectedPartner}
         />
       )}
+
+      {/* Drag Reschedule Confirmation */}
+      <AnimatePresence>
+        {dragConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm p-4 flex items-center justify-center"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setDragConfirm(null); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-2xl space-y-4"
+            >
+              <h3 className="font-heading text-base font-bold text-foreground">Confirmar remarcação</h3>
+              <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1">
+                <p className="font-heading text-sm font-bold text-foreground">
+                  {dragConfirm.apt.profile?.full_name || "Cliente"}
+                </p>
+                <p className="font-body text-xs text-muted-foreground">
+                  {dragConfirm.apt.service_title}
+                </p>
+                <p className="font-body text-sm text-foreground">
+                  {dragConfirm.apt.appointment_time} → <span className="font-bold text-primary">{dragConfirm.newTime}</span>
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setDragConfirm(null)}
+                  className="h-10 rounded-xl border border-border font-body text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDragReschedule}
+                  className="h-10 rounded-xl bg-primary text-primary-foreground font-body text-sm font-bold hover:opacity-90 transition-opacity"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {decisionModal && (
