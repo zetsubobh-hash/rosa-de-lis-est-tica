@@ -251,6 +251,10 @@ const AdminPartners = () => {
           work_end: editing.work_end,
           is_active: editing.is_active,
           can_manage_agenda: editing.can_manage_agenda,
+          can_create_appointments: editing.can_create_appointments,
+          can_reschedule: editing.can_reschedule,
+          can_cancel: editing.can_cancel,
+          can_complete: editing.can_complete,
         })
         .select("id")
         .single();
