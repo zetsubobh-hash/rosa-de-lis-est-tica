@@ -519,13 +519,33 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                         </div>
                       ) : (
                         <div className="space-y-2">
+                          {/* Delete All button */}
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => setDeleteTarget("all")}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-destructive/30 text-destructive font-body text-xs font-medium hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Excluir Tudo ({appointments.length})
+                            </button>
+                          </div>
+
                           {appointments.map((a) => {
                             const st = STATUS_MAP[a.status] || { label: a.status, cls: "bg-muted text-muted-foreground" };
                             return (
                               <div key={a.id} className="rounded-xl border border-border p-3 space-y-1">
                                 <div className="flex items-center justify-between gap-2">
                                   <p className="font-heading text-sm font-semibold text-foreground">{a.service_title}</p>
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${st.cls}`}>{st.label}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${st.cls}`}>{st.label}</span>
+                                    <button
+                                      onClick={() => setDeleteTarget(a.id)}
+                                      className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                      title="Excluir este registro"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-xs text-muted-foreground font-body">
                                   <span>{formatDate(a.appointment_date)}</span>
@@ -538,6 +558,76 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                           })}
                         </div>
                       )}
+
+                      {/* Password confirmation dialog for delete */}
+                      <AnimatePresence>
+                        {deleteTarget && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                            onMouseDown={(e) => { if (e.target === e.currentTarget) { setDeleteTarget(null); setDeletePassword(""); } }}
+                          >
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                              className="bg-card rounded-2xl border border-border w-full max-w-sm p-5 shadow-2xl space-y-4"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                                  <Lock className="w-5 h-5 text-destructive" />
+                                </div>
+                                <div>
+                                  <h3 className="font-heading text-sm font-bold text-foreground">Confirmar exclusão</h3>
+                                  <p className="font-body text-xs text-muted-foreground">
+                                    {deleteTarget === "all"
+                                      ? `Excluir todos os ${appointments.length} registros do histórico?`
+                                      : "Excluir este registro do histórico?"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div>
+                                <p className="font-body text-xs text-muted-foreground mb-1.5">Digite sua senha para confirmar:</p>
+                                <Input
+                                  type="password"
+                                  value={deletePassword}
+                                  onChange={(e) => setDeletePassword(e.target.value)}
+                                  placeholder="Sua senha"
+                                  className="h-9 text-sm"
+                                  onKeyDown={(e) => { if (e.key === "Enter") handleDeleteHistory(); }}
+                                  autoFocus
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  onClick={() => { setDeleteTarget(null); setDeletePassword(""); }}
+                                  className="h-9 rounded-xl border border-border font-body text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={handleDeleteHistory}
+                                  disabled={!deletePassword.trim() || deletingHistory}
+                                  className="h-9 rounded-xl bg-destructive text-destructive-foreground font-body text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
+                                >
+                                  {deletingHistory ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-destructive-foreground border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  )}
+                                  Excluir
+                                </button>
+                              </div>
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </TabsContent>
 
                     {/* Cupons */}
