@@ -79,6 +79,8 @@ interface DayTimelineViewProps {
   onDragReschedule?: (appointmentId: string, newTime: string) => void;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
+  /** Callback to check if an appointment is overdue and needs attention */
+  isOverdue?: (apt: TimelineAppointment) => boolean;
 }
 
 const PALETTE = [
@@ -148,6 +150,7 @@ const DayTimelineView = ({
   onSlotClick,
   onDragReschedule,
   readOnly = false,
+  isOverdue: isOverdueFn,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
@@ -292,7 +295,7 @@ const DayTimelineView = ({
           
           const isComplete = plan ? plan.completed_sessions >= plan.total_sessions : false;
           const isMoving = mobileMovingId === block.id;
-
+          const blockOverdue = isOverdueFn?.(block) ?? false;
           return (
             <div key={block.id}>
               {/* Colored block */}
@@ -331,7 +334,8 @@ const DayTimelineView = ({
                   "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
                   isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
                   !readOnly && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing",
-                  isMoving && "ring-2 ring-primary animate-pulse"
+                  isMoving && "ring-2 ring-primary animate-pulse",
+                  blockOverdue && !isExpanded && "ring-2 ring-destructive animate-pulse"
                 )}
                 style={{
                   top: `${top + 1}px`,
@@ -477,6 +481,13 @@ const DayTimelineView = ({
                       </span>
                       {getAppointmentPrice && <span className="font-heading text-xs font-bold text-primary">{getAppointmentPrice(block, allPrices)}</span>}
                     </div>
+
+                    {/* Overdue alert */}
+                    {blockOverdue && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-destructive/10 animate-pulse">
+                        <span className="text-xs font-semibold text-destructive">⚠️ Horário passou! Confirme se a sessão foi realizada.</span>
+                      </div>
+                    )}
 
                     {/* Plan progress - full session tracker */}
                     {(() => {

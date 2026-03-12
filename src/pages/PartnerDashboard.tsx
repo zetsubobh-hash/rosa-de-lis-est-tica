@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
-  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift
+  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
@@ -62,6 +63,19 @@ const getInitials = (name: string) =>
 const formatDate = (dateStr: string) => {
   const [y, m, d] = dateStr.split("-");
   return `${d}/${m}/${y}`;
+};
+
+const isAppointmentOverdue = (apt: { appointment_date: string; appointment_time: string; status: string }) => {
+  if (apt.status !== "confirmed") return false;
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  if (apt.appointment_date > todayStr) return false;
+  if (apt.appointment_date < todayStr) return true;
+  // Same day — check if time has passed (add 30min buffer for the session itself)
+  const [h, m] = apt.appointment_time.split(":").map(Number);
+  const aptMinutes = h * 60 + m + 30; // 30min after start
+  const nowMinutes = today.getHours() * 60 + today.getMinutes();
+  return nowMinutes >= aptMinutes;
 };
 
 const PartnerDashboard = () => {
@@ -267,6 +281,44 @@ const PartnerDashboard = () => {
     return () => { supabase.removeChannel(channel); };
   }, [partnerId]);
 
+  /* ── Mark appointment as completed or no-show ── */
+  const [completingId, setCompletingId] = useState<string | null>(null);
+
+  const handleMarkAppointment = async (apt: Appointment, completed: boolean) => {
+    setCompletingId(apt.id);
+    try {
+      const newStatus = completed ? "completed" : "cancelled";
+      await supabase.from("appointments").update({ status: newStatus }).eq("id", apt.id);
+
+      // If completed and has a plan, increment completed_sessions
+      if (completed && apt.plan_id) {
+        const plan = clientPlans.find(p => p.id === apt.plan_id);
+        if (plan) {
+          const newCompleted = Math.min(plan.completed_sessions + 1, plan.total_sessions);
+          const newPlanStatus = newCompleted >= plan.total_sessions ? "completed" : "active";
+          await supabase.from("client_plans").update({
+            completed_sessions: newCompleted,
+            status: newPlanStatus,
+          }).eq("id", plan.id);
+
+          setClientPlans(prev => prev.map(p => p.id === plan.id ? { ...p, completed_sessions: newCompleted, status: newPlanStatus } : p));
+        }
+      }
+
+      // Move from appointments to past
+      setAppointments(prev => prev.filter(a => a.id !== apt.id));
+      if (completed) {
+        setPastAppointments(prev => [{ ...apt, status: "completed" }, ...prev]);
+      }
+
+      toast.success(completed ? "✅ Sessão marcada como realizada!" : "❌ Sessão marcada como não realizada.");
+    } catch (err: any) {
+      toast.error("Erro ao atualizar: " + err.message);
+    } finally {
+      setCompletingId(null);
+    }
+  };
+
   const grouped = appointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
     if (!acc[apt.appointment_date]) acc[apt.appointment_date] = [];
     acc[apt.appointment_date].push(apt);
@@ -296,13 +348,24 @@ const PartnerDashboard = () => {
     );
   }
 
-  const renderAppointmentCard = (apt: Appointment) => (
+  const renderAppointmentCard = (apt: Appointment) => {
+    const overdue = isAppointmentOverdue(apt);
+    return (
     <motion.div
       key={apt.id}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-card rounded-2xl border border-border p-4"
+      className={`bg-card rounded-2xl border p-4 ${overdue ? "border-destructive/50 ring-1 ring-destructive/20" : "border-border"}`}
     >
+      {/* Overdue blinking alert */}
+      {overdue && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-destructive/10 animate-pulse">
+          <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+          <p className="font-body text-xs font-semibold text-destructive">
+            Horário passou! Confirme se a sessão foi realizada.
+          </p>
+        </div>
+      )}
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
           {apt.profile?.avatar_url ? (
@@ -411,10 +474,33 @@ const PartnerDashboard = () => {
               </p>
             </div>
           )}
+
+          {/* Action buttons for overdue appointments */}
+          {overdue && (
+            <div className="mt-3 pt-3 border-t border-border flex gap-2 flex-wrap">
+              <button
+                onClick={() => handleMarkAppointment(apt, true)}
+                disabled={completingId === apt.id}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-all disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {completingId === apt.id ? "Salvando..." : "Sessão Realizada"}
+              </button>
+              <button
+                onClick={() => handleMarkAppointment(apt, false)}
+                disabled={completingId === apt.id}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all disabled:opacity-50"
+              >
+                <XCircle className="w-4 h-4" />
+                Não Realizada
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
   );
+  };
 
   return (
     <>
@@ -566,7 +652,14 @@ const PartnerDashboard = () => {
                 onAnamnesis={partnerId ? (userId, name) => setAnamnesisClient({ userId, name }) : undefined}
                 onHistory={(userId, name) => setHistoryClient({ userId, name })}
                 onScheduleSession={(params) => setScheduleModal(params)}
-                readOnly
+                onComplete={(apt) => {
+                  const fullApt = appointments.find(a => a.id === apt.id);
+                  if (fullApt) handleMarkAppointment(fullApt, true);
+                }}
+                isOverdue={(apt) => {
+                  const fullApt = appointments.find(a => a.id === apt.id);
+                  return fullApt ? isAppointmentOverdue(fullApt) : false;
+                }}
               />
             ) : (
               Object.entries(grouped).map(([date, apts]) => (
