@@ -124,6 +124,7 @@ const PartnerDashboard = () => {
   const [scheduleModal, setScheduleModal] = useState<{
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
+  const [showNewClient, setShowNewClient] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;

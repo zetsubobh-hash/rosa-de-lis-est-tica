@@ -129,6 +129,7 @@ const AdminPartnerView = () => {
   const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
   const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
   const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
+  const [showNewClient, setShowNewClient] = useState(false);
 
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
