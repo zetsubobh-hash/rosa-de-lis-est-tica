@@ -265,7 +265,45 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     setMarkingUsed(null);
   };
 
-  return (
+  const handleDeleteHistory = async () => {
+    if (!deletePassword.trim() || !user?.email) return;
+    setDeletingHistory(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: deletePassword,
+      });
+      if (authError) {
+        toast.error("Senha incorreta. Tente novamente.");
+        setDeletingHistory(false);
+        setDeletePassword("");
+        return;
+      }
+
+      if (deleteTarget === "all") {
+        const ids = appointments.map((a) => a.id);
+        if (ids.length > 0) {
+          const { error } = await supabase.from("appointments").delete().in("id", ids);
+          if (error) throw error;
+        }
+        toast.success("Histórico completo excluído ✅");
+      } else if (deleteTarget) {
+        const { error } = await supabase.from("appointments").delete().eq("id", deleteTarget);
+        if (error) throw error;
+        toast.success("Registro excluído ✅");
+      }
+
+      await loadData();
+    } catch (err: any) {
+      console.error("Delete history error:", err);
+      toast.error("Erro ao excluir: " + (err.message || "Tente novamente."));
+    } finally {
+      setDeletingHistory(false);
+      setDeleteTarget(null);
+      setDeletePassword("");
+    }
+  };
+
     <AnimatePresence>
       {open && (
         <motion.div
