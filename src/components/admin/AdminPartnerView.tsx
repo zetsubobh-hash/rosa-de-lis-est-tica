@@ -677,6 +677,30 @@ const AdminPartnerView = () => {
             {/* Clientes tab */}
             {activeTab === "clientes" && (
               <div className="space-y-3">
+                {/* Novo Cliente button */}
+                <div className="flex flex-col sm:flex-row gap-2 items-start">
+                  {showNewClient ? (
+                    <div className="w-full">
+                      <NewClientInlineForm
+                        onClientCreated={(client) => {
+                          setAllProfiles((prev) => [...prev, { user_id: client.user_id, full_name: client.full_name }]);
+                          setShowNewClient(false);
+                          toast.success("Cliente cadastrado com sucesso!");
+                        }}
+                        onCancel={() => setShowNewClient(false)}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowNewClient(true)}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Novo Cliente
+                    </button>
+                  )}
+                </div>
+
                 {/* Filtros */}
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">

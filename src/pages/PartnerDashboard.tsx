@@ -977,6 +977,30 @@ const PartnerDashboard = () => {
 
         {activeTab === "clientes" && (
           <div className="space-y-3">
+            {/* Novo Cliente button */}
+            {permissions.can_create_appointments && (
+              <div>
+                {showNewClient ? (
+                  <NewClientInlineForm
+                    onClientCreated={(client) => {
+                      setAllProfiles((prev) => [...prev, { user_id: client.user_id, full_name: client.full_name }]);
+                      setShowNewClient(false);
+                      toast.success("Cliente cadastrado com sucesso!");
+                    }}
+                    onCancel={() => setShowNewClient(false)}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setShowNewClient(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Novo Cliente
+                  </button>
+                )}
+              </div>
+            )}
+
             {clientPlans.length === 0 ? (
               <div className="bg-card rounded-2xl border border-border p-12 text-center">
                 <ClipboardList className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
