@@ -1,7 +1,8 @@
-import { motion } from "framer-motion";
-import { User, Scissors } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
+import { Progress } from "@/components/ui/progress";
 
 interface Profile {
   full_name: string;
@@ -18,24 +19,56 @@ interface TimelineAppointment {
   status: string;
   user_id: string;
   session_number: number | null;
+  notes: string | null;
+  partner_id: string | null;
+  plan_id: string | null;
   profiles?: Profile | null;
+}
+
+interface ClientPlan {
+  id: string;
+  user_id: string;
+  service_slug: string;
+  service_title: string;
+  plan_name: string;
+  total_sessions: number;
+  completed_sessions: number;
+  status: string;
+}
+
+interface PartnerOption {
+  id: string;
+  full_name: string;
 }
 
 interface DayTimelineViewProps {
   appointments: TimelineAppointment[];
-  onSelectAppointment?: (id: string) => void;
+  expandedAptId: string | null;
+  onSelectAppointment: (id: string) => void;
+  clientPlans: ClientPlan[];
+  partnerOptions: PartnerOption[];
+  allPrices: any[];
+  updatingPlan: string | null;
+  onConfirmPayment: (apt: TimelineAppointment) => void;
+  onComplete: (apt: TimelineAppointment) => void;
+  onReschedule: (apt: TimelineAppointment) => void;
+  onCancel: (id: string) => void;
+  onPartnerAssign: (aptId: string, partnerId: string | null) => void;
+  onUpdateSessions: (planId: string, delta: number) => void;
+  isRescheduled: (apt: TimelineAppointment) => boolean;
+  getAppointmentPrice: (apt: TimelineAppointment, prices: any[]) => string;
+  getInitials: (name: string) => string;
 }
 
-// Consistent color palette per service slug
 const PALETTE = [
-  { bg: "#d8b4fe", text: "#581c87" },  // violet
-  { bg: "#93c5fd", text: "#1e3a5f" },  // blue
-  { bg: "#fcd34d", text: "#713f12" },  // amber/gold
-  { bg: "#fda4af", text: "#881337" },  // rose
-  { bg: "#6ee7b7", text: "#064e3b" },  // emerald
-  { bg: "#fdba74", text: "#7c2d12" },  // orange
-  { bg: "#c4b5fd", text: "#4c1d95" },  // purple
-  { bg: "#67e8f9", text: "#155e75" },  // cyan
+  { bg: "#d8b4fe", text: "#581c87" },
+  { bg: "#93c5fd", text: "#1e3a5f" },
+  { bg: "#fcd34d", text: "#713f12" },
+  { bg: "#fda4af", text: "#881337" },
+  { bg: "#6ee7b7", text: "#064e3b" },
+  { bg: "#fdba74", text: "#7c2d12" },
+  { bg: "#c4b5fd", text: "#4c1d95" },
+  { bg: "#67e8f9", text: "#155e75" },
 ];
 
 const estimateDuration = (serviceSlug: string): number => {
@@ -52,8 +85,8 @@ const estimateDuration = (serviceSlug: string): number => {
 
 const START_HOUR = 8;
 const END_HOUR = 19;
-const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 2; // 30-min slots
-const ROW_HEIGHT = 40; // px per 30-min slot
+const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 2;
+const ROW_HEIGHT = 40;
 
 const timeToSlotIndex = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -68,8 +101,24 @@ const formatTimeRange = (startTime: string, durationMin: number) => {
   return `${startTime} - ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
 };
 
-const DayTimelineView = ({ appointments, onSelectAppointment }: DayTimelineViewProps) => {
-  // Build color map consistently
+const DayTimelineView = ({
+  appointments,
+  expandedAptId,
+  onSelectAppointment,
+  clientPlans,
+  partnerOptions,
+  allPrices,
+  updatingPlan,
+  onConfirmPayment,
+  onComplete,
+  onReschedule,
+  onCancel,
+  onPartnerAssign,
+  onUpdateSessions,
+  isRescheduled: isRescheduledFn,
+  getAppointmentPrice,
+  getInitials,
+}: DayTimelineViewProps) => {
   const colorMap = useMemo(() => {
     const map: Record<string, { bg: string; text: string }> = {};
     const slugs = [...new Set(appointments.map((a) => a.service_slug))];
@@ -84,14 +133,12 @@ const DayTimelineView = ({ appointments, onSelectAppointment }: DayTimelineViewP
     [appointments]
   );
 
-  // Build slot labels
   const slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
     const hour = START_HOUR + Math.floor(i / 2);
     const min = (i % 2) * 30;
     return `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
   });
 
-  // Map each appointment to slot positions
   const aptBlocks = sorted.map((apt) => {
     const duration = estimateDuration(apt.service_slug);
     const startSlot = timeToSlotIndex(apt.appointment_time);
@@ -99,7 +146,6 @@ const DayTimelineView = ({ appointments, onSelectAppointment }: DayTimelineViewP
     return { ...apt, startSlot, spanSlots, duration };
   });
 
-  // Detect overlapping for column layout
   const columns: typeof aptBlocks[] = [];
   const aptCol = new Map<string, number>();
 
@@ -122,7 +168,6 @@ const DayTimelineView = ({ appointments, onSelectAppointment }: DayTimelineViewP
 
   const totalCols = Math.max(1, columns.length);
 
-  // Current time indicator
   const now = new Date();
   const nowSlot = (now.getHours() - START_HOUR) * 2 + now.getMinutes() / 30;
   const showNowLine = nowSlot >= 0 && nowSlot <= TOTAL_SLOTS;
@@ -134,7 +179,7 @@ const DayTimelineView = ({ appointments, onSelectAppointment }: DayTimelineViewP
       className="bg-card rounded-2xl border border-border overflow-auto relative"
     >
       <div className="relative" style={{ height: `${TOTAL_SLOTS * ROW_HEIGHT}px` }}>
-        {/* Grid rows with time labels */}
+        {/* Grid rows */}
         {slots.map((label, i) => (
           <div
             key={i}
@@ -177,63 +222,178 @@ const DayTimelineView = ({ appointments, onSelectAppointment }: DayTimelineViewP
           const top = block.startSlot * ROW_HEIGHT;
           const height = Math.max(block.spanSlots * ROW_HEIGHT - 2, ROW_HEIGHT - 2);
           const timeRange = formatTimeRange(block.appointment_time, block.duration);
+          const isExpanded = expandedAptId === block.id;
+          const plan = clientPlans.find((p) => p.user_id === block.user_id && p.service_slug === block.service_slug);
+          const progress = plan && plan.total_sessions > 0 ? (plan.completed_sessions / plan.total_sessions) * 100 : 0;
+          const isComplete = plan ? plan.completed_sessions >= plan.total_sessions : false;
 
           return (
-            <motion.div
-              key={block.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.05 }}
-              className="absolute z-10 rounded-md cursor-pointer hover:brightness-95 transition-all overflow-hidden px-2 py-1.5"
-              style={{
-                top: `${top + 1}px`,
-                left: colLeft,
-                width: colWidth,
-                height: `${height}px`,
-                backgroundColor: color.bg,
-                color: color.text,
-              }}
-              onClick={() => onSelectAppointment?.(block.id)}
-            >
-              {/* Time range header */}
-              <p className="text-[11px] font-bold leading-tight truncate">
-                {timeRange}
-              </p>
-
-              {/* Client info */}
-              <div className="flex items-center gap-1 mt-0.5">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} className="w-4 h-4 rounded-full object-cover shrink-0" alt="" />
-                ) : (
-                  <User className="w-3.5 h-3.5 shrink-0 opacity-70" />
+            <div key={block.id}>
+              {/* Colored block */}
+              <motion.div
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.05 }}
+                className={cn(
+                  "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
+                  isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95"
                 )}
-                <span className="text-[11px] font-semibold truncate">
-                  {profile?.full_name || "Cliente"}
-                </span>
-              </div>
-
-              {/* Service */}
-              {height > 50 && (
+                style={{
+                  top: `${top + 1}px`,
+                  left: colLeft,
+                  width: colWidth,
+                  height: `${height}px`,
+                  backgroundColor: color.bg,
+                  color: color.text,
+                }}
+                onClick={() => onSelectAppointment(block.id)}
+              >
+                <p className="text-[11px] font-bold leading-tight truncate">{timeRange}</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <Scissors className="w-3 h-3 shrink-0 opacity-60" />
-                  <span className="text-[10px] font-medium truncate opacity-80">
-                    {block.service_title}
-                  </span>
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} className="w-4 h-4 rounded-full object-cover shrink-0" alt="" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                  )}
+                  <span className="text-[11px] font-semibold truncate">{profile?.full_name || "Cliente"}</span>
                 </div>
-              )}
-            </motion.div>
+                {height > 50 && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Scissors className="w-3 h-3 shrink-0 opacity-60" />
+                    <span className="text-[10px] font-medium truncate opacity-80">{block.service_title}</span>
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Expanded detail card - positioned right below the block */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, scaleY: 0.9 }}
+                    animate={{ opacity: 1, scaleY: 1 }}
+                    exit={{ opacity: 0, scaleY: 0.9 }}
+                    className="absolute z-40 bg-card rounded-xl border border-border shadow-xl p-4 space-y-3"
+                    style={{
+                      top: `${top + height + 6}px`,
+                      left: "52px",
+                      right: "8px",
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-heading text-sm font-bold text-foreground">{block.service_title}</h3>
+                      <button onClick={() => onSelectAppointment(block.id)} className="text-muted-foreground hover:text-foreground">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Client info */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                        {profile?.avatar_url ? (
+                          <img src={profile.avatar_url} alt={profile?.full_name} className="w-full h-full object-cover" />
+                        ) : profile ? (
+                          <span className="font-heading text-xs font-bold text-primary">{getInitials(profile.full_name)}</span>
+                        ) : (
+                          <User className="w-4 h-4 text-primary/50" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-heading text-sm font-semibold text-foreground truncate">{profile?.full_name || "Cliente"}</p>
+                        {profile?.phone && (
+                          <p className="font-body text-xs text-muted-foreground flex items-center gap-1">
+                            <Phone className="w-3 h-3" />{profile.phone}
+                          </p>
+                        )}
+                      </div>
+                      {profile?.phone && (
+                        <div className="flex gap-1.5 shrink-0">
+                          <a href={`tel:${profile.phone.replace(/\D/g, "")}`} className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all">
+                            <Phone className="w-3.5 h-3.5" />
+                          </a>
+                          <a href={`https://wa.me/55${profile.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all">
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status badges */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${block.status === "confirmed" ? "bg-primary/10 text-primary" : "bg-amber-100 text-amber-700"}`}>
+                        {block.status === "confirmed" ? "Confirmado" : "Pendente"}
+                      </span>
+                      {isRescheduledFn(block) && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700">Remarcado</span>}
+                      {isComplete && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-primary/10 text-primary">Plano Completo</span>}
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />{block.appointment_time}
+                      </span>
+                      <span className="font-heading text-xs font-bold text-primary">{getAppointmentPrice(block, allPrices)}</span>
+                    </div>
+
+                    {/* Plan progress */}
+                    {plan && (
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-body text-xs font-semibold text-foreground">{plan.plan_name}</span>
+                          <span className="font-heading text-[11px] font-bold text-primary">{plan.completed_sessions}/{plan.total_sessions}</span>
+                        </div>
+                        <Progress value={progress} className="h-1.5" />
+                      </div>
+                    )}
+
+                    {/* Partner */}
+                    <div className="flex items-center gap-2">
+                      <Handshake className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <select
+                        value={block.partner_id || ""}
+                        onChange={(e) => onPartnerAssign(block.id, e.target.value || null)}
+                        className="flex-1 h-7 rounded-lg border border-border bg-background px-2 text-[11px] font-body text-foreground focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="">Sem parceiro</option>
+                        {partnerOptions.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2 flex-wrap">
+                      {block.status === "pending" && (
+                        <button onClick={() => onConfirmPayment(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-emerald-400/40 text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all">
+                          <Banknote className="w-3.5 h-3.5" />Confirmar PIX
+                        </button>
+                      )}
+                      <button onClick={() => onComplete(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all">
+                        <CheckCircle2 className="w-3.5 h-3.5" />Finalizar
+                      </button>
+                      {plan && (
+                        <button
+                          onClick={() => { onUpdateSessions(plan.id, 1); onComplete(block); }}
+                          disabled={updatingPlan === plan.id}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all disabled:opacity-30"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5" />Sessão Realizada
+                        </button>
+                      )}
+                      <button onClick={() => onReschedule(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all">
+                        <CalendarClock className="w-3.5 h-3.5" />Remarcar
+                      </button>
+                      <button onClick={() => onCancel(block.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all">
+                        <CalendarX className="w-3.5 h-3.5" />Cancelar
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           );
         })}
       </div>
 
-      {/* "Hoje" floating button */}
+      {/* "Hoje" button */}
       <div className="sticky bottom-3 flex justify-end pr-3 pb-2 pointer-events-none">
         <button
-          onClick={() => {
-            const container = document.querySelector("[data-timeline-scroll]");
-            if (container) container.scrollTop = 0;
-            else window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="pointer-events-auto px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg hover:bg-primary/90 transition-colors"
         >
           Hoje
