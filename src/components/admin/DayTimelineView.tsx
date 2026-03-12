@@ -575,15 +575,37 @@ const DayTimelineView = ({
         })}
       </div>
 
+      {/* Mobile moving mode banner */}
+      <AnimatePresence>
+        {mobileMovingId && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="sticky bottom-3 mx-3 mb-2 flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground shadow-lg z-40"
+          >
+            <p className="text-xs font-bold">📌 Toque no horário desejado para mover</p>
+            <button
+              onClick={() => setMobileMovingId(null)}
+              className="px-3 py-1 rounded-lg text-xs font-semibold bg-primary-foreground/20 hover:bg-primary-foreground/30 transition-colors"
+            >
+              Cancelar
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* "Hoje" button */}
-      <div className="sticky bottom-3 flex justify-end pr-3 pb-2 pointer-events-none">
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="pointer-events-auto px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg hover:bg-primary/90 transition-colors"
-        >
-          Hoje
-        </button>
-      </div>
+      {!mobileMovingId && (
+        <div className="sticky bottom-3 flex justify-end pr-3 pb-2 pointer-events-none">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="pointer-events-auto px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg hover:bg-primary/90 transition-colors"
+          >
+            Hoje
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 };
