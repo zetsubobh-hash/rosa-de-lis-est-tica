@@ -16,6 +16,7 @@ import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 import CalendarPopoverFilter from "@/components/admin/CalendarPopoverFilter";
 import QuickBookModal from "@/components/admin/QuickBookModal";
+import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 
 interface SessionInfo {
