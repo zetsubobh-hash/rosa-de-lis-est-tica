@@ -168,6 +168,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
       toast({ title: "Serviço salvo com sucesso! ✅" });
       setHasChanges(false);
       setEditedPrices({});
+      setRawPriceInputs({});
       onSaved();
     }
     setSaving(false);
