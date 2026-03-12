@@ -6,6 +6,7 @@ import {
   Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
