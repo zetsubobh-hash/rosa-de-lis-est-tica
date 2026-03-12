@@ -22,6 +22,7 @@ interface SessionScheduleModalProps {
   serviceSlug: string;
   serviceTitle: string;
   userId: string;
+  partnerId?: string | null;
 }
 
 const SessionScheduleModal = ({
