@@ -214,8 +214,8 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
           <Input value={form.full_name} onChange={(e) => setForm(prev => ({ ...prev, full_name: capitalize(e.target.value) }))} placeholder="Maria Silva" className="font-body h-8 text-xs" />
         </div>
         <div className="space-y-1">
-          <label className="font-body text-[10px] font-medium text-foreground">Usuário (login) *</label>
-          <Input value={form.username} onChange={(e) => setForm(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, "") }))} placeholder="maria.silva" className="font-body h-8 text-xs" />
+          <label className="font-body text-[10px] font-medium text-foreground">Senha *</label>
+          <Input type="password" value={form.password} onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))} placeholder="Mín. 6 caracteres" className="font-body h-8 text-xs" autoComplete="new-password" />
         </div>
         <div className="space-y-1">
           <label className="font-body text-[10px] font-medium text-foreground">Senha *</label>
