@@ -283,9 +283,17 @@ const DayTimelineView = ({
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05 }}
+                draggable={!readOnly && !!onDragReschedule && !isMobile}
+                onDragStart={(e: any) => {
+                  if (!onDragReschedule || readOnly) return;
+                  e.dataTransfer.setData("text/appointment-id", block.id);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnd={() => setDragOverSlot(null)}
                 className={cn(
                   "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
-                  isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95"
+                  isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
+                  !readOnly && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing"
                 )}
                 style={{
                   top: `${top + 1}px`,
