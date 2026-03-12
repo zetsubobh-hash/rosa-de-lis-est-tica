@@ -69,7 +69,7 @@ const DYNAMIC_VARS = [
 ];
 
 const DEFAULT_TEMPLATE =
-  "Olá {nome}! 🌸\n\nTemos uma promoção especial para você em *{servico}*!\n\nAgende agora e garanta condições exclusivas.\n\n_{empresa}_";
+  "Olá {nome}! 🌸\n\nTemos uma promoção especial para você em *{servico}*!\n\nAgende agora e garanta condições exclusivas.\n\n_{empresa}_\n\n---\n_Não deseja mais receber promoções? Responda SAIR._";
 
 /* ───────── component ───────── */
 const AdminPromoBroadcast = () => {
@@ -94,6 +94,7 @@ const AdminPromoBroadcast = () => {
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [campaignFormOpen, setCampaignFormOpen] = useState(false);
   const [services, setServices] = useState<ServiceOption[]>([]);
+  const [unsubCount, setUnsubCount] = useState(0);
 
   const [campForm, setCampForm] = useState({
     title: "",
@@ -213,11 +214,19 @@ const AdminPromoBroadcast = () => {
     if (data) setServices(data);
   }, []);
 
+  const fetchUnsubCount = useCallback(async () => {
+    const { count } = await supabase
+      .from("promo_unsubscribes" as any)
+      .select("id", { count: "exact", head: true });
+    setUnsubCount(count || 0);
+  }, []);
+
   useEffect(() => {
     fetchInstances();
     fetchCampaigns();
     fetchServices();
-  }, [fetchInstances, fetchCampaigns, fetchServices]);
+    fetchUnsubCount();
+  }, [fetchInstances, fetchCampaigns, fetchServices, fetchUnsubCount]);
 
   /* ───────── instance connection actions ───────── */
   const handleInstanceConnect = async (instId: string) => {
@@ -789,9 +798,10 @@ const AdminPromoBroadcast = () => {
                   <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground space-y-1">
                     <p className="font-semibold flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Como funciona o envio:</p>
                     <p>1. As mensagens são enviadas para todos os clientes cadastrados com telefone.</p>
-                    <p>2. O sistema usa a 1ª instância ativa até atingir o limite de msgs/ciclo.</p>
-                    <p>3. Então pula automaticamente para a próxima instância e assim por diante.</p>
-                    <p>4. Ao terminar todas, reinicia o ciclo na 1ª instância.</p>
+                    <p>2. Clientes que cancelaram a inscrição são automaticamente excluídos ({unsubCount} cancelado{unsubCount === 1 ? "" : "s"}).</p>
+                    <p>3. O sistema usa a 1ª instância ativa até atingir o limite de msgs/ciclo.</p>
+                    <p>4. Então pula automaticamente para a próxima instância e assim por diante.</p>
+                    <p>5. Um link de cancelamento é adicionado automaticamente ao final da mensagem (LGPD).</p>
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2 pt-2">

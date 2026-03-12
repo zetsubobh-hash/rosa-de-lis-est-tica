@@ -736,6 +736,27 @@ export type Database = {
           },
         ]
       }
+      promo_unsubscribes: {
+        Row: {
+          created_at: string
+          id: string
+          phone: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phone: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phone?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       service_prices: {
         Row: {
           id: string

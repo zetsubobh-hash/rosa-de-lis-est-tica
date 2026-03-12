@@ -54,18 +54,40 @@ Deno.serve(async (req) => {
     if (!instances || instances.length === 0) return json({ error: "No active instances" }, 400);
 
     // Fetch all clients with phone
-    const { data: profiles } = await supabase
+    const { data: allProfiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, phone");
-    if (!profiles || profiles.length === 0) return json({ error: "No clients found" }, 400);
+    if (!allProfiles || allProfiles.length === 0) return json({ error: "No clients found" }, 400);
 
-    // Get business name
-    const { data: siteSettings } = await supabase
+    // Fetch unsubscribed phones
+    const { data: unsubRows } = await supabase
+      .from("promo_unsubscribes")
+      .select("phone");
+    const unsubPhones = new Set((unsubRows || []).map((r: any) => r.phone));
+
+    // Filter out unsubscribed
+    const profiles = allProfiles.filter((p: any) => {
+      const normalized = normalizePhone(p.phone || "");
+      return normalized && !unsubPhones.has(normalized);
+    });
+    if (profiles.length === 0) return json({ error: "Todos os clientes cancelaram o recebimento de promoções" }, 400);
+
+    // Get business name & site URL
+    const { data: settingsRows } = await supabase
       .from("site_settings")
       .select("key, value")
-      .eq("key", "business_name")
+      .in("key", ["business_name", "site_url"]);
+    const settingsMap: Record<string, string> = {};
+    (settingsRows || []).forEach((r: any) => { settingsMap[r.key] = r.value; });
+    const businessName = settingsMap.business_name || "Nossa Clínica";
+
+    // Build unsubscribe base URL
+    const { data: appUrlRow } = await supabase
+      .from("payment_settings")
+      .select("value")
+      .eq("key", "app_install_url")
       .maybeSingle();
-    const businessName = siteSettings?.value || "Nossa Clínica";
+    const siteBaseUrl = (appUrlRow?.value || settingsMap.site_url || "").replace(/\/+$/, "");
 
     // Get service title if specified
     let serviceTitle = "nossos serviços";
@@ -128,12 +150,18 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Build message
-      const message = template
+      // Build message with unsubscribe footer
+      let message = template
         .replace(/{nome}/g, profile?.full_name || "Cliente")
         .replace(/{servico}/g, serviceTitle)
         .replace(/{empresa}/g, businessName)
         .replace(/{telefone}/g, record.phone || profile?.phone || "");
+
+      // Append opt-out link
+      if (siteBaseUrl) {
+        const unsubUrl = `${siteBaseUrl}/cancelar?phone=${encodeURIComponent(phone)}`;
+        message += `\n\n---\n_Não deseja mais receber promoções? Cancele aqui:_ ${unsubUrl}`;
+      }
 
       // Send via Evolution API
       try {
