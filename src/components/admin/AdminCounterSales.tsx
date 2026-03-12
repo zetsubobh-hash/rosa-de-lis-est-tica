@@ -252,20 +252,18 @@ const AdminCounterSales = () => {
 
   /* ─── Create new client ─── */
   const createNewClient = async () => {
-    const { full_name, username, password, phone, sex, address, email } = newClient;
-    if (!full_name || !username || !password || !phone || !sex || !address) {
+    const { full_name, phone, sex, address, email, birth_date } = newClient;
+    if (!full_name || !phone || !sex || !address || !birth_date) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
-    if (password.length < 6) {
-      toast.error("Senha deve ter no mínimo 6 caracteres");
-      return;
-    }
+    const username = generateUsername(full_name);
+    const password = generatePassword();
     setCreatingClient(true);
     try {
       const rawPhone = phone.replace(/\D/g, "");
       const res = await supabase.functions.invoke("register", {
-        body: { username: username.toLowerCase(), password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined },
+        body: { username, password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined, birth_date },
       });
       if (res.error || res.data?.error) throw new Error(res.data?.error || res.error?.message || "Erro ao criar cliente");
 
