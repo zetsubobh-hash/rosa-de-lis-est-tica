@@ -55,6 +55,16 @@ const Admin = () => {
   const [partnersUnlocked, setPartnersUnlocked] = useState(false);
   const [usersUnlocked, setUsersUnlocked] = useState(false);
 
+  // Sync tab from URL params (e.g. when navigating from Header "Parceiro" button)
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && tabParam !== activeTab && ["dashboard","agenda","counter-sales","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette"].includes(tabParam)) {
+      setActiveTab(tabParam as Tab);
+      searchParams.delete("tab");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
+
   const handleTabChange = (tab: Tab) => {
     if (tab !== activeTab) {
       setPartnersUnlocked(false);
