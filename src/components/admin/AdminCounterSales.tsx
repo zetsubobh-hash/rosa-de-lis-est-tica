@@ -572,12 +572,8 @@ const AdminCounterSales = () => {
                       <Input value={newClient.full_name} onChange={(e) => setNewClient(prev => ({ ...prev, full_name: capitalize(e.target.value) }))} placeholder="Maria Silva" className="font-body" />
                     </div>
                     <div className="space-y-1">
-                      <label className="font-body text-xs font-medium text-foreground">Usuário (login) *</label>
-                      <Input value={newClient.username} onChange={(e) => setNewClient(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, "") }))} placeholder="maria.silva" className="font-body" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="font-body text-xs font-medium text-foreground">Senha *</label>
-                      <Input type="password" value={newClient.password} onChange={(e) => setNewClient(prev => ({ ...prev, password: e.target.value }))} placeholder="Mín. 6 caracteres" className="font-body" />
+                      <label className="font-body text-xs font-medium text-foreground">Data de Nascimento *</label>
+                      <Input type="date" value={newClient.birth_date} onChange={(e) => setNewClient(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body" />
                     </div>
                     <div className="space-y-1">
                       <label className="font-body text-xs font-medium text-foreground">Telefone *</label>
@@ -598,11 +594,15 @@ const AdminCounterSales = () => {
                       <label className="font-body text-xs font-medium text-foreground">E-mail</label>
                       <Input type="email" value={newClient.email} onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))} placeholder="email@exemplo.com" className="font-body" />
                     </div>
-                    <div className="space-y-1 sm:col-span-2">
+                    <div className="space-y-1">
                       <label className="font-body text-xs font-medium text-foreground">Endereço *</label>
                       <Input value={newClient.address} onChange={(e) => setNewClient(prev => ({ ...prev, address: capitalize(e.target.value) }))} placeholder="Rua..., Nº - Bairro, Cidade" className="font-body" />
                     </div>
                   </div>
+
+                  <p className="font-body text-xs text-muted-foreground italic">
+                    🔑 Senha gerada automaticamente e enviada via WhatsApp
+                  </p>
 
                   <Button onClick={createNewClient} disabled={creatingClient} className="w-full font-body">
                     {creatingClient ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Criando...</> : <><UserPlus className="w-4 h-4 mr-2" /> Criar e Selecionar</>}
