@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake, Ticket, CheckCircle2, Pencil, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -163,7 +163,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
         phone: p.phone || "",
         email: p.email || "",
         address: p.address || "",
-        sex: p.sex || "",
+        sex: (p.sex || "").toLowerCase(),
         birth_date: p.birth_date || "",
       });
     }
@@ -191,13 +191,20 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       toast.error("Nome é obrigatório");
       return;
     }
+
+    const sexValue = editData.sex.trim().toLowerCase();
+    if (!["feminino", "masculino"].includes(sexValue)) {
+      toast.error("Selecione um sexo válido (feminino ou masculino)");
+      return;
+    }
+
     setSaving(true);
     const updateData: any = {
       full_name: editData.full_name.trim(),
       phone: editData.phone.trim(),
       email: editData.email.trim() || null,
       address: editData.address.trim(),
-      sex: editData.sex.trim(),
+      sex: sexValue,
     };
     if (editData.birth_date) {
       updateData.birth_date = editData.birth_date;
@@ -315,9 +322,8 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                                 className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               >
                                 <option value="">Selecione</option>
-                                <option value="Feminino">Feminino</option>
-                                <option value="Masculino">Masculino</option>
-                                <option value="Outro">Outro</option>
+                                <option value="feminino">Feminino</option>
+                                <option value="masculino">Masculino</option>
                               </select>
                             </div>
                           </div>
@@ -347,7 +353,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                                     phone: profile.phone || "",
                                     email: profile.email || "",
                                     address: profile.address || "",
-                                    sex: profile.sex || "",
+                                    sex: (profile.sex || "").toLowerCase(),
                                     birth_date: profile.birth_date || "",
                                   });
                                 }
