@@ -188,6 +188,7 @@ const AdminPartners = () => {
     setIsNew(false);
     setCredPassword("");
     setCredShowPassword(false);
+    setGeneratedPassword(null);
     // Check if partner has a real account (profile exists)
     const { data: profile } = await supabase
       .from("profiles")
