@@ -69,6 +69,7 @@ interface DayTimelineViewProps {
   isRescheduled?: (apt: TimelineAppointment) => boolean;
   getAppointmentPrice?: (apt: TimelineAppointment, prices: any[]) => string;
   getInitials?: (name: string) => string;
+  onAnamnesis?: (userId: string, name: string) => void;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
 }
