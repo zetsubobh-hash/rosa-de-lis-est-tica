@@ -560,6 +560,7 @@ const PartnerDashboard = () => {
                 }}
                 onAnamnesis={partnerId ? (userId, name) => setAnamnesisClient({ userId, name }) : undefined}
                 onHistory={(userId, name) => setHistoryClient({ userId, name })}
+                onScheduleSession={(params) => setScheduleModal(params)}
                 readOnly
               />
             ) : (
