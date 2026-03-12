@@ -885,6 +885,7 @@ const AdminPromoBroadcast = () => {
                 </div>
 
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1"><Users className="w-3 h-3 text-primary" /> {AUDIENCE_FILTERS.find(f => f.value === ((camp as any).audience_filter?.type || "all"))?.label || "Todos"}</span>
                   <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> {camp.total_sent} enviadas</span>
                   <span className="flex items-center gap-1"><XCircle className="w-3 h-3 text-destructive" /> {camp.total_failed} falhas</span>
                   <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {camp.total_target} alvo</span>

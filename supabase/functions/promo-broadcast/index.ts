@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const json = (body: unknown, status = 200) =>
@@ -11,6 +11,15 @@ const json = (body: unknown, status = 200) =>
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
+function normalizePhone(phone: string): string | null {
+  if (!phone) return null;
+  let digits = phone.replace(/\D/g, "");
+  if (digits.length === 11) digits = "55" + digits;
+  if (digits.length === 10) digits = "55" + digits;
+  if (digits.length < 12) return null;
+  return digits;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -56,8 +65,66 @@ Deno.serve(async (req) => {
     // Fetch all clients with phone
     const { data: allProfiles } = await supabase
       .from("profiles")
-      .select("user_id, full_name, phone");
+      .select("user_id, full_name, phone, created_at, birth_date");
     if (!allProfiles || allProfiles.length === 0) return json({ error: "No clients found" }, 400);
+
+    // Apply audience filter
+    const audienceFilter = campaign.audience_filter || { type: "all" };
+    const filterType = audienceFilter.type || "all";
+    let filteredProfiles = [...allProfiles];
+
+    const now = new Date();
+
+    if (filterType === "new_clients") {
+      // Registered in last 30 days
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      filteredProfiles = filteredProfiles.filter((p: any) =>
+        p.created_at && new Date(p.created_at) >= thirtyDaysAgo
+      );
+    } else if (filterType === "inactive") {
+      // No appointments in last 90 days
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      const isoDate = ninetyDaysAgo.toISOString().split("T")[0];
+      const { data: recentAppts } = await supabase
+        .from("appointments")
+        .select("user_id")
+        .gte("appointment_date", isoDate);
+      const activeUserIds = new Set((recentAppts || []).map((a: any) => a.user_id));
+      filteredProfiles = filteredProfiles.filter((p: any) => !activeUserIds.has(p.user_id));
+    } else if (filterType === "recent") {
+      // Had appointments in last 30 days
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const isoDate = thirtyDaysAgo.toISOString().split("T")[0];
+      const { data: recentAppts } = await supabase
+        .from("appointments")
+        .select("user_id")
+        .gte("appointment_date", isoDate);
+      const recentUserIds = new Set((recentAppts || []).map((a: any) => a.user_id));
+      filteredProfiles = filteredProfiles.filter((p: any) => recentUserIds.has(p.user_id));
+    } else if (filterType === "birthday_today") {
+      const todayMM_DD = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      filteredProfiles = filteredProfiles.filter((p: any) => {
+        if (!p.birth_date) return false;
+        const bd = p.birth_date.slice(5); // "MM-DD"
+        return bd === todayMM_DD;
+      });
+    } else if (filterType === "birthday_week") {
+      const weekDates = new Set<string>();
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+        weekDates.add(`${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`);
+      }
+      filteredProfiles = filteredProfiles.filter((p: any) => {
+        if (!p.birth_date) return false;
+        return weekDates.has(p.birth_date.slice(5));
+      });
+    } else if (filterType === "birthday_month") {
+      const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+      filteredProfiles = filteredProfiles.filter((p: any) => {
+        if (!p.birth_date) return false;
+        return p.birth_date.slice(5, 7) === currentMonth;
+      });
+    }
 
     // Fetch unsubscribed phones
     const { data: unsubRows } = await supabase
@@ -65,12 +132,12 @@ Deno.serve(async (req) => {
       .select("phone");
     const unsubPhones = new Set((unsubRows || []).map((r: any) => r.phone));
 
-    // Filter out unsubscribed
-    const profiles = allProfiles.filter((p: any) => {
+    // Filter out unsubscribed and invalid phones
+    const profiles = filteredProfiles.filter((p: any) => {
       const normalized = normalizePhone(p.phone || "");
       return normalized && !unsubPhones.has(normalized);
     });
-    if (profiles.length === 0) return json({ error: "Todos os clientes cancelaram o recebimento de promoções" }, 400);
+    if (profiles.length === 0) return json({ error: "Nenhum cliente encontrado com os filtros selecionados" }, 400);
 
     // Get business name & site URL
     const { data: settingsRows } = await supabase
@@ -106,7 +173,7 @@ Deno.serve(async (req) => {
       .update({ status: "sending", total_target: profiles.length, total_sent: 0, total_failed: 0, current_instance_index: 0 })
       .eq("id", campaign_id);
 
-    // Create send records (preserve full history of every run)
+    // Create send records
     const sendRecords = profiles.map((p: any) => ({
       campaign_id,
       user_id: p.user_id,
@@ -114,7 +181,6 @@ Deno.serve(async (req) => {
       status: "pending",
     }));
 
-    // Insert run records in batches and keep inserted ids for precise updates
     const insertedRecords: Array<{ id: string; user_id: string; phone: string }> = [];
     for (let i = 0; i < sendRecords.length; i += 500) {
       const batch = sendRecords.slice(i, i + 500);
@@ -122,12 +188,11 @@ Deno.serve(async (req) => {
         .from("promo_sends")
         .insert(batch)
         .select("id, user_id, phone");
-
       if (insertErr) throw insertErr;
       if (insertedBatch) insertedRecords.push(...(insertedBatch as Array<{ id: string; user_id: string; phone: string }>));
     }
 
-    // Now process sends with instance rotation
+    // Process sends with instance rotation
     let instanceIdx = 0;
     let sentOnCurrentInstance = 0;
     let totalSent = 0;
@@ -143,75 +208,59 @@ Deno.serve(async (req) => {
 
       if (!phone) {
         totalFailed++;
-        await supabase
-          .from("promo_sends")
+        await supabase.from("promo_sends")
           .update({ status: "failed", error_message: "Invalid phone", sent_at: new Date().toISOString() })
           .eq("id", record.id);
         continue;
       }
 
-      // Build message with unsubscribe footer
       let message = template
         .replace(/{nome}/g, profile?.full_name || "Cliente")
         .replace(/{servico}/g, serviceTitle)
         .replace(/{empresa}/g, businessName)
         .replace(/{telefone}/g, record.phone || profile?.phone || "");
 
-      // Append opt-out link
       if (siteBaseUrl) {
         const unsubUrl = `${siteBaseUrl}/cancelar?phone=${encodeURIComponent(phone)}`;
         message += `\n\n---\n_Não deseja mais receber promoções? Cancele aqui:_ ${unsubUrl}`;
       }
 
-      // Send via Evolution API
       try {
         const apiUrl = currentInstance.api_url.replace(/\/+$/, "");
         const resp = await fetch(
           `${apiUrl}/message/sendText/${currentInstance.instance_name}`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: currentInstance.api_key,
-            },
-            body: JSON.stringify({
-              number: phone,
-              text: message,
-            }),
+            headers: { "Content-Type": "application/json", apikey: currentInstance.api_key },
+            body: JSON.stringify({ number: phone, text: message }),
           }
         );
 
         if (resp.ok) {
           totalSent++;
-          await supabase
-            .from("promo_sends")
+          await supabase.from("promo_sends")
             .update({ status: "sent", instance_id: currentInstance.id, sent_at: new Date().toISOString() })
             .eq("id", record.id);
         } else {
           const errBody = await resp.text();
           totalFailed++;
-          await supabase
-            .from("promo_sends")
+          await supabase.from("promo_sends")
             .update({ status: "failed", instance_id: currentInstance.id, error_message: errBody.substring(0, 500), sent_at: new Date().toISOString() })
             .eq("id", record.id);
         }
       } catch (err: any) {
         totalFailed++;
-        await supabase
-          .from("promo_sends")
+        await supabase.from("promo_sends")
           .update({ status: "failed", instance_id: currentInstance.id, error_message: err.message?.substring(0, 500), sent_at: new Date().toISOString() })
           .eq("id", record.id);
       }
 
       sentOnCurrentInstance++;
-
-      // Rotate instance if limit reached
       if (sentOnCurrentInstance >= currentInstance.msgs_per_cycle) {
         instanceIdx = (instanceIdx + 1) % instances.length;
         sentOnCurrentInstance = 0;
       }
 
-      // Wait interval between messages
       if (campaign.interval_seconds > 0) {
         await new Promise((resolve) => setTimeout(resolve, campaign.interval_seconds * 1000));
       }
@@ -229,12 +278,3 @@ Deno.serve(async (req) => {
     return json({ error: err.message }, 500);
   }
 });
-
-function normalizePhone(phone: string): string | null {
-  if (!phone) return null;
-  let digits = phone.replace(/\D/g, "");
-  if (digits.length === 11) digits = "55" + digits;
-  if (digits.length === 10) digits = "55" + digits;
-  if (digits.length < 12) return null;
-  return digits;
-}
