@@ -509,7 +509,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                       </div>
                     </TabsContent>
                   </div>
-                </ScrollArea>
+                </div>
               </Tabs>
             )}
           </motion.div>
