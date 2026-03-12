@@ -94,6 +94,7 @@ const AdminPromoBroadcast = () => {
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [campaignFormOpen, setCampaignFormOpen] = useState(false);
   const [services, setServices] = useState<ServiceOption[]>([]);
+  const [unsubCount, setUnsubCount] = useState(0);
 
   const [campForm, setCampForm] = useState({
     title: "",
