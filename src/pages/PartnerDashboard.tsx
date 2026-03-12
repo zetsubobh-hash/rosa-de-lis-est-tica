@@ -288,7 +288,12 @@ const PartnerDashboard = () => {
     setCompletingId(apt.id);
     try {
       const newStatus = completed ? "completed" : "cancelled";
-      await supabase.from("appointments").update({ status: newStatus }).eq("id", apt.id);
+      const { error: appointmentError } = await supabase
+        .from("appointments")
+        .update({ status: newStatus })
+        .eq("id", apt.id);
+
+      if (appointmentError) throw appointmentError;
 
       // If completed and has a plan, increment completed_sessions
       if (completed && apt.plan_id) {
@@ -296,10 +301,15 @@ const PartnerDashboard = () => {
         if (plan) {
           const newCompleted = Math.min(plan.completed_sessions + 1, plan.total_sessions);
           const newPlanStatus = newCompleted >= plan.total_sessions ? "completed" : "active";
-          await supabase.from("client_plans").update({
-            completed_sessions: newCompleted,
-            status: newPlanStatus,
-          }).eq("id", plan.id);
+          const { error: planError } = await supabase
+            .from("client_plans")
+            .update({
+              completed_sessions: newCompleted,
+              status: newPlanStatus,
+            })
+            .eq("id", plan.id);
+
+          if (planError) throw planError;
 
           setClientPlans(prev => prev.map(p => p.id === plan.id ? { ...p, completed_sessions: newCompleted, status: newPlanStatus } : p));
         }
