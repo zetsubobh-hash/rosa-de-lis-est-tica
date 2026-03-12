@@ -37,6 +37,7 @@ interface Appointment {
 interface ClientPlan {
   id: string;
   user_id: string;
+  service_slug: string;
   service_title: string;
   plan_name: string;
   total_sessions: number;
