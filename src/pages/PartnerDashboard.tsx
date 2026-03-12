@@ -32,6 +32,7 @@ interface Appointment {
   user_id: string;
   plan_id: string | null;
   session_number: number | null;
+  notes?: string | null;
   total_sessions?: number | null;
   completed_sessions?: number | null;
   planSessions?: SessionInfo[];
@@ -145,7 +146,7 @@ const PartnerDashboard = () => {
       const [{ data: upcoming }, { data: past }] = await Promise.all([
         supabase
           .from("appointments")
-          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number")
+          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, notes")
           .eq("partner_id", partner.id)
           .gte("appointment_date", today)
           .in("status", ["confirmed", "pending"])
@@ -153,7 +154,7 @@ const PartnerDashboard = () => {
           .order("appointment_time"),
         supabase
           .from("appointments")
-          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number")
+          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, notes")
           .eq("partner_id", partner.id)
           .in("status", ["completed", "confirmed"])
           .lt("appointment_date", today)
@@ -296,16 +297,58 @@ const PartnerDashboard = () => {
     return () => { supabase.removeChannel(channel); };
   }, [partnerId]);
 
-  /* ── Mark appointment as completed or no-show ── */
+  /* ── Decision modal state ── */
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [decisionModal, setDecisionModal] = useState<{
+    apt: Appointment;
+    type: "completed" | "cancelled";
+  } | null>(null);
+  const [decisionNotes, setDecisionNotes] = useState("");
+  const [cancelReason, setCancelReason] = useState<"no_show" | "other">("no_show");
+  const [cancelReasonText, setCancelReasonText] = useState("");
 
-  const handleMarkAppointment = async (apt: Appointment, completed: boolean) => {
+  const openDecisionModal = (apt: Appointment, type: "completed" | "cancelled") => {
+    setDecisionModal({ apt, type });
+    setDecisionNotes("");
+    setCancelReason("no_show");
+    setCancelReasonText("");
+  };
+
+  const handleConfirmDecision = async () => {
+    if (!decisionModal) return;
+    const { apt, type } = decisionModal;
+    const completed = type === "completed";
+
+    // Validate cancel reason
+    if (!completed && cancelReason === "other" && !cancelReasonText.trim()) {
+      toast.error("Informe o motivo do cancelamento.");
+      return;
+    }
+
     setCompletingId(apt.id);
     try {
       const newStatus = completed ? "completed" : "cancelled";
+
+      // Build notes JSON
+      let existingNotes: Record<string, any> = {};
+      if (apt.notes) {
+        try { existingNotes = JSON.parse(apt.notes); } catch { /* ignore */ }
+      }
+
+      const notesPayload: Record<string, any> = {
+        ...existingNotes,
+        ...(completed
+          ? { session_observation: decisionNotes.trim() || null, completed_at: new Date().toISOString() }
+          : {
+              cancel_reason: cancelReason === "no_show" ? "Cliente não apareceu" : cancelReasonText.trim(),
+              cancelled_at: new Date().toISOString(),
+            }
+        ),
+      };
+
       const { error: appointmentError } = await supabase
         .from("appointments")
-        .update({ status: newStatus })
+        .update({ status: newStatus, notes: JSON.stringify(notesPayload) })
         .eq("id", apt.id);
 
       if (appointmentError) throw appointmentError;
@@ -337,6 +380,7 @@ const PartnerDashboard = () => {
       }
 
       toast.success(completed ? "✅ Sessão marcada como realizada!" : "❌ Sessão marcada como não realizada.");
+      setDecisionModal(null);
     } catch (err: any) {
       toast.error("Erro ao atualizar: " + err.message);
     } finally {
@@ -508,7 +552,7 @@ const PartnerDashboard = () => {
           {overdue && (
             <div className="mt-3 pt-3 border-t border-border flex gap-2 flex-wrap">
               <button
-                onClick={() => handleMarkAppointment(apt, true)}
+                onClick={() => openDecisionModal(apt, "completed")}
                 disabled={completingId === apt.id}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-white hover:bg-emerald-600 transition-all disabled:opacity-50"
               >
@@ -516,7 +560,7 @@ const PartnerDashboard = () => {
                 {completingId === apt.id ? "Salvando..." : "Sessão Realizada"}
               </button>
               <button
-                onClick={() => handleMarkAppointment(apt, false)}
+                onClick={() => openDecisionModal(apt, "cancelled")}
                 disabled={completingId === apt.id}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all disabled:opacity-50"
               >
@@ -624,24 +668,22 @@ const PartnerDashboard = () => {
                     setActiveTab("agenda");
                     setFilterDate(nextOverdueAppointment.appointment_date);
                     setExpandedAptId(nextOverdueAppointment.id);
-                    handleMarkAppointment(nextOverdueAppointment, false);
+                    openDecisionModal(nextOverdueAppointment, "cancelled");
                   }}
-                  disabled={completingId === nextOverdueAppointment.id}
-                  className="h-11 rounded-xl border border-destructive/30 text-destructive font-body text-xs font-bold hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  className="h-11 rounded-xl border border-destructive/30 text-destructive font-body text-xs font-bold hover:bg-destructive/10 transition-colors"
                 >
-                  {completingId === nextOverdueAppointment.id ? "Salvando..." : "Não realizada"}
+                  Não realizada
                 </button>
                 <button
                   onClick={() => {
                     setActiveTab("agenda");
                     setFilterDate(nextOverdueAppointment.appointment_date);
                     setExpandedAptId(nextOverdueAppointment.id);
-                    handleMarkAppointment(nextOverdueAppointment, true);
+                    openDecisionModal(nextOverdueAppointment, "completed");
                   }}
-                  disabled={completingId === nextOverdueAppointment.id}
-                  className="h-11 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="h-11 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:opacity-90 transition-opacity"
                 >
-                  {completingId === nextOverdueAppointment.id ? "Salvando..." : "Sessão realizada"}
+                  Sessão realizada
                 </button>
               </div>
             </motion.div>
@@ -753,11 +795,11 @@ const PartnerDashboard = () => {
                 onScheduleSession={(params) => setScheduleModal(params)}
                 onComplete={(apt) => {
                   const fullApt = appointments.find(a => a.id === apt.id);
-                  if (fullApt) handleMarkAppointment(fullApt, true);
+                  if (fullApt) openDecisionModal(fullApt, "completed");
                 }}
                 onMarkNoShow={(apt) => {
                   const fullApt = appointments.find(a => a.id === apt.id);
-                  if (fullApt) handleMarkAppointment(fullApt, false);
+                  if (fullApt) openDecisionModal(fullApt, "cancelled");
                 }}
                 markingAppointmentId={completingId}
                 isOverdue={(apt) => {
@@ -1069,6 +1111,117 @@ const PartnerDashboard = () => {
     {showDemoRoulette && (
       <WelcomeRoulette testMode onClose={() => setShowDemoRoulette(false)} />
     )}
+
+    {/* Decision Modal — Sessão Realizada / Não Realizada */}
+    <AnimatePresence>
+      {decisionModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm p-4 flex items-center justify-center"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDecisionModal(null); }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-base font-bold text-foreground">
+                {decisionModal.type === "completed" ? "✅ Sessão Realizada" : "❌ Sessão Não Realizada"}
+              </h3>
+              <button onClick={() => setDecisionModal(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-0.5">
+              <p className="font-heading text-sm font-bold text-foreground">
+                {decisionModal.apt.profile?.full_name || "Cliente"}
+              </p>
+              <p className="font-body text-xs text-muted-foreground">
+                {decisionModal.apt.service_title} • {formatDate(decisionModal.apt.appointment_date)} às {decisionModal.apt.appointment_time}
+              </p>
+            </div>
+
+            {decisionModal.type === "completed" ? (
+              <div className="space-y-2">
+                <label className="font-body text-xs font-semibold text-foreground">
+                  Observação do atendimento <span className="text-muted-foreground font-normal">(opcional)</span>
+                </label>
+                <textarea
+                  value={decisionNotes}
+                  onChange={(e) => setDecisionNotes(e.target.value)}
+                  placeholder="Ex: Pele sensível, aplicar hidratação extra na próxima..."
+                  maxLength={500}
+                  className="w-full min-h-[80px] rounded-xl border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none resize-none"
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <label className="font-body text-xs font-semibold text-foreground">
+                  Motivo do cancelamento <span className="text-destructive">*</span>
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cancel-reason"
+                      checked={cancelReason === "no_show"}
+                      onChange={() => setCancelReason("no_show")}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    <span className="font-body text-sm text-foreground">Cliente não apareceu</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cancel-reason"
+                      checked={cancelReason === "other"}
+                      onChange={() => setCancelReason("other")}
+                      className="w-4 h-4 accent-primary"
+                    />
+                    <span className="font-body text-sm text-foreground">Outro motivo</span>
+                  </label>
+                </div>
+                {cancelReason === "other" && (
+                  <textarea
+                    value={cancelReasonText}
+                    onChange={(e) => setCancelReasonText(e.target.value)}
+                    placeholder="Descreva o motivo..."
+                    maxLength={500}
+                    className="w-full min-h-[70px] rounded-xl border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none resize-none"
+                  />
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={() => setDecisionModal(null)}
+                className="h-11 rounded-xl border border-border font-body text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDecision}
+                disabled={completingId === decisionModal.apt.id}
+                className={`h-11 rounded-xl font-body text-sm font-bold transition-all disabled:opacity-50 ${
+                  decisionModal.type === "completed"
+                    ? "bg-primary text-primary-foreground hover:opacity-90"
+                    : "bg-destructive text-destructive-foreground hover:opacity-90"
+                }`}
+              >
+                {completingId === decisionModal.apt.id ? "Salvando..." : "Confirmar"}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     </>
   );
 };
