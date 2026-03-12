@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Save, Loader2, DollarSign, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAllServicePrices, formatCents, type ServicePrice } from "@/hooks/useServicePrices";
+import { useAllServicePrices, type ServicePrice } from "@/hooks/useServicePrices";
 import { useServices } from "@/hooks/useServices";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,9 @@ const AdminPricing = () => {
   const { prices, loading, refetch } = useAllServicePrices();
   const { services: dbServices, loading: servicesLoading } = useServices();
   const [editedPrices, setEditedPrices] = useState<Record<string, Partial<ServicePrice>>>({});
+  const [rawPriceInputs, setRawPriceInputs] = useState<
+    Record<string, Partial<Record<"price_per_session_cents" | "total_price_cents", string>>>
+  >({});
   const [saving, setSaving] = useState(false);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
 
@@ -26,11 +29,88 @@ const AdminPricing = () => {
   } | null>(null);
   const [addingPlan, setAddingPlan] = useState(false);
 
-  const handleChange = (id: string, field: keyof ServicePrice, value: string) => {
-    const numValue = field === "sessions" ? parseInt(value) || 0 : Math.round(parseFloat(value.replace(",", ".")) * 100) || 0;
-    setEditedPrices((prev) => ({
+  const formatInputCents = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
+
+  const parseCurrencyToCents = (value: string) => {
+    const normalizedValue = value.replace(/\./g, ",");
+    const clean = normalizedValue.replace(/[^\d,]/g, "");
+    if (!clean) return 0;
+
+    const [intPart = "", decPart = ""] = clean.split(",");
+    const integer = parseInt(intPart.replace(/^0+(?=\d)/, ""), 10) || 0;
+    const decimals = parseInt(decPart.slice(0, 2).padEnd(2, "0"), 10) || 0;
+
+    return integer * 100 + decimals;
+  };
+
+  const handleSessionsChange = (id: string, value: string) => {
+    const sessions = Math.max(1, parseInt(value, 10) || 1);
+
+    setEditedPrices((prev) => {
+      const original = prices.find((p) => p.id === id);
+      if (!original) return prev;
+
+      const next = { ...prev[id], sessions };
+      const shouldRecalculateTotal = prev[id]?.total_price_cents === undefined;
+
+      if (shouldRecalculateTotal) {
+        const currentPps = next.price_per_session_cents ?? original.price_per_session_cents;
+        next.total_price_cents = currentPps * sessions;
+      }
+
+      return {
+        ...prev,
+        [id]: next,
+      };
+    });
+  };
+
+  const handleMoneyInputChange = (
+    id: string,
+    field: "price_per_session_cents" | "total_price_cents",
+    value: string
+  ) => {
+    setRawPriceInputs((prev) => ({
       ...prev,
-      [id]: { ...prev[id], [field]: numValue },
+      [id]: {
+        ...prev[id],
+        [field]: value,
+      },
+    }));
+  };
+
+  const commitMoneyInput = (id: string, field: "price_per_session_cents" | "total_price_cents") => {
+    const rawValue = rawPriceInputs[id]?.[field];
+    if (rawValue === undefined) return;
+
+    const cents = parseCurrencyToCents(rawValue);
+
+    setEditedPrices((prev) => {
+      const original = prices.find((p) => p.id === id);
+      if (!original) return prev;
+
+      const next = {
+        ...prev[id],
+        [field]: cents,
+      };
+
+      if (field === "price_per_session_cents" && prev[id]?.total_price_cents === undefined) {
+        const currentSessions = next.sessions ?? original.sessions;
+        next.total_price_cents = cents * currentSessions;
+      }
+
+      return {
+        ...prev,
+        [id]: next,
+      };
+    });
+
+    setRawPriceInputs((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: formatInputCents(cents),
+      },
     }));
   };
 
@@ -67,6 +147,7 @@ const AdminPricing = () => {
     } else {
       toast({ title: "Preços atualizados com sucesso! ✅" });
       setEditedPrices({});
+      setRawPriceInputs({});
     }
     await refetch();
     setSaving(false);
@@ -282,9 +363,12 @@ const AdminPricing = () => {
                     ) : (
                       svc.plans.map((plan) => {
                         const edited = editedPrices[plan.id];
+                        const rawInput = rawPriceInputs[plan.id];
                         const currentSessions = edited?.sessions ?? plan.sessions;
                         const currentPerSession = edited?.price_per_session_cents ?? plan.price_per_session_cents;
-                        const currentTotal = edited?.total_price_cents ?? plan.total_price_cents;
+                        const currentTotal = edited?.total_price_cents ?? currentPerSession * currentSessions;
+                        const perSessionDisplay = rawInput?.price_per_session_cents ?? formatInputCents(currentPerSession);
+                        const totalDisplay = rawInput?.total_price_cents ?? formatInputCents(currentTotal);
 
                         return (
                           <div key={plan.id} className="rounded-xl border border-border p-4">
@@ -308,7 +392,7 @@ const AdminPricing = () => {
                                   type="number"
                                   min={1}
                                   value={currentSessions}
-                                  onChange={(e) => handleChange(plan.id, "sessions", e.target.value)}
+                                  onChange={(e) => handleSessionsChange(plan.id, e.target.value)}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
@@ -316,8 +400,9 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
                                 <Input
                                   type="text"
-                                  value={(currentPerSession / 100).toFixed(2).replace(".", ",")}
-                                  onChange={(e) => handleChange(plan.id, "price_per_session_cents", e.target.value)}
+                                  value={perSessionDisplay}
+                                  onChange={(e) => handleMoneyInputChange(plan.id, "price_per_session_cents", e.target.value)}
+                                  onBlur={() => commitMoneyInput(plan.id, "price_per_session_cents")}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
@@ -325,8 +410,9 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
                                 <Input
                                   type="text"
-                                  value={(currentTotal / 100).toFixed(2).replace(".", ",")}
-                                  onChange={(e) => handleChange(plan.id, "total_price_cents", e.target.value)}
+                                  value={totalDisplay}
+                                  onChange={(e) => handleMoneyInputChange(plan.id, "total_price_cents", e.target.value)}
+                                  onBlur={() => commitMoneyInput(plan.id, "total_price_cents")}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
