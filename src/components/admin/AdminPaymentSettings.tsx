@@ -152,6 +152,20 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(pixPayloadString);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                    toast({ title: "PIX Copia e Cola copiado!" });
+                  }}
+                  className="gap-2 mx-auto"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? "Copiado!" : "Copiar PIX Copia e Cola"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setQrKey(Date.now())}
                   className="gap-2 mx-auto"
                 >
