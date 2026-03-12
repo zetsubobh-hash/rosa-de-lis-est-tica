@@ -500,15 +500,31 @@ const DayTimelineView = ({
                               const isDone = isDoneByRecord || isDoneByCounter;
                               const isScheduled = sessionApt && sessionApt.status !== "completed";
                               const isCurrent = block.session_number === sessionNum;
+                              const canClick = onScheduleSession && plan && !isDone && !isCurrent;
                               return (
                                 <div key={sessionNum} className="flex flex-col items-center">
-                                  <div className={cn(
-                                    "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all",
-                                    isCurrent ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
-                                      : isDone ? "border-emerald-500 bg-emerald-500 text-white"
-                                      : isScheduled ? "border-primary/50 bg-primary/10 text-primary"
-                                      : "border-muted-foreground/20 bg-muted text-muted-foreground"
-                                  )}>
+                                  <div
+                                    onClick={(e) => {
+                                      if (canClick) {
+                                        e.stopPropagation();
+                                        onScheduleSession({
+                                          planId: plan.id,
+                                          sessionNumber: sessionNum,
+                                          serviceSlug: plan.service_slug || block.service_slug,
+                                          serviceTitle: plan.service_title || block.service_title,
+                                          userId: block.user_id,
+                                        });
+                                      }
+                                    }}
+                                    className={cn(
+                                      "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all",
+                                      isCurrent ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
+                                        : isDone ? "border-emerald-500 bg-emerald-500 text-white"
+                                        : isScheduled ? "border-primary/50 bg-primary/10 text-primary"
+                                        : "border-muted-foreground/20 bg-muted text-muted-foreground",
+                                      canClick && "cursor-pointer hover:border-primary hover:bg-primary/20 hover:text-primary hover:scale-110"
+                                    )}
+                                  >
                                     {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
                                   </div>
                                   {sessionApt && (
