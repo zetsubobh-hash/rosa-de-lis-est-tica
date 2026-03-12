@@ -31,7 +31,7 @@ import AdminPromoBroadcast from "@/components/admin/AdminPromoBroadcast";
 import AdminClients from "@/components/admin/AdminClients";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "counter-sales" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast";
+type Tab = "dashboard" | "agenda" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
