@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText, ClipboardList } from "lucide-react";
+import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText, ClipboardList, BellRing } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo, useState, useRef } from "react";
 
@@ -81,6 +81,10 @@ interface DayTimelineViewProps {
   readOnly?: boolean;
   /** Callback to check if an appointment is overdue and needs attention */
   isOverdue?: (apt: TimelineAppointment) => boolean;
+  /** Mark overdue appointment as not completed */
+  onMarkNoShow?: (apt: TimelineAppointment) => void;
+  /** Current appointment id being persisted */
+  markingAppointmentId?: string | null;
 }
 
 const PALETTE = [
@@ -151,6 +155,8 @@ const DayTimelineView = ({
   onDragReschedule,
   readOnly = false,
   isOverdue: isOverdueFn,
+  onMarkNoShow,
+  markingAppointmentId = null,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
@@ -309,6 +315,8 @@ const DayTimelineView = ({
           const isMoving = mobileMovingId === block.id;
           const blockOverdue = isOverdueFn?.(block) ?? false;
           const isCompleted = block.status === "completed";
+          const needsDecision = blockOverdue && !isCompleted && ["confirmed", "pending"].includes(block.status);
+          const hasOverdueDecisionActions = needsDecision && (!!onComplete || !!onMarkNoShow);
           return (
             <div key={block.id}>
               {/* Colored block */}
@@ -380,6 +388,12 @@ const DayTimelineView = ({
                   <div className="flex items-center gap-1 mt-0.5">
                     <Scissors className="w-3 h-3 shrink-0 opacity-60" />
                     <span className="text-[10px] font-medium truncate opacity-80">{block.service_title}</span>
+                  </div>
+                )}
+                {needsDecision && (
+                  <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-destructive animate-pulse">
+                    <BellRing className="w-3 h-3" />
+                    <span className="text-[9px] font-bold">Pendente</span>
                   </div>
                 )}
                 {isCompleted && (
@@ -502,10 +516,36 @@ const DayTimelineView = ({
                       {getAppointmentPrice && <span className="font-heading text-xs font-bold text-primary">{getAppointmentPrice(block, allPrices)}</span>}
                     </div>
 
-                    {/* Overdue alert */}
-                    {blockOverdue && (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-destructive/10 animate-pulse">
-                        <span className="text-xs font-semibold text-destructive">⚠️ Horário passou! Confirme se a sessão foi realizada.</span>
+                    {needsDecision && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-destructive/10 animate-pulse">
+                          <BellRing className="w-4 h-4 text-destructive shrink-0" />
+                          <span className="text-xs font-semibold text-destructive">
+                            Horário encerrado — confirme agora se a sessão foi realizada.
+                          </span>
+                        </div>
+                        {hasOverdueDecisionActions && (
+                          <div className="grid grid-cols-2 gap-2">
+                            {onMarkNoShow && (
+                              <button
+                                onClick={() => onMarkNoShow(block)}
+                                disabled={markingAppointmentId === block.id}
+                                className="h-9 rounded-lg border border-destructive/30 text-destructive text-[11px] font-bold hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                              >
+                                {markingAppointmentId === block.id ? "Salvando..." : "Não realizada"}
+                              </button>
+                            )}
+                            {onComplete && (
+                              <button
+                                onClick={() => onComplete(block)}
+                                disabled={markingAppointmentId === block.id}
+                                className="h-9 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                              >
+                                {markingAppointmentId === block.id ? "Salvando..." : "Sessão realizada"}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -611,7 +651,7 @@ const DayTimelineView = ({
                             <Banknote className="w-3.5 h-3.5" />Confirmar PIX
                           </button>
                         )}
-                        {!isCompleted && onComplete && (
+                        {!isCompleted && !hasOverdueDecisionActions && onComplete && (
                           <button onClick={() => onComplete(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all">
                             <CheckCircle2 className="w-3.5 h-3.5" />Finalizar
                           </button>
