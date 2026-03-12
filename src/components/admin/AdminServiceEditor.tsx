@@ -56,13 +56,28 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   };
 
   const parseMoneyInput = (value: string) => {
-    const digitsOnly = value.replace(/\D/g, "");
-    const cents = digitsOnly ? parseInt(digitsOnly, 10) : 0;
+    const clean = value.replace(/[^\d,]/g, "");
+    if (!clean) return { display: "", cents: 0 };
 
-    return {
-      display: centsToStr(cents),
-      cents,
-    };
+    const commaIndex = clean.indexOf(",");
+    const normalized = commaIndex === -1
+      ? clean
+      : `${clean.slice(0, commaIndex + 1)}${clean.slice(commaIndex + 1).replace(/,/g, "")}`;
+
+    const [rawInt = "", rawDec = ""] = normalized.split(",");
+    const intPart = rawInt.replace(/^0+(?=\d)/, "");
+    const normalizedInt = intPart === "" ? "0" : intPart;
+    const decPart = rawDec.slice(0, 2);
+
+    const display = commaIndex === -1
+      ? normalizedInt
+      : `${normalizedInt},${decPart}`;
+
+    const cents =
+      (parseInt(normalizedInt, 10) || 0) * 100 +
+      (parseInt(decPart.padEnd(2, "0"), 10) || 0);
+
+    return { display, cents };
   };
 
   const Icon = getIconByName(service.icon_name);
