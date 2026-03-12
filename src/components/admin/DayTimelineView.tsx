@@ -296,6 +296,7 @@ const DayTimelineView = ({
           const isComplete = plan ? plan.completed_sessions >= plan.total_sessions : false;
           const isMoving = mobileMovingId === block.id;
           const blockOverdue = isOverdueFn?.(block) ?? false;
+          const isCompleted = block.status === "completed";
           return (
             <div key={block.id}>
               {/* Colored block */}
