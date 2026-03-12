@@ -103,15 +103,64 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
 
 interface NewClientForm {
   full_name: string;
-  username: string;
-  password: string;
   phone: string;
   email: string;
   sex: string;
   address: string;
+  birth_date: string;
 }
 
-const emptyNewClient: NewClientForm = { full_name: "", username: "", password: "", phone: "", email: "", sex: "", address: "" };
+const emptyNewClient: NewClientForm = { full_name: "", phone: "", email: "", sex: "", address: "", birth_date: "" };
+
+const generateUsername = (name: string): string => {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(".")
+    + "." + Math.floor(Math.random() * 900 + 100);
+};
+
+const generatePassword = (): string => {
+  const chars = "abcdefghijkmnpqrstuvwxyz23456789";
+  let pass = "";
+  for (let i = 0; i < 6; i++) {
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pass;
+};
+
+const sendWhatsAppCredentials = async (phone: string, fullName: string, username: string, password: string) => {
+  try {
+    const { data: settingsData } = await supabase
+      .from("payment_settings")
+      .select("key, value")
+      .in("key", ["evolution_enabled", "evolution_api_url", "evolution_api_key", "evolution_instance_name"]);
+    const cfg: Record<string, string> = {};
+    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
+    if (cfg.evolution_enabled !== "true") return;
+    const apiUrl = cfg.evolution_api_url?.replace(/\/+$/, "");
+    const apiKey = cfg.evolution_api_key;
+    const instanceName = cfg.evolution_instance_name;
+    if (!apiUrl || !apiKey || !instanceName) return;
+    const { data: siteData } = await supabase.from("site_settings").select("value").eq("key", "business_name").maybeSingle();
+    const businessName = siteData?.value || "Rosa de Lis Estética";
+    const cleanPhone = phone.replace(/\D/g, "");
+    const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    const text = `Olá *${fullName}*! 👋\n\nSeu cadastro na *${businessName}* foi criado com sucesso! ✨\n\nAcesse nosso app com os dados abaixo:\n\n👤 *Usuário:* ${username}\n🔑 *Senha:* ${password}\n\nRecomendamos alterar sua senha no primeiro acesso. 💕`;
+    await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
+      method: "POST",
+      headers: { apikey: apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ number, text }),
+    });
+  } catch (e) {
+    console.error("Failed to send WhatsApp credentials:", e);
+  }
+};
 
 /* ─── Component ─── */
 const AdminCounterSales = () => {
@@ -203,20 +252,18 @@ const AdminCounterSales = () => {
 
   /* ─── Create new client ─── */
   const createNewClient = async () => {
-    const { full_name, username, password, phone, sex, address, email } = newClient;
-    if (!full_name || !username || !password || !phone || !sex || !address) {
+    const { full_name, phone, sex, address, email, birth_date } = newClient;
+    if (!full_name || !phone || !sex || !address || !birth_date) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
-    if (password.length < 6) {
-      toast.error("Senha deve ter no mínimo 6 caracteres");
-      return;
-    }
+    const username = generateUsername(full_name);
+    const password = generatePassword();
     setCreatingClient(true);
     try {
       const rawPhone = phone.replace(/\D/g, "");
       const res = await supabase.functions.invoke("register", {
-        body: { username: username.toLowerCase(), password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined },
+        body: { username, password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined, birth_date },
       });
       if (res.error || res.data?.error) throw new Error(res.data?.error || res.error?.message || "Erro ao criar cliente");
 
@@ -248,7 +295,9 @@ const AdminCounterSales = () => {
       setNewClient(emptyNewClient);
       setAvatarSrc(null);
       setAvatarBlob(null);
-      toast.success("Cliente criado com sucesso!");
+      // Send credentials via WhatsApp
+      sendWhatsAppCredentials(rawPhone, full_name.trim(), username, password);
+      toast.success("Cliente criado! Login enviado via WhatsApp 📲");
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar cliente");
     } finally {
@@ -523,12 +572,8 @@ const AdminCounterSales = () => {
                       <Input value={newClient.full_name} onChange={(e) => setNewClient(prev => ({ ...prev, full_name: capitalize(e.target.value) }))} placeholder="Maria Silva" className="font-body" />
                     </div>
                     <div className="space-y-1">
-                      <label className="font-body text-xs font-medium text-foreground">Usuário (login) *</label>
-                      <Input value={newClient.username} onChange={(e) => setNewClient(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, "") }))} placeholder="maria.silva" className="font-body" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="font-body text-xs font-medium text-foreground">Senha *</label>
-                      <Input type="password" value={newClient.password} onChange={(e) => setNewClient(prev => ({ ...prev, password: e.target.value }))} placeholder="Mín. 6 caracteres" className="font-body" />
+                      <label className="font-body text-xs font-medium text-foreground">Data de Nascimento *</label>
+                      <Input type="date" value={newClient.birth_date} onChange={(e) => setNewClient(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body" />
                     </div>
                     <div className="space-y-1">
                       <label className="font-body text-xs font-medium text-foreground">Telefone *</label>
@@ -549,11 +594,15 @@ const AdminCounterSales = () => {
                       <label className="font-body text-xs font-medium text-foreground">E-mail</label>
                       <Input type="email" value={newClient.email} onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))} placeholder="email@exemplo.com" className="font-body" />
                     </div>
-                    <div className="space-y-1 sm:col-span-2">
+                    <div className="space-y-1">
                       <label className="font-body text-xs font-medium text-foreground">Endereço *</label>
                       <Input value={newClient.address} onChange={(e) => setNewClient(prev => ({ ...prev, address: capitalize(e.target.value) }))} placeholder="Rua..., Nº - Bairro, Cidade" className="font-body" />
                     </div>
                   </div>
+
+                  <p className="font-body text-xs text-muted-foreground italic">
+                    🔑 Senha gerada automaticamente e enviada via WhatsApp
+                  </p>
 
                   <Button onClick={createNewClient} disabled={creatingClient} className="w-full font-body">
                     {creatingClient ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Criando...</> : <><UserPlus className="w-4 h-4 mr-2" /> Criar e Selecionar</>}

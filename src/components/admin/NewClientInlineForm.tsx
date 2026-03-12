@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
 import Cropper, { Area } from "react-easy-crop";
 
@@ -60,14 +61,14 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
 
 interface FormData {
   full_name: string;
-  password: string;
   phone: string;
   email: string;
   sex: string;
   address: string;
+  birth_date: string;
 }
 
-const emptyForm: FormData = { full_name: "", password: "", phone: "", email: "", sex: "", address: "" };
+const emptyForm: FormData = { full_name: "", phone: "", email: "", sex: "", address: "", birth_date: "" };
 
 const generateUsername = (name: string): string => {
   return name
@@ -80,6 +81,57 @@ const generateUsername = (name: string): string => {
     .filter(Boolean)
     .join(".")
     + "." + Math.floor(Math.random() * 900 + 100);
+};
+
+const generatePassword = (): string => {
+  const chars = "abcdefghijkmnpqrstuvwxyz23456789";
+  let pass = "";
+  for (let i = 0; i < 6; i++) {
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pass;
+};
+
+const sendWhatsAppCredentials = async (phone: string, fullName: string, username: string, password: string) => {
+  try {
+    // Fetch Evolution config from payment_settings
+    const { data: settingsData } = await supabase
+      .from("payment_settings")
+      .select("key, value")
+      .in("key", ["evolution_enabled", "evolution_api_url", "evolution_api_key", "evolution_instance_name"]);
+
+    const cfg: Record<string, string> = {};
+    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
+
+    if (cfg.evolution_enabled !== "true") return;
+
+    const apiUrl = cfg.evolution_api_url?.replace(/\/+$/, "");
+    const apiKey = cfg.evolution_api_key;
+    const instanceName = cfg.evolution_instance_name;
+
+    if (!apiUrl || !apiKey || !instanceName) return;
+
+    // Fetch business name
+    const { data: siteData } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "business_name")
+      .maybeSingle();
+    const businessName = siteData?.value || "Rosa de Lis Estética";
+
+    const cleanPhone = phone.replace(/\D/g, "");
+    const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+
+    const text = `Olá *${fullName}*! 👋\n\nSeu cadastro na *${businessName}* foi criado com sucesso! ✨\n\nAcesse nosso app com os dados abaixo:\n\n👤 *Usuário:* ${username}\n🔑 *Senha:* ${password}\n\nRecomendamos alterar sua senha no primeiro acesso. 💕`;
+
+    await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
+      method: "POST",
+      headers: { apikey: apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ number, text }),
+    });
+  } catch (e) {
+    console.error("Failed to send WhatsApp credentials:", e);
+  }
 };
 
 const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormProps) => {
@@ -113,21 +165,19 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
   };
 
   const handleCreate = async () => {
-    const { full_name, password, phone, sex, address, email } = form;
-    if (!full_name || !password || !phone || !sex || !address) {
+    const { full_name, phone, sex, address, email, birth_date } = form;
+    if (!full_name || !phone || !sex || !address || !birth_date) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
     const username = generateUsername(full_name);
-    if (password.length < 6) {
-      toast.error("Senha deve ter no mínimo 6 caracteres");
-      return;
-    }
+    const password = generatePassword();
+
     setCreating(true);
     try {
       const rawPhone = phone.replace(/\D/g, "");
       const res = await supabase.functions.invoke("register", {
-        body: { username: username.toLowerCase(), password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined },
+        body: { username, password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined, birth_date },
       });
       if (res.error || res.data?.error) throw new Error(res.data?.error || res.error?.message || "Erro ao criar cliente");
 
@@ -145,6 +195,9 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
         }
       }
 
+      // Send credentials via WhatsApp
+      sendWhatsAppCredentials(rawPhone, full_name.trim(), username, password);
+
       onClientCreated({
         user_id: newUserId,
         full_name: full_name.trim(),
@@ -152,7 +205,7 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
         email: email.trim() || null,
         avatar_url: avatarUrl,
       });
-      toast.success("Cliente criado com sucesso!");
+      toast.success("Cliente criado! Login enviado via WhatsApp 📲");
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar cliente");
     } finally {
@@ -214,12 +267,8 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
           <Input value={form.full_name} onChange={(e) => setForm(prev => ({ ...prev, full_name: capitalize(e.target.value) }))} placeholder="Maria Silva" className="font-body h-8 text-xs" />
         </div>
         <div className="space-y-1">
-          <label className="font-body text-[10px] font-medium text-foreground">Senha *</label>
-          <Input type="password" value={form.password} onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))} placeholder="Mín. 6 caracteres" className="font-body h-8 text-xs" autoComplete="new-password" />
-        </div>
-        <div className="space-y-1">
-          <label className="font-body text-[10px] font-medium text-foreground">Senha *</label>
-          <Input type="password" value={form.password} onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))} placeholder="Mín. 6 caracteres" className="font-body h-8 text-xs" />
+          <label className="font-body text-[10px] font-medium text-foreground">Data de Nascimento *</label>
+          <Input type="date" value={form.birth_date} onChange={(e) => setForm(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body h-8 text-xs" />
         </div>
         <div className="space-y-1">
           <label className="font-body text-[10px] font-medium text-foreground">Telefone *</label>
@@ -240,11 +289,15 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
           <label className="font-body text-[10px] font-medium text-foreground">E-mail</label>
           <Input type="email" value={form.email} onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))} placeholder="email@exemplo.com" className="font-body h-8 text-xs" />
         </div>
-        <div className="space-y-1 sm:col-span-2">
+        <div className="space-y-1">
           <label className="font-body text-[10px] font-medium text-foreground">Endereço *</label>
           <Input value={form.address} onChange={(e) => setForm(prev => ({ ...prev, address: capitalize(e.target.value) }))} placeholder="Rua..., Nº - Bairro, Cidade" className="font-body h-8 text-xs" />
         </div>
       </div>
+
+      <p className="font-body text-[10px] text-muted-foreground italic">
+        🔑 Senha gerada automaticamente e enviada via WhatsApp
+      </p>
 
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={onCancel} className="flex-1 font-body text-xs">
