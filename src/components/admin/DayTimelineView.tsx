@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText } from "lucide-react";
+import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
