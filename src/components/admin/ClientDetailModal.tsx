@@ -137,6 +137,10 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [markingUsed, setMarkingUsed] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<"all" | string | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deletingHistory, setDeletingHistory] = useState(false);
+  const { user } = useAuth();
   const [editData, setEditData] = useState({
     full_name: "",
     phone: "",
