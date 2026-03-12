@@ -337,6 +337,45 @@ export type Database = {
         }
         Relationships: []
       }
+      evolution_instances: {
+        Row: {
+          api_key: string
+          api_url: string
+          created_at: string
+          id: string
+          instance_name: string
+          is_active: boolean
+          msgs_per_cycle: number
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          api_url: string
+          created_at?: string
+          id?: string
+          instance_name: string
+          is_active?: boolean
+          msgs_per_cycle?: number
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          api_url?: string
+          created_at?: string
+          id?: string
+          instance_name?: string
+          is_active?: boolean
+          msgs_per_cycle?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_views: {
         Row: {
           created_at: string
@@ -597,6 +636,105 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      promo_campaigns: {
+        Row: {
+          created_at: string
+          current_instance_index: number
+          id: string
+          interval_seconds: number
+          message_template: string
+          service_slug: string | null
+          start_time: string
+          status: string
+          title: string
+          total_failed: number
+          total_sent: number
+          total_target: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_instance_index?: number
+          id?: string
+          interval_seconds?: number
+          message_template?: string
+          service_slug?: string | null
+          start_time?: string
+          status?: string
+          title: string
+          total_failed?: number
+          total_sent?: number
+          total_target?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_instance_index?: number
+          id?: string
+          interval_seconds?: number
+          message_template?: string
+          service_slug?: string | null
+          start_time?: string
+          status?: string
+          title?: string
+          total_failed?: number
+          total_sent?: number
+          total_target?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      promo_sends: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          instance_id: string | null
+          phone: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          instance_id?: string | null
+          phone: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          instance_id?: string | null
+          phone?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "promo_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_sends_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "evolution_instances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_prices: {
         Row: {

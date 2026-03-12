@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.birthday-check]
 verify_jwt = false
+
+[functions.promo-broadcast]
+verify_jwt = false
