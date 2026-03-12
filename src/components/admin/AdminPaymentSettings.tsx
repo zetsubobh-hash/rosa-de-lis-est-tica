@@ -28,6 +28,7 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
   const [pixSettingsOpen, setPixSettingsOpen] = useState(false);
   const [qrKey, setQrKey] = useState(Date.now());
   const [pixAmount, setPixAmount] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const handlePixAmountChange = (val: string) => {
     // Allow only digits and comma/dot
