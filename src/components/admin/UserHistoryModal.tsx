@@ -44,6 +44,7 @@ interface Props {
   onClose: () => void;
   userId: string;
   userName: string;
+  hidePayments?: boolean;
 }
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
@@ -67,7 +68,7 @@ const METHOD_MAP: Record<string, string> = {
 
 const getStatus = (status: string) => STATUS_MAP[status] || { label: status, class: "bg-muted text-muted-foreground" };
 
-const UserHistoryModal = ({ open, onClose, userId, userName }: Props) => {
+const UserHistoryModal = ({ open, onClose, userId, userName, hidePayments = false }: Props) => {
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -120,7 +121,7 @@ const UserHistoryModal = ({ open, onClose, userId, userName }: Props) => {
 
   const tabs = [
     { key: "appointments" as const, label: "Procedimentos", icon: CalendarCheck, count: appointments.length },
-    { key: "payments" as const, label: "Pagamentos", icon: CreditCard, count: payments.length },
+    ...(!hidePayments ? [{ key: "payments" as const, label: "Pagamentos", icon: CreditCard, count: payments.length }] : []),
     { key: "plans" as const, label: "Planos", icon: Package, count: plans.length },
   ];
 
