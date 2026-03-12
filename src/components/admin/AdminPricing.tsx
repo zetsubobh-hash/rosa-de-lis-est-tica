@@ -290,7 +290,17 @@ const AdminPricing = () => {
                 type="number"
                 min={1}
                 value={newPlan.sessions}
-                onChange={(e) => setNewPlan({ ...newPlan, sessions: e.target.value })}
+                onChange={(e) => {
+                  const sessions = e.target.value;
+                  const sessionsNumber = Math.max(1, parseInt(sessions, 10) || 1);
+                  const currentPpsCents = parseCurrencyToCents(newPlan.price_per_session);
+
+                  setNewPlan({
+                    ...newPlan,
+                    sessions,
+                    total_price: formatInputCents(currentPpsCents * sessionsNumber),
+                  });
+                }}
                 className="font-body text-sm h-9"
               />
             </div>
@@ -298,9 +308,20 @@ const AdminPricing = () => {
               <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
               <Input
                 type="text"
+                inputMode="numeric"
                 placeholder="0,00"
                 value={newPlan.price_per_session}
-                onChange={(e) => setNewPlan({ ...newPlan, price_per_session: e.target.value })}
+                onChange={(e) => {
+                  const ppsCents = parseCurrencyToCents(e.target.value);
+                  const maskedPps = formatInputCents(ppsCents);
+                  const sessionsNumber = Math.max(1, parseInt(newPlan.sessions, 10) || 1);
+
+                  setNewPlan({
+                    ...newPlan,
+                    price_per_session: maskedPps,
+                    total_price: formatInputCents(ppsCents * sessionsNumber),
+                  });
+                }}
                 className="font-body text-sm h-9"
               />
             </div>
@@ -308,9 +329,13 @@ const AdminPricing = () => {
               <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
               <Input
                 type="text"
+                inputMode="numeric"
                 placeholder="0,00"
                 value={newPlan.total_price}
-                onChange={(e) => setNewPlan({ ...newPlan, total_price: e.target.value })}
+                onChange={(e) => {
+                  const totalCents = parseCurrencyToCents(e.target.value);
+                  setNewPlan({ ...newPlan, total_price: formatInputCents(totalCents) });
+                }}
                 className="font-body text-sm h-9"
               />
             </div>
