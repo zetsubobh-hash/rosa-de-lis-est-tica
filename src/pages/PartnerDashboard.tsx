@@ -154,7 +154,7 @@ const PartnerDashboard = () => {
           .order("appointment_time"),
         supabase
           .from("appointments")
-          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number")
+          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, notes")
           .eq("partner_id", partner.id)
           .in("status", ["completed", "confirmed"])
           .lt("appointment_date", today)
