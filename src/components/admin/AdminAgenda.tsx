@@ -140,7 +140,7 @@ const AdminAgenda = () => {
       supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
-        .in("status", ["confirmed", "pending"])
+        .in("status", ["confirmed", "pending", "completed"])
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true }),
       supabase
