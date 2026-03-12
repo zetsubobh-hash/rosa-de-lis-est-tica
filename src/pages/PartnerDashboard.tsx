@@ -356,9 +356,10 @@ const PartnerDashboard = () => {
     return acc;
   }, {});
 
-  const today = new Date().toISOString().split("T")[0];
+  const referenceNow = new Date(nowTick);
+  const today = formatLocalDate(referenceNow);
   const todayCount = appointments.filter((a) => a.appointment_date === today).length;
-  const overdueAppointments = appointments.filter((a) => isAppointmentOverdue(a));
+  const overdueAppointments = appointments.filter((a) => isAppointmentOverdue(a, referenceNow));
   const overdueCount = overdueAppointments.length;
   const nextOverdueAppointment = overdueAppointments[0] ?? null;
 
