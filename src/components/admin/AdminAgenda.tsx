@@ -583,6 +583,7 @@ const AdminAgenda = () => {
             setQuickBook({ time });
             setQbUserId("");
             setQbServiceSlug("");
+            setQbShowNewClient(false);
           }}
           onDragReschedule={handleDragReschedule}
         />
