@@ -60,7 +60,7 @@ const Admin = () => {
   // Sync tab from URL params (e.g. when navigating from Header "Parceiro" button)
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && tabParam !== activeTab && ["dashboard","agenda","counter-sales","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"].includes(tabParam)) {
+    if (tabParam && tabParam !== activeTab && ["dashboard","agenda","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"].includes(tabParam)) {
       setActiveTab(tabParam as Tab);
       searchParams.delete("tab");
       setSearchParams(searchParams, { replace: true });
