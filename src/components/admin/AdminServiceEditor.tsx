@@ -826,9 +826,10 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                                 }
                               }}
                               onChange={(e) => {
+                                const parsed = parseMoneyInput(e.target.value);
                                 setRawPriceInputs((p) => ({
                                   ...p,
-                                  [plan.id]: { ...p[plan.id], pps: e.target.value, total: p[plan.id]?.total ?? centsToStr(total) },
+                                  [plan.id]: { ...p[plan.id], pps: parsed.display, total: p[plan.id]?.total ?? centsToStr(total) },
                                 }));
                                 setHasChanges(true);
                               }}
@@ -949,7 +950,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             }
                           }}
                           onChange={(e) => {
-                            setNewPlanRaw((p) => ({ ...p, pps: e.target.value }));
+                            const parsed = parseMoneyInput(e.target.value);
+                            setNewPlanRaw((p) => ({ ...p, pps: parsed.display }));
                           }}
                           onBlur={() => commitNewPlanPricePerSession()}
                           className="h-8 font-body text-sm"
