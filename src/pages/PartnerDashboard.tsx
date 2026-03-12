@@ -65,6 +65,19 @@ const formatDate = (dateStr: string) => {
   return `${d}/${m}/${y}`;
 };
 
+const isAppointmentOverdue = (apt: { appointment_date: string; appointment_time: string; status: string }) => {
+  if (apt.status !== "confirmed") return false;
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  if (apt.appointment_date > todayStr) return false;
+  if (apt.appointment_date < todayStr) return true;
+  // Same day — check if time has passed (add 30min buffer for the session itself)
+  const [h, m] = apt.appointment_time.split(":").map(Number);
+  const aptMinutes = h * 60 + m + 30; // 30min after start
+  const nowMinutes = today.getHours() * 60 + today.getMinutes();
+  return nowMinutes >= aptMinutes;
+};
+
 const PartnerDashboard = () => {
   const { user, signOut } = useAuth();
   const { logoWhite: logo } = useBrandingLogos();
