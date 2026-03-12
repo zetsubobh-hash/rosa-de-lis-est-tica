@@ -766,7 +766,16 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Sessões</label>
-                        <Input type="number" min={1} value={newPlan.sessions} onChange={(e) => setNewPlan(p => ({ ...p, sessions: parseInt(e.target.value) || 1 }))} className="h-8 font-body text-sm" />
+                        <Input
+                          type="number"
+                          min={1}
+                          value={newPlan.sessions}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.preventDefault();
+                          }}
+                          onChange={(e) => setNewPlan(p => ({ ...p, sessions: parseInt(e.target.value) || 1 }))}
+                          className="h-8 font-body text-sm"
+                        />
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
@@ -775,11 +784,13 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           inputMode="decimal"
                           value={newPlanRaw.pps}
                           onFocus={(e) => e.currentTarget.select()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.preventDefault();
+                          }}
                           onChange={(e) => {
-                            const raw = e.target.value;
-                            const v = strToCents(raw);
-                            setNewPlanRaw({ pps: raw, total: centsToStr(v * newPlan.sessions) });
-                            setNewPlan((p) => ({ ...p, price_per_session_cents: v, total_price_cents: v * p.sessions }));
+                            const parsed = parseMoneyInput(e.target.value);
+                            setNewPlanRaw({ pps: parsed.display, total: centsToStr(parsed.cents * newPlan.sessions) });
+                            setNewPlan((p) => ({ ...p, price_per_session_cents: parsed.cents, total_price_cents: parsed.cents * p.sessions }));
                           }}
                           onBlur={() => setNewPlanRaw((p) => ({ ...p, pps: centsToStr(newPlan.price_per_session_cents) }))}
                           className="h-8 font-body text-sm"
@@ -792,11 +803,13 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           inputMode="decimal"
                           value={newPlanRaw.total}
                           onFocus={(e) => e.currentTarget.select()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.preventDefault();
+                          }}
                           onChange={(e) => {
-                            const raw = e.target.value;
-                            const v = strToCents(raw);
-                            setNewPlanRaw((p) => ({ ...p, total: raw }));
-                            setNewPlan((p) => ({ ...p, total_price_cents: v }));
+                            const parsed = parseMoneyInput(e.target.value);
+                            setNewPlanRaw((p) => ({ ...p, total: parsed.display }));
+                            setNewPlan((p) => ({ ...p, total_price_cents: parsed.cents }));
                           }}
                           onBlur={() => setNewPlanRaw((p) => ({ ...p, total: centsToStr(newPlan.total_price_cents) }))}
                           className="h-8 font-body text-sm"
