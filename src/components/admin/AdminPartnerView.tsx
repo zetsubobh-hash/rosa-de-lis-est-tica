@@ -67,6 +67,27 @@ const formatDate = (dateStr: string) => {
   return `${d}/${m}/${y}`;
 };
 
+const formatLocalDate = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const isAppointmentOverdue = (
+  apt: { appointment_date: string; appointment_time: string; status: string },
+  referenceDate: Date
+) => {
+  if (!["confirmed", "pending"].includes(apt.status)) return false;
+  const todayStr = formatLocalDate(referenceDate);
+  if (apt.appointment_date > todayStr) return false;
+  if (apt.appointment_date < todayStr) return true;
+  const [h, m] = apt.appointment_time.split(":").map(Number);
+  const aptMinutes = h * 60 + m + 30;
+  const nowMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
+  return nowMinutes >= aptMinutes;
+};
+
 const AdminPartnerView = () => {
   const { logoWhite: logo } = useBrandingLogos();
   const [partners, setPartners] = useState<{ id: string; full_name: string }[]>([]);
@@ -85,8 +106,14 @@ const AdminPartnerView = () => {
   const [scheduleModal, setScheduleModal] = useState<{
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowTick(Date.now()), 30000);
+    return () => window.clearInterval(interval);
+  }, []);
   useEffect(() => {
     const fetchPartners = async () => {
       const { data } = await supabase
@@ -566,6 +593,10 @@ const AdminPartnerView = () => {
                     onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
                     onHistory={(userId, name) => setHistoryClient({ userId, name })}
                     onScheduleSession={(params) => setScheduleModal(params)}
+                    isOverdue={(apt) => {
+                      const fullApt = appointments.find(a => a.id === apt.id);
+                      return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
+                    }}
                     readOnly
                   />
                 ) : (
