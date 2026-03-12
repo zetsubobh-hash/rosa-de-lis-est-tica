@@ -5,6 +5,7 @@ import {
   Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
@@ -106,6 +107,7 @@ const AdminPartnerView = () => {
   const [scheduleModal, setScheduleModal] = useState<{
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
+  const [completingId, setCompletingId] = useState<string | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
@@ -279,6 +281,51 @@ const AdminPartnerView = () => {
 
     return () => { supabase.removeChannel(channel); };
   }, [selectedPartner]);
+
+  const handleMarkAppointment = async (apt: Appointment, completed: boolean) => {
+    setCompletingId(apt.id);
+    try {
+      const newStatus = completed ? "completed" : "cancelled";
+      const { error: appointmentError } = await supabase
+        .from("appointments")
+        .update({ status: newStatus })
+        .eq("id", apt.id);
+
+      if (appointmentError) throw appointmentError;
+
+      if (completed && apt.plan_id) {
+        const plan = clientPlans.find((p) => p.id === apt.plan_id);
+        if (plan) {
+          const newCompleted = Math.min(plan.completed_sessions + 1, plan.total_sessions);
+          const newPlanStatus = newCompleted >= plan.total_sessions ? "completed" : "active";
+          const { error: planError } = await supabase
+            .from("client_plans")
+            .update({
+              completed_sessions: newCompleted,
+              status: newPlanStatus,
+            })
+            .eq("id", plan.id);
+
+          if (planError) throw planError;
+
+          setClientPlans((prev) =>
+            prev.map((p) => (p.id === plan.id ? { ...p, completed_sessions: newCompleted, status: newPlanStatus } : p))
+          );
+        }
+      }
+
+      setAppointments((prev) => prev.filter((a) => a.id !== apt.id));
+      if (completed) {
+        setPastAppointments((prev) => [{ ...apt, status: "completed" }, ...prev]);
+      }
+
+      toast.success(completed ? "✅ Sessão marcada como realizada!" : "❌ Sessão marcada como não realizada.");
+    } catch (err: any) {
+      toast.error("Erro ao atualizar: " + err.message);
+    } finally {
+      setCompletingId(null);
+    }
+  };
 
   const grouped = appointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
     if (!acc[apt.appointment_date]) acc[apt.appointment_date] = [];
@@ -593,6 +640,15 @@ const AdminPartnerView = () => {
                     onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
                     onHistory={(userId, name) => setHistoryClient({ userId, name })}
                     onScheduleSession={(params) => setScheduleModal(params)}
+                    onComplete={(apt) => {
+                      const fullApt = appointments.find((a) => a.id === apt.id);
+                      if (fullApt) handleMarkAppointment(fullApt, true);
+                    }}
+                    onMarkNoShow={(apt) => {
+                      const fullApt = appointments.find((a) => a.id === apt.id);
+                      if (fullApt) handleMarkAppointment(fullApt, false);
+                    }}
+                    markingAppointmentId={completingId}
                     isOverdue={(apt) => {
                       const fullApt = appointments.find(a => a.id === apt.id);
                       return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
