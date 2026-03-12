@@ -996,8 +996,9 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-    </div>
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+      </div>
+    </EditableWrapperContext.Provider>
   );
 };
 
