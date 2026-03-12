@@ -146,7 +146,7 @@ const PartnerDashboard = () => {
       const [{ data: upcoming }, { data: past }] = await Promise.all([
         supabase
           .from("appointments")
-          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number")
+          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, notes")
           .eq("partner_id", partner.id)
           .gte("appointment_date", today)
           .in("status", ["confirmed", "pending"])
