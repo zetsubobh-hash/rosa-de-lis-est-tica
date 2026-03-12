@@ -525,6 +525,72 @@ const AdminPromoBroadcast = () => {
           ))}
         </CardContent>
       </Card>
+
+      {/* ─── INSTANCE FORM DIALOG ─── */}
+      <Dialog open={instanceFormOpen} onOpenChange={setInstanceFormOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingInstance ? "Editar Instância" : "Nova Instância Evolution"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nome da Instância (identificação)</Label>
+              <Input
+                value={instForm.name}
+                onChange={(e) => setInstForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="Ex: Instância 1"
+                maxLength={50}
+              />
+            </div>
+            <div>
+              <Label>URL da API Evolution</Label>
+              <Input
+                value={instForm.api_url}
+                onChange={(e) => setInstForm(p => ({ ...p, api_url: e.target.value }))}
+                placeholder="https://sua-api.com"
+                maxLength={500}
+              />
+            </div>
+            <div>
+              <Label>API Key</Label>
+              <Input
+                type="password"
+                value={instForm.api_key}
+                onChange={(e) => setInstForm(p => ({ ...p, api_key: e.target.value }))}
+                placeholder="Chave da API"
+                maxLength={500}
+              />
+            </div>
+            <div>
+              <Label>Nome da Instância Evolution</Label>
+              <Input
+                value={instForm.instance_name}
+                onChange={(e) => setInstForm(p => ({ ...p, instance_name: e.target.value }))}
+                placeholder="Ex: rosa-de-lis-1"
+                maxLength={100}
+              />
+            </div>
+            <div>
+              <Label>Mensagens por Ciclo (antes de pular para próxima instância)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={500}
+                className="text-2xl font-bold text-center h-14"
+                value={instForm.msgs_per_cycle}
+                onChange={(e) => setInstForm(p => ({ ...p, msgs_per_cycle: parseInt(e.target.value) || 1 }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInstanceFormOpen(false)}>Cancelar</Button>
+            <Button onClick={saveInstance} disabled={savingInst} className="gap-2">
+              {savingInst ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
