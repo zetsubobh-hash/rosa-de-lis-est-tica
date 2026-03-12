@@ -798,9 +798,10 @@ const AdminPromoBroadcast = () => {
                   <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground space-y-1">
                     <p className="font-semibold flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Como funciona o envio:</p>
                     <p>1. As mensagens são enviadas para todos os clientes cadastrados com telefone.</p>
-                    <p>2. O sistema usa a 1ª instância ativa até atingir o limite de msgs/ciclo.</p>
-                    <p>3. Então pula automaticamente para a próxima instância e assim por diante.</p>
-                    <p>4. Ao terminar todas, reinicia o ciclo na 1ª instância.</p>
+                    <p>2. Clientes que cancelaram a inscrição são automaticamente excluídos ({unsubCount} cancelado{unsubCount === 1 ? "" : "s"}).</p>
+                    <p>3. O sistema usa a 1ª instância ativa até atingir o limite de msgs/ciclo.</p>
+                    <p>4. Então pula automaticamente para a próxima instância e assim por diante.</p>
+                    <p>5. Um link de cancelamento é adicionado automaticamente ao final da mensagem (LGPD).</p>
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2 pt-2">
