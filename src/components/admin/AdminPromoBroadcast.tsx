@@ -482,6 +482,24 @@ const AdminPromoBroadcast = () => {
     return null;
   };
 
+  const reportStatusBadge = (status: string) => {
+    if (status === "sent") return <Badge variant="outline">Enviada</Badge>;
+    if (status === "failed") return <Badge variant="destructive">Falha</Badge>;
+    return <Badge variant="secondary">Pendente</Badge>;
+  };
+
+  const formatDateTime = (iso: string | null) => {
+    if (!iso) return "-";
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const connectedInstancesCount = Object.values(instanceStatus).filter((st) => st === "open").length;
   const loading = loadingInstances || loadingCampaigns;
 
   if (loading) {
