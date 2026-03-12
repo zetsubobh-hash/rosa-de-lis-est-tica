@@ -796,14 +796,19 @@ const AdminPartners = () => {
                       </div>
                       <div>
                         <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">
-                          {hasRealAccount ? "Nova senha" : "Senha"}
+                          {hasRealAccount ? "Redefinir senha" : "Senha"}
                         </label>
+                        {hasRealAccount && (
+                          <p className="font-body text-[11px] text-muted-foreground/70 mb-1.5 -mt-0.5">
+                            A senha atual é criptografada e não pode ser visualizada. Digite abaixo apenas se quiser alterá-la.
+                          </p>
+                        )}
                         <div className="relative">
                           <Input
                             type={credShowPassword ? "text" : "password"}
                             value={credPassword}
                             onChange={(e) => setCredPassword(e.target.value)}
-                            placeholder={hasRealAccount ? "Deixe vazio para manter a atual" : "Mínimo 6 caracteres"}
+                            placeholder={hasRealAccount ? "Nova senha (vazio = manter atual)" : "Mínimo 6 caracteres"}
                             className="font-body pr-10"
                           />
                           <button
