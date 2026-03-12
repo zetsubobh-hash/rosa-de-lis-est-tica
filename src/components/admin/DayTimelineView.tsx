@@ -138,6 +138,7 @@ const DayTimelineView = ({
   getAppointmentPrice,
   getInitials = defaultGetInitials,
   onAnamnesis,
+  onSlotClick,
   readOnly = false,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
