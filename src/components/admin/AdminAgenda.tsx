@@ -511,6 +511,7 @@ const AdminAgenda = () => {
           getAppointmentPrice={getAppointmentPrice}
           getInitials={getInitials}
         />
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {groupedEntries.map((group, i) => {
           const first = group[0];
