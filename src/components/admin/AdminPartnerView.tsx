@@ -121,6 +121,7 @@ const AdminPartnerView = () => {
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [clientSearchName, setClientSearchName] = useState("");
   const [clientSearchService, setClientSearchService] = useState("");
+  const [dragConfirm, setDragConfirm] = useState<{ appointmentId: string; newTime: string; apt: Appointment } | null>(null);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
 
