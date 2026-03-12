@@ -66,17 +66,15 @@ const AdminPricing = () => {
       const original = prices.find((p) => p.id === id);
       if (!original) return prev;
 
-      const next = { ...prev[id], sessions };
-      const shouldRecalculateTotal = prev[id]?.total_price_cents === undefined;
-
-      if (shouldRecalculateTotal) {
-        const currentPps = next.price_per_session_cents ?? original.price_per_session_cents;
-        next.total_price_cents = currentPps * sessions;
-      }
+      const currentPps = prev[id]?.price_per_session_cents ?? original.price_per_session_cents;
 
       return {
         ...prev,
-        [id]: next,
+        [id]: {
+          ...prev[id],
+          sessions,
+          total_price_cents: currentPps * sessions,
+        },
       };
     });
   };
@@ -95,14 +93,6 @@ const AdminPricing = () => {
         [field]: parsed.display,
       },
     }));
-
-    setEditedPrices((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        [field]: parsed.cents,
-      },
-    }));
   };
 
   const commitMoneyInput = (id: string, field: "price_per_session_cents" | "total_price_cents") => {
@@ -115,12 +105,12 @@ const AdminPricing = () => {
       const original = prices.find((p) => p.id === id);
       if (!original) return prev;
 
-      const next = {
+      const next: Partial<ServicePrice> = {
         ...prev[id],
         [field]: cents,
       };
 
-      if (field === "price_per_session_cents" && prev[id]?.total_price_cents === undefined) {
+      if (field === "price_per_session_cents") {
         const currentSessions = next.sessions ?? original.sessions;
         next.total_price_cents = cents * currentSessions;
       }
@@ -140,12 +130,29 @@ const AdminPricing = () => {
     }));
   };
 
+  const hasPendingRawChanges = Object.values(rawPriceInputs).some(
+    (raw) => raw.price_per_session_cents !== undefined
+  );
+
   const handleSaveAll = async () => {
-    const entries = Object.entries(editedPrices);
+    const mergedChanges: Record<string, Partial<ServicePrice>> = { ...editedPrices };
+
+    for (const [id, raw] of Object.entries(rawPriceInputs)) {
+      if (raw.price_per_session_cents === undefined) continue;
+
+      const { cents } = parseMoneyInput(raw.price_per_session_cents);
+      mergedChanges[id] = {
+        ...mergedChanges[id],
+        price_per_session_cents: cents,
+      };
+    }
+
+    const entries = Object.entries(mergedChanges);
     if (entries.length === 0) {
       toast({ title: "Nenhuma alteração para salvar." });
       return;
     }
+
     setSaving(true);
     let hasError = false;
 
@@ -155,7 +162,7 @@ const AdminPricing = () => {
 
       const sessions = changes.sessions ?? original.sessions;
       const pricePerSession = changes.price_per_session_cents ?? original.price_per_session_cents;
-      const totalPrice = changes.total_price_cents ?? pricePerSession * sessions;
+      const totalPrice = pricePerSession * sessions;
 
       const { error } = await supabase
         .from("service_prices")
@@ -165,6 +172,7 @@ const AdminPricing = () => {
           total_price_cents: totalPrice,
         })
         .eq("id", id);
+
       if (error) hasError = true;
     }
 
@@ -175,6 +183,7 @@ const AdminPricing = () => {
       setEditedPrices({});
       setRawPriceInputs({});
     }
+
     await refetch();
     setSaving(false);
   };
@@ -255,7 +264,7 @@ const AdminPricing = () => {
           </button>
           <button
             onClick={handleSaveAll}
-            disabled={saving || Object.keys(editedPrices).length === 0}
+            disabled={saving || (Object.keys(editedPrices).length === 0 && !hasPendingRawChanges)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -429,9 +438,9 @@ const AdminPricing = () => {
                         const rawInput = rawPriceInputs[plan.id];
                         const currentSessions = edited?.sessions ?? plan.sessions;
                         const currentPerSession = edited?.price_per_session_cents ?? plan.price_per_session_cents;
-                        const currentTotal = edited?.total_price_cents ?? currentPerSession * currentSessions;
+                        const currentTotal = currentPerSession * currentSessions;
                         const perSessionDisplay = rawInput?.price_per_session_cents ?? formatInputCents(currentPerSession);
-                        const totalDisplay = rawInput?.total_price_cents ?? formatInputCents(currentTotal);
+                        const totalDisplay = formatInputCents(currentTotal);
 
                         return (
                           <div key={plan.id} className="rounded-xl border border-border p-4">
@@ -463,9 +472,17 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
                                 <Input
                                   type="text"
+                                  inputMode="decimal"
                                   value={perSessionDisplay}
                                   onChange={(e) => handleMoneyInputChange(plan.id, "price_per_session_cents", e.target.value)}
                                   onBlur={() => commitMoneyInput(plan.id, "price_per_session_cents")}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      commitMoneyInput(plan.id, "price_per_session_cents");
+                                      (e.currentTarget as HTMLInputElement).blur();
+                                    }
+                                  }}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
@@ -473,14 +490,13 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
                                 <Input
                                   type="text"
+                                  readOnly
                                   value={totalDisplay}
-                                  onChange={(e) => handleMoneyInputChange(plan.id, "total_price_cents", e.target.value)}
-                                  onBlur={() => commitMoneyInput(plan.id, "total_price_cents")}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
                             </div>
-                            {edited && (
+                            {(edited || rawInput?.price_per_session_cents !== undefined) && (
                               <p className="font-body text-[10px] text-primary mt-2">• Alterado (salve para aplicar)</p>
                             )}
                           </div>
