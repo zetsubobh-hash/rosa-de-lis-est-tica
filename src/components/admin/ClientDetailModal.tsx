@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake, Ticket, CheckCircle2, Pencil, Save } from "lucide-react";
+import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake, Ticket, CheckCircle2, Pencil, Save, Trash2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
