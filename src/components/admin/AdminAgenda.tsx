@@ -575,26 +575,7 @@ const AdminAgenda = () => {
           >
             Hoje
           </button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-9 px-3 text-xs font-body justify-start"
-              >
-                <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
-                {format(filterDate, "dd/MM/yyyy")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <CalendarComponent
-                mode="single"
-                selected={filterDate}
-                onSelect={(d) => { if (d) setFilterDate(d); }}
-                locale={ptBR}
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+          <CalendarPopoverFilter date={filterDate} onSelect={setFilterDate} align="end" />
         </div>
       </div>
 

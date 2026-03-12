@@ -515,23 +515,7 @@ const AdminPartnerView = () => {
                   >
                     Hoje
                   </button>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium font-body border border-border text-foreground hover:bg-muted transition-colors">
-                        <CalendarIcon className="w-3.5 h-3.5" />
-                        {format(filterDate, "dd/MM/yyyy")}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={filterDate}
-                        onSelect={(d) => { if (d) setFilterDate(d); }}
-                        locale={ptBR}
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <CalendarPopoverFilter date={filterDate} onSelect={setFilterDate} align="start" />
                 </div>
 
                 {(() => {
