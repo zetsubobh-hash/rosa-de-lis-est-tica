@@ -77,6 +77,8 @@ interface DayTimelineViewProps {
   onSlotClick?: (time: string) => void;
   /** Called when an appointment is dragged to a new time slot */
   onDragReschedule?: (appointmentId: string, newTime: string) => void;
+  /** Day represented by this timeline in YYYY-MM-DD */
+  timelineDate?: string;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
   /** Callback to check if an appointment is overdue and needs attention */
