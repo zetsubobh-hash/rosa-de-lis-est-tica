@@ -158,11 +158,13 @@ const PartnerDashboard = () => {
       setPartnerId(partner.id);
       setPartnerName(partner.full_name);
       const p = partner as any;
+      const canManageAgenda = !!p.can_manage_agenda;
       const perms = {
-        can_create_appointments: !!p.can_create_appointments,
-        can_reschedule: !!p.can_reschedule,
-        can_cancel: !!p.can_cancel,
-        can_complete: !!p.can_complete,
+        can_manage_agenda: canManageAgenda,
+        can_create_appointments: canManageAgenda || !!p.can_create_appointments,
+        can_reschedule: canManageAgenda || !!p.can_reschedule,
+        can_cancel: canManageAgenda || !!p.can_cancel,
+        can_complete: canManageAgenda || !!p.can_complete,
       };
       setPermissions(perms);
 
