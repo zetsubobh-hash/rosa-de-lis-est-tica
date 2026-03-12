@@ -867,6 +867,11 @@ const PartnerDashboard = () => {
         </motion.div>
       )}
     </AnimatePresence>
+
+    {/* Demo Roulette */}
+    {showDemoRoulette && (
+      <WelcomeRoulette testMode onClose={() => setShowDemoRoulette(false)} />
+    )}
     </>
   );
 };
