@@ -26,6 +26,10 @@ interface Partner {
   work_end: string;
   is_active: boolean;
   can_manage_agenda: boolean;
+  can_create_appointments: boolean;
+  can_reschedule: boolean;
+  can_cancel: boolean;
+  can_complete: boolean;
   specialties?: string[];
 }
 
