@@ -8,6 +8,8 @@ export interface CartItem {
   dateFormatted: string;
   time: string;
   iconName: string;
+  partnerId?: string;
+  partnerName?: string;
 }
 
 interface CartContextType {
