@@ -334,7 +334,8 @@ const DayTimelineView = ({
                   "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
                   isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
                   !readOnly && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing",
-                  isMoving && "ring-2 ring-primary animate-pulse"
+                  isMoving && "ring-2 ring-primary animate-pulse",
+                  blockOverdue && !isExpanded && "ring-2 ring-destructive animate-pulse"
                 )}
                 style={{
                   top: `${top + 1}px`,
