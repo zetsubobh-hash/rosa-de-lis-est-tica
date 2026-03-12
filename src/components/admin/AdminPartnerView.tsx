@@ -541,8 +541,10 @@ const AdminPartnerView = () => {
                       total_sessions: a.total_sessions || null,
                       completed_sessions: a.completed_sessions || null,
                       planSessions: a.planSessions || [],
-                      profiles: a.profile ? { ...a.profile, phone: "", email: null } : null,
+                      profiles: a.profile ? { ...a.profile, phone: (a.profile as any).phone || "", email: null } : null,
                     }))}
+                    expandedAptId={expandedAptId}
+                    onSelectAppointment={(id) => setExpandedAptId(expandedAptId === id ? null : id)}
                     clientPlans={clientPlans.map(p => ({
                       id: p.id,
                       user_id: p.user_id,
