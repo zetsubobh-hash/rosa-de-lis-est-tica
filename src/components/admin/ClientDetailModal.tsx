@@ -200,7 +200,27 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       return;
     }
 
+    const newUsername = editData.username.trim();
+    if (!newUsername || newUsername.length < 3) {
+      toast.error("Usuário deve ter pelo menos 3 caracteres");
+      return;
+    }
+
     setSaving(true);
+
+    // If username changed, update via edge function
+    const usernameChanged = profile && newUsername !== profile.username;
+    if (usernameChanged) {
+      const { data: credRes, error: credErr } = await supabase.functions.invoke("admin-update-credentials", {
+        body: { target_user_id: userId, new_username: newUsername },
+      });
+      if (credErr || credRes?.error) {
+        toast.error(credRes?.error || credErr?.message || "Erro ao atualizar usuário");
+        setSaving(false);
+        return;
+      }
+    }
+
     const updateData: any = {
       full_name: editData.full_name.trim(),
       phone: editData.phone.trim(),
