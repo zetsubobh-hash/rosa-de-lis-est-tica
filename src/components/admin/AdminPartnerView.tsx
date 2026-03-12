@@ -978,6 +978,10 @@ const AdminPartnerView = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showDemoRoulette && (
+        <WelcomeRoulette testMode onClose={() => setShowDemoRoulette(false)} />
+      )}
     </div>
   );
 };
