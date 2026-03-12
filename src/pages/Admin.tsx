@@ -44,7 +44,7 @@ const Admin = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["dashboard","agenda","counter-sales","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"].includes(tabParam)) {
+    if (tabParam && ["dashboard","agenda","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"].includes(tabParam)) {
       return tabParam as Tab;
     }
     return "dashboard";
