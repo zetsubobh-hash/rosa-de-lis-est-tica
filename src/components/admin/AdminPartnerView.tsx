@@ -593,6 +593,10 @@ const AdminPartnerView = () => {
                     onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
                     onHistory={(userId, name) => setHistoryClient({ userId, name })}
                     onScheduleSession={(params) => setScheduleModal(params)}
+                    isOverdue={(apt) => {
+                      const fullApt = appointments.find(a => a.id === apt.id);
+                      return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
+                    }}
                     readOnly
                   />
                 ) : (
