@@ -69,7 +69,7 @@ const DYNAMIC_VARS = [
 ];
 
 const DEFAULT_TEMPLATE =
-  "Olá {nome}! 🌸\n\nTemos uma promoção especial para você em *{servico}*!\n\nAgende agora e garanta condições exclusivas.\n\n_{empresa}_";
+  "Olá {nome}! 🌸\n\nTemos uma promoção especial para você em *{servico}*!\n\nAgende agora e garanta condições exclusivas.\n\n_{empresa}_\n\n---\n_Não deseja mais receber promoções? Responda SAIR._";
 
 /* ───────── component ───────── */
 const AdminPromoBroadcast = () => {
