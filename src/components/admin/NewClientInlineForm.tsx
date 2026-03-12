@@ -113,11 +113,12 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
   };
 
   const handleCreate = async () => {
-    const { full_name, username, password, phone, sex, address, email } = form;
-    if (!full_name || !username || !password || !phone || !sex || !address) {
+    const { full_name, password, phone, sex, address, email } = form;
+    if (!full_name || !password || !phone || !sex || !address) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
+    const username = generateUsername(full_name);
     if (password.length < 6) {
       toast.error("Senha deve ter no mínimo 6 caracteres");
       return;
