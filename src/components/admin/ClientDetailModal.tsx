@@ -143,6 +143,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     address: "",
     sex: "",
     birth_date: "",
+    username: "",
   });
 
   const loadData = async () => {
@@ -165,6 +166,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
         address: p.address || "",
         sex: (p.sex || "").toLowerCase(),
         birth_date: p.birth_date || "",
+        username: p.username || "",
       });
     }
     if (anamnesisRes.data?.[0]) setAnamnesis(anamnesisRes.data[0] as any);
@@ -198,7 +200,27 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       return;
     }
 
+    const newUsername = editData.username.trim();
+    if (!newUsername || newUsername.length < 3) {
+      toast.error("Usuário deve ter pelo menos 3 caracteres");
+      return;
+    }
+
     setSaving(true);
+
+    // If username changed, update via edge function
+    const usernameChanged = profile && newUsername !== profile.username;
+    if (usernameChanged) {
+      const { data: credRes, error: credErr } = await supabase.functions.invoke("admin-update-credentials", {
+        body: { target_user_id: userId, new_username: newUsername },
+      });
+      if (credErr || credRes?.error) {
+        toast.error(credRes?.error || credErr?.message || "Erro ao atualizar usuário");
+        setSaving(false);
+        return;
+      }
+    }
+
     const updateData: any = {
       full_name: editData.full_name.trim(),
       phone: editData.phone.trim(),
@@ -327,7 +349,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                               </select>
                             </div>
                           </div>
-                          <InfoRow icon={User} label="Usuário (login)" value={profile?.username} />
+                          <EditableRow icon={User} label="Usuário (login)" value={editData.username} onChange={(v) => setEditData(d => ({ ...d, username: v.toLowerCase().replace(/[^a-z0-9._-]/g, "") }))} placeholder="nome.usuario" />
                           <InfoRow icon={Calendar} label="Cadastro" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pt-BR") : null} />
                           <InfoRow icon={Clock} label="Último acesso" value={profile?.last_seen ? new Date(profile.last_seen).toLocaleString("pt-BR") : "Nunca acessou"} />
 
@@ -355,6 +377,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                                     address: profile.address || "",
                                     sex: (profile.sex || "").toLowerCase(),
                                     birth_date: profile.birth_date || "",
+                                    username: profile.username || "",
                                   });
                                 }
                               }}
