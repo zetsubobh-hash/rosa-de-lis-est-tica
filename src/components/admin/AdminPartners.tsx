@@ -86,6 +86,8 @@ const AdminPartners = () => {
   const [credShowPassword, setCredShowPassword] = useState(false);
   const [credSaving, setCredSaving] = useState(false);
   const [hasRealAccount, setHasRealAccount] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [generatingPassword, setGeneratingPassword] = useState(false);
 
   const fetchPartners = async () => {
     setLoading(true);
