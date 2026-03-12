@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useServicePrices, formatCents } from "@/hooks/useServicePrices";
 import { useServices, DBService } from "@/hooks/useServices";
 import { getIconByName } from "@/lib/iconMap";
+import { useOnlineBooking } from "@/hooks/useOnlineBooking";
 
 const DotScreenShader = lazy(() =>
   import("@/components/ui/dot-shader-background").then((m) => ({ default: m.DotScreenShader }))
@@ -25,11 +26,16 @@ const ServiceDetail = () => {
   const [pendingPlan, setPendingPlan] = useState<{ name?: string; cents?: number } | null>(null);
   const { services, loading } = useServices();
   const { prices } = useServicePrices(slug);
+  const { isEnabled: bookingEnabled, getWhatsAppUrl } = useOnlineBooking();
 
   const service = services.find((s) => s.slug === slug);
   const related = services.filter((s) => s.slug !== slug).slice(0, 3);
 
   const handleAgendar = (planName?: string, priceCents?: number) => {
+    if (!bookingEnabled) {
+      window.open(getWhatsAppUrl(service?.title), "_blank");
+      return;
+    }
     if (!user) {
       setPendingPlan({ name: planName, cents: priceCents });
       setAuthModalOpen(true);
@@ -40,7 +46,6 @@ const ServiceDetail = () => {
   };
 
   const handleAuthSuccess = () => {
-    // After successful login, navigate to booking with pending plan
     const plan = pendingPlan;
     setPendingPlan(null);
     const planQuery = plan?.name && plan?.cents ? `?plan=${encodeURIComponent(plan.name)}&price=${plan.cents}` : "";
