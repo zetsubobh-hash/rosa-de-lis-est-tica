@@ -438,9 +438,9 @@ const AdminPricing = () => {
                         const rawInput = rawPriceInputs[plan.id];
                         const currentSessions = edited?.sessions ?? plan.sessions;
                         const currentPerSession = edited?.price_per_session_cents ?? plan.price_per_session_cents;
-                        const currentTotal = edited?.total_price_cents ?? currentPerSession * currentSessions;
+                        const currentTotal = currentPerSession * currentSessions;
                         const perSessionDisplay = rawInput?.price_per_session_cents ?? formatInputCents(currentPerSession);
-                        const totalDisplay = rawInput?.total_price_cents ?? formatInputCents(currentTotal);
+                        const totalDisplay = formatInputCents(currentTotal);
 
                         return (
                           <div key={plan.id} className="rounded-xl border border-border p-4">
@@ -472,9 +472,17 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
                                 <Input
                                   type="text"
+                                  inputMode="decimal"
                                   value={perSessionDisplay}
                                   onChange={(e) => handleMoneyInputChange(plan.id, "price_per_session_cents", e.target.value)}
                                   onBlur={() => commitMoneyInput(plan.id, "price_per_session_cents")}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      commitMoneyInput(plan.id, "price_per_session_cents");
+                                      (e.currentTarget as HTMLInputElement).blur();
+                                    }
+                                  }}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
@@ -482,14 +490,13 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
                                 <Input
                                   type="text"
+                                  readOnly
                                   value={totalDisplay}
-                                  onChange={(e) => handleMoneyInputChange(plan.id, "total_price_cents", e.target.value)}
-                                  onBlur={() => commitMoneyInput(plan.id, "total_price_cents")}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
                             </div>
-                            {edited && (
+                            {(edited || rawInput?.price_per_session_cents !== undefined) && (
                               <p className="font-body text-[10px] text-primary mt-2">• Alterado (salve para aplicar)</p>
                             )}
                           </div>
