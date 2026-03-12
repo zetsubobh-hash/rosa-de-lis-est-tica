@@ -573,7 +573,7 @@ const DayTimelineView = ({
                               const isCurrent = block.session_number === sessionNum;
                               const canClick = onScheduleSession && plan && !isDone && !isCurrent;
                               return (
-                                <div key={sessionNum} className="flex flex-col items-center">
+                                <div key={sessionNum} className="flex flex-col items-center relative group">
                                   <div
                                     onClick={(e) => {
                                       if (canClick) {
@@ -607,6 +607,11 @@ const DayTimelineView = ({
                                   {isDoneByCounter && !sessionApt && (
                                     <span className="font-body text-[8px] text-muted-foreground mt-0.5 text-center leading-tight">
                                       Realizada
+                                    </span>
+                                  )}
+                                  {!isDone && !isScheduled && !isCurrent && !onScheduleSession && (
+                                    <span className="font-body text-[8px] text-muted-foreground/60 mt-0.5 text-center leading-tight italic">
+                                      Não agendada
                                     </span>
                                   )}
                                 </div>
