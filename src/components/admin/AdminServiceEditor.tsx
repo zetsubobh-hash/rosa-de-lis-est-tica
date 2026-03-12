@@ -417,7 +417,14 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const sortedPrices = [...prices].sort((a, b) => planOrder.indexOf(a.plan_name) - planOrder.indexOf(b.plan_name));
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background overflow-y-auto" onPointerDownCapture={handleRootPointerDownCapture}>
+    <EditableWrapperContext.Provider
+      value={{
+        editingSection,
+        setEditingSection: (section) => setEditingSection(section),
+        isPlanEditLocked,
+      }}
+    >
+      <div className="fixed inset-0 z-[60] bg-background overflow-y-auto" onPointerDownCapture={handleRootPointerDownCapture}>
       {/* Top toolbar */}
       <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between gap-3">
         <button onClick={onClose} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-body text-sm">
