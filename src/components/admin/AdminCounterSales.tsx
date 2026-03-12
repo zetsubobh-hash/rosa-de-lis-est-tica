@@ -569,7 +569,10 @@ const AdminCounterSales = () => {
 
                   {/* Selected client */}
                   {selectedClient && (
-                    <div className="p-4 rounded-xl border-2 border-primary bg-primary/5 flex items-center gap-3">
+                    <button
+                      onClick={() => setSelectedClient(null)}
+                      className="w-full p-4 rounded-xl border-2 border-primary bg-primary/5 flex items-center gap-3 text-left hover:bg-primary/10 transition-colors"
+                    >
                       {selectedClient.avatar_url ? (
                         <img src={selectedClient.avatar_url} alt={selectedClient.full_name} className="w-10 h-10 rounded-full object-cover" />
                       ) : (
@@ -581,8 +584,8 @@ const AdminCounterSales = () => {
                         <p className="font-body font-semibold text-foreground truncate">{selectedClient.full_name}</p>
                         <p className="font-body text-xs text-muted-foreground">{selectedClient.phone}</p>
                       </div>
-                      <Check className="w-5 h-5 text-primary" />
-                    </div>
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
                   )}
 
                   {/* Client list */}
