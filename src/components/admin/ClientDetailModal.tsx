@@ -354,7 +354,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                                     phone: profile.phone || "",
                                     email: profile.email || "",
                                     address: profile.address || "",
-                                    sex: profile.sex || "",
+                                    sex: (profile.sex || "").toLowerCase(),
                                     birth_date: profile.birth_date || "",
                                   });
                                 }
