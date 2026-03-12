@@ -1200,6 +1200,7 @@ const PartnerDashboard = () => {
         onClose={() => setHistoryClient(null)}
         userId={historyClient.userId}
         userName={historyClient.name}
+        hidePayments
       />
     )}
 
