@@ -715,20 +715,19 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
                               onFocus={(e) => e.currentTarget.select()}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") e.preventDefault();
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  commitPlanPricePerSession(plan.id, plan.price_per_session_cents, plan.sessions);
+                                  (e.currentTarget as HTMLInputElement).blur();
+                                }
                               }}
                               onChange={(e) => {
                                 const parsed = parseMoneyInput(e.target.value);
                                 setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: parsed.display } }));
-                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: parsed.cents } }));
                                 setHasChanges(true);
                               }}
                               onBlur={() => {
-                                const currentPps = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
-                                const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
-                                const recalculatedTotal = currentPps * currentSessions;
-                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: recalculatedTotal } }));
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(currentPps), total: centsToStr(recalculatedTotal) } }));
+                                commitPlanPricePerSession(plan.id, plan.price_per_session_cents, plan.sessions);
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -737,22 +736,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Total (R$)</label>
                             <Input
                               type="text"
-                              inputMode="decimal"
-                              value={rawPriceInputs[plan.id]?.total ?? centsToStr(total)}
-                              onFocus={(e) => e.currentTarget.select()}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") e.preventDefault();
-                              }}
-                              onChange={(e) => {
-                                const parsed = parseMoneyInput(e.target.value);
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: parsed.display } }));
-                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: parsed.cents } }));
-                                setHasChanges(true);
-                              }}
-                              onBlur={() => {
-                                const current = editedPrices[plan.id]?.total_price_cents ?? plan.total_price_cents;
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(current) } }));
-                              }}
+                              readOnly
+                              value={centsToStr(total)}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
                           </div>
