@@ -633,6 +633,8 @@ const AdminPartnerView = () => {
                         const fullApt = appointments.find(a => a.id === apt.id);
                         return fullApt ? isAppointmentOverdue(fullApt, new Date(nowTick)) : false;
                       }}
+                      onDragReschedule={handleDragReschedule}
+                      onCancel={handleCancelAppointment}
                     />
                   );
                 })()}
