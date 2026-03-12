@@ -563,6 +563,76 @@ const PartnerDashboard = () => {
         </AnimatePresence>
       </div>
 
+      <AnimatePresence>
+        {nextOverdueAppointment && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-background/70 backdrop-blur-sm p-4 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              className="w-full max-w-md rounded-2xl border border-destructive/30 bg-card p-5 shadow-2xl"
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 p-2 rounded-xl bg-destructive/10">
+                  <AlertCircle className="w-5 h-5 text-destructive" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-heading text-base font-bold text-foreground">Confirmação obrigatória da sessão</p>
+                  <p className="font-body text-sm text-muted-foreground mt-1">
+                    O horário desta sessão já passou. Marque agora se foi realizada ou não.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3 space-y-1">
+                <p className="font-body text-xs text-muted-foreground">Cliente</p>
+                <p className="font-heading text-sm font-bold text-foreground">{nextOverdueAppointment.profile?.full_name || "Cliente"}</p>
+                <p className="font-body text-xs text-muted-foreground">
+                  {nextOverdueAppointment.service_title} • {formatDate(nextOverdueAppointment.appointment_date)} às {nextOverdueAppointment.appointment_time}
+                </p>
+                {overdueCount > 1 && (
+                  <p className="font-body text-[11px] text-destructive font-semibold mt-1">
+                    {overdueCount} sessões aguardando confirmação
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setActiveTab("agenda");
+                    setFilterDate(nextOverdueAppointment.appointment_date);
+                    setExpandedAptId(nextOverdueAppointment.id);
+                    handleMarkAppointment(nextOverdueAppointment, false);
+                  }}
+                  disabled={completingId === nextOverdueAppointment.id}
+                  className="h-11 rounded-xl border border-destructive/30 text-destructive font-body text-xs font-bold hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                >
+                  {completingId === nextOverdueAppointment.id ? "Salvando..." : "Não realizada"}
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab("agenda");
+                    setFilterDate(nextOverdueAppointment.appointment_date);
+                    setExpandedAptId(nextOverdueAppointment.id);
+                    handleMarkAppointment(nextOverdueAppointment, true);
+                  }}
+                  disabled={completingId === nextOverdueAppointment.id}
+                  className="h-11 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {completingId === nextOverdueAppointment.id ? "Salvando..." : "Sessão realizada"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* KPIs */}
         <div className="grid grid-cols-3 gap-3">
