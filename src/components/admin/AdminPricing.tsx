@@ -135,11 +135,24 @@ const AdminPricing = () => {
   );
 
   const handleSaveAll = async () => {
-    const entries = Object.entries(editedPrices);
+    const mergedChanges: Record<string, Partial<ServicePrice>> = { ...editedPrices };
+
+    for (const [id, raw] of Object.entries(rawPriceInputs)) {
+      if (raw.price_per_session_cents === undefined) continue;
+
+      const { cents } = parseMoneyInput(raw.price_per_session_cents);
+      mergedChanges[id] = {
+        ...mergedChanges[id],
+        price_per_session_cents: cents,
+      };
+    }
+
+    const entries = Object.entries(mergedChanges);
     if (entries.length === 0) {
       toast({ title: "Nenhuma alteração para salvar." });
       return;
     }
+
     setSaving(true);
     let hasError = false;
 
@@ -149,7 +162,7 @@ const AdminPricing = () => {
 
       const sessions = changes.sessions ?? original.sessions;
       const pricePerSession = changes.price_per_session_cents ?? original.price_per_session_cents;
-      const totalPrice = changes.total_price_cents ?? pricePerSession * sessions;
+      const totalPrice = pricePerSession * sessions;
 
       const { error } = await supabase
         .from("service_prices")
@@ -159,6 +172,7 @@ const AdminPricing = () => {
           total_price_cents: totalPrice,
         })
         .eq("id", id);
+
       if (error) hasError = true;
     }
 
@@ -169,6 +183,7 @@ const AdminPricing = () => {
       setEditedPrices({});
       setRawPriceInputs({});
     }
+
     await refetch();
     setSaving(false);
   };
