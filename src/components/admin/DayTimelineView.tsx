@@ -47,8 +47,6 @@ const getServiceColor = (slug: string) => {
   return SERVICE_COLORS[slug];
 };
 
-const getInitials = (name: string) =>
-  name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 
 // Duration estimates in minutes based on common service types
 const estimateDuration = (serviceSlug: string): number => {
