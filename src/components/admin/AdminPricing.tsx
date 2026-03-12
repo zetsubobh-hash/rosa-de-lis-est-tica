@@ -84,13 +84,11 @@ const AdminPricing = () => {
     field: "price_per_session_cents" | "total_price_cents",
     value: string
   ) => {
-    const parsed = parseMoneyInput(value);
-
     setRawPriceInputs((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
-        [field]: parsed.display,
+        [field]: value,
       },
     }));
   };

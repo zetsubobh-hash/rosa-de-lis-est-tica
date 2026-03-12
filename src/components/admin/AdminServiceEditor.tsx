@@ -219,12 +219,17 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
   const handleAddPlan = async () => {
     if (!newPlan.plan_name || isNew) return;
+
+    const sessions = Math.max(1, newPlan.sessions || 1);
+    const pricePerSessionCents = parseMoneyInput(newPlanRaw.pps).cents;
+    const totalPriceCents = pricePerSessionCents * sessions;
+
     const { error } = await supabase.from("service_prices").insert({
       service_slug: service.slug,
       plan_name: newPlan.plan_name,
-      sessions: newPlan.sessions,
-      price_per_session_cents: newPlan.price_per_session_cents,
-      total_price_cents: newPlan.total_price_cents || newPlan.price_per_session_cents * newPlan.sessions,
+      sessions,
+      price_per_session_cents: pricePerSessionCents,
+      total_price_cents: totalPriceCents,
     });
     if (error) {
       toast({ title: "Erro ao adicionar plano", variant: "destructive" });
@@ -242,7 +247,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     if (!error) { refetchPrices(); toast({ title: "Plano removido ✅" }); }
   };
 
-  const commitPlanPricePerSession = (planId: string, fallbackPps: number, fallbackSessions: number) => {
+  const commitPlanPricePerSession = (planId: string, fallbackSessions: number) => {
     const rawValue = rawPriceInputs[planId]?.pps;
     if (rawValue === undefined) return;
 
@@ -266,6 +271,25 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         pps: centsToStr(parsed.cents),
         total: centsToStr(total),
       },
+    }));
+  };
+
+  const commitNewPlanPricePerSession = () => {
+    const parsed = parseMoneyInput(newPlanRaw.pps);
+    const sessions = Math.max(1, newPlan.sessions || 1);
+    const total = parsed.cents * sessions;
+
+    setNewPlan((prev) => ({
+      ...prev,
+      sessions,
+      price_per_session_cents: parsed.cents,
+      total_price_cents: total,
+    }));
+
+    setNewPlanRaw((prev) => ({
+      ...prev,
+      pps: centsToStr(parsed.cents),
+      total: centsToStr(total),
     }));
   };
 
@@ -713,21 +737,19 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               type="text"
                               inputMode="decimal"
                               value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
-                              onFocus={(e) => e.currentTarget.select()}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
-                                  commitPlanPricePerSession(plan.id, plan.price_per_session_cents, plan.sessions);
+                                  commitPlanPricePerSession(plan.id, plan.sessions);
                                   (e.currentTarget as HTMLInputElement).blur();
                                 }
                               }}
                               onChange={(e) => {
-                                const parsed = parseMoneyInput(e.target.value);
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: parsed.display } }));
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: e.target.value } }));
                                 setHasChanges(true);
                               }}
                               onBlur={() => {
-                                commitPlanPricePerSession(plan.id, plan.price_per_session_cents, plan.sessions);
+                                commitPlanPricePerSession(plan.id, plan.sessions);
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -827,16 +849,17 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           type="text"
                           inputMode="decimal"
                           value={newPlanRaw.pps}
-                          onFocus={(e) => e.currentTarget.select()}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") e.preventDefault();
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              commitNewPlanPricePerSession();
+                              (e.currentTarget as HTMLInputElement).blur();
+                            }
                           }}
                           onChange={(e) => {
-                            const parsed = parseMoneyInput(e.target.value);
-                            setNewPlanRaw({ pps: parsed.display, total: centsToStr(parsed.cents * newPlan.sessions) });
-                            setNewPlan((p) => ({ ...p, price_per_session_cents: parsed.cents, total_price_cents: parsed.cents * p.sessions }));
+                            setNewPlanRaw((p) => ({ ...p, pps: e.target.value }));
                           }}
-                          onBlur={() => setNewPlanRaw((p) => ({ ...p, pps: centsToStr(newPlan.price_per_session_cents) }))}
+                          onBlur={() => commitNewPlanPricePerSession()}
                           className="h-8 font-body text-sm"
                         />
                       </div>
@@ -844,18 +867,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
                         <Input
                           type="text"
-                          inputMode="decimal"
+                          readOnly
                           value={newPlanRaw.total}
-                          onFocus={(e) => e.currentTarget.select()}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") e.preventDefault();
-                          }}
-                          onChange={(e) => {
-                            const parsed = parseMoneyInput(e.target.value);
-                            setNewPlanRaw((p) => ({ ...p, total: parsed.display }));
-                            setNewPlan((p) => ({ ...p, total_price_cents: parsed.cents }));
-                          }}
-                          onBlur={() => setNewPlanRaw((p) => ({ ...p, total: centsToStr(newPlan.total_price_cents) }))}
                           className="h-8 font-body text-sm"
                         />
                       </div>
