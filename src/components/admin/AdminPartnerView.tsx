@@ -286,13 +286,46 @@ const AdminPartnerView = () => {
     return () => { supabase.removeChannel(channel); };
   }, [selectedPartner]);
 
-  const handleMarkAppointment = async (apt: Appointment, completed: boolean) => {
+  const openDecisionModal = (apt: Appointment, type: "completed" | "cancelled") => {
+    setDecisionModal({ apt, type });
+    setDecisionNotes("");
+    setCancelReason("no_show");
+    setCancelReasonText("");
+  };
+
+  const handleConfirmDecision = async () => {
+    if (!decisionModal) return;
+
+    const { apt, type } = decisionModal;
+    const completed = type === "completed";
+
+    if (!completed && cancelReason === "other" && !cancelReasonText.trim()) {
+      toast.error("Informe o motivo do cancelamento.");
+      return;
+    }
+
     setCompletingId(apt.id);
     try {
       const newStatus = completed ? "completed" : "cancelled";
+
+      let existingNotes: Record<string, any> = {};
+      if (apt.notes) {
+        try { existingNotes = JSON.parse(apt.notes); } catch { /* ignore */ }
+      }
+
+      const notesPayload: Record<string, any> = {
+        ...existingNotes,
+        ...(completed
+          ? { session_observation: decisionNotes.trim() || null, completed_at: new Date().toISOString() }
+          : {
+              cancel_reason: cancelReason === "no_show" ? "Cliente não apareceu" : cancelReasonText.trim(),
+              cancelled_at: new Date().toISOString(),
+            }),
+      };
+
       const { error: appointmentError } = await supabase
         .from("appointments")
-        .update({ status: newStatus })
+        .update({ status: newStatus, notes: JSON.stringify(notesPayload) })
         .eq("id", apt.id);
 
       if (appointmentError) throw appointmentError;
@@ -320,10 +353,11 @@ const AdminPartnerView = () => {
 
       setAppointments((prev) => prev.filter((a) => a.id !== apt.id));
       if (completed) {
-        setPastAppointments((prev) => [{ ...apt, status: "completed" }, ...prev]);
+        setPastAppointments((prev) => [{ ...apt, status: "completed", notes: JSON.stringify(notesPayload) }, ...prev]);
       }
 
       toast.success(completed ? "✅ Sessão marcada como realizada!" : "❌ Sessão marcada como não realizada.");
+      setDecisionModal(null);
     } catch (err: any) {
       toast.error("Erro ao atualizar: " + err.message);
     } finally {
