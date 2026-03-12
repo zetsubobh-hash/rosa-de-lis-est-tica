@@ -192,19 +192,26 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       return;
     }
     setSaving(true);
+    const updateData: any = {
+      full_name: editData.full_name.trim(),
+      phone: editData.phone.trim(),
+      email: editData.email.trim() || null,
+      address: editData.address.trim(),
+      sex: editData.sex.trim(),
+    };
+    if (editData.birth_date) {
+      updateData.birth_date = editData.birth_date;
+    } else {
+      updateData.birth_date = null;
+    }
+
     const { error } = await supabase
       .from("profiles")
-      .update({
-        full_name: editData.full_name.trim(),
-        phone: editData.phone.trim(),
-        email: editData.email.trim() || null,
-        address: editData.address.trim(),
-        sex: editData.sex.trim(),
-        birth_date: editData.birth_date || null,
-      })
+      .update(updateData)
       .eq("user_id", userId);
 
     if (error) {
+      console.error("Profile update error:", error);
       toast.error("Erro ao salvar: " + error.message);
     } else {
       toast.success("Dados atualizados com sucesso!");
