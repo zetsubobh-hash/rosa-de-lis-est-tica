@@ -183,14 +183,31 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
     // Save price changes
     if (!saveError) {
-      for (const [id, changes] of Object.entries(editedPrices)) {
+      const changedPlanIds = Array.from(
+        new Set([
+          ...Object.keys(editedPrices),
+          ...Object.keys(rawPriceInputs).filter((id) => rawPriceInputs[id]?.pps !== undefined),
+        ])
+      );
+
+      for (const id of changedPlanIds) {
         const original = prices.find((p) => p.id === id);
         if (!original) continue;
+
+        const changes = editedPrices[id] || {};
+        const rawPps = rawPriceInputs[id]?.pps;
+        const parsedRawPps = rawPps !== undefined ? parseMoneyInput(rawPps).cents : undefined;
+
         const sessions = changes.sessions ?? original.sessions;
-        const pps = changes.price_per_session_cents ?? original.price_per_session_cents;
-        const total = changes.total_price_cents ?? pps * sessions;
-        await supabase.from("service_prices").update({ sessions, price_per_session_cents: pps, total_price_cents: total }).eq("id", id);
+        const pps = parsedRawPps ?? changes.price_per_session_cents ?? original.price_per_session_cents;
+        const total = pps * sessions;
+
+        await supabase
+          .from("service_prices")
+          .update({ sessions, price_per_session_cents: pps, total_price_cents: total })
+          .eq("id", id);
       }
+
       toast({ title: "Serviço salvo com sucesso! ✅" });
       setHasChanges(false);
       setEditedPrices({});
@@ -225,14 +242,44 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     if (!error) { refetchPrices(); toast({ title: "Plano removido ✅" }); }
   };
 
+  const commitPlanPricePerSession = (planId: string, fallbackPps: number, fallbackSessions: number) => {
+    const rawValue = rawPriceInputs[planId]?.pps;
+    if (rawValue === undefined) return;
+
+    const parsed = parseMoneyInput(rawValue);
+    const sessions = editedPrices[planId]?.sessions ?? fallbackSessions;
+    const total = parsed.cents * sessions;
+
+    setEditedPrices((prev) => ({
+      ...prev,
+      [planId]: {
+        ...prev[planId],
+        price_per_session_cents: parsed.cents,
+        total_price_cents: total,
+      },
+    }));
+
+    setRawPriceInputs((prev) => ({
+      ...prev,
+      [planId]: {
+        ...prev[planId],
+        pps: centsToStr(parsed.cents),
+        total: centsToStr(total),
+      },
+    }));
+  };
+
   const handleSavePlan = async (planId: string) => {
     const original = prices.find((p) => p.id === planId);
     if (!original) return;
 
     const changes = editedPrices[planId] || {};
+    const rawPps = rawPriceInputs[planId]?.pps;
+    const parsedRawPps = rawPps !== undefined ? parseMoneyInput(rawPps).cents : undefined;
+
     const sessions = changes.sessions ?? original.sessions;
-    const pps = changes.price_per_session_cents ?? original.price_per_session_cents;
-    const total = changes.total_price_cents ?? pps * sessions;
+    const pps = parsedRawPps ?? changes.price_per_session_cents ?? original.price_per_session_cents;
+    const total = pps * sessions;
 
     setSavingPlanId(planId);
     const { error } = await supabase
@@ -668,20 +715,19 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
                               onFocus={(e) => e.currentTarget.select()}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") e.preventDefault();
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  commitPlanPricePerSession(plan.id, plan.price_per_session_cents, plan.sessions);
+                                  (e.currentTarget as HTMLInputElement).blur();
+                                }
                               }}
                               onChange={(e) => {
                                 const parsed = parseMoneyInput(e.target.value);
                                 setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: parsed.display } }));
-                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: parsed.cents } }));
                                 setHasChanges(true);
                               }}
                               onBlur={() => {
-                                const currentPps = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
-                                const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
-                                const recalculatedTotal = currentPps * currentSessions;
-                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: recalculatedTotal } }));
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(currentPps), total: centsToStr(recalculatedTotal) } }));
+                                commitPlanPricePerSession(plan.id, plan.price_per_session_cents, plan.sessions);
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -690,22 +736,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Total (R$)</label>
                             <Input
                               type="text"
-                              inputMode="decimal"
-                              value={rawPriceInputs[plan.id]?.total ?? centsToStr(total)}
-                              onFocus={(e) => e.currentTarget.select()}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") e.preventDefault();
-                              }}
-                              onChange={(e) => {
-                                const parsed = parseMoneyInput(e.target.value);
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: parsed.display } }));
-                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: parsed.cents } }));
-                                setHasChanges(true);
-                              }}
-                              onBlur={() => {
-                                const current = editedPrices[plan.id]?.total_price_cents ?? plan.total_price_cents;
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(current) } }));
-                              }}
+                              readOnly
+                              value={centsToStr(total)}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
                           </div>
