@@ -39,7 +39,14 @@ const Admin = () => {
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["dashboard","agenda","counter-sales","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette"].includes(tabParam)) {
+      return tabParam as Tab;
+    }
+    return "dashboard";
+  });
   const [settingsMap, setSettingsMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
