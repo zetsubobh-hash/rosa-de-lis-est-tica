@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Calendar, Clock, CalendarCheck, CalendarClock, CalendarIcon,
-  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift, User
+  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift, User, UserPlus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
