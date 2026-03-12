@@ -66,17 +66,15 @@ const AdminPricing = () => {
       const original = prices.find((p) => p.id === id);
       if (!original) return prev;
 
-      const next = { ...prev[id], sessions };
-      const shouldRecalculateTotal = prev[id]?.total_price_cents === undefined;
-
-      if (shouldRecalculateTotal) {
-        const currentPps = next.price_per_session_cents ?? original.price_per_session_cents;
-        next.total_price_cents = currentPps * sessions;
-      }
+      const currentPps = prev[id]?.price_per_session_cents ?? original.price_per_session_cents;
 
       return {
         ...prev,
-        [id]: next,
+        [id]: {
+          ...prev[id],
+          sessions,
+          total_price_cents: currentPps * sessions,
+        },
       };
     });
   };
