@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Save, Pencil, X, Plus, Trash2, Upload, Check,
@@ -31,6 +31,46 @@ type EditingSection =
   | "title" | "icon" | "image" | "short_description" | "full_description" 
   | "benefits" | "duration" | "price_label" | "sessions_label" | "settings"
   | `plan-${string}` | "new-plan" | null;
+
+interface EditableWrapperContextValue {
+  editingSection: EditingSection;
+  setEditingSection: (section: EditingSection) => void;
+  isPlanEditLocked: boolean;
+}
+
+const EditableWrapperContext = createContext<EditableWrapperContextValue | null>(null);
+
+const EditableWrapper = ({ section, children, className = "" }: { section: EditingSection; children: React.ReactNode; className?: string }) => {
+  const context = useContext(EditableWrapperContext);
+
+  if (!context) {
+    return <div className={className}>{children}</div>;
+  }
+
+  const { editingSection, setEditingSection, isPlanEditLocked } = context;
+
+  return (
+    <div
+      className={`group relative cursor-pointer rounded-xl transition-all ${
+        editingSection === section ? "ring-2 ring-primary/50 ring-offset-2" : "hover:ring-2 hover:ring-primary/20 hover:ring-offset-1"
+      } ${className}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (isPlanEditLocked && editingSection !== section) return;
+        if (editingSection !== section) setEditingSection(section);
+      }}
+    >
+      {children}
+      {editingSection !== section && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+            <Pencil className="w-3.5 h-3.5" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const generateSlug = (title: string) =>
   title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -372,33 +412,19 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     }
   };
 
-  const EditableWrapper = ({ section, children, className = "" }: { section: EditingSection; children: React.ReactNode; className?: string }) => (
-    <div
-      className={`group relative cursor-pointer rounded-xl transition-all ${
-        editingSection === section ? "ring-2 ring-primary/50 ring-offset-2" : "hover:ring-2 hover:ring-primary/20 hover:ring-offset-1"
-      } ${className}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (isPlanEditLocked && editingSection !== section) return;
-        if (editingSection !== section) setEditingSection(section);
-      }}
-    >
-      {children}
-      {editingSection !== section && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-          <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
-            <Pencil className="w-3.5 h-3.5" />
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   const planOrder = ["Essencial", "Premium", "VIP"];
   const sortedPrices = [...prices].sort((a, b) => planOrder.indexOf(a.plan_name) - planOrder.indexOf(b.plan_name));
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background overflow-y-auto" onPointerDownCapture={handleRootPointerDownCapture}>
+    <EditableWrapperContext.Provider
+      value={{
+        editingSection,
+        setEditingSection: (section) => setEditingSection(section),
+        isPlanEditLocked,
+      }}
+    >
+      <div className="fixed inset-0 z-[60] bg-background overflow-y-auto" onPointerDownCapture={handleRootPointerDownCapture}>
       {/* Top toolbar */}
       <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between gap-3">
         <button onClick={onClose} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-body text-sm">
@@ -970,8 +996,9 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-    </div>
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+      </div>
+    </EditableWrapperContext.Provider>
   );
 };
 
