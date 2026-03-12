@@ -639,6 +639,7 @@ export type Database = {
       }
       promo_campaigns: {
         Row: {
+          audience_filter: Json
           created_at: string
           current_instance_index: number
           id: string
@@ -654,6 +655,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          audience_filter?: Json
           created_at?: string
           current_instance_index?: number
           id?: string
@@ -669,6 +671,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          audience_filter?: Json
           created_at?: string
           current_instance_index?: number
           id?: string

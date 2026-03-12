@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Save, Send, Pencil, Server, Megaphone, Clock,
   Hash, ChevronDown, ChevronUp, Loader2, CheckCircle2, XCircle,
-  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff
+  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff, Users, Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,16 @@ const DYNAMIC_VARS = [
   { key: "{telefone}", label: "Telefone do cliente" },
 ];
 
+const AUDIENCE_FILTERS = [
+  { value: "all", label: "Todos os clientes", description: "Envia para todos com telefone cadastrado" },
+  { value: "new_clients", label: "Clientes novos", description: "Cadastrados nos últimos 30 dias" },
+  { value: "inactive", label: "Clientes inativos", description: "Sem agendamentos nos últimos 90 dias" },
+  { value: "recent", label: "Clientes recentes", description: "Com agendamentos nos últimos 30 dias" },
+  { value: "birthday_today", label: "Aniversariantes do dia", description: "Clientes que fazem aniversário hoje" },
+  { value: "birthday_week", label: "Aniversariantes da semana", description: "Clientes que fazem aniversário esta semana" },
+  { value: "birthday_month", label: "Aniversariantes do mês", description: "Clientes que fazem aniversário este mês" },
+];
+
 const DEFAULT_TEMPLATE =
   "Olá {nome}! 🌸\n\nTemos uma promoção especial para você em *{servico}*!\n\nAgende agora e garanta condições exclusivas.\n\n_{empresa}_\n\n---\n_Não deseja mais receber promoções? Responda SAIR._";
 
@@ -102,6 +112,7 @@ const AdminPromoBroadcast = () => {
     message_template: DEFAULT_TEMPLATE,
     start_time: "09:00",
     interval_seconds: 30,
+    audience_filter: "all" as string,
   });
   const [savingCamp, setSavingCamp] = useState(false);
   const [sendingCampId, setSendingCampId] = useState<string | null>(null);
@@ -342,6 +353,7 @@ const AdminPromoBroadcast = () => {
       message_template: DEFAULT_TEMPLATE,
       start_time: "09:00",
       interval_seconds: 30,
+      audience_filter: "all",
     });
     setCampaignFormOpen(true);
   };
@@ -358,7 +370,8 @@ const AdminPromoBroadcast = () => {
       message_template: campForm.message_template,
       start_time: campForm.start_time,
       interval_seconds: Math.max(5, campForm.interval_seconds),
-    });
+      audience_filter: { type: campForm.audience_filter },
+    } as any);
     toast({ title: "Campanha criada com sucesso!" });
     setCampaignFormOpen(false);
     setSavingCamp(false);
@@ -744,6 +757,30 @@ const AdminPromoBroadcast = () => {
 
                     <div className="md:col-span-2">
                       <Label className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-primary" />
+                        Público-Alvo (Filtro de Audiência)
+                      </Label>
+                      <Select value={campForm.audience_filter} onValueChange={(v) => setCampForm(p => ({ ...p, audience_filter: v }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os clientes" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {AUDIENCE_FILTERS.map(f => (
+                            <SelectItem key={f.value} value={f.value}>
+                              <div className="flex flex-col">
+                                <span>{f.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {AUDIENCE_FILTERS.find(f => f.value === campForm.audience_filter)?.description || ""}
+                      </p>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label className="flex items-center gap-2">
                         <Pencil className="w-4 h-4 text-primary" />
                         Mensagem da Promoção
                       </Label>
@@ -848,6 +885,7 @@ const AdminPromoBroadcast = () => {
                 </div>
 
                 <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1"><Users className="w-3 h-3 text-primary" /> {AUDIENCE_FILTERS.find(f => f.value === ((camp as any).audience_filter?.type || "all"))?.label || "Todos"}</span>
                   <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> {camp.total_sent} enviadas</span>
                   <span className="flex items-center gap-1"><XCircle className="w-3 h-3 text-destructive" /> {camp.total_failed} falhas</span>
                   <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {camp.total_target} alvo</span>
