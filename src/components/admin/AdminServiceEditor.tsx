@@ -55,21 +55,24 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const strToCents = (str: string) => {
-    const clean = str.replace(/[^\d,.-]/g, "").trim();
-    if (!clean) return 0;
+  const parseMoneyInput = (value: string) => {
+    const clean = value.replace(/[^\d,]/g, "").trim();
+    if (!clean) return { display: "", cents: 0 };
 
-    if (!clean.includes(",") && !clean.includes(".")) {
-      const intValue = parseInt(clean.replace(/\D/g, ""), 10) || 0;
-      return intValue * 100;
-    }
+    const [rawInt = "", rawDec = ""] = clean.split(",");
+    const intPart = rawInt.replace(/^0+(?=\d)/, "");
+    const normalizedInt = intPart === "" ? "0" : intPart;
+    const decPart = rawDec.slice(0, 2);
 
-    const normalized = clean.includes(",")
-      ? clean.replace(/\./g, "").replace(",", ".")
-      : clean.replace(/,/g, "");
+    const display = rawDec.length > 0
+      ? `${normalizedInt},${decPart}`
+      : normalizedInt;
 
-    const num = parseFloat(normalized);
-    return Number.isFinite(num) ? Math.max(0, Math.round(num * 100)) : 0;
+    const cents =
+      (parseInt(normalizedInt, 10) || 0) * 100 +
+      (parseInt(decPart.padEnd(2, "0"), 10) || 0);
+
+    return { display, cents };
   };
 
   const Icon = getIconByName(service.icon_name);
