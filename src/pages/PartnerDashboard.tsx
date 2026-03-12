@@ -99,6 +99,7 @@ const PartnerDashboard = () => {
   const [partnerName, setPartnerName] = useState("");
   
   const [permissions, setPermissions] = useState({
+    can_manage_agenda: false,
     can_create_appointments: false,
     can_reschedule: false,
     can_cancel: false,
