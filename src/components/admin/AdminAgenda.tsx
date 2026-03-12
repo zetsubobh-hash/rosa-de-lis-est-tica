@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
+import DayTimelineView from "@/components/admin/DayTimelineView";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -491,6 +492,11 @@ const AdminAgenda = () => {
           <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="font-body text-muted-foreground">Nenhum agendamento para esta data.</p>
         </div>
+      ) : filterDate ? (
+        <DayTimelineView
+          appointments={filtered}
+          onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
+        />
       ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {groupedEntries.map((group, i) => {
