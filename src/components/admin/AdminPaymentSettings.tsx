@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Save, QrCode, CreditCard, Eye, EyeOff, ChevronDown, RefreshCw, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { generatePixPayload } from "@/lib/pixPayload";
 
 interface Props {
   initialSettings: Record<string, string>;
@@ -26,6 +27,31 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
 
   const [pixSettingsOpen, setPixSettingsOpen] = useState(false);
   const [qrKey, setQrKey] = useState(Date.now());
+  const [pixAmount, setPixAmount] = useState("");
+
+  const handlePixAmountChange = (val: string) => {
+    // Allow only digits and comma/dot
+    const digits = val.replace(/[^\d]/g, "");
+    if (!digits) { setPixAmount(""); return; }
+    const cents = parseInt(digits, 10);
+    const formatted = (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    setPixAmount(formatted);
+  };
+
+  const pixAmountNumber = useMemo(() => {
+    if (!pixAmount) return 0;
+    const clean = pixAmount.replace(/\./g, "").replace(",", ".");
+    return parseFloat(clean) || 0;
+  }, [pixAmount]);
+
+  const pixPayloadString = useMemo(() => {
+    if (!pixKey) return "";
+    return generatePixPayload({
+      pixKey,
+      beneficiaryName: pixBeneficiary || "LOJA",
+      amount: pixAmountNumber > 0 ? pixAmountNumber : undefined,
+    });
+  }, [pixKey, pixBeneficiary, pixAmountNumber, qrKey]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -72,7 +98,30 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
 
         {pixEnabled && (
           <div className="space-y-5">
-            {/* QR Code — sempre visível */}
+            {/* Amount Input — large digits */}
+            <div className="space-y-2 text-center">
+              <label className="font-body text-sm font-semibold text-foreground block">
+                Valor do PIX (opcional)
+              </label>
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-heading text-3xl md:text-4xl font-bold text-foreground">R$</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={pixAmount}
+                  onChange={(e) => handlePixAmountChange(e.target.value)}
+                  placeholder="0,00"
+                  className="w-48 md:w-64 text-center font-heading text-4xl md:text-5xl font-bold text-foreground bg-transparent border-b-2 border-primary/40 focus:border-primary outline-none placeholder:text-muted-foreground/40 transition-colors py-2"
+                />
+              </div>
+              <p className="font-body text-xs text-muted-foreground">
+                {pixAmountNumber > 0
+                  ? "O QR Code será gerado com este valor fixo"
+                  : "Deixe vazio para gerar QR Code sem valor definido"}
+              </p>
+            </div>
+
+            {/* QR Code */}
             {pixKey ? (
               <div className="space-y-4 text-center">
                 <p className="font-body text-sm font-semibold text-foreground">
@@ -81,8 +130,8 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
                 <div className="flex justify-center">
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-border inline-block">
                     <img
-                      key={qrKey}
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pixKey)}&margin=8`}
+                      key={qrKey + pixAmount}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pixPayloadString)}&margin=8`}
                       alt="QR Code PIX"
                       className="w-52 h-52"
                     />
@@ -90,6 +139,11 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
                 </div>
                 <div className="space-y-1">
                   <p className="font-body text-sm font-semibold text-foreground">{pixBeneficiary || "—"}</p>
+                  {pixAmountNumber > 0 && (
+                    <p className="font-body text-lg font-bold text-primary">
+                      R$ {pixAmountNumber.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </p>
+                  )}
                   <p className="font-body text-xs text-muted-foreground">
                     Chave: <span className="font-medium text-foreground select-all">{pixKey}</span>
                   </p>
