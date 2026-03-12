@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Calendar, Clock, CalendarCheck, CalendarClock, CalendarIcon,
-  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search
+  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
+import WelcomeRoulette from "@/components/WelcomeRoulette";
 
 interface SessionInfo {
   date: string;
@@ -105,6 +106,7 @@ const AdminPartnerView = () => {
   const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
   const [historyClient, setHistoryClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
+  const [showDemoRoulette, setShowDemoRoulette] = useState(false);
   const [filterDate, setFilterDate] = useState<Date>(new Date());
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
   const [scheduleModal, setScheduleModal] = useState<{
@@ -447,6 +449,9 @@ const AdminPartnerView = () => {
               <div className="flex items-center gap-2">
                 <button onClick={() => setShowInstallQR(true)} className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors" title="Compartilhar instalação do app">
                   <Smartphone className="w-5 h-5" />
+                </button>
+                <button onClick={() => setShowDemoRoulette(true)} className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors" title="Demo Roleta de Boas-Vindas">
+                  <Gift className="w-5 h-5" />
                 </button>
                 <div className="p-2 rounded-lg text-primary-foreground/30 cursor-default">
                   <Home className="w-5 h-5" />
@@ -973,6 +978,10 @@ const AdminPartnerView = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showDemoRoulette && (
+        <WelcomeRoulette testMode onClose={() => setShowDemoRoulette(false)} />
+      )}
     </div>
   );
 };
