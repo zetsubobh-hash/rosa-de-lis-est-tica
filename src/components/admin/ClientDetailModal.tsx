@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake, Ticket, CheckCircle2 } from "lucide-react";
+import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake, Ticket, CheckCircle2, Pencil, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -93,6 +95,24 @@ const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value
   );
 };
 
+const EditableRow = ({ icon: Icon, label, value, onChange, type = "text", placeholder }: { icon: any; label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) => {
+  return (
+    <div className="flex items-start gap-2.5 py-2">
+      <Icon className="w-4 h-4 text-primary mt-2.5 shrink-0" />
+      <div className="flex-1">
+        <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+        <Input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="h-8 text-sm"
+        />
+      </div>
+    </div>
+  );
+};
+
 const AnamnesisField = ({ label, value }: { label: string; value: any }) => {
   if (!value || (Array.isArray(value) && value.length === 0) || value === "" || value === "nao") return null;
   const display = Array.isArray(value) ? value.join(", ") : typeof value === "boolean" ? (value ? "Sim" : "Não") : String(value);
@@ -111,6 +131,16 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [coupons, setCoupons] = useState<{ id: string; code: string; discount_type: string; discount_value: number; expires_at: string; is_used: boolean; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingUsed, setMarkingUsed] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    full_name: "",
+    phone: "",
+    email: "",
+    address: "",
+    sex: "",
+    birth_date: "",
+  });
 
   const loadData = async () => {
     setLoading(true);
@@ -122,7 +152,18 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       supabase.from("coupons").select("id, code, discount_type, discount_value, expires_at, is_used, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
     ]);
 
-    if (profileRes.data) setProfile(profileRes.data as any);
+    if (profileRes.data) {
+      const p = profileRes.data as any;
+      setProfile(p);
+      setEditData({
+        full_name: p.full_name || "",
+        phone: p.phone || "",
+        email: p.email || "",
+        address: p.address || "",
+        sex: p.sex || "",
+        birth_date: p.birth_date || "",
+      });
+    }
     if (anamnesisRes.data?.[0]) setAnamnesis(anamnesisRes.data[0] as any);
     else setAnamnesis(null);
 
@@ -138,9 +179,37 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { setEditing(false); return; }
     loadData();
   }, [open, userId]);
+
+  const handleSave = async () => {
+    if (!editData.full_name.trim()) {
+      toast.error("Nome é obrigatório");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: editData.full_name.trim(),
+        phone: editData.phone.trim(),
+        email: editData.email.trim() || null,
+        address: editData.address.trim(),
+        sex: editData.sex.trim(),
+        birth_date: editData.birth_date || null,
+      })
+      .eq("user_id", userId);
+
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message);
+    } else {
+      toast.success("Dados atualizados com sucesso!");
+      setEditing(false);
+      await loadData();
+    }
+    setSaving(false);
+  };
 
   const handleMarkUsed = async (couponId: string) => {
     setMarkingUsed(couponId);
@@ -180,7 +249,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="font-heading text-lg font-bold text-foreground truncate">{userName}</h2>
+                <h2 className="font-heading text-lg font-bold text-foreground truncate">{editing ? editData.full_name : userName}</h2>
                 {profile?.created_at && (
                   <p className="font-body text-xs text-muted-foreground">
                     Cliente desde {new Date(profile.created_at).toLocaleDateString("pt-BR")}
@@ -218,16 +287,88 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                 <ScrollArea className="flex-1 min-h-0">
                   <div className="p-5">
                     {/* Dados Pessoais */}
-                    <TabsContent value="dados" className="mt-0 space-y-1">
-                      <InfoRow icon={User} label="Nome completo" value={profile?.full_name} />
-                      <InfoRow icon={Phone} label="Telefone" value={profile?.phone} />
-                      <InfoRow icon={Cake} label="Data de Nascimento" value={profile?.birth_date ? new Date(profile.birth_date + "T00:00:00").toLocaleDateString("pt-BR") : null} />
-                      <InfoRow icon={Mail} label="E-mail" value={profile?.email} />
-                      <InfoRow icon={MapPin} label="Endereço" value={profile?.address} />
-                      <InfoRow icon={Heart} label="Sexo" value={profile?.sex} />
-                      <InfoRow icon={User} label="Usuário (login)" value={profile?.username} />
-                      <InfoRow icon={Calendar} label="Cadastro" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pt-BR") : null} />
-                      <InfoRow icon={Clock} label="Último acesso" value={profile?.last_seen ? new Date(profile.last_seen).toLocaleString("pt-BR") : "Nunca acessou"} />
+                    <TabsContent value="dados" className="mt-0">
+                      {editing ? (
+                        <div className="space-y-1">
+                          <EditableRow icon={User} label="Nome completo" value={editData.full_name} onChange={(v) => setEditData(d => ({ ...d, full_name: v }))} placeholder="Nome completo" />
+                          <EditableRow icon={Phone} label="Telefone" value={editData.phone} onChange={(v) => setEditData(d => ({ ...d, phone: v }))} placeholder="(00) 00000-0000" />
+                          <EditableRow icon={Cake} label="Data de Nascimento" value={editData.birth_date} onChange={(v) => setEditData(d => ({ ...d, birth_date: v }))} type="date" />
+                          <EditableRow icon={Mail} label="E-mail" value={editData.email} onChange={(v) => setEditData(d => ({ ...d, email: v }))} type="email" placeholder="email@exemplo.com" />
+                          <EditableRow icon={MapPin} label="Endereço" value={editData.address} onChange={(v) => setEditData(d => ({ ...d, address: v }))} placeholder="Endereço" />
+                          <div className="flex items-start gap-2.5 py-2">
+                            <Heart className="w-4 h-4 text-primary mt-2.5 shrink-0" />
+                            <div className="flex-1">
+                              <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Sexo</p>
+                              <select
+                                value={editData.sex}
+                                onChange={(e) => setEditData(d => ({ ...d, sex: e.target.value }))}
+                                className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                <option value="">Selecione</option>
+                                <option value="Feminino">Feminino</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Outro">Outro</option>
+                              </select>
+                            </div>
+                          </div>
+                          <InfoRow icon={User} label="Usuário (login)" value={profile?.username} />
+                          <InfoRow icon={Calendar} label="Cadastro" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pt-BR") : null} />
+                          <InfoRow icon={Clock} label="Último acesso" value={profile?.last_seen ? new Date(profile.last_seen).toLocaleString("pt-BR") : "Nunca acessou"} />
+
+                          <div className="flex gap-2 pt-4">
+                            <button
+                              onClick={handleSave}
+                              disabled={saving}
+                              className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                              {saving ? (
+                                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Save className="w-4 h-4" />
+                              )}
+                              Salvar
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditing(false);
+                                if (profile) {
+                                  setEditData({
+                                    full_name: profile.full_name || "",
+                                    phone: profile.phone || "",
+                                    email: profile.email || "",
+                                    address: profile.address || "",
+                                    sex: profile.sex || "",
+                                    birth_date: profile.birth_date || "",
+                                  });
+                                }
+                              }}
+                              className="px-4 py-2.5 rounded-xl border border-border font-body text-sm hover:bg-muted transition-colors"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <InfoRow icon={User} label="Nome completo" value={profile?.full_name} />
+                          <InfoRow icon={Phone} label="Telefone" value={profile?.phone} />
+                          <InfoRow icon={Cake} label="Data de Nascimento" value={profile?.birth_date ? new Date(profile.birth_date + "T00:00:00").toLocaleDateString("pt-BR") : null} />
+                          <InfoRow icon={Mail} label="E-mail" value={profile?.email} />
+                          <InfoRow icon={MapPin} label="Endereço" value={profile?.address} />
+                          <InfoRow icon={Heart} label="Sexo" value={profile?.sex} />
+                          <InfoRow icon={User} label="Usuário (login)" value={profile?.username} />
+                          <InfoRow icon={Calendar} label="Cadastro" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pt-BR") : null} />
+                          <InfoRow icon={Clock} label="Último acesso" value={profile?.last_seen ? new Date(profile.last_seen).toLocaleString("pt-BR") : "Nunca acessou"} />
+
+                          <button
+                            onClick={() => setEditing(true)}
+                            className="mt-4 w-full py-2.5 rounded-xl border border-primary/20 text-primary font-body text-sm font-semibold hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            Editar Dados
+                          </button>
+                        </div>
+                      )}
                     </TabsContent>
 
                     {/* Anamnese */}
