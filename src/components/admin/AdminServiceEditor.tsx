@@ -242,14 +242,44 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     if (!error) { refetchPrices(); toast({ title: "Plano removido ✅" }); }
   };
 
+  const commitPlanPricePerSession = (planId: string, fallbackPps: number, fallbackSessions: number) => {
+    const rawValue = rawPriceInputs[planId]?.pps;
+    if (rawValue === undefined) return;
+
+    const parsed = parseMoneyInput(rawValue);
+    const sessions = editedPrices[planId]?.sessions ?? fallbackSessions;
+    const total = parsed.cents * sessions;
+
+    setEditedPrices((prev) => ({
+      ...prev,
+      [planId]: {
+        ...prev[planId],
+        price_per_session_cents: parsed.cents,
+        total_price_cents: total,
+      },
+    }));
+
+    setRawPriceInputs((prev) => ({
+      ...prev,
+      [planId]: {
+        ...prev[planId],
+        pps: centsToStr(parsed.cents),
+        total: centsToStr(total),
+      },
+    }));
+  };
+
   const handleSavePlan = async (planId: string) => {
     const original = prices.find((p) => p.id === planId);
     if (!original) return;
 
     const changes = editedPrices[planId] || {};
+    const rawPps = rawPriceInputs[planId]?.pps;
+    const parsedRawPps = rawPps !== undefined ? parseMoneyInput(rawPps).cents : undefined;
+
     const sessions = changes.sessions ?? original.sessions;
-    const pps = changes.price_per_session_cents ?? original.price_per_session_cents;
-    const total = changes.total_price_cents ?? pps * sessions;
+    const pps = parsedRawPps ?? changes.price_per_session_cents ?? original.price_per_session_cents;
+    const total = pps * sessions;
 
     setSavingPlanId(planId);
     const { error } = await supabase
