@@ -219,8 +219,12 @@ const DayTimelineView = ({
   const nowSlot = (now.getHours() - START_HOUR) * 2 + now.getMinutes() / 30;
   const showNowLine = nowSlot >= 0 && nowSlot <= TOTAL_SLOTS;
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const activeTimelineDate = timelineDate || appointments[0]?.appointment_date || todayStr;
 
   const isSlotInPast = (slotLabel: string) => {
+    if (activeTimelineDate < todayStr) return true;
+    if (activeTimelineDate > todayStr) return false;
     const [h, m] = slotLabel.split(":").map(Number);
     return (h * 60 + m) < nowMinutes;
   };
