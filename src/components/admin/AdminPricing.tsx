@@ -29,18 +29,16 @@ const AdminPricing = () => {
   } | null>(null);
   const [addingPlan, setAddingPlan] = useState(false);
 
-  const formatInputCents = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
+  const formatInputCents = (cents: number) => {
+    return (cents / 100).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
   const parseCurrencyToCents = (value: string) => {
-    const normalizedValue = value.replace(/\./g, ",");
-    const clean = normalizedValue.replace(/[^\d,]/g, "");
-    if (!clean) return 0;
-
-    const [intPart = "", decPart = ""] = clean.split(",");
-    const integer = parseInt(intPart.replace(/^0+(?=\d)/, ""), 10) || 0;
-    const decimals = parseInt(decPart.slice(0, 2).padEnd(2, "0"), 10) || 0;
-
-    return integer * 100 + decimals;
+    const digitsOnly = value.replace(/\D/g, "");
+    return digitsOnly ? parseInt(digitsOnly, 10) : 0;
   };
 
   const handleSessionsChange = (id: string, value: string) => {
@@ -70,11 +68,13 @@ const AdminPricing = () => {
     field: "price_per_session_cents" | "total_price_cents",
     value: string
   ) => {
+    const maskedValue = formatInputCents(parseCurrencyToCents(value));
+
     setRawPriceInputs((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
-        [field]: value,
+        [field]: maskedValue,
       },
     }));
   };
