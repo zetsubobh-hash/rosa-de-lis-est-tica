@@ -351,7 +351,7 @@ const AdminPartnerView = () => {
         }
       }
 
-      setAppointments((prev) => prev.filter((a) => a.id !== apt.id));
+      setAppointments((prev) => prev.map((a) => a.id === apt.id ? { ...a, status: completed ? "completed" : "cancelled", notes: JSON.stringify(notesPayload) } : a));
       if (completed) {
         setPastAppointments((prev) => [{ ...apt, status: "completed", notes: JSON.stringify(notesPayload) }, ...prev]);
       }
