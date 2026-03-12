@@ -32,6 +32,7 @@ interface Appointment {
   user_id: string;
   plan_id: string | null;
   session_number: number | null;
+  notes?: string | null;
   total_sessions?: number | null;
   completed_sessions?: number | null;
   planSessions?: SessionInfo[];
