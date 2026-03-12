@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, X, Save, Search, Users, Phone,
-  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText, KeyRound, UserPlus, Copy, RefreshCw, Calendar
+  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText, KeyRound, UserPlus, Copy, RefreshCw
 } from "lucide-react";
 import PartnerPaymentHistory from "@/components/admin/PartnerPaymentHistory";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,10 @@ interface Partner {
   work_end: string;
   is_active: boolean;
   can_manage_agenda: boolean;
+  can_create_appointments: boolean;
+  can_reschedule: boolean;
+  can_cancel: boolean;
+  can_complete: boolean;
   specialties?: string[];
 }
 
@@ -180,6 +184,10 @@ const AdminPartners = () => {
       work_end: "18:00",
       is_active: true,
       can_manage_agenda: false,
+      can_create_appointments: false,
+      can_reschedule: false,
+      can_cancel: false,
+      can_complete: false,
       specialties: [],
     });
     setIsNew(true);
@@ -243,6 +251,10 @@ const AdminPartners = () => {
           work_end: editing.work_end,
           is_active: editing.is_active,
           can_manage_agenda: editing.can_manage_agenda,
+          can_create_appointments: editing.can_create_appointments,
+          can_reschedule: editing.can_reschedule,
+          can_cancel: editing.can_cancel,
+          can_complete: editing.can_complete,
         })
         .select("id")
         .single();
@@ -276,6 +288,10 @@ const AdminPartners = () => {
           work_end: editing.work_end,
           is_active: editing.is_active,
           can_manage_agenda: editing.can_manage_agenda,
+          can_create_appointments: editing.can_create_appointments,
+          can_reschedule: editing.can_reschedule,
+          can_cancel: editing.can_cancel,
+          can_complete: editing.can_complete,
         })
         .eq("id", editing.id);
 
@@ -906,8 +922,8 @@ const AdminPartners = () => {
                   </div>
                 )}
 
-                {/* Active & Agenda toggles */}
-                <div className="flex items-center gap-3 flex-wrap">
+                {/* Active toggle */}
+                <div className="flex items-center gap-3 mb-3">
                   <button
                     onClick={() => setEditing({ ...editing, is_active: !editing.is_active })}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
@@ -917,16 +933,33 @@ const AdminPartners = () => {
                     {editing.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     {editing.is_active ? "Ativo" : "Inativo"}
                   </button>
-                  <button
-                    onClick={() => setEditing({ ...editing, can_manage_agenda: !editing.can_manage_agenda })}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
-                      editing.can_manage_agenda ? "border-primary/20 text-primary" : "border-muted-foreground/20 text-muted-foreground"
-                    }`}
-                    title="Permite que o parceiro crie, edite e cancele agendamentos"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    {editing.can_manage_agenda ? "Gerenciar Agenda ✅" : "Gerenciar Agenda ❌"}
-                  </button>
+                </div>
+
+                {/* Granular permissions */}
+                <div className="space-y-2">
+                  <p className="font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Permissões da Agenda</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { key: "can_create_appointments" as const, label: "Agendar", icon: "📅" },
+                      { key: "can_reschedule" as const, label: "Remarcar", icon: "🔄" },
+                      { key: "can_cancel" as const, label: "Cancelar", icon: "❌" },
+                      { key: "can_complete" as const, label: "Concluir Sessão", icon: "✅" },
+                    ]).map((perm) => (
+                      <button
+                        key={perm.key}
+                        onClick={() => setEditing({ ...editing, [perm.key]: !editing[perm.key] })}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl font-body text-xs font-medium border transition-all ${
+                          editing[perm.key]
+                            ? "border-primary/30 bg-primary/5 text-primary"
+                            : "border-border bg-muted/30 text-muted-foreground"
+                        }`}
+                      >
+                        <span>{perm.icon}</span>
+                        <span>{perm.label}</span>
+                        <span className="ml-auto text-[10px]">{editing[perm.key] ? "ON" : "OFF"}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

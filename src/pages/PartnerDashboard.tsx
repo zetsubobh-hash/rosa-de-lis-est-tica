@@ -95,7 +95,13 @@ const PartnerDashboard = () => {
   const navigate = useNavigate();
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [partnerName, setPartnerName] = useState("");
-  const [canManageAgenda, setCanManageAgenda] = useState(false);
+  
+  const [permissions, setPermissions] = useState({
+    can_create_appointments: false,
+    can_reschedule: false,
+    can_cancel: false,
+    can_complete: false,
+  });
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [pastAppointments, setPastAppointments] = useState<Appointment[]>([]);
   const [clientPlans, setClientPlans] = useState<ClientPlan[]>([]);
@@ -141,7 +147,14 @@ const PartnerDashboard = () => {
 
       setPartnerId(partner.id);
       setPartnerName(partner.full_name);
-      setCanManageAgenda(!!(partner as any).can_manage_agenda);
+      const p = partner as any;
+      const perms = {
+        can_create_appointments: !!p.can_create_appointments,
+        can_reschedule: !!p.can_reschedule,
+        can_cancel: !!p.can_cancel,
+        can_complete: !!p.can_complete,
+      };
+      setPermissions(perms);
 
       const today = formatLocalDate(new Date());
 
@@ -325,7 +338,7 @@ const PartnerDashboard = () => {
   } | null>(null);
 
   const handleDragReschedule = (appointmentId: string, newTime: string) => {
-    if (!canManageAgenda) return;
+    if (!permissions.can_reschedule) return;
     const apt = appointments.find((a) => a.id === appointmentId);
     if (!apt) return;
     if (apt.appointment_time === newTime) return;
@@ -379,7 +392,7 @@ const PartnerDashboard = () => {
   };
 
   const handleCancelAppointment = async (id: string) => {
-    if (!canManageAgenda) return;
+    if (!permissions.can_cancel) return;
     const { error } = await supabase.from("appointments").delete().eq("id", id);
     if (error) {
       toast.error("Erro ao cancelar agendamento.");
@@ -881,10 +894,8 @@ const PartnerDashboard = () => {
                   const fullApt = appointments.find(a => a.id === apt.id);
                   return fullApt ? isAppointmentOverdue(fullApt, referenceNow) : false;
                 }}
-                {...(canManageAgenda ? {
-                  onDragReschedule: handleDragReschedule,
-                  onCancel: handleCancelAppointment,
-                } : {})}
+                {...(permissions.can_reschedule ? { onDragReschedule: handleDragReschedule } : {})}
+                {...(permissions.can_cancel ? { onCancel: handleCancelAppointment } : {})}
               />
             ) : (
               Object.entries(grouped).map(([date, apts]) => (
