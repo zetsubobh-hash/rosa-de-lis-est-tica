@@ -304,7 +304,7 @@ const DayTimelineView = ({
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: isMoving ? 0.5 : 1, x: 0, scale: isMoving ? 0.95 : 1 }}
                 transition={{ delay: 0.05 }}
-                draggable={!readOnly && !!onDragReschedule && !isMobile}
+                draggable={!readOnly && !isCompleted && !!onDragReschedule && !isMobile}
                 onDragStart={(e: any) => {
                   if (!onDragReschedule || readOnly) return;
                   e.dataTransfer.setData("text/appointment-id", block.id);
