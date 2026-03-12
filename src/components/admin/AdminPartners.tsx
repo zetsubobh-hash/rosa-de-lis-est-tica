@@ -25,6 +25,7 @@ interface Partner {
   work_start: string;
   work_end: string;
   is_active: boolean;
+  can_manage_agenda: boolean;
   specialties?: string[];
 }
 
