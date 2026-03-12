@@ -187,8 +187,8 @@ const AdminPricing = () => {
 
     setAddingPlan(true);
     const sessions = parseInt(newPlan.sessions) || 1;
-    const pricePerSession = parseCurrencyToCents(newPlan.price_per_session);
-    const totalPrice = parseCurrencyToCents(newPlan.total_price) || pricePerSession * sessions;
+    const pricePerSession = parseMoneyInput(newPlan.price_per_session).cents;
+    const totalPrice = parseMoneyInput(newPlan.total_price).cents || pricePerSession * sessions;
 
     const { error } = await supabase.from("service_prices").insert({
       service_slug: newPlan.service_slug,
