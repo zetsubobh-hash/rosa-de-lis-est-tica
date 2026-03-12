@@ -281,6 +281,44 @@ const PartnerDashboard = () => {
     return () => { supabase.removeChannel(channel); };
   }, [partnerId]);
 
+  /* ── Mark appointment as completed or no-show ── */
+  const [completingId, setCompletingId] = useState<string | null>(null);
+
+  const handleMarkAppointment = async (apt: Appointment, completed: boolean) => {
+    setCompletingId(apt.id);
+    try {
+      const newStatus = completed ? "completed" : "cancelled";
+      await supabase.from("appointments").update({ status: newStatus }).eq("id", apt.id);
+
+      // If completed and has a plan, increment completed_sessions
+      if (completed && apt.plan_id) {
+        const plan = clientPlans.find(p => p.id === apt.plan_id);
+        if (plan) {
+          const newCompleted = Math.min(plan.completed_sessions + 1, plan.total_sessions);
+          const newPlanStatus = newCompleted >= plan.total_sessions ? "completed" : "active";
+          await supabase.from("client_plans").update({
+            completed_sessions: newCompleted,
+            status: newPlanStatus,
+          }).eq("id", plan.id);
+
+          setClientPlans(prev => prev.map(p => p.id === plan.id ? { ...p, completed_sessions: newCompleted, status: newPlanStatus } : p));
+        }
+      }
+
+      // Move from appointments to past
+      setAppointments(prev => prev.filter(a => a.id !== apt.id));
+      if (completed) {
+        setPastAppointments(prev => [{ ...apt, status: "completed" }, ...prev]);
+      }
+
+      toast.success(completed ? "✅ Sessão marcada como realizada!" : "❌ Sessão marcada como não realizada.");
+    } catch (err: any) {
+      toast.error("Erro ao atualizar: " + err.message);
+    } finally {
+      setCompletingId(null);
+    }
+  };
+
   const grouped = appointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
     if (!acc[apt.appointment_date]) acc[apt.appointment_date] = [];
     acc[apt.appointment_date].push(apt);
