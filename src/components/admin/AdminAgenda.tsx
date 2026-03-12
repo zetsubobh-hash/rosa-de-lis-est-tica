@@ -92,7 +92,7 @@ const getInitials = (name: string) => {
     .toUpperCase();
 };
 
-const HOURS = Array.from({ length: 11 }, (_, i) => {
+const HOURS = Array.from({ length: 13 }, (_, i) => {
   const h = 8 + i;
   return `${String(h).padStart(2, "0")}:00`;
 });
