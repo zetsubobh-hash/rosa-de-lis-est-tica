@@ -950,7 +950,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             }
                           }}
                           onChange={(e) => {
-                            setNewPlanRaw((p) => ({ ...p, pps: e.target.value }));
+                            const parsed = parseMoneyInput(e.target.value);
+                            setNewPlanRaw((p) => ({ ...p, pps: parsed.display }));
                           }}
                           onBlur={() => commitNewPlanPricePerSession()}
                           className="h-8 font-body text-sm"
