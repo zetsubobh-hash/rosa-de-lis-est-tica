@@ -540,7 +540,7 @@ const AdminPartnerView = () => {
                       total_sessions: a.total_sessions || null,
                       completed_sessions: a.completed_sessions || null,
                       planSessions: a.planSessions || [],
-                      profiles: a.profile ? { ...a.profile, phone: a.profile.phone || "", email: null } : null,
+                      profiles: a.profile ? { ...a.profile, phone: "", email: null } : null,
                     }))}
                     clientPlans={clientPlans.map(p => ({
                       id: p.id,
