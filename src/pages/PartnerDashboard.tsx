@@ -287,6 +287,20 @@ const PartnerDashboard = () => {
     init();
   }, [user, navigate]);
 
+  // Fetch all profiles + services for quick-book
+  useEffect(() => {
+    if (!permissions.can_create_appointments) return;
+    const load = async () => {
+      const [{ data: profs }, { data: svcs }] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name").order("full_name"),
+        supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
+      ]);
+      setAllProfiles(profs || []);
+      setAllServices(svcs || []);
+    };
+    load();
+  }, [permissions.can_create_appointments]);
+
   // Real-time subscription
   useEffect(() => {
     if (!partnerId) return;
