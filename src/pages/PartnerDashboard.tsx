@@ -656,6 +656,10 @@ const PartnerDashboard = () => {
                   const fullApt = appointments.find(a => a.id === apt.id);
                   if (fullApt) handleMarkAppointment(fullApt, true);
                 }}
+                isOverdue={(apt) => {
+                  const fullApt = appointments.find(a => a.id === apt.id);
+                  return fullApt ? isAppointmentOverdue(fullApt) : false;
+                }}
               />
             ) : (
               Object.entries(grouped).map(([date, apts]) => (
