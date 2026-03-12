@@ -668,24 +668,22 @@ const PartnerDashboard = () => {
                     setActiveTab("agenda");
                     setFilterDate(nextOverdueAppointment.appointment_date);
                     setExpandedAptId(nextOverdueAppointment.id);
-                    handleMarkAppointment(nextOverdueAppointment, false);
+                    openDecisionModal(nextOverdueAppointment, "cancelled");
                   }}
-                  disabled={completingId === nextOverdueAppointment.id}
-                  className="h-11 rounded-xl border border-destructive/30 text-destructive font-body text-xs font-bold hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  className="h-11 rounded-xl border border-destructive/30 text-destructive font-body text-xs font-bold hover:bg-destructive/10 transition-colors"
                 >
-                  {completingId === nextOverdueAppointment.id ? "Salvando..." : "Não realizada"}
+                  Não realizada
                 </button>
                 <button
                   onClick={() => {
                     setActiveTab("agenda");
                     setFilterDate(nextOverdueAppointment.appointment_date);
                     setExpandedAptId(nextOverdueAppointment.id);
-                    handleMarkAppointment(nextOverdueAppointment, true);
+                    openDecisionModal(nextOverdueAppointment, "completed");
                   }}
-                  disabled={completingId === nextOverdueAppointment.id}
-                  className="h-11 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="h-11 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:opacity-90 transition-opacity"
                 >
-                  {completingId === nextOverdueAppointment.id ? "Salvando..." : "Sessão realizada"}
+                  Sessão realizada
                 </button>
               </div>
             </motion.div>
