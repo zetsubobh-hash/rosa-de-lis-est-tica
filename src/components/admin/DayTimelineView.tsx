@@ -311,7 +311,7 @@ const DayTimelineView = ({
                 }}
                 onDragEnd={() => setDragOverSlot(null)}
                 onTouchStart={() => {
-                  if (!onDragReschedule || readOnly || !isMobile) return;
+                  if (!onDragReschedule || readOnly || isCompleted || !isMobile) return;
                   longPressTimer.current = setTimeout(() => {
                     setMobileMovingId(block.id);
                     // Close any expanded card
