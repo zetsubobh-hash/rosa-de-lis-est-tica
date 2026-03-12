@@ -133,7 +133,7 @@ const AdminAgenda = () => {
     setLoading(true);
 
     // Run ALL queries in parallel
-    const [appointmentsRes, profilesRes, partnersRes, plansRes] = await Promise.all([
+    const [appointmentsRes, profilesRes, partnersRes, plansRes, servicesRes] = await Promise.all([
       supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
@@ -152,6 +152,11 @@ const AdminAgenda = () => {
         .from("client_plans")
         .select("id, user_id, service_slug, service_title, plan_name, total_sessions, completed_sessions, status")
         .in("status", ["active", "completed"]),
+      supabase
+        .from("services")
+        .select("slug, title")
+        .eq("is_active", true)
+        .order("sort_order"),
     ]);
 
     if (partnersRes.data) setPartnerOptions(partnersRes.data);
