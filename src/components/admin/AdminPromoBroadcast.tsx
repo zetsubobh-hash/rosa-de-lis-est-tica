@@ -121,11 +121,34 @@ const AdminPromoBroadcast = () => {
     if (data) setServices(data);
   }, []);
 
+  // Auto-check status for all instances on load
+  const checkAllStatuses = useCallback(async (insts: EvolutionInstance[]) => {
+    for (const inst of insts) {
+      try {
+        const data = await callInstanceAction(inst.id, "check_status");
+        const state = data?.instance?.state || data?.state || "unknown";
+        setInstanceStatus(p => ({ ...p, [inst.id]: state }));
+      } catch {
+        // silent — instance may not be provisioned yet
+      }
+    }
+  }, []);
+
   useEffect(() => {
-    fetchInstances();
-    fetchCampaigns();
-    fetchServices();
-  }, [fetchInstances, fetchCampaigns, fetchServices]);
+    const init = async () => {
+      await Promise.all([fetchCampaigns(), fetchServices()]);
+      const { data } = await supabase
+        .from("evolution_instances")
+        .select("*")
+        .order("sort_order");
+      if (data) {
+        setInstances(data as EvolutionInstance[]);
+        checkAllStatuses(data as EvolutionInstance[]);
+      }
+      setLoadingInstances(false);
+    };
+    init();
+  }, [fetchCampaigns, fetchServices, checkAllStatuses]);
 
   /* ───────── call evolution-instance edge function ───────── */
   const callInstanceAction = async (instanceId: string, action: string) => {
