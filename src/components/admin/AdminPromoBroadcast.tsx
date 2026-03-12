@@ -214,11 +214,19 @@ const AdminPromoBroadcast = () => {
     if (data) setServices(data);
   }, []);
 
+  const fetchUnsubCount = useCallback(async () => {
+    const { count } = await supabase
+      .from("promo_unsubscribes" as any)
+      .select("id", { count: "exact", head: true });
+    setUnsubCount(count || 0);
+  }, []);
+
   useEffect(() => {
     fetchInstances();
     fetchCampaigns();
     fetchServices();
-  }, [fetchInstances, fetchCampaigns, fetchServices]);
+    fetchUnsubCount();
+  }, [fetchInstances, fetchCampaigns, fetchServices, fetchUnsubCount]);
 
   /* ───────── instance connection actions ───────── */
   const handleInstanceConnect = async (instId: string) => {
