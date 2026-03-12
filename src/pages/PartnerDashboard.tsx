@@ -129,7 +129,7 @@ const PartnerDashboard = () => {
     const init = async () => {
       const { data: partner } = await supabase
         .from("partners")
-        .select("id, full_name")
+        .select("id, full_name, can_manage_agenda")
         .eq("user_id", user.id)
         .eq("is_active", true)
         .maybeSingle();
@@ -141,6 +141,7 @@ const PartnerDashboard = () => {
 
       setPartnerId(partner.id);
       setPartnerName(partner.full_name);
+      setCanManageAgenda(!!(partner as any).can_manage_agenda);
 
       const today = formatLocalDate(new Date());
 
