@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       .update({ status: "sending", total_target: profiles.length, total_sent: 0, total_failed: 0, current_instance_index: 0 })
       .eq("id", campaign_id);
 
-    // Create send records
+    // Create send records (preserve full history of every run)
     const sendRecords = profiles.map((p: any) => ({
       campaign_id,
       user_id: p.user_id,
@@ -92,12 +92,17 @@ Deno.serve(async (req) => {
       status: "pending",
     }));
 
-    // Delete old sends for this campaign
-    await supabase.from("promo_sends").delete().eq("campaign_id", campaign_id);
-
-    // Insert new sends in batches
+    // Insert run records in batches and keep inserted ids for precise updates
+    const insertedRecords: Array<{ id: string; user_id: string; phone: string }> = [];
     for (let i = 0; i < sendRecords.length; i += 500) {
-      await supabase.from("promo_sends").insert(sendRecords.slice(i, i + 500));
+      const batch = sendRecords.slice(i, i + 500);
+      const { data: insertedBatch, error: insertErr } = await supabase
+        .from("promo_sends")
+        .insert(batch)
+        .select("id, user_id, phone");
+
+      if (insertErr) throw insertErr;
+      if (insertedBatch) insertedRecords.push(...(insertedBatch as Array<{ id: string; user_id: string; phone: string }>));
     }
 
     // Now process sends with instance rotation
@@ -107,26 +112,28 @@ Deno.serve(async (req) => {
     let totalFailed = 0;
 
     const template = campaign.message_template || "";
+    const profileByUserId = new Map(profiles.map((p: any) => [p.user_id, p]));
 
-    for (const profile of profiles) {
+    for (const record of insertedRecords) {
       const currentInstance = instances[instanceIdx];
-      const phone = normalizePhone(profile.phone);
+      const profile = profileByUserId.get(record.user_id);
+      const phone = normalizePhone(record.phone || profile?.phone || "");
+
       if (!phone) {
         totalFailed++;
         await supabase
           .from("promo_sends")
           .update({ status: "failed", error_message: "Invalid phone", sent_at: new Date().toISOString() })
-          .eq("campaign_id", campaign_id)
-          .eq("user_id", profile.user_id);
+          .eq("id", record.id);
         continue;
       }
 
       // Build message
       const message = template
-        .replace(/{nome}/g, profile.full_name || "Cliente")
+        .replace(/{nome}/g, profile?.full_name || "Cliente")
         .replace(/{servico}/g, serviceTitle)
         .replace(/{empresa}/g, businessName)
-        .replace(/{telefone}/g, profile.phone || "");
+        .replace(/{telefone}/g, record.phone || profile?.phone || "");
 
       // Send via Evolution API
       try {
@@ -151,24 +158,21 @@ Deno.serve(async (req) => {
           await supabase
             .from("promo_sends")
             .update({ status: "sent", instance_id: currentInstance.id, sent_at: new Date().toISOString() })
-            .eq("campaign_id", campaign_id)
-            .eq("user_id", profile.user_id);
+            .eq("id", record.id);
         } else {
           const errBody = await resp.text();
           totalFailed++;
           await supabase
             .from("promo_sends")
             .update({ status: "failed", instance_id: currentInstance.id, error_message: errBody.substring(0, 500), sent_at: new Date().toISOString() })
-            .eq("campaign_id", campaign_id)
-            .eq("user_id", profile.user_id);
+            .eq("id", record.id);
         }
       } catch (err: any) {
         totalFailed++;
         await supabase
           .from("promo_sends")
           .update({ status: "failed", instance_id: currentInstance.id, error_message: err.message?.substring(0, 500), sent_at: new Date().toISOString() })
-          .eq("campaign_id", campaign_id)
-          .eq("user_id", profile.user_id);
+          .eq("id", record.id);
       }
 
       sentOnCurrentInstance++;
