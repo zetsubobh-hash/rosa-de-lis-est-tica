@@ -4,8 +4,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Calendar, Clock, CalendarCheck, CalendarClock, CalendarIcon,
-  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift
+  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift, UserPlus, User
 } from "lucide-react";
+import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
