@@ -765,7 +765,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             <Input
                               type="text"
                               inputMode="decimal"
-                              value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
+                              value={rawPriceInputs[plan.id]?.pps ?? ""}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
