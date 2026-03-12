@@ -166,6 +166,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
         address: p.address || "",
         sex: (p.sex || "").toLowerCase(),
         birth_date: p.birth_date || "",
+        username: p.username || "",
       });
     }
     if (anamnesisRes.data?.[0]) setAnamnesis(anamnesisRes.data[0] as any);
