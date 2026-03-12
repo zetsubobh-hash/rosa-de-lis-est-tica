@@ -109,15 +109,92 @@ const AdminPromoBroadcast = () => {
   const [campaignReportLoading, setCampaignReportLoading] = useState<Record<string, boolean>>({});
   const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
 
+  /* ───────── call evolution-instance edge function ───────── */
+  const callInstanceAction = useCallback(async (instanceId: string, action: string) => {
+    const { data, error } = await supabase.functions.invoke("evolution-instance", {
+      body: { instance_id: instanceId, action },
+    });
+    if (error) throw new Error(error.message || "Erro na chamada");
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }, []);
+
   /* ───────── fetch ───────── */
+  const checkAllStatuses = useCallback(async (insts: EvolutionInstance[]) => {
+    if (insts.length === 0) return;
+
+    await Promise.all(
+      insts.map(async (inst) => {
+        try {
+          const data = await callInstanceAction(inst.id, "check_status");
+          const state = data?.instance?.state || data?.state || "unknown";
+          setInstanceStatus((p) => ({ ...p, [inst.id]: state }));
+        } catch {
+          setInstanceStatus((p) => ({ ...p, [inst.id]: "unknown" }));
+        }
+      })
+    );
+  }, [callInstanceAction]);
+
   const fetchInstances = useCallback(async () => {
-    const { data } = await supabase
+    setLoadingInstances(true);
+
+    const { data: existingInstances, error: listError } = await supabase
       .from("evolution_instances")
       .select("*")
       .order("sort_order");
-    if (data) setInstances(data as EvolutionInstance[]);
+
+    if (listError) {
+      setLoadingInstances(false);
+      toast({ title: "Erro ao carregar instâncias", description: listError.message, variant: "destructive" });
+      return;
+    }
+
+    let finalInstances = (existingInstances || []) as EvolutionInstance[];
+
+    // Importa automaticamente a instância principal já configurada no módulo antigo
+    if (finalInstances.length === 0) {
+      const { data: legacyRows } = await supabase
+        .from("payment_settings")
+        .select("key, value")
+        .in("key", ["evolution_api_url", "evolution_api_key", "evolution_instance_name", "evolution_enabled"]);
+
+      const legacyMap: Record<string, string> = {};
+      (legacyRows || []).forEach((row: { key: string; value: string }) => {
+        legacyMap[row.key] = row.value;
+      });
+
+      const legacyUrl = (legacyMap.evolution_api_url || "").trim().replace(/\/+$/, "");
+      const legacyKey = (legacyMap.evolution_api_key || "").trim();
+      const legacyName = (legacyMap.evolution_instance_name || "").trim();
+
+      if (legacyUrl && legacyKey && legacyName) {
+        const { error: importError } = await supabase.from("evolution_instances").insert({
+          name: "Instância Principal",
+          api_url: legacyUrl,
+          api_key: legacyKey,
+          instance_name: legacyName,
+          is_active: legacyMap.evolution_enabled !== "false",
+          sort_order: 0,
+          msgs_per_cycle: 10,
+        });
+
+        if (!importError) {
+          const { data: importedInstances } = await supabase
+            .from("evolution_instances")
+            .select("*")
+            .order("sort_order");
+
+          finalInstances = (importedInstances || []) as EvolutionInstance[];
+          toast({ title: "Instância conectada encontrada", description: "A instância principal já existente foi carregada automaticamente." });
+        }
+      }
+    }
+
+    setInstances(finalInstances);
+    await checkAllStatuses(finalInstances);
     setLoadingInstances(false);
-  }, []);
+  }, [checkAllStatuses, toast]);
 
   const fetchCampaigns = useCallback(async () => {
     const { data } = await supabase
@@ -137,44 +214,11 @@ const AdminPromoBroadcast = () => {
     if (data) setServices(data);
   }, []);
 
-  // Auto-check status for all instances on load
-  const checkAllStatuses = useCallback(async (insts: EvolutionInstance[]) => {
-    for (const inst of insts) {
-      try {
-        const data = await callInstanceAction(inst.id, "check_status");
-        const state = data?.instance?.state || data?.state || "unknown";
-        setInstanceStatus(p => ({ ...p, [inst.id]: state }));
-      } catch {
-        // silent — instance may not be provisioned yet
-      }
-    }
-  }, []);
-
   useEffect(() => {
-    const init = async () => {
-      await Promise.all([fetchCampaigns(), fetchServices()]);
-      const { data } = await supabase
-        .from("evolution_instances")
-        .select("*")
-        .order("sort_order");
-      if (data) {
-        setInstances(data as EvolutionInstance[]);
-        checkAllStatuses(data as EvolutionInstance[]);
-      }
-      setLoadingInstances(false);
-    };
-    init();
-  }, [fetchCampaigns, fetchServices, checkAllStatuses]);
-
-  /* ───────── call evolution-instance edge function ───────── */
-  const callInstanceAction = async (instanceId: string, action: string) => {
-    const { data, error } = await supabase.functions.invoke("evolution-instance", {
-      body: { instance_id: instanceId, action },
-    });
-    if (error) throw new Error(error.message || "Erro na chamada");
-    if (data?.error) throw new Error(data.error);
-    return data;
-  };
+    fetchInstances();
+    fetchCampaigns();
+    fetchServices();
+  }, [fetchInstances, fetchCampaigns, fetchServices]);
 
   /* ───────── instance connection actions ───────── */
   const handleInstanceConnect = async (instId: string) => {
