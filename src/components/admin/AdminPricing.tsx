@@ -19,6 +19,16 @@ const AdminPricing = () => {
   const [saving, setSaving] = useState(false);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
 
+  // New plan form state
+  const [newPlan, setNewPlan] = useState<{
+    service_slug: string;
+    plan_name: string;
+    sessions: string;
+    price_per_session: string;
+    total_price: string;
+  } | null>(null);
+  const [addingPlan, setAddingPlan] = useState(false);
+
   const formatInputCents = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
 
   const parseCurrencyToCents = (value: string) => {
