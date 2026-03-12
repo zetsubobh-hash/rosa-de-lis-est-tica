@@ -535,10 +535,7 @@ const AdminAgenda = () => {
   }
 
   const filterDateStr = format(filterDate, "yyyy-MM-dd");
-  const filtered = (filterDateStr
-    ? appointments.filter((a) => a.appointment_date === filterDateStr)
-    : appointments
-  ).filter((a) => {
+  const filtered = appointments.filter((a) => a.appointment_date === filterDateStr).filter((a) => {
     // Only hide appointments that are explicitly linked to a completed plan
     if (a.plan_id) {
       const linkedPlan = clientPlans.find((p) => p.id === a.plan_id);
