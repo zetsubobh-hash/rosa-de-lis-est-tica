@@ -43,6 +43,19 @@ interface PromoCampaign {
   created_at: string;
 }
 
+interface CampaignReportRow {
+  id: string;
+  user_id: string;
+  phone: string;
+  status: string;
+  sent_at: string | null;
+  created_at: string;
+  error_message: string | null;
+  instance_id: string | null;
+  recipient_name: string;
+  instance_label: string;
+}
+
 interface ServiceOption {
   slug: string;
   title: string;
