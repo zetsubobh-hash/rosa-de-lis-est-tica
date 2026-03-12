@@ -310,7 +310,7 @@ const AdminPricing = () => {
                 onChange={(e) => {
                   const sessions = e.target.value;
                   const sessionsNumber = Math.max(1, parseInt(sessions, 10) || 1);
-                  const currentPpsCents = parseCurrencyToCents(newPlan.price_per_session);
+                  const currentPpsCents = parseMoneyInput(newPlan.price_per_session).cents;
 
                   setNewPlan({
                     ...newPlan,
@@ -325,18 +325,26 @@ const AdminPricing = () => {
               <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
               <Input
                 type="text"
-                inputMode="numeric"
+                inputMode="decimal"
                 placeholder="0,00"
                 value={newPlan.price_per_session}
                 onChange={(e) => {
-                  const ppsCents = parseCurrencyToCents(e.target.value);
-                  const maskedPps = formatInputCents(ppsCents);
+                  const parsed = parseMoneyInput(e.target.value);
                   const sessionsNumber = Math.max(1, parseInt(newPlan.sessions, 10) || 1);
 
                   setNewPlan({
                     ...newPlan,
-                    price_per_session: maskedPps,
-                    total_price: formatInputCents(ppsCents * sessionsNumber),
+                    price_per_session: parsed.display,
+                    total_price: formatInputCents(parsed.cents * sessionsNumber),
+                  });
+                }}
+                onBlur={() => {
+                  const parsed = parseMoneyInput(newPlan.price_per_session);
+                  const sessionsNumber = Math.max(1, parseInt(newPlan.sessions, 10) || 1);
+                  setNewPlan({
+                    ...newPlan,
+                    price_per_session: formatInputCents(parsed.cents),
+                    total_price: formatInputCents(parsed.cents * sessionsNumber),
                   });
                 }}
                 className="font-body text-sm h-9"
@@ -346,12 +354,16 @@ const AdminPricing = () => {
               <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
               <Input
                 type="text"
-                inputMode="numeric"
+                inputMode="decimal"
                 placeholder="0,00"
                 value={newPlan.total_price}
                 onChange={(e) => {
-                  const totalCents = parseCurrencyToCents(e.target.value);
-                  setNewPlan({ ...newPlan, total_price: formatInputCents(totalCents) });
+                  const parsed = parseMoneyInput(e.target.value);
+                  setNewPlan({ ...newPlan, total_price: parsed.display });
+                }}
+                onBlur={() => {
+                  const parsed = parseMoneyInput(newPlan.total_price);
+                  setNewPlan({ ...newPlan, total_price: formatInputCents(parsed.cents) });
                 }}
                 className="font-body text-sm h-9"
               />
