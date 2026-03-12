@@ -752,25 +752,37 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
-                        <Input type="text" value={newPlanRaw.pps}
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={newPlanRaw.pps}
+                          onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) => {
-                            const masked = maskBRL(e.target.value);
-                            const v = strToCents(e.target.value);
-                            setNewPlanRaw({ pps: masked, total: centsToStr(v * newPlan.sessions) });
-                            setNewPlan(p => ({ ...p, price_per_session_cents: v, total_price_cents: v * p.sessions }));
+                            const raw = e.target.value;
+                            const v = strToCents(raw);
+                            setNewPlanRaw({ pps: raw, total: centsToStr(v * newPlan.sessions) });
+                            setNewPlan((p) => ({ ...p, price_per_session_cents: v, total_price_cents: v * p.sessions }));
                           }}
-                          className="h-8 font-body text-sm" />
+                          onBlur={() => setNewPlanRaw((p) => ({ ...p, pps: centsToStr(newPlan.price_per_session_cents) }))}
+                          className="h-8 font-body text-sm"
+                        />
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
-                        <Input type="text" value={newPlanRaw.total}
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={newPlanRaw.total}
+                          onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) => {
-                            const masked = maskBRL(e.target.value);
-                            const v = strToCents(e.target.value);
-                            setNewPlanRaw(p => ({ ...p, total: masked }));
-                            setNewPlan(p => ({ ...p, total_price_cents: v }));
+                            const raw = e.target.value;
+                            const v = strToCents(raw);
+                            setNewPlanRaw((p) => ({ ...p, total: raw }));
+                            setNewPlan((p) => ({ ...p, total_price_cents: v }));
                           }}
-                          className="h-8 font-body text-sm" />
+                          onBlur={() => setNewPlanRaw((p) => ({ ...p, total: centsToStr(newPlan.total_price_cents) }))}
+                          className="h-8 font-body text-sm"
+                        />
                       </div>
                       <Button onClick={handleAddPlan} size="sm" className="w-full gap-1.5" disabled={!newPlan.plan_name}>
                         <Check className="w-3.5 h-3.5" />
