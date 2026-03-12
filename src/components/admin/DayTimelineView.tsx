@@ -315,6 +315,8 @@ const DayTimelineView = ({
           const isMoving = mobileMovingId === block.id;
           const blockOverdue = isOverdueFn?.(block) ?? false;
           const isCompleted = block.status === "completed";
+          const needsDecision = blockOverdue && !isCompleted && ["confirmed", "pending"].includes(block.status);
+          const hasOverdueDecisionActions = needsDecision && (!!onComplete || !!onMarkNoShow);
           return (
             <div key={block.id}>
               {/* Colored block */}
