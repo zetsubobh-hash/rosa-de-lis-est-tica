@@ -714,13 +714,39 @@ const AdminPartnerView = () => {
             {/* Clientes tab */}
             {activeTab === "clientes" && (
               <div className="space-y-3">
-                {clientPlans.length === 0 ? (
+                {/* Filtros */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nome..."
+                      value={clientSearchName}
+                      onChange={(e) => setClientSearchName(e.target.value)}
+                      className="w-full h-10 pl-9 pr-3 rounded-xl border border-border bg-background font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por procedimento..."
+                      value={clientSearchService}
+                      onChange={(e) => setClientSearchService(e.target.value)}
+                      className="w-full h-10 pl-9 pr-3 rounded-xl border border-border bg-background font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {filteredClientPlans.length === 0 ? (
                   <div className="bg-card rounded-2xl border border-border p-12 text-center">
                     <ClipboardList className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="font-body text-muted-foreground">Nenhum plano de tratamento em andamento.</p>
+                    <p className="font-body text-muted-foreground">
+                      {clientPlans.length === 0 ? "Nenhum plano de tratamento em andamento." : "Nenhum resultado encontrado."}
+                    </p>
                   </div>
                 ) : (
-                  clientPlans.map((plan) => {
+                  filteredClientPlans.map((plan) => {
                     const progress = plan.total_sessions > 0
                       ? Math.round((plan.completed_sessions / plan.total_sessions) * 100)
                       : 0;
