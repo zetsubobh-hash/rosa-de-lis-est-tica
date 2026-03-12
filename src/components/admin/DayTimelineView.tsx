@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText, ClipboardList } from "lucide-react";
+import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText, ClipboardList, BellRing } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo, useState, useRef } from "react";
 
