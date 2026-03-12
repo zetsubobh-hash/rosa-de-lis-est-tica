@@ -296,16 +296,58 @@ const PartnerDashboard = () => {
     return () => { supabase.removeChannel(channel); };
   }, [partnerId]);
 
-  /* ── Mark appointment as completed or no-show ── */
+  /* ── Decision modal state ── */
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [decisionModal, setDecisionModal] = useState<{
+    apt: Appointment;
+    type: "completed" | "cancelled";
+  } | null>(null);
+  const [decisionNotes, setDecisionNotes] = useState("");
+  const [cancelReason, setCancelReason] = useState<"no_show" | "other">("no_show");
+  const [cancelReasonText, setCancelReasonText] = useState("");
 
-  const handleMarkAppointment = async (apt: Appointment, completed: boolean) => {
+  const openDecisionModal = (apt: Appointment, type: "completed" | "cancelled") => {
+    setDecisionModal({ apt, type });
+    setDecisionNotes("");
+    setCancelReason("no_show");
+    setCancelReasonText("");
+  };
+
+  const handleConfirmDecision = async () => {
+    if (!decisionModal) return;
+    const { apt, type } = decisionModal;
+    const completed = type === "completed";
+
+    // Validate cancel reason
+    if (!completed && cancelReason === "other" && !cancelReasonText.trim()) {
+      toast.error("Informe o motivo do cancelamento.");
+      return;
+    }
+
     setCompletingId(apt.id);
     try {
       const newStatus = completed ? "completed" : "cancelled";
+
+      // Build notes JSON
+      let existingNotes: Record<string, any> = {};
+      if (apt.notes) {
+        try { existingNotes = JSON.parse(apt.notes); } catch { /* ignore */ }
+      }
+
+      const notesPayload: Record<string, any> = {
+        ...existingNotes,
+        ...(completed
+          ? { session_observation: decisionNotes.trim() || null, completed_at: new Date().toISOString() }
+          : {
+              cancel_reason: cancelReason === "no_show" ? "Cliente não apareceu" : cancelReasonText.trim(),
+              cancelled_at: new Date().toISOString(),
+            }
+        ),
+      };
+
       const { error: appointmentError } = await supabase
         .from("appointments")
-        .update({ status: newStatus })
+        .update({ status: newStatus, notes: JSON.stringify(notesPayload) })
         .eq("id", apt.id);
 
       if (appointmentError) throw appointmentError;
@@ -337,6 +379,7 @@ const PartnerDashboard = () => {
       }
 
       toast.success(completed ? "✅ Sessão marcada como realizada!" : "❌ Sessão marcada como não realizada.");
+      setDecisionModal(null);
     } catch (err: any) {
       toast.error("Erro ao atualizar: " + err.message);
     } finally {
