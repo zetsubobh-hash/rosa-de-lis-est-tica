@@ -304,6 +304,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     }
   };
 
+  return (
     <AnimatePresence>
       {open && (
         <motion.div
