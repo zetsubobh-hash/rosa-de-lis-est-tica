@@ -123,6 +123,16 @@ const AdminPartnerView = () => {
   const [clientSearchName, setClientSearchName] = useState("");
   const [clientSearchService, setClientSearchService] = useState("");
   const [dragConfirm, setDragConfirm] = useState<{ appointmentId: string; newTime: string; apt: Appointment } | null>(null);
+
+  // Quick-book from timeline slot
+  const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
+  const [qbUserId, setQbUserId] = useState("");
+  const [qbServiceSlug, setQbServiceSlug] = useState("");
+  const [qbSaving, setQbSaving] = useState(false);
+  const [qbShowNewClient, setQbShowNewClient] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
+
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
 
