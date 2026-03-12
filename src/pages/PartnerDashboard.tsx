@@ -905,7 +905,7 @@ const PartnerDashboard = () => {
                         serviceSlug: fullApt.service_slug,
                         serviceTitle: fullApt.service_title,
                         userId: fullApt.user_id,
-                        partnerId: fullApt.partner_id,
+                        partnerId: (fullApt as any).partner_id || partnerId,
                       });
                     }
                   },
