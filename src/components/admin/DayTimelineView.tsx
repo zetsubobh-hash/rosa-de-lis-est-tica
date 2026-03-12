@@ -474,7 +474,7 @@ const DayTimelineView = ({
                         <div className="pt-1">
                           <div className="flex items-center justify-between mb-2">
                             <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                              Sessões — {completedSess}/{totalSess}
+                              {plan.plan_name} — {plan.service_title} ({completedSess}/{totalSess})
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
