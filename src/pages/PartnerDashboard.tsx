@@ -518,7 +518,6 @@ const PartnerDashboard = () => {
               <DayTimelineView
                 appointments={appointments.filter((a) => a.appointment_date === filterDate).map((a) => ({
                   ...a,
-                  partner_id: null,
                   profiles: a.profile ? { ...a.profile, phone: "", email: null } : null,
                 }))}
                 readOnly
