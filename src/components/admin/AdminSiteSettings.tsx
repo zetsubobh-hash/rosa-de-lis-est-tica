@@ -86,6 +86,22 @@ const AdminSiteSettings = () => {
         Essas informações aparecem no rodapé do site e em outros locais públicos.
       </p>
 
+      {/* Online Booking Toggle */}
+      <div className="rounded-xl border border-border p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <CalendarCheck className="w-5 h-5 text-primary" />
+          <div>
+            <p className="font-body text-sm font-semibold text-foreground">Agendamento Online</p>
+            <p className="font-body text-xs text-muted-foreground">
+              {isBookingEnabled
+                ? "Clientes podem agendar e comprar pacotes diretamente pelo site."
+                : "Desativado — botões de agendar direcionam para o WhatsApp."}
+            </p>
+          </div>
+        </div>
+        <Switch checked={isBookingEnabled} onCheckedChange={handleToggleBooking} />
+      </div>
+
       <div className="space-y-4">
         {fields.map((field) => (
           <div key={field.key} className="space-y-1.5">
