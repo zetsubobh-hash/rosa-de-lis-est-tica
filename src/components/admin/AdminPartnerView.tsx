@@ -5,6 +5,7 @@ import {
   Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
