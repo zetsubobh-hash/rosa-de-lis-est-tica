@@ -65,16 +65,25 @@ const formatDate = (dateStr: string) => {
   return `${d}/${m}/${y}`;
 };
 
-const isAppointmentOverdue = (apt: { appointment_date: string; appointment_time: string; status: string }) => {
-  if (apt.status !== "confirmed") return false;
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
+const formatLocalDate = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const isAppointmentOverdue = (
+  apt: { appointment_date: string; appointment_time: string; status: string },
+  referenceDate: Date
+) => {
+  if (!["confirmed", "pending"].includes(apt.status)) return false;
+  const todayStr = formatLocalDate(referenceDate);
   if (apt.appointment_date > todayStr) return false;
   if (apt.appointment_date < todayStr) return true;
   // Same day — check if time has passed (add 30min buffer for the session itself)
   const [h, m] = apt.appointment_time.split(":").map(Number);
   const aptMinutes = h * 60 + m + 30; // 30min after start
-  const nowMinutes = today.getHours() * 60 + today.getMinutes();
+  const nowMinutes = referenceDate.getHours() * 60 + referenceDate.getMinutes();
   return nowMinutes >= aptMinutes;
 };
 
