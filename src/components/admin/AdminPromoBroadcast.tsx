@@ -146,7 +146,7 @@ const AdminPromoBroadcast = () => {
 
     if (listError) {
       setLoadingInstances(false);
-      toast({ title: "Erro ao carregar instâncias", description: listError.message, variant: "destructive" });
+      console.error("Erro ao carregar instâncias:", listError.message);
       return;
     }
 
