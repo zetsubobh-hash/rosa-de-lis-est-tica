@@ -249,6 +249,10 @@ const DayTimelineView = ({
               )}
               onClick={() => {
                 if (mobileMovingId && onDragReschedule) {
+                  if (isSlotInPast(label)) {
+                    setMobileMovingId(null);
+                    return;
+                  }
                   onDragReschedule(mobileMovingId, label);
                   setMobileMovingId(null);
                   return;
@@ -257,6 +261,7 @@ const DayTimelineView = ({
               }}
               onDragOver={(e) => {
                 if (!onDragReschedule || readOnly) return;
+                if (isSlotInPast(label)) return; // Block past slots
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
                 setDragOverSlot(i);
@@ -265,6 +270,7 @@ const DayTimelineView = ({
               onDrop={(e) => {
                 e.preventDefault();
                 setDragOverSlot(null);
+                if (isSlotInPast(label)) return; // Block past slots
                 const aptId = e.dataTransfer.getData("text/appointment-id");
                 if (aptId && onDragReschedule) {
                   onDragReschedule(aptId, label);
