@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Save, Send, Pencil, Server, Megaphone, Clock,
   Hash, ChevronDown, ChevronUp, Loader2, CheckCircle2, XCircle,
-  AlertTriangle, RefreshCw
+  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,12 @@ const AdminPromoBroadcast = () => {
   const [instForm, setInstForm] = useState({ name: "", api_url: "", api_key: "", instance_name: "", msgs_per_cycle: 10 });
   const [savingInst, setSavingInst] = useState(false);
 
+  // ── per-instance connection state
+  const [instanceStatus, setInstanceStatus] = useState<Record<string, string>>({});
+  const [instanceQr, setInstanceQr] = useState<Record<string, string | null>>({});
+  const [instanceLoading, setInstanceLoading] = useState<Record<string, string | null>>({});
+  // instanceLoading[id] = "qr" | "status" | "logout" | null
+
   // ── campaigns state
   const [campaigns, setCampaigns] = useState<PromoCampaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
@@ -120,6 +126,65 @@ const AdminPromoBroadcast = () => {
     fetchCampaigns();
     fetchServices();
   }, [fetchInstances, fetchCampaigns, fetchServices]);
+
+  /* ───────── call evolution-instance edge function ───────── */
+  const callInstanceAction = async (instanceId: string, action: string) => {
+    const { data, error } = await supabase.functions.invoke("evolution-instance", {
+      body: { instance_id: instanceId, action },
+    });
+    if (error) throw new Error(error.message || "Erro na chamada");
+    if (data?.error) throw new Error(data.error);
+    return data;
+  };
+
+  /* ───────── instance connection actions ───────── */
+  const handleInstanceConnect = async (instId: string) => {
+    setInstanceLoading(p => ({ ...p, [instId]: "qr" }));
+    setInstanceQr(p => ({ ...p, [instId]: null }));
+    try {
+      await callInstanceAction(instId, "create_instance");
+      const data = await callInstanceAction(instId, "get_qrcode");
+      if (data.base64) {
+        setInstanceQr(p => ({ ...p, [instId]: data.base64 }));
+      } else if (data.code) {
+        setInstanceQr(p => ({ ...p, [instId]: data.code }));
+      } else {
+        toast({ title: "QR Code não disponível", description: "A instância pode já estar conectada. Verifique o status.", variant: "destructive" });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar QR Code", description: e.message, variant: "destructive" });
+    }
+    setInstanceLoading(p => ({ ...p, [instId]: null }));
+  };
+
+  const handleInstanceCheckStatus = async (instId: string) => {
+    setInstanceLoading(p => ({ ...p, [instId]: "status" }));
+    try {
+      const data = await callInstanceAction(instId, "check_status");
+      const state = data?.instance?.state || data?.state || "unknown";
+      setInstanceStatus(p => ({ ...p, [instId]: state }));
+      toast({
+        title: "Status da conexão",
+        description: state === "open" ? "✅ Conectado e funcionando!" : `Status atual: ${state}`,
+      });
+    } catch (e: any) {
+      toast({ title: "Erro ao verificar status", description: e.message, variant: "destructive" });
+    }
+    setInstanceLoading(p => ({ ...p, [instId]: null }));
+  };
+
+  const handleInstanceLogout = async (instId: string) => {
+    setInstanceLoading(p => ({ ...p, [instId]: "logout" }));
+    try {
+      await callInstanceAction(instId, "logout");
+      setInstanceStatus(p => ({ ...p, [instId]: "close" }));
+      setInstanceQr(p => ({ ...p, [instId]: null }));
+      toast({ title: "Desconectado", description: "Instância desconectada do WhatsApp." });
+    } catch (e: any) {
+      toast({ title: "Erro ao desconectar", description: e.message, variant: "destructive" });
+    }
+    setInstanceLoading(p => ({ ...p, [instId]: null }));
+  };
 
   /* ───────── instance CRUD ───────── */
   const openNewInstance = () => {
@@ -260,6 +325,13 @@ const AdminPromoBroadcast = () => {
     return <Badge variant={s.variant}>{s.label}</Badge>;
   };
 
+  const connStatusIcon = (instId: string) => {
+    const st = instanceStatus[instId];
+    if (st === "open") return <Wifi className="w-4 h-4 text-emerald-500" />;
+    if (st === "close") return <WifiOff className="w-4 h-4 text-destructive" />;
+    return null;
+  };
+
   const loading = loadingInstances || loadingCampaigns;
 
   if (loading) {
@@ -299,38 +371,127 @@ const AdminPromoBroadcast = () => {
                   </div>
                 )}
 
-                <div className="grid gap-3">
-                  {instances.map((inst, idx) => (
-                    <div
-                      key={inst.id}
-                      className="flex flex-col md:flex-row md:items-center gap-3 p-4 rounded-xl border border-border bg-card"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm shrink-0">
-                          {idx + 1}
+                <div className="grid gap-4">
+                  {instances.map((inst, idx) => {
+                    const isLoadingQr = instanceLoading[inst.id] === "qr";
+                    const isLoadingStatus = instanceLoading[inst.id] === "status";
+                    const isLoadingLogout = instanceLoading[inst.id] === "logout";
+                    const qr = instanceQr[inst.id];
+                    const connStatus = instanceStatus[inst.id];
+
+                    return (
+                      <div
+                        key={inst.id}
+                        className="p-4 rounded-xl border border-border bg-card space-y-3"
+                      >
+                        {/* Header row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm shrink-0">
+                              {idx + 1}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-sm truncate">{inst.name}</p>
+                                {connStatusIcon(inst.id)}
+                                {connStatus === "open" && <span className="text-[10px] text-emerald-500 font-medium">Conectado</span>}
+                                {connStatus === "close" && <span className="text-[10px] text-destructive font-medium">Desconectado</span>}
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">{inst.instance_name} · {inst.msgs_per_cycle} msgs/ciclo</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={inst.is_active}
+                                onCheckedChange={(v) => toggleInstance(inst.id, v)}
+                              />
+                              <span className="text-xs text-muted-foreground">{inst.is_active ? "Ativa" : "Inativa"}</span>
+                            </div>
+                            <Button size="sm" variant="ghost" onClick={() => openEditInstance(inst)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteInstance(inst.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-sm truncate">{inst.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{inst.instance_name} · {inst.msgs_per_cycle} msgs/ciclo</p>
+
+                        {/* Connection controls */}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2 flex-1"
+                            disabled={isLoadingQr}
+                            onClick={() => handleInstanceConnect(inst.id)}
+                          >
+                            {isLoadingQr ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
+                            {isLoadingQr ? "Gerando..." : "Gerar QR Code"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2 flex-1"
+                            disabled={isLoadingStatus}
+                            onClick={() => handleInstanceCheckStatus(inst.id)}
+                          >
+                            {isLoadingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                            Verificar Status
+                          </Button>
+                          {connStatus === "open" && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="gap-2 flex-1"
+                              disabled={isLoadingLogout}
+                              onClick={() => handleInstanceLogout(inst.id)}
+                            >
+                              {isLoadingLogout ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                              Desconectar
+                            </Button>
+                          )}
                         </div>
+
+                        {/* QR Code display */}
+                        <AnimatePresence>
+                          {qr && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="flex flex-col items-center gap-2 py-3"
+                            >
+                              <p className="text-xs text-muted-foreground">Escaneie o QR Code com o WhatsApp:</p>
+                              <div className="bg-background p-3 rounded-xl border border-border inline-block">
+                                {qr.startsWith("data:") || qr.length > 200 ? (
+                                  <img
+                                    src={qr.startsWith("data:") ? qr : `data:image/png;base64,${qr}`}
+                                    alt="QR Code"
+                                    className="w-48 h-48"
+                                  />
+                                ) : (
+                                  <img
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr)}`}
+                                    alt="QR Code"
+                                    className="w-48 h-48"
+                                  />
+                                )}
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs"
+                                onClick={() => setInstanceQr(p => ({ ...p, [inst.id]: null }))}
+                              >
+                                Fechar QR Code
+                              </Button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={inst.is_active}
-                            onCheckedChange={(v) => toggleInstance(inst.id, v)}
-                          />
-                          <span className="text-xs text-muted-foreground">{inst.is_active ? "Ativa" : "Inativa"}</span>
-                        </div>
-                        <Button size="sm" variant="ghost" onClick={() => openEditInstance(inst)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteInstance(inst.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <Button onClick={openNewInstance} className="gap-2">
@@ -502,8 +663,8 @@ const AdminPromoBroadcast = () => {
               </div>
 
               <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-green-500" /> {camp.total_sent} enviadas</span>
-                <span className="flex items-center gap-1"><XCircle className="w-3 h-3 text-red-500" /> {camp.total_failed} falhas</span>
+                <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> {camp.total_sent} enviadas</span>
+                <span className="flex items-center gap-1"><XCircle className="w-3 h-3 text-destructive" /> {camp.total_failed} falhas</span>
                 <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {camp.total_target} alvo</span>
               </div>
 
