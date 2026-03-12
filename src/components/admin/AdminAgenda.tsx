@@ -121,6 +121,14 @@ const AdminAgenda = () => {
   const [saving, setSaving] = useState(false);
   const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
 
+  // Quick-book from timeline slot
+  const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
+  const [qbUserId, setQbUserId] = useState("");
+  const [qbServiceSlug, setQbServiceSlug] = useState("");
+  const [qbSaving, setQbSaving] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
+
   const fetchAll = async () => {
     setLoading(true);
 
