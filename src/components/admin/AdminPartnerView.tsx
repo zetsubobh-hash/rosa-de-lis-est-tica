@@ -275,6 +275,19 @@ const AdminPartnerView = () => {
     setDataLoading(false);
   };
 
+  // Fetch all profiles + services for quick-book
+  useEffect(() => {
+    const load = async () => {
+      const [{ data: profs }, { data: svcs }] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name").order("full_name"),
+        supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
+      ]);
+      setAllProfiles(profs || []);
+      setAllServices(svcs || []);
+    };
+    load();
+  }, []);
+
   useEffect(() => {
     if (!selectedPartner) return;
     fetchData(selectedPartner);
