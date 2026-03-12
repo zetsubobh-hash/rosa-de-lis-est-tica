@@ -657,9 +657,6 @@ const AdminPartnerView = () => {
                       onCancel={handleCancelAppointment}
                       onSlotClick={(time) => {
                         setQuickBook({ time });
-                        setQbUserId("");
-                        setQbServiceSlug("");
-                        setQbShowNewClient(false);
                       }}
                     />
                   );
