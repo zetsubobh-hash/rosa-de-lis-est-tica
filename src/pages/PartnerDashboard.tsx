@@ -873,7 +873,7 @@ const PartnerDashboard = () => {
               </button>
             </div>
 
-            {appointments.length === 0 ? (
+            {(!filterDate && appointments.length === 0) ? (
               <div className="bg-card rounded-2xl border border-border p-12 text-center">
                 <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="font-body text-muted-foreground">Nenhum agendamento próximo.</p>
