@@ -564,73 +564,73 @@ const AdminAgenda = () => {
           Agendamentos ({filtered.length})
         </h2>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setFilterDate(new Date())}
+            className={cn(
+              "h-9 px-3 rounded-lg text-xs font-semibold font-body border transition-colors",
+              format(filterDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            Hoje
+          </button>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className={cn(
-                  "h-9 px-3 text-xs font-body justify-start",
-                  !filterDate && "text-muted-foreground"
-                )}
+                className="h-9 px-3 text-xs font-body justify-start"
               >
                 <CalendarIcon className="w-3.5 h-3.5 mr-1.5" />
-                {filterDate ? format(filterDate, "dd/MM/yyyy") : "Filtrar por data"}
+                {format(filterDate, "dd/MM/yyyy")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
               <CalendarComponent
                 mode="single"
                 selected={filterDate}
-                onSelect={setFilterDate}
+                onSelect={(d) => { if (d) setFilterDate(d); }}
                 locale={ptBR}
                 className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
-          {filterDate && (
-            <button
-              onClick={() => setFilterDate(undefined)}
-              className="h-9 px-3 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              Limpar
-            </button>
-          )}
         </div>
       </div>
 
-      {filterDate ? (
-        <DayTimelineView
-          appointments={filtered}
-          expandedAptId={expandedApt}
-          onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
-          clientPlans={clientPlans}
-          partnerOptions={partnerOptions}
-          allPrices={allPrices}
-          updatingPlan={updatingPlan}
-          onConfirmPayment={handleConfirmPayment}
-          onComplete={handleComplete}
-          onReschedule={openReschedule}
-          onCancel={handleCancel}
-          onPartnerAssign={handlePartnerAssign}
-          onUpdateSessions={updateSessions}
-          isRescheduled={isRescheduled}
-          getAppointmentPrice={getAppointmentPrice}
-          getInitials={getInitials}
-          onSlotClick={(time) => {
-            setQuickBook({ time });
-            setQbUserId("");
-            setQbServiceSlug("");
-            setQbShowNewClient(false);
-          }}
-          onDragReschedule={handleDragReschedule}
-          onScheduleSession={(params) => setScheduleModal(params)}
-        />
-      ) : groupedEntries.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
           <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="font-body text-muted-foreground">Nenhum agendamento encontrado.</p>
+          <p className="font-body text-muted-foreground">Nenhum agendamento para {format(filterDate, "dd/MM/yyyy")}.</p>
         </div>
-      ) : (
+      ) : null}
+
+      <DayTimelineView
+        appointments={filtered}
+        expandedAptId={expandedApt}
+        onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
+        clientPlans={clientPlans}
+        partnerOptions={partnerOptions}
+        allPrices={allPrices}
+        updatingPlan={updatingPlan}
+        onConfirmPayment={handleConfirmPayment}
+        onComplete={handleComplete}
+        onReschedule={openReschedule}
+        onCancel={handleCancel}
+        onPartnerAssign={handlePartnerAssign}
+        onUpdateSessions={updateSessions}
+        isRescheduled={isRescheduled}
+        getAppointmentPrice={getAppointmentPrice}
+        getInitials={getInitials}
+        onSlotClick={(time) => {
+          setQuickBook({ time });
+          setQbUserId("");
+          setQbServiceSlug("");
+          setQbShowNewClient(false);
+        }}
+        onDragReschedule={handleDragReschedule}
+        onScheduleSession={(params) => setScheduleModal(params)}
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {groupedEntries.map((group, i) => {
           const first = group[0];
