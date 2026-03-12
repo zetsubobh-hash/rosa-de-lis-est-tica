@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Save, QrCode, CreditCard, Eye, EyeOff, ChevronDown, RefreshCw, Settings } from "lucide-react";
+import { Save, QrCode, CreditCard, Eye, EyeOff, ChevronDown, RefreshCw, Settings, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
