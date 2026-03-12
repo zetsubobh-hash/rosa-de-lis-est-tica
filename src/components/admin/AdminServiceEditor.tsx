@@ -216,6 +216,42 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     if (!error) { refetchPrices(); toast({ title: "Plano removido ✅" }); }
   };
 
+  const handleSavePlan = async (planId: string) => {
+    const original = prices.find((p) => p.id === planId);
+    if (!original) return;
+
+    const changes = editedPrices[planId] || {};
+    const sessions = changes.sessions ?? original.sessions;
+    const pps = changes.price_per_session_cents ?? original.price_per_session_cents;
+    const total = changes.total_price_cents ?? pps * sessions;
+
+    setSavingPlanId(planId);
+    const { error } = await supabase
+      .from("service_prices")
+      .update({ sessions, price_per_session_cents: pps, total_price_cents: total })
+      .eq("id", planId);
+
+    if (error) {
+      toast({ title: "Erro ao salvar plano", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Plano salvo com sucesso ✅" });
+      setEditedPrices((prev) => {
+        const next = { ...prev };
+        delete next[planId];
+        return next;
+      });
+      setRawPriceInputs((prev) => {
+        const next = { ...prev };
+        delete next[planId];
+        return next;
+      });
+      setEditingSection(null);
+      await refetchPrices();
+    }
+
+    setSavingPlanId(null);
+  };
+
   const EditableWrapper = ({ section, children, className = "" }: { section: EditingSection; children: React.ReactNode; className?: string }) => (
     <div
       className={`group relative cursor-pointer rounded-xl transition-all ${
