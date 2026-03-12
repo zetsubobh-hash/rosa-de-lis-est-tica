@@ -209,6 +209,12 @@ const DayTimelineView = ({
   const now = new Date();
   const nowSlot = (now.getHours() - START_HOUR) * 2 + now.getMinutes() / 30;
   const showNowLine = nowSlot >= 0 && nowSlot <= TOTAL_SLOTS;
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const isSlotInPast = (slotLabel: string) => {
+    const [h, m] = slotLabel.split(":").map(Number);
+    return (h * 60 + m) < nowMinutes;
+  };
 
   return (
     <motion.div
