@@ -906,8 +906,8 @@ const AdminPartners = () => {
                   </div>
                 )}
 
-                {/* Active toggle */}
-                <div className="flex items-center gap-3">
+                {/* Active & Agenda toggles */}
+                <div className="flex items-center gap-3 flex-wrap">
                   <button
                     onClick={() => setEditing({ ...editing, is_active: !editing.is_active })}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
@@ -916,6 +916,16 @@ const AdminPartners = () => {
                   >
                     {editing.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     {editing.is_active ? "Ativo" : "Inativo"}
+                  </button>
+                  <button
+                    onClick={() => setEditing({ ...editing, can_manage_agenda: !editing.can_manage_agenda })}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
+                      editing.can_manage_agenda ? "border-primary/20 text-primary" : "border-muted-foreground/20 text-muted-foreground"
+                    }`}
+                    title="Permite que o parceiro crie, edite e cancele agendamentos"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    {editing.can_manage_agenda ? "Gerenciar Agenda ✅" : "Gerenciar Agenda ❌"}
                   </button>
                 </div>
               </div>
