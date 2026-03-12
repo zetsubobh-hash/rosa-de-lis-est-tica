@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
-  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone
+  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,7 @@ import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
+import WelcomeRoulette from "@/components/WelcomeRoulette";
 
 interface SessionInfo {
   date: string;
@@ -78,6 +79,7 @@ const PartnerDashboard = () => {
   const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
   const [historyClient, setHistoryClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
+  const [showDemoRoulette, setShowDemoRoulette] = useState(false);
   const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
   const [scheduleModal, setScheduleModal] = useState<{
@@ -428,6 +430,9 @@ const PartnerDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setShowDemoRoulette(true)} className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors" title="Demo Roleta de Boas-Vindas">
+              <Gift className="w-5 h-5" />
+            </button>
             <button onClick={() => setShowInstallQR(true)} className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors" title="Compartilhar instalação do app">
               <Smartphone className="w-5 h-5" />
             </button>
@@ -862,6 +867,11 @@ const PartnerDashboard = () => {
         </motion.div>
       )}
     </AnimatePresence>
+
+    {/* Demo Roulette */}
+    {showDemoRoulette && (
+      <WelcomeRoulette testMode onClose={() => setShowDemoRoulette(false)} />
+    )}
     </>
   );
 };
