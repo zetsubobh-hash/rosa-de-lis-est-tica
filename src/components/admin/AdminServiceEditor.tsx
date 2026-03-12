@@ -54,14 +54,22 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const centsToStr = (cents: number) => {
     return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
+
   const strToCents = (str: string) => {
-    const digits = str.replace(/\D/g, "");
-    return parseInt(digits, 10) || 0;
-  };
-  const maskBRL = (raw: string) => {
-    const digits = raw.replace(/\D/g, "");
-    const cents = parseInt(digits, 10) || 0;
-    return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const clean = str.replace(/[^\d,.-]/g, "").trim();
+    if (!clean) return 0;
+
+    if (!clean.includes(",") && !clean.includes(".")) {
+      const intValue = parseInt(clean.replace(/\D/g, ""), 10) || 0;
+      return intValue * 100;
+    }
+
+    const normalized = clean.includes(",")
+      ? clean.replace(/\./g, "").replace(",", ".")
+      : clean.replace(/,/g, "");
+
+    const num = parseFloat(normalized);
+    return Number.isFinite(num) ? Math.max(0, Math.round(num * 100)) : 0;
   };
 
   const Icon = getIconByName(service.icon_name);
