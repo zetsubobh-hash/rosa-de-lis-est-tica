@@ -9,8 +9,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import CalendarPopoverFilter from "@/components/admin/CalendarPopoverFilter";
 import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
@@ -515,23 +514,7 @@ const AdminPartnerView = () => {
                   >
                     Hoje
                   </button>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium font-body border border-border text-foreground hover:bg-muted transition-colors">
-                        <CalendarIcon className="w-3.5 h-3.5" />
-                        {format(filterDate, "dd/MM/yyyy")}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={filterDate}
-                        onSelect={(d) => { if (d) setFilterDate(d); }}
-                        locale={ptBR}
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <CalendarPopoverFilter date={filterDate} onSelect={setFilterDate} align="start" />
                 </div>
 
                 {(() => {
