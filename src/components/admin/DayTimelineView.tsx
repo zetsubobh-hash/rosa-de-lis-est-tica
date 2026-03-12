@@ -71,6 +71,8 @@ interface DayTimelineViewProps {
   getInitials?: (name: string) => string;
   onAnamnesis?: (userId: string, name: string) => void;
   onHistory?: (userId: string, name: string) => void;
+  /** Called when a session bubble is clicked to schedule/reschedule */
+  onScheduleSession?: (params: { planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string }) => void;
   /** Called when an empty time slot is clicked */
   onSlotClick?: (time: string) => void;
   /** Called when an appointment is dragged to a new time slot */
