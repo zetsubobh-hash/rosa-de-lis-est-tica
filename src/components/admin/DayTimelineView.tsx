@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { User, Phone, MessageCircle } from "lucide-react";
+import { User, Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 
 interface Profile {
   full_name: string;
@@ -25,30 +26,18 @@ interface DayTimelineViewProps {
   onSelectAppointment?: (id: string) => void;
 }
 
-// Service → color mapping for visual distinction
-const SERVICE_COLORS: Record<string, { bg: string; border: string; text: string }> = {};
+// Consistent color palette per service slug
 const PALETTE = [
-  { bg: "bg-violet-100 dark:bg-violet-900/30", border: "border-violet-400 dark:border-violet-600", text: "text-violet-800 dark:text-violet-200" },
-  { bg: "bg-sky-100 dark:bg-sky-900/30", border: "border-sky-400 dark:border-sky-600", text: "text-sky-800 dark:text-sky-200" },
-  { bg: "bg-amber-100 dark:bg-amber-900/30", border: "border-amber-400 dark:border-amber-600", text: "text-amber-800 dark:text-amber-200" },
-  { bg: "bg-rose-100 dark:bg-rose-900/30", border: "border-rose-400 dark:border-rose-600", text: "text-rose-800 dark:text-rose-200" },
-  { bg: "bg-emerald-100 dark:bg-emerald-900/30", border: "border-emerald-400 dark:border-emerald-600", text: "text-emerald-800 dark:text-emerald-200" },
-  { bg: "bg-orange-100 dark:bg-orange-900/30", border: "border-orange-400 dark:border-orange-600", text: "text-orange-800 dark:text-orange-200" },
-  { bg: "bg-pink-100 dark:bg-pink-900/30", border: "border-pink-400 dark:border-pink-600", text: "text-pink-800 dark:text-pink-200" },
-  { bg: "bg-teal-100 dark:bg-teal-900/30", border: "border-teal-400 dark:border-teal-600", text: "text-teal-800 dark:text-teal-200" },
+  { bg: "#d8b4fe", text: "#581c87" },  // violet
+  { bg: "#93c5fd", text: "#1e3a5f" },  // blue
+  { bg: "#fcd34d", text: "#713f12" },  // amber/gold
+  { bg: "#fda4af", text: "#881337" },  // rose
+  { bg: "#6ee7b7", text: "#064e3b" },  // emerald
+  { bg: "#fdba74", text: "#7c2d12" },  // orange
+  { bg: "#c4b5fd", text: "#4c1d95" },  // purple
+  { bg: "#67e8f9", text: "#155e75" },  // cyan
 ];
 
-let colorIndex = 0;
-const getServiceColor = (slug: string) => {
-  if (!SERVICE_COLORS[slug]) {
-    SERVICE_COLORS[slug] = PALETTE[colorIndex % PALETTE.length];
-    colorIndex++;
-  }
-  return SERVICE_COLORS[slug];
-};
-
-
-// Duration estimates in minutes based on common service types
 const estimateDuration = (serviceSlug: string): number => {
   const slug = serviceSlug.toLowerCase();
   if (slug.includes("micropigment")) return 120;
@@ -58,187 +47,193 @@ const estimateDuration = (serviceSlug: string): number => {
   if (slug.includes("limpeza")) return 90;
   if (slug.includes("peeling")) return 60;
   if (slug.includes("botox") || slug.includes("toxina")) return 45;
-  return 60; // default 1h
+  return 60;
 };
 
-// Timeline runs from 08:00 to 19:00 (11 hours)
 const START_HOUR = 8;
 const END_HOUR = 19;
-const TOTAL_MINUTES = (END_HOUR - START_HOUR) * 60;
-const SLOT_HEIGHT = 3.5; // rem per 30 min
-const PX_PER_MIN = (SLOT_HEIGHT * 2) / 60; // rem per minute
+const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 2; // 30-min slots
+const ROW_HEIGHT = 40; // px per 30-min slot
 
-const timeToMinutes = (time: string) => {
+const timeToSlotIndex = (time: string) => {
   const [h, m] = time.split(":").map(Number);
-  return (h - START_HOUR) * 60 + m;
+  return (h - START_HOUR) * 2 + Math.floor(m / 30);
+};
+
+const formatTimeRange = (startTime: string, durationMin: number) => {
+  const [h, m] = startTime.split(":").map(Number);
+  const totalMin = h * 60 + m + durationMin;
+  const endH = Math.floor(totalMin / 60);
+  const endM = totalMin % 60;
+  return `${startTime} - ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
 };
 
 const DayTimelineView = ({ appointments, onSelectAppointment }: DayTimelineViewProps) => {
-  const hours = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
+  // Build color map consistently
+  const colorMap = useMemo(() => {
+    const map: Record<string, { bg: string; text: string }> = {};
+    const slugs = [...new Set(appointments.map((a) => a.service_slug))];
+    slugs.forEach((slug, i) => {
+      map[slug] = PALETTE[i % PALETTE.length];
+    });
+    return map;
+  }, [appointments]);
 
-  // Sort appointments by time
-  const sorted = [...appointments].sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+  const sorted = useMemo(
+    () => [...appointments].sort((a, b) => a.appointment_time.localeCompare(b.appointment_time)),
+    [appointments]
+  );
 
-  // Detect overlapping appointments for column layout
-  const columns: TimelineAppointment[][] = [];
-  const aptColumns: Map<string, number> = new Map();
+  // Build slot labels
+  const slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
+    const hour = START_HOUR + Math.floor(i / 2);
+    const min = (i % 2) * 30;
+    return `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+  });
 
-  for (const apt of sorted) {
-    const startMin = timeToMinutes(apt.appointment_time);
+  // Map each appointment to slot positions
+  const aptBlocks = sorted.map((apt) => {
     const duration = estimateDuration(apt.service_slug);
-    const _endMin = startMin + duration;
+    const startSlot = timeToSlotIndex(apt.appointment_time);
+    const spanSlots = Math.max(1, Math.ceil(duration / 30));
+    return { ...apt, startSlot, spanSlots, duration };
+  });
 
+  // Detect overlapping for column layout
+  const columns: typeof aptBlocks[] = [];
+  const aptCol = new Map<string, number>();
+
+  for (const block of aptBlocks) {
     let placed = false;
-    for (let col = 0; col < columns.length; col++) {
-      const lastInCol = columns[col][columns[col].length - 1];
-      const lastStart = timeToMinutes(lastInCol.appointment_time);
-      const lastEnd = lastStart + estimateDuration(lastInCol.service_slug);
-      if (startMin >= lastEnd) {
-        columns[col].push(apt);
-        aptColumns.set(apt.id, col);
+    for (let c = 0; c < columns.length; c++) {
+      const last = columns[c][columns[c].length - 1];
+      if (block.startSlot >= last.startSlot + last.spanSlots) {
+        columns[c].push(block);
+        aptCol.set(block.id, c);
         placed = true;
         break;
       }
     }
     if (!placed) {
-      columns.push([apt]);
-      aptColumns.set(apt.id, columns.length - 1);
+      columns.push([block]);
+      aptCol.set(block.id, columns.length - 1);
     }
   }
 
-  const totalColumns = Math.max(1, columns.length);
+  const totalCols = Math.max(1, columns.length);
+
+  // Current time indicator
+  const now = new Date();
+  const nowSlot = (now.getHours() - START_HOUR) * 2 + now.getMinutes() / 30;
+  const showNowLine = nowSlot >= 0 && nowSlot <= TOTAL_SLOTS;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-card rounded-2xl border border-border overflow-hidden"
+      className="bg-card rounded-2xl border border-border overflow-auto relative"
     >
-      <div className="relative" style={{ minHeight: `${hours.length * SLOT_HEIGHT * 2}rem` }}>
-        {/* Hour lines */}
-        {hours.map((hour) => {
-          const topRem = (hour - START_HOUR) * SLOT_HEIGHT * 2;
-          return (
-            <div key={hour} className="absolute left-0 right-0" style={{ top: `${topRem}rem` }}>
-              <div className="flex items-start">
-                <span className="w-14 shrink-0 text-right pr-2 font-body text-[11px] text-muted-foreground -translate-y-2">
-                  {String(hour).padStart(2, "0")}:00
-                </span>
-                <div className="flex-1 border-t border-border" />
-              </div>
-              {/* Half-hour line */}
-              <div className="flex items-start" style={{ marginTop: `${SLOT_HEIGHT}rem` }}>
-                <span className="w-14 shrink-0 text-right pr-2 font-body text-[10px] text-muted-foreground/50 -translate-y-2">
-                  {String(hour).padStart(2, "0")}:30
-                </span>
-                <div className="flex-1 border-t border-border/40 border-dashed" />
-              </div>
+      <div className="relative" style={{ height: `${TOTAL_SLOTS * ROW_HEIGHT}px` }}>
+        {/* Grid rows with time labels */}
+        {slots.map((label, i) => (
+          <div
+            key={i}
+            className="absolute left-0 right-0 flex"
+            style={{ top: `${i * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}
+          >
+            <div className="w-[52px] shrink-0 flex items-start justify-end pr-2 pt-0.5">
+              <span className={cn(
+                "font-body text-[11px]",
+                i % 2 === 0 ? "text-muted-foreground font-medium" : "text-muted-foreground/40"
+              )}>
+                {label}
+              </span>
             </div>
-          );
-        })}
+            <div className={cn(
+              "flex-1 border-t",
+              i % 2 === 0 ? "border-border" : "border-border/30 border-dashed"
+            )} />
+          </div>
+        ))}
 
-        {/* Current time indicator */}
-        {(() => {
-          const now = new Date();
-          const nowMin = (now.getHours() - START_HOUR) * 60 + now.getMinutes();
-          if (nowMin < 0 || nowMin > TOTAL_MINUTES) return null;
-          const topRem = nowMin * PX_PER_MIN;
-          return (
-            <div className="absolute left-12 right-0 z-20 flex items-center" style={{ top: `${topRem}rem` }}>
-              <div className="w-2.5 h-2.5 rounded-full bg-destructive shrink-0 -ml-1" />
-              <div className="flex-1 border-t-2 border-destructive" />
-            </div>
-          );
-        })()}
+        {/* Current time line */}
+        {showNowLine && (
+          <div
+            className="absolute left-[48px] right-0 z-30 flex items-center pointer-events-none"
+            style={{ top: `${nowSlot * ROW_HEIGHT}px` }}
+          >
+            <div className="w-2.5 h-2.5 rounded-full bg-destructive -ml-1 shrink-0" />
+            <div className="flex-1 h-0.5 bg-destructive" />
+          </div>
+        )}
 
         {/* Appointment blocks */}
-        {sorted.map((apt) => {
-          const startMin = timeToMinutes(apt.appointment_time);
-          const duration = estimateDuration(apt.service_slug);
-          const topRem = startMin * PX_PER_MIN;
-          const heightRem = duration * PX_PER_MIN;
-          const color = getServiceColor(apt.service_slug);
-          const profile = apt.profiles;
-          const col = aptColumns.get(apt.id) || 0;
-          const widthPct = 100 / totalColumns;
-          const leftPct = col * widthPct;
-
-          const endHour = Math.floor((startMin + duration) / 60) + START_HOUR;
-          const endMinute = (startMin + duration) % 60;
-          const timeRange = `${apt.appointment_time} - ${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+        {aptBlocks.map((block) => {
+          const color = colorMap[block.service_slug] || PALETTE[0];
+          const profile = block.profiles;
+          const col = aptCol.get(block.id) || 0;
+          const colWidth = `calc((100% - 52px) / ${totalCols})`;
+          const colLeft = `calc(52px + ${col} * (100% - 52px) / ${totalCols})`;
+          const top = block.startSlot * ROW_HEIGHT;
+          const height = Math.max(block.spanSlots * ROW_HEIGHT - 2, ROW_HEIGHT - 2);
+          const timeRange = formatTimeRange(block.appointment_time, block.duration);
 
           return (
             <motion.div
-              key={apt.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={cn(
-                "absolute ml-14 rounded-lg border-l-4 px-2.5 py-1.5 cursor-pointer transition-shadow hover:shadow-lg overflow-hidden z-10",
-                color.bg,
-                color.border
-              )}
+              key={block.id}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.05 }}
+              className="absolute z-10 rounded-md cursor-pointer hover:brightness-95 transition-all overflow-hidden px-2 py-1.5"
               style={{
-                top: `${topRem}rem`,
-                height: `${Math.max(heightRem, 2.5)}rem`,
-                left: `calc(3.5rem + ${leftPct}%)`,
-                width: `calc(${widthPct}% - ${totalColumns > 1 ? "0.5rem" : "0.5rem"})`,
-                right: totalColumns === 1 ? "0.5rem" : undefined,
+                top: `${top + 1}px`,
+                left: colLeft,
+                width: colWidth,
+                height: `${height}px`,
+                backgroundColor: color.bg,
+                color: color.text,
               }}
-              onClick={() => onSelectAppointment?.(apt.id)}
+              onClick={() => onSelectAppointment?.(block.id)}
             >
-              <p className={cn("font-heading text-[11px] font-bold leading-tight truncate", color.text)}>
+              {/* Time range header */}
+              <p className="text-[11px] font-bold leading-tight truncate">
                 {timeRange}
               </p>
-              <div className="flex items-center gap-1.5 mt-0.5">
+
+              {/* Client info */}
+              <div className="flex items-center gap-1 mt-0.5">
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} className="w-4 h-4 rounded-full object-cover shrink-0" alt="" />
                 ) : (
-                  <User className={cn("w-3 h-3 shrink-0", color.text)} />
+                  <User className="w-3.5 h-3.5 shrink-0 opacity-70" />
                 )}
-                <span className={cn("font-body text-[11px] font-medium truncate", color.text)}>
+                <span className="text-[11px] font-semibold truncate">
                   {profile?.full_name || "Cliente"}
                 </span>
               </div>
-              {heightRem > 3.5 && (
-                <p className={cn("font-body text-[10px] mt-0.5 truncate opacity-80", color.text)}>
-                  ✂ {apt.service_title}
-                </p>
-              )}
-              {heightRem > 5 && profile?.phone && (
-                <div className="flex items-center gap-2 mt-1">
-                  <a
-                    href={`tel:${profile.phone.replace(/\D/g, "")}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className={cn("flex items-center gap-0.5 text-[10px] hover:underline", color.text)}
-                  >
-                    <Phone className="w-2.5 h-2.5" />
-                    {profile.phone}
-                  </a>
-                  <a
-                    href={`https://wa.me/55${profile.phone.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-emerald-600 hover:text-emerald-700"
-                  >
-                    <MessageCircle className="w-3 h-3" />
-                  </a>
+
+              {/* Service */}
+              {height > 50 && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Scissors className="w-3 h-3 shrink-0 opacity-60" />
+                  <span className="text-[10px] font-medium truncate opacity-80">
+                    {block.service_title}
+                  </span>
                 </div>
-              )}
-              {apt.session_number && heightRem > 3 && (
-                <span className={cn("font-body text-[9px] font-bold opacity-60 mt-0.5 block", color.text)}>
-                  Sessão {apt.session_number}
-                </span>
               )}
             </motion.div>
           );
         })}
       </div>
 
-      {/* "Hoje" button */}
-      <div className="sticky bottom-4 flex justify-end pr-4 pb-4 pointer-events-none">
+      {/* "Hoje" floating button */}
+      <div className="sticky bottom-3 flex justify-end pr-3 pb-2 pointer-events-none">
         <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          onClick={() => {
+            const container = document.querySelector("[data-timeline-scroll]");
+            if (container) container.scrollTop = 0;
+            else window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
           className="pointer-events-auto px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg hover:bg-primary/90 transition-colors"
         >
           Hoje
