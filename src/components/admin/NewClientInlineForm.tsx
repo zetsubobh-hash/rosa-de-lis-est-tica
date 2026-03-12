@@ -60,7 +60,6 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
 
 interface FormData {
   full_name: string;
-  username: string;
   password: string;
   phone: string;
   email: string;
@@ -68,7 +67,20 @@ interface FormData {
   address: string;
 }
 
-const emptyForm: FormData = { full_name: "", username: "", password: "", phone: "", email: "", sex: "", address: "" };
+const emptyForm: FormData = { full_name: "", password: "", phone: "", email: "", sex: "", address: "" };
+
+const generateUsername = (name: string): string => {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(".")
+    + "." + Math.floor(Math.random() * 900 + 100);
+};
 
 const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormProps) => {
   const [form, setForm] = useState<FormData>(emptyForm);
