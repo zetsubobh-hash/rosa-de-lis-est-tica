@@ -363,6 +363,71 @@ const AdminPromoBroadcast = () => {
     fetchCampaigns();
   };
 
+  const fetchCampaignReport = useCallback(async (campaignId: string) => {
+    setCampaignReportLoading((prev) => ({ ...prev, [campaignId]: true }));
+
+    try {
+      const { data: sends, error: sendsError } = await supabase
+        .from("promo_sends")
+        .select("id, user_id, phone, status, sent_at, created_at, error_message, instance_id")
+        .eq("campaign_id", campaignId)
+        .order("created_at", { ascending: false })
+        .range(0, 4999);
+
+      if (sendsError) throw sendsError;
+
+      const safeSends = sends || [];
+      const userIds = Array.from(new Set(safeSends.map((row) => row.user_id).filter(Boolean)));
+      const instanceIds = Array.from(new Set(safeSends.map((row) => row.instance_id).filter(Boolean))) as string[];
+
+      const [profilesRes, instancesRes] = await Promise.all([
+        userIds.length > 0
+          ? supabase.from("profiles").select("user_id, full_name, phone").in("user_id", userIds)
+          : Promise.resolve({ data: [], error: null }),
+        instanceIds.length > 0
+          ? supabase.from("evolution_instances").select("id, name, instance_name").in("id", instanceIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (profilesRes.error) throw profilesRes.error;
+      if (instancesRes.error) throw instancesRes.error;
+
+      const profileMap = new Map(
+        (profilesRes.data || []).map((p: { user_id: string; full_name: string; phone: string }) => [p.user_id, p])
+      );
+      const instanceMap = new Map(
+        (instancesRes.data || []).map((i: { id: string; name: string; instance_name: string }) => [i.id, i])
+      );
+
+      const reportRows: CampaignReportRow[] = safeSends.map((row) => {
+        const profile = profileMap.get(row.user_id);
+        const inst = row.instance_id ? instanceMap.get(row.instance_id) : null;
+
+        return {
+          ...row,
+          recipient_name: profile?.full_name || "Cliente sem nome",
+          phone: row.phone || profile?.phone || "-",
+          instance_label: inst ? `${inst.name} (${inst.instance_name})` : "-",
+        };
+      });
+
+      setCampaignReports((prev) => ({ ...prev, [campaignId]: reportRows }));
+    } catch (err: any) {
+      toast({ title: "Erro ao carregar relatório", description: err.message, variant: "destructive" });
+    } finally {
+      setCampaignReportLoading((prev) => ({ ...prev, [campaignId]: false }));
+    }
+  }, [toast]);
+
+  const toggleCampaignReport = async (campaignId: string) => {
+    const willOpen = !campaignReportOpen[campaignId];
+    setCampaignReportOpen((prev) => ({ ...prev, [campaignId]: willOpen }));
+
+    if (willOpen && !campaignReports[campaignId]) {
+      await fetchCampaignReport(campaignId);
+    }
+  };
+
   /* ───────── send campaign ───────── */
   const sendCampaign = async (campaign: PromoCampaign) => {
     const activeInstances = instances.filter(i => i.is_active);
@@ -377,10 +442,12 @@ const AdminPromoBroadcast = () => {
       });
       if (error) throw error;
       toast({
-        title: "Disparo iniciado!",
-        description: `${data?.queued || 0} mensagens enfileiradas para envio.`,
+        title: "Disparo concluído!",
+        description: `${data?.sent || 0} enviadas · ${data?.failed || 0} falhas.`,
       });
-      fetchCampaigns();
+      await fetchCampaigns();
+      setCampaignReportOpen((prev) => ({ ...prev, [campaign.id]: true }));
+      await fetchCampaignReport(campaign.id);
     } catch (err: any) {
       toast({ title: "Erro ao disparar", description: err.message, variant: "destructive" });
     } finally {
