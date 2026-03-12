@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
-  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle, UserPlus
+  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
@@ -14,8 +14,8 @@ import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
-import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import CalendarPopoverFilter from "@/components/admin/CalendarPopoverFilter";
+import QuickBookModal from "@/components/admin/QuickBookModal";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 
 interface SessionInfo {
