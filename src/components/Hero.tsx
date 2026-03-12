@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import referenceHero from "@/assets/reference-hero.webp";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import { BackgroundPaths } from "@/components/ui/background-paths";
+import { useOnlineBooking } from "@/hooks/useOnlineBooking";
 const slides = [
   { title: "Drenagem Linfática", subtitle: "O melhor tratamento para combater a retenção de líquidos.", slug: "drenagem-linfatica" },
   { title: "Criolipólise", subtitle: "Elimine gordura localizada sem cirurgia, com resultados visíveis.", slug: "criolipolise" },
@@ -19,9 +20,14 @@ const Hero = () => {
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
   const { logoWhite } = useBrandingLogos();
+  const { isEnabled, getWhatsAppUrl } = useOnlineBooking();
 
   const handleAgendar = () => {
-    navigate(`/servico/${slides[current].slug}`);
+    if (isEnabled) {
+      navigate(`/servico/${slides[current].slug}`);
+    } else {
+      window.open(getWhatsAppUrl(slides[current].title), "_blank");
+    }
   };
 
   useEffect(() => {
