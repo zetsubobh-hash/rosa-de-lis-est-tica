@@ -943,9 +943,6 @@ const PartnerDashboard = () => {
                 {...(permissions.can_create_appointments ? {
                   onSlotClick: (time: string) => {
                     setQuickBook({ time });
-                    setQbUserId("");
-                    setQbServiceSlug("");
-                    setQbShowNewClient(false);
                   },
                 } : {})}
               />
