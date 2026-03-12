@@ -464,6 +464,15 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
                 </button>
               </div>
             </div>
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => { setMode("forgot"); setLoginError(false); }}
+                className="font-body text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
             <Button type="submit" className="w-full gap-2" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
               Entrar
