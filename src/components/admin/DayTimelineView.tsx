@@ -286,13 +286,14 @@ const DayTimelineView = ({
           const plan = clientPlans.find((p) => p.user_id === block.user_id && p.service_slug === block.service_slug);
           
           const isComplete = plan ? plan.completed_sessions >= plan.total_sessions : false;
+          const isMoving = mobileMovingId === block.id;
 
           return (
             <div key={block.id}>
               {/* Colored block */}
               <motion.div
                 initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
+                animate={{ opacity: isMoving ? 0.5 : 1, x: 0, scale: isMoving ? 0.95 : 1 }}
                 transition={{ delay: 0.05 }}
                 draggable={!readOnly && !!onDragReschedule && !isMobile}
                 onDragStart={(e: any) => {
@@ -301,10 +302,31 @@ const DayTimelineView = ({
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 onDragEnd={() => setDragOverSlot(null)}
+                onTouchStart={() => {
+                  if (!onDragReschedule || readOnly || !isMobile) return;
+                  longPressTimer.current = setTimeout(() => {
+                    setMobileMovingId(block.id);
+                    // Close any expanded card
+                    if (expandedAptId) onSelectAppointment?.(expandedAptId);
+                  }, 500);
+                }}
+                onTouchEnd={() => {
+                  if (longPressTimer.current) {
+                    clearTimeout(longPressTimer.current);
+                    longPressTimer.current = null;
+                  }
+                }}
+                onTouchMove={() => {
+                  if (longPressTimer.current) {
+                    clearTimeout(longPressTimer.current);
+                    longPressTimer.current = null;
+                  }
+                }}
                 className={cn(
                   "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
                   isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
-                  !readOnly && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing"
+                  !readOnly && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing",
+                  isMoving && "ring-2 ring-primary animate-pulse"
                 )}
                 style={{
                   top: `${top + 1}px`,
@@ -314,7 +336,13 @@ const DayTimelineView = ({
                   backgroundColor: color.bg,
                   color: color.text,
                 }}
-                onClick={() => onSelectAppointment?.(block.id)}
+                onClick={() => {
+                  if (mobileMovingId) {
+                    setMobileMovingId(null);
+                    return;
+                  }
+                  onSelectAppointment?.(block.id);
+                }}
               >
                 <p className="text-[11px] font-bold leading-tight truncate">{timeRange}</p>
                 <div className="flex items-center gap-1 mt-0.5">
