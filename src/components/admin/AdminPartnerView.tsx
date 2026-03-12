@@ -798,6 +798,7 @@ const AdminPartnerView = () => {
           serviceSlug={scheduleModal.serviceSlug}
           serviceTitle={scheduleModal.serviceTitle}
           userId={scheduleModal.userId}
+          partnerId={scheduleModal.partnerId || selectedPartner}
         />
       )}
 
