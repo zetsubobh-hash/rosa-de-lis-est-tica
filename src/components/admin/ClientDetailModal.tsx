@@ -322,9 +322,8 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                                 className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               >
                                 <option value="">Selecione</option>
-                                <option value="Feminino">Feminino</option>
-                                <option value="Masculino">Masculino</option>
-                                <option value="Outro">Outro</option>
+                                <option value="feminino">Feminino</option>
+                                <option value="masculino">Masculino</option>
                               </select>
                             </div>
                           </div>
