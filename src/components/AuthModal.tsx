@@ -56,12 +56,14 @@ const capitalizeWords = (value: string) => {
 };
 
 const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [loginError, setLoginError] = useState(false);
+  const [forgotPhone, setForgotPhone] = useState("");
+  const [forgotResult, setForgotResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Login fields
   const [loginUsername, setLoginUsername] = useState("");
