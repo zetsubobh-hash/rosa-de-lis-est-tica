@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
-  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle
+  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle, UserPlus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
@@ -16,6 +16,7 @@ import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 import CalendarPopoverFilter from "@/components/admin/CalendarPopoverFilter";
 import QuickBookModal from "@/components/admin/QuickBookModal";
+import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 
 interface SessionInfo {
@@ -123,6 +124,7 @@ const PartnerDashboard = () => {
   const [scheduleModal, setScheduleModal] = useState<{
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
+  const [showNewClient, setShowNewClient] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
@@ -975,6 +977,30 @@ const PartnerDashboard = () => {
 
         {activeTab === "clientes" && (
           <div className="space-y-3">
+            {/* Novo Cliente button */}
+            {permissions.can_create_appointments && (
+              <div>
+                {showNewClient ? (
+                  <NewClientInlineForm
+                    onClientCreated={(client) => {
+                      setAllProfiles((prev) => [...prev, { user_id: client.user_id, full_name: client.full_name }]);
+                      setShowNewClient(false);
+                      toast.success("Cliente cadastrado com sucesso!");
+                    }}
+                    onCancel={() => setShowNewClient(false)}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setShowNewClient(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Novo Cliente
+                  </button>
+                )}
+              </div>
+            )}
+
             {clientPlans.length === 0 ? (
               <div className="bg-card rounded-2xl border border-border p-12 text-center">
                 <ClipboardList className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />

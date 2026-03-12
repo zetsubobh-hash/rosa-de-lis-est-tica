@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Calendar, Clock, CalendarCheck, CalendarClock, CalendarIcon,
-  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift, User
+  Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift, User, UserPlus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
@@ -16,6 +16,7 @@ import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 import QuickBookModal from "@/components/admin/QuickBookModal";
+import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 
 interface SessionInfo {
@@ -128,6 +129,7 @@ const AdminPartnerView = () => {
   const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
   const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
   const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
+  const [showNewClient, setShowNewClient] = useState(false);
 
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
@@ -675,6 +677,30 @@ const AdminPartnerView = () => {
             {/* Clientes tab */}
             {activeTab === "clientes" && (
               <div className="space-y-3">
+                {/* Novo Cliente button */}
+                <div className="flex flex-col sm:flex-row gap-2 items-start">
+                  {showNewClient ? (
+                    <div className="w-full">
+                      <NewClientInlineForm
+                        onClientCreated={(client) => {
+                          setAllProfiles((prev) => [...prev, { user_id: client.user_id, full_name: client.full_name }]);
+                          setShowNewClient(false);
+                          toast.success("Cliente cadastrado com sucesso!");
+                        }}
+                        onCancel={() => setShowNewClient(false)}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowNewClient(true)}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Novo Cliente
+                    </button>
+                  )}
+                </div>
+
                 {/* Filtros */}
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
