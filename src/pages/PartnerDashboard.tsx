@@ -560,7 +560,7 @@ const PartnerDashboard = () => {
                 {completingId === apt.id ? "Salvando..." : "Sessão Realizada"}
               </button>
               <button
-                onClick={() => handleMarkAppointment(apt, false)}
+                onClick={() => openDecisionModal(apt, "cancelled")}
                 disabled={completingId === apt.id}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all disabled:opacity-50"
               >
