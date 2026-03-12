@@ -150,6 +150,7 @@ const DayTimelineView = ({
   onSlotClick,
   onDragReschedule,
   readOnly = false,
+  isOverdue: isOverdueFn,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
