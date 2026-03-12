@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Save, Loader2, DollarSign, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAllServicePrices, formatCents, type ServicePrice } from "@/hooks/useServicePrices";
+import { useAllServicePrices, type ServicePrice } from "@/hooks/useServicePrices";
 import { useServices } from "@/hooks/useServices";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
