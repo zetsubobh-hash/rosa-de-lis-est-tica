@@ -72,6 +72,8 @@ interface DayTimelineViewProps {
   onAnamnesis?: (userId: string, name: string) => void;
   /** Called when an empty time slot is clicked */
   onSlotClick?: (time: string) => void;
+  /** Called when an appointment is dragged to a new time slot */
+  onDragReschedule?: (appointmentId: string, newTime: string) => void;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
 }
