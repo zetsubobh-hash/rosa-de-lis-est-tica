@@ -144,6 +144,7 @@ const DayTimelineView = ({
   getInitials = defaultGetInitials,
   onAnamnesis,
   onHistory,
+  onScheduleSession,
   onSlotClick,
   onDragReschedule,
   readOnly = false,
