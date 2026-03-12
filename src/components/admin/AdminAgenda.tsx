@@ -542,7 +542,7 @@ const AdminAgenda = () => {
     // Only hide appointments that are explicitly linked to a completed plan
     if (a.plan_id) {
       const linkedPlan = clientPlans.find((p) => p.id === a.plan_id);
-      if (linkedPlan && linkedPlan.status === "completed") return false;
+      if (linkedPlan && linkedPlan.status === "completed" && a.status !== "completed") return false;
     }
     return true;
   });
