@@ -890,6 +890,7 @@ const PartnerDashboard = () => {
               </div>
             ) : (filterDate || permissions.can_create_appointments) ? (
               <DayTimelineView
+                timelineDate={selectedAgendaDate}
                 appointments={appointments.filter((a) => a.appointment_date === selectedAgendaDate).map((a) => ({
                   ...a,
                   service_slug: a.service_slug || "",

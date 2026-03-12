@@ -619,6 +619,7 @@ const AdminPartnerView = () => {
                   const dayApts = appointments.filter((a) => a.appointment_date === dateStr);
                   return (
                     <DayTimelineView
+                      timelineDate={dateStr}
                       appointments={dayApts.map((a) => ({
                         ...a,
                         service_slug: a.service_slug || "",
