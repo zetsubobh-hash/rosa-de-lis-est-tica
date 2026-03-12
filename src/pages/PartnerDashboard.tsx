@@ -786,6 +786,19 @@ const PartnerDashboard = () => {
       />
     )}
 
+    {scheduleModal && (
+      <SessionScheduleModal
+        open={!!scheduleModal}
+        onClose={() => setScheduleModal(null)}
+        onScheduled={() => { setScheduleModal(null); window.location.reload(); }}
+        planId={scheduleModal.planId}
+        sessionNumber={scheduleModal.sessionNumber}
+        serviceSlug={scheduleModal.serviceSlug}
+        serviceTitle={scheduleModal.serviceTitle}
+        userId={scheduleModal.userId}
+      />
+    )}
+
     {/* Install QR Code Modal */}
     <AnimatePresence>
       {showInstallQR && (
