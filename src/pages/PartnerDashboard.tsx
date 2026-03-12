@@ -129,10 +129,10 @@ const PartnerDashboard = () => {
     const init = async () => {
       const { data: partner } = await supabase
         .from("partners")
-        .select("id, full_name")
+        .select("*")
         .eq("user_id", user.id)
         .eq("is_active", true)
-        .maybeSingle() as any;
+        .maybeSingle();
 
       if (!partner) {
         navigate("/", { replace: true });
