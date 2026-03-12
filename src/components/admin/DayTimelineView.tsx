@@ -377,24 +377,72 @@ const DayTimelineView = ({
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${block.status === "confirmed" ? "bg-primary/10 text-primary" : "bg-amber-100 text-amber-700"}`}>
                         {block.status === "confirmed" ? "Confirmado" : "Pendente"}
                       </span>
-                      {isRescheduledFn(block) && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700">Remarcado</span>}
+                      {isRescheduledFn?.(block) && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700">Remarcado</span>}
+                      {block.session_number && (block.total_sessions || plan?.total_sessions) && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-accent text-accent-foreground">
+                          Sessão {block.session_number}/{block.total_sessions || plan?.total_sessions}
+                        </span>
+                      )}
                       {isComplete && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-primary/10 text-primary">Plano Completo</span>}
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="w-3 h-3" />{block.appointment_time}
                       </span>
-                      <span className="font-heading text-xs font-bold text-primary">{getAppointmentPrice(block, allPrices)}</span>
+                      {getAppointmentPrice && <span className="font-heading text-xs font-bold text-primary">{getAppointmentPrice(block, allPrices)}</span>}
                     </div>
 
-                    {/* Plan progress */}
-                    {plan && (
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-body text-xs font-semibold text-foreground">{plan.plan_name}</span>
-                          <span className="font-heading text-[11px] font-bold text-primary">{plan.completed_sessions}/{plan.total_sessions}</span>
+                    {/* Plan progress - full session tracker */}
+                    {(() => {
+                      const totalSess = plan?.total_sessions || block.total_sessions || 0;
+                      const completedSess = plan?.completed_sessions || block.completed_sessions || 0;
+                      const sessions = block.planSessions || [];
+                      if (totalSess <= 0) return null;
+                      return (
+                        <div className="pt-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                              Progresso do plano — {completedSess}/{totalSess} sessões
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {Array.from({ length: totalSess }, (_, i) => {
+                              const sessionNum = i + 1;
+                              const sessionApt = sessions.find((s) => s.session_number === sessionNum);
+                              const isDoneByRecord = sessionApt?.status === "completed";
+                              const isDoneByCounter = !sessionApt && sessionNum <= completedSess;
+                              const isDone = isDoneByRecord || isDoneByCounter;
+                              const isScheduled = sessionApt && sessionApt.status !== "completed";
+                              const isCurrent = block.session_number === sessionNum;
+                              return (
+                                <div key={sessionNum} className="flex flex-col items-center">
+                                  <div className={cn(
+                                    "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all",
+                                    isCurrent ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
+                                      : isDone ? "border-emerald-500 bg-emerald-500 text-white"
+                                      : isScheduled ? "border-primary/50 bg-primary/10 text-primary"
+                                      : "border-muted-foreground/20 bg-muted text-muted-foreground"
+                                  )}>
+                                    {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : sessionNum}
+                                  </div>
+                                  {sessionApt && (
+                                    <span className="font-body text-[8px] text-muted-foreground mt-0.5 text-center leading-tight">
+                                      {sessionApt.date.split("-").reverse().join("/")}
+                                    </span>
+                                  )}
+                                  {isDoneByCounter && !sessionApt && (
+                                    <span className="font-body text-[8px] text-muted-foreground mt-0.5 text-center leading-tight">
+                                      Realizada
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <p className="font-body text-[10px] text-muted-foreground mt-2">
+                            Restam <span className="font-semibold text-foreground">{totalSess - completedSess}</span> sessão(ões)
+                          </p>
                         </div>
-                        <Progress value={progress} className="h-1.5" />
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Partner */}
                     {!readOnly && onPartnerAssign && (
