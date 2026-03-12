@@ -79,6 +79,8 @@ interface DayTimelineViewProps {
   onDragReschedule?: (appointmentId: string, newTime: string) => void;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
+  /** Callback to check if an appointment is overdue and needs attention */
+  isOverdue?: (apt: TimelineAppointment) => boolean;
 }
 
 const PALETTE = [
