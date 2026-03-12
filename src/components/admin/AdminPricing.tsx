@@ -68,13 +68,22 @@ const AdminPricing = () => {
     field: "price_per_session_cents" | "total_price_cents",
     value: string
   ) => {
-    const maskedValue = formatInputCents(parseCurrencyToCents(value));
+    const cents = parseCurrencyToCents(value);
+    const maskedValue = formatInputCents(cents);
 
     setRawPriceInputs((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
         [field]: maskedValue,
+      },
+    }));
+
+    setEditedPrices((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: cents,
       },
     }));
   };
