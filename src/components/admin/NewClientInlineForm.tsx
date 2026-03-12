@@ -60,7 +60,6 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
 
 interface FormData {
   full_name: string;
-  username: string;
   password: string;
   phone: string;
   email: string;
@@ -68,7 +67,20 @@ interface FormData {
   address: string;
 }
 
-const emptyForm: FormData = { full_name: "", username: "", password: "", phone: "", email: "", sex: "", address: "" };
+const emptyForm: FormData = { full_name: "", password: "", phone: "", email: "", sex: "", address: "" };
+
+const generateUsername = (name: string): string => {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(".")
+    + "." + Math.floor(Math.random() * 900 + 100);
+};
 
 const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormProps) => {
   const [form, setForm] = useState<FormData>(emptyForm);
@@ -101,11 +113,12 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
   };
 
   const handleCreate = async () => {
-    const { full_name, username, password, phone, sex, address, email } = form;
-    if (!full_name || !username || !password || !phone || !sex || !address) {
+    const { full_name, password, phone, sex, address, email } = form;
+    if (!full_name || !password || !phone || !sex || !address) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
+    const username = generateUsername(full_name);
     if (password.length < 6) {
       toast.error("Senha deve ter no mínimo 6 caracteres");
       return;
@@ -201,8 +214,8 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
           <Input value={form.full_name} onChange={(e) => setForm(prev => ({ ...prev, full_name: capitalize(e.target.value) }))} placeholder="Maria Silva" className="font-body h-8 text-xs" />
         </div>
         <div className="space-y-1">
-          <label className="font-body text-[10px] font-medium text-foreground">Usuário (login) *</label>
-          <Input value={form.username} onChange={(e) => setForm(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, "") }))} placeholder="maria.silva" className="font-body h-8 text-xs" />
+          <label className="font-body text-[10px] font-medium text-foreground">Senha *</label>
+          <Input type="password" value={form.password} onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))} placeholder="Mín. 6 caracteres" className="font-body h-8 text-xs" autoComplete="new-password" />
         </div>
         <div className="space-y-1">
           <label className="font-body text-[10px] font-medium text-foreground">Senha *</label>
