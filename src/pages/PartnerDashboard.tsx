@@ -894,7 +894,22 @@ const PartnerDashboard = () => {
                   const fullApt = appointments.find(a => a.id === apt.id);
                   return fullApt ? isAppointmentOverdue(fullApt, referenceNow) : false;
                 }}
-                {...(permissions.can_reschedule ? { onDragReschedule: handleDragReschedule } : {})}
+                {...(permissions.can_reschedule ? {
+                  onDragReschedule: handleDragReschedule,
+                  onReschedule: (apt: any) => {
+                    const fullApt = appointments.find(a => a.id === apt.id);
+                    if (fullApt) {
+                      setScheduleModal({
+                        planId: fullApt.plan_id || "",
+                        sessionNumber: fullApt.session_number || 1,
+                        serviceSlug: fullApt.service_slug,
+                        serviceTitle: fullApt.service_title,
+                        userId: fullApt.user_id,
+                        partnerId: (fullApt as any).partner_id || partnerId,
+                      });
+                    }
+                  },
+                } : {})}
                 {...(permissions.can_cancel ? { onCancel: handleCancelAppointment } : {})}
               />
             ) : (
