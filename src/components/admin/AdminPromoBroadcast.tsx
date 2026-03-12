@@ -105,6 +105,9 @@ const AdminPromoBroadcast = () => {
   const [savingCamp, setSavingCamp] = useState(false);
   const [sendingCampId, setSendingCampId] = useState<string | null>(null);
   const [expandedInstances, setExpandedInstances] = useState(true);
+  const [campaignReportOpen, setCampaignReportOpen] = useState<Record<string, boolean>>({});
+  const [campaignReportLoading, setCampaignReportLoading] = useState<Record<string, boolean>>({});
+  const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
 
   /* ───────── fetch ───────── */
   const fetchInstances = useCallback(async () => {
