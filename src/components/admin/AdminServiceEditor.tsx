@@ -274,6 +274,25 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     }));
   };
 
+  const commitNewPlanPricePerSession = () => {
+    const parsed = parseMoneyInput(newPlanRaw.pps);
+    const sessions = Math.max(1, newPlan.sessions || 1);
+    const total = parsed.cents * sessions;
+
+    setNewPlan((prev) => ({
+      ...prev,
+      sessions,
+      price_per_session_cents: parsed.cents,
+      total_price_cents: total,
+    }));
+
+    setNewPlanRaw((prev) => ({
+      ...prev,
+      pps: centsToStr(parsed.cents),
+      total: centsToStr(total),
+    }));
+  };
+
   const handleSavePlan = async (planId: string) => {
     const original = prices.find((p) => p.id === planId);
     if (!original) return;
