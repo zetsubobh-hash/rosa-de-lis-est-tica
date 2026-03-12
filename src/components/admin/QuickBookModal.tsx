@@ -118,7 +118,7 @@ const QuickBookModal = ({
           appointment_time: time,
           status: "confirmed",
           partner_id: partnerId,
-          plan_id: plan.id,
+          plan_id: planId,
           session_number: 1,
         });
 
