@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, X, Save, Search, Users, Phone,
-  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText, KeyRound, UserPlus, Copy, RefreshCw
+  Clock, Eye, EyeOff, Loader2, MessageCircle, FileText, KeyRound, UserPlus, Copy, RefreshCw, Calendar
 } from "lucide-react";
 import PartnerPaymentHistory from "@/components/admin/PartnerPaymentHistory";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ interface Partner {
   work_start: string;
   work_end: string;
   is_active: boolean;
+  can_manage_agenda: boolean;
   specialties?: string[];
 }
 
@@ -178,6 +179,7 @@ const AdminPartners = () => {
       work_start: "08:00",
       work_end: "18:00",
       is_active: true,
+      can_manage_agenda: false,
       specialties: [],
     });
     setIsNew(true);
@@ -240,6 +242,7 @@ const AdminPartners = () => {
           work_start: editing.work_start,
           work_end: editing.work_end,
           is_active: editing.is_active,
+          can_manage_agenda: editing.can_manage_agenda,
         })
         .select("id")
         .single();
@@ -272,6 +275,7 @@ const AdminPartners = () => {
           work_start: editing.work_start,
           work_end: editing.work_end,
           is_active: editing.is_active,
+          can_manage_agenda: editing.can_manage_agenda,
         })
         .eq("id", editing.id);
 
@@ -902,8 +906,8 @@ const AdminPartners = () => {
                   </div>
                 )}
 
-                {/* Active toggle */}
-                <div className="flex items-center gap-3">
+                {/* Active & Agenda toggles */}
+                <div className="flex items-center gap-3 flex-wrap">
                   <button
                     onClick={() => setEditing({ ...editing, is_active: !editing.is_active })}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
@@ -912,6 +916,16 @@ const AdminPartners = () => {
                   >
                     {editing.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     {editing.is_active ? "Ativo" : "Inativo"}
+                  </button>
+                  <button
+                    onClick={() => setEditing({ ...editing, can_manage_agenda: !editing.can_manage_agenda })}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
+                      editing.can_manage_agenda ? "border-primary/20 text-primary" : "border-muted-foreground/20 text-muted-foreground"
+                    }`}
+                    title="Permite que o parceiro crie, edite e cancele agendamentos"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    {editing.can_manage_agenda ? "Gerenciar Agenda ✅" : "Gerenciar Agenda ❌"}
                   </button>
                 </div>
               </div>
