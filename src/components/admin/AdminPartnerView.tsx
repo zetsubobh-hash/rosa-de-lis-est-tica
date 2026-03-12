@@ -377,11 +377,6 @@ const AdminPartnerView = () => {
     }
   };
 
-  const grouped = appointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
-    if (!acc[apt.appointment_date]) acc[apt.appointment_date] = [];
-    acc[apt.appointment_date].push(apt);
-    return acc;
-  }, {});
 
   const pastGrouped = pastAppointments.reduce<Record<string, Appointment[]>>((acc, apt) => {
     if (!acc[apt.appointment_date]) acc[apt.appointment_date] = [];
