@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL } from "@/lib/supabaseUrl";
 import { toast } from "@/hooks/use-toast";
-import { LogIn, UserPlus, Loader2, Eye, EyeOff, Camera, X, Check } from "lucide-react";
+import { LogIn, UserPlus, Loader2, Eye, EyeOff, Camera, X, Check, Phone } from "lucide-react";
 import Cropper, { Area } from "react-easy-crop";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -56,12 +56,14 @@ const capitalizeWords = (value: string) => {
 };
 
 const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [loginError, setLoginError] = useState(false);
+  const [forgotPhone, setForgotPhone] = useState("");
+  const [forgotResult, setForgotResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Login fields
   const [loginUsername, setLoginUsername] = useState("");
@@ -326,16 +328,93 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
     resetFields();
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const digits = forgotPhone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      toast({ title: "Informe um telefone válido", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    setForgotResult(null);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: digits }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setForgotResult({ success: false, message: result.error || "Erro ao redefinir senha" });
+      } else {
+        setForgotResult({ success: true, message: result.message });
+      }
+    } catch {
+      setForgotResult({ success: false, message: "Erro de conexão. Tente novamente." });
+    }
+    setLoading(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-heading text-xl text-center">
-            {mode === "login" ? "Entrar na sua conta" : "Criar sua conta"}
+            {mode === "login" ? "Entrar na sua conta" : mode === "forgot" ? "Recuperar senha" : "Criar sua conta"}
           </DialogTitle>
         </DialogHeader>
 
-        {mode === "login" ? (
+        {mode === "forgot" ? (
+          <form onSubmit={handleForgotPassword} className="space-y-4 mt-2">
+            <p className="font-body text-sm text-muted-foreground text-center">
+              Informe o telefone cadastrado na sua conta. Uma nova senha será enviada para o seu WhatsApp.
+            </p>
+
+            {forgotResult && (
+              <div className={`rounded-xl border p-4 text-center space-y-1 ${forgotResult.success ? "border-primary/20 bg-primary/5" : "border-destructive/20 bg-destructive/5"}`}>
+                <p className={`font-body text-sm font-medium ${forgotResult.success ? "text-primary" : "text-destructive"}`}>
+                  {forgotResult.message}
+                </p>
+                {forgotResult.success && (
+                  <button
+                    type="button"
+                    onClick={() => { setMode("login"); setForgotResult(null); setForgotPhone(""); }}
+                    className="text-primary font-semibold hover:underline font-body text-xs"
+                  >
+                    Voltar para o login
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="forgot-phone" className="font-body text-sm">Telefone cadastrado</Label>
+              <Input
+                id="forgot-phone"
+                placeholder="(00) 00000-0000"
+                value={forgotPhone}
+                onChange={(e) => { setForgotPhone(formatPhone(e.target.value)); setForgotResult(null); }}
+                autoComplete="tel"
+              />
+            </div>
+
+            <Button type="submit" className="w-full gap-2" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
+              Enviar nova senha
+            </Button>
+
+            <p className="text-center font-body text-sm text-muted-foreground">
+              Lembrou a senha?{" "}
+              <button
+                type="button"
+                onClick={() => { setMode("login"); setForgotResult(null); setForgotPhone(""); }}
+                className="text-primary font-semibold hover:underline"
+              >
+                Fazer login
+              </button>
+            </p>
+          </form>
+        ) : mode === "login" ? (
           <form onSubmit={handleLogin} className="space-y-4 mt-2">
             {loginError && (
               <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center space-y-2">
@@ -384,6 +463,15 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
                   {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+            </div>
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => { setMode("forgot"); setLoginError(false); }}
+                className="font-body text-xs text-muted-foreground hover:text-primary hover:underline transition-colors"
+              >
+                Esqueci minha senha
+              </button>
             </div>
             <Button type="submit" className="w-full gap-2" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
