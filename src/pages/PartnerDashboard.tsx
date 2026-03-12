@@ -757,7 +757,7 @@ const PartnerDashboard = () => {
                 }}
                 isOverdue={(apt) => {
                   const fullApt = appointments.find(a => a.id === apt.id);
-                  return fullApt ? isAppointmentOverdue(fullApt) : false;
+                  return fullApt ? isAppointmentOverdue(fullApt, referenceNow) : false;
                 }}
               />
             ) : (
