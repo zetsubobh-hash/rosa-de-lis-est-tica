@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, Users, Phone, Mail, Calendar, MapPin } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search, Users, Phone, Mail, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 
@@ -117,6 +117,27 @@ const AdminClients = () => {
                       {client.email}
                     </p>
                   )}
+                </div>
+                {/* Quick action icons */}
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <a
+                    href={`tel:${client.phone.replace(/\D/g, "")}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                    title="Ligar"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                  </a>
+                  <a
+                    href={`https://wa.me/55${client.phone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
+                    title="WhatsApp"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                  </a>
                 </div>
               </div>
             </motion.button>
