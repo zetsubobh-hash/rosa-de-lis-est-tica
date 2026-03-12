@@ -450,6 +450,9 @@ const AdminPartnerView = () => {
                 <button onClick={() => setShowInstallQR(true)} className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors" title="Compartilhar instalação do app">
                   <Smartphone className="w-5 h-5" />
                 </button>
+                <button onClick={() => setShowDemoRoulette(true)} className="p-2 rounded-lg text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors" title="Demo Roleta de Boas-Vindas">
+                  <Gift className="w-5 h-5" />
+                </button>
                 <div className="p-2 rounded-lg text-primary-foreground/30 cursor-default">
                   <Home className="w-5 h-5" />
                 </div>
