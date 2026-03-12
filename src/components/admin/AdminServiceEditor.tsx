@@ -219,12 +219,17 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
   const handleAddPlan = async () => {
     if (!newPlan.plan_name || isNew) return;
+
+    const sessions = Math.max(1, newPlan.sessions || 1);
+    const pricePerSessionCents = parseMoneyInput(newPlanRaw.pps).cents;
+    const totalPriceCents = pricePerSessionCents * sessions;
+
     const { error } = await supabase.from("service_prices").insert({
       service_slug: service.slug,
       plan_name: newPlan.plan_name,
-      sessions: newPlan.sessions,
-      price_per_session_cents: newPlan.price_per_session_cents,
-      total_price_cents: newPlan.total_price_cents || newPlan.price_per_session_cents * newPlan.sessions,
+      sessions,
+      price_per_session_cents: pricePerSessionCents,
+      total_price_cents: totalPriceCents,
     });
     if (error) {
       toast({ title: "Erro ao adicionar plano", variant: "destructive" });
