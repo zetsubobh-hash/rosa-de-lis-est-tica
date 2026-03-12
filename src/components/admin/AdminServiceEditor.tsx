@@ -412,27 +412,6 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     }
   };
 
-  const EditableWrapper = ({ section, children, className = "" }: { section: EditingSection; children: React.ReactNode; className?: string }) => (
-    <div
-      className={`group relative cursor-pointer rounded-xl transition-all ${
-        editingSection === section ? "ring-2 ring-primary/50 ring-offset-2" : "hover:ring-2 hover:ring-primary/20 hover:ring-offset-1"
-      } ${className}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (isPlanEditLocked && editingSection !== section) return;
-        if (editingSection !== section) setEditingSection(section);
-      }}
-    >
-      {children}
-      {editingSection !== section && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-          <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
-            <Pencil className="w-3.5 h-3.5" />
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   const planOrder = ["Essencial", "Premium", "VIP"];
   const sortedPrices = [...prices].sort((a, b) => planOrder.indexOf(a.plan_name) - planOrder.indexOf(b.plan_name));
