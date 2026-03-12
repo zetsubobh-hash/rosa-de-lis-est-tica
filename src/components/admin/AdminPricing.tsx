@@ -147,6 +147,7 @@ const AdminPricing = () => {
     } else {
       toast({ title: "Preços atualizados com sucesso! ✅" });
       setEditedPrices({});
+      setRawPriceInputs({});
     }
     await refetch();
     setSaving(false);
