@@ -339,7 +339,7 @@ const PartnerDashboard = () => {
   } | null>(null);
 
   const handleDragReschedule = (appointmentId: string, newTime: string) => {
-    if (!canManageAgenda) return;
+    if (!permissions.can_reschedule) return;
     const apt = appointments.find((a) => a.id === appointmentId);
     if (!apt) return;
     if (apt.appointment_time === newTime) return;
