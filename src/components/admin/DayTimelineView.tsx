@@ -44,21 +44,23 @@ interface PartnerOption {
 
 interface DayTimelineViewProps {
   appointments: TimelineAppointment[];
-  expandedAptId: string | null;
-  onSelectAppointment: (id: string) => void;
-  clientPlans: ClientPlan[];
-  partnerOptions: PartnerOption[];
-  allPrices: any[];
-  updatingPlan: string | null;
-  onConfirmPayment: (apt: TimelineAppointment) => void;
-  onComplete: (apt: TimelineAppointment) => void;
-  onReschedule: (apt: TimelineAppointment) => void;
-  onCancel: (id: string) => void;
-  onPartnerAssign: (aptId: string, partnerId: string | null) => void;
-  onUpdateSessions: (planId: string, delta: number) => void;
-  isRescheduled: (apt: TimelineAppointment) => boolean;
-  getAppointmentPrice: (apt: TimelineAppointment, prices: any[]) => string;
-  getInitials: (name: string) => string;
+  expandedAptId?: string | null;
+  onSelectAppointment?: (id: string) => void;
+  clientPlans?: ClientPlan[];
+  partnerOptions?: PartnerOption[];
+  allPrices?: any[];
+  updatingPlan?: string | null;
+  onConfirmPayment?: (apt: TimelineAppointment) => void;
+  onComplete?: (apt: TimelineAppointment) => void;
+  onReschedule?: (apt: TimelineAppointment) => void;
+  onCancel?: (id: string) => void;
+  onPartnerAssign?: (aptId: string, partnerId: string | null) => void;
+  onUpdateSessions?: (planId: string, delta: number) => void;
+  isRescheduled?: (apt: TimelineAppointment) => boolean;
+  getAppointmentPrice?: (apt: TimelineAppointment, prices: any[]) => string;
+  getInitials?: (name: string) => string;
+  /** Read-only mode hides action buttons */
+  readOnly?: boolean;
 }
 
 const PALETTE = [
