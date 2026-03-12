@@ -307,6 +307,7 @@ const DayTimelineView = ({
                 draggable={!readOnly && !isCompleted && !!onDragReschedule && !isMobile}
                 onDragStart={(e: any) => {
                   if (!onDragReschedule || readOnly || isCompleted) return;
+                  e.dataTransfer.setData("text/appointment-id", block.id);
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 onDragEnd={() => setDragOverSlot(null)}
