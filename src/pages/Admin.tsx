@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift } from "lucide-react";
@@ -39,7 +39,14 @@ const Admin = () => {
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["dashboard","agenda","counter-sales","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette"].includes(tabParam)) {
+      return tabParam as Tab;
+    }
+    return "dashboard";
+  });
   const [settingsMap, setSettingsMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -59,6 +66,11 @@ const Admin = () => {
     }
     setActiveTab(tab);
     setMobileMenuOpen(false);
+    // Clean tab param from URL
+    if (searchParams.has("tab")) {
+      searchParams.delete("tab");
+      setSearchParams(searchParams, { replace: true });
+    }
   };
 
   useEffect(() => {
