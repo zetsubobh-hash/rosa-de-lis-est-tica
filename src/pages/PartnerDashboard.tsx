@@ -599,14 +599,24 @@ const PartnerDashboard = () => {
                             <p className="font-body text-xs text-muted-foreground mt-0.5">{plan.service_title} · {plan.plan_name}</p>
                           </div>
                           {plan.profile && partnerId && (
-                            <button
-                              onClick={() => setAnamnesisClient({ userId: plan.user_id, name: plan.profile?.full_name || "Cliente" })}
-                              className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
-                              title="Ficha de Anamnese"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Anamnese</span>
-                            </button>
+                            <div className="flex gap-1 shrink-0">
+                              <button
+                                onClick={() => setHistoryClient({ userId: plan.user_id, name: plan.profile?.full_name || "Cliente" })}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors border border-border"
+                                title="Ficha Completa"
+                              >
+                                <ClipboardList className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Ficha</span>
+                              </button>
+                              <button
+                                onClick={() => setAnamnesisClient({ userId: plan.user_id, name: plan.profile?.full_name || "Cliente" })}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors border border-primary/20"
+                                title="Ficha de Anamnese"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Anamnese</span>
+                              </button>
+                            </div>
                           )}
                         </div>
 
