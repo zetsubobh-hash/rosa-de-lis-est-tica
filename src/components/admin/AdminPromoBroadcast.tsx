@@ -112,6 +112,7 @@ const AdminPromoBroadcast = () => {
     message_template: DEFAULT_TEMPLATE,
     start_time: "09:00",
     interval_seconds: 30,
+    audience_filter: "all" as string,
   });
   const [savingCamp, setSavingCamp] = useState(false);
   const [sendingCampId, setSendingCampId] = useState<string | null>(null);
