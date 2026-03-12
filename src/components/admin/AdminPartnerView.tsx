@@ -82,6 +82,9 @@ const AdminPartnerView = () => {
   const [showInstallQR, setShowInstallQR] = useState(false);
   const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
+  const [scheduleModal, setScheduleModal] = useState<{
+    planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string;
+  } | null>(null);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
   useEffect(() => {
