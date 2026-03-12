@@ -537,11 +537,22 @@ const PartnerDashboard = () => {
                   planSessions: a.planSessions || [],
                   profiles: a.profile ? { ...a.profile, phone: "", email: null } : null,
                 }))}
+                clientPlans={clientPlans.map(p => ({
+                  id: p.id,
+                  user_id: p.user_id,
+                  service_slug: p.service_slug,
+                  service_title: p.service_title,
+                  plan_name: p.plan_name,
+                  total_sessions: p.total_sessions,
+                  completed_sessions: p.completed_sessions,
+                  status: p.status,
+                }))}
                 isRescheduled={(apt) => {
                   if (!apt.notes) return false;
                   try { return !!JSON.parse(apt.notes).rescheduled; } catch { return false; }
                 }}
                 onAnamnesis={partnerId ? (userId, name) => setAnamnesisClient({ userId, name }) : undefined}
+                onHistory={(userId, name) => setHistoryClient({ userId, name })}
                 readOnly
               />
             ) : (
