@@ -937,6 +937,14 @@ const PartnerDashboard = () => {
                   },
                 } : {})}
                 {...(permissions.can_cancel ? { onCancel: handleCancelAppointment } : {})}
+                {...(permissions.can_create_appointments ? {
+                  onSlotClick: (time: string) => {
+                    setQuickBook({ time });
+                    setQbUserId("");
+                    setQbServiceSlug("");
+                    setQbShowNewClient(false);
+                  },
+                } : {})}
               />
             ) : (
               Object.entries(grouped).map(([date, apts]) => (
