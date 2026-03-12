@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -72,6 +72,8 @@ interface DayTimelineViewProps {
   onAnamnesis?: (userId: string, name: string) => void;
   /** Called when an empty time slot is clicked */
   onSlotClick?: (time: string) => void;
+  /** Called when an appointment is dragged to a new time slot */
+  onDragReschedule?: (appointmentId: string, newTime: string) => void;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
 }
@@ -139,9 +141,11 @@ const DayTimelineView = ({
   getInitials = defaultGetInitials,
   onAnamnesis,
   onSlotClick,
+  onDragReschedule,
   readOnly = false,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const colorMap = useMemo(() => {
     const map: Record<string, { bg: string; text: string }> = {};
     const slugs = [...new Set(appointments.map((a) => a.service_slug))];
@@ -220,11 +224,27 @@ const DayTimelineView = ({
             </div>
             <div
               className={cn(
-                "flex-1 border-t",
+                "flex-1 border-t transition-colors",
                 i % 2 === 0 ? "border-border" : "border-border/30 border-dashed",
-                onSlotClick && !readOnly && "cursor-pointer hover:bg-primary/5 transition-colors"
+                dragOverSlot === i && "bg-primary/15 ring-1 ring-primary/30",
+                onSlotClick && !readOnly && "cursor-pointer hover:bg-primary/5"
               )}
               onClick={() => onSlotClick && !readOnly && onSlotClick(label)}
+              onDragOver={(e) => {
+                if (!onDragReschedule || readOnly) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setDragOverSlot(i);
+              }}
+              onDragLeave={() => setDragOverSlot(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverSlot(null);
+                const aptId = e.dataTransfer.getData("text/appointment-id");
+                if (aptId && onDragReschedule) {
+                  onDragReschedule(aptId, label);
+                }
+              }}
             />
           </div>
         ))}
@@ -263,9 +283,17 @@ const DayTimelineView = ({
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05 }}
+                draggable={!readOnly && !!onDragReschedule && !isMobile}
+                onDragStart={(e: any) => {
+                  if (!onDragReschedule || readOnly) return;
+                  e.dataTransfer.setData("text/appointment-id", block.id);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnd={() => setDragOverSlot(null)}
                 className={cn(
                   "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
-                  isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95"
+                  isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
+                  !readOnly && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing"
                 )}
                 style={{
                   top: `${top + 1}px`,
