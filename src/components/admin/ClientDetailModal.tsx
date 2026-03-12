@@ -124,7 +124,10 @@ const AnamnesisField = ({ label, value }: { label: string; value: any }) => {
   );
 };
 
+const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
+
 const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props) => {
+  const isMasterAdmin = userId === MASTER_ADMIN_ID;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
@@ -360,13 +363,15 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                           <InfoRow icon={Calendar} label="Cadastro" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pt-BR") : null} />
                           <InfoRow icon={Clock} label="Último acesso" value={profile?.last_seen ? new Date(profile.last_seen).toLocaleString("pt-BR") : "Nunca acessou"} />
 
-                          <button
-                            onClick={() => setEditing(true)}
-                            className="mt-4 w-full py-2.5 rounded-xl border border-primary/20 text-primary font-body text-sm font-semibold hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Pencil className="w-4 h-4" />
-                            Editar Dados
-                          </button>
+                          {!isMasterAdmin && (
+                            <button
+                              onClick={() => setEditing(true)}
+                              className="mt-4 w-full py-2.5 rounded-xl border border-primary/20 text-primary font-body text-sm font-semibold hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <Pencil className="w-4 h-4" />
+                              Editar Dados
+                            </button>
+                          )}
                         </div>
                       )}
                     </TabsContent>
