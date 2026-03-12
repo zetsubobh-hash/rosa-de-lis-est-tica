@@ -313,7 +313,7 @@ const DayTimelineView = ({
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <h3 className="font-heading text-sm font-bold text-foreground">{block.service_title}</h3>
-                      <button onClick={() => onSelectAppointment(block.id)} className="text-muted-foreground hover:text-foreground">
+                      <button onClick={() => onSelectAppointment?.(block.id)} className="text-muted-foreground hover:text-foreground">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
