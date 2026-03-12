@@ -247,7 +247,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     if (!error) { refetchPrices(); toast({ title: "Plano removido ✅" }); }
   };
 
-  const commitPlanPricePerSession = (planId: string, fallbackPps: number, fallbackSessions: number) => {
+  const commitPlanPricePerSession = (planId: string, fallbackSessions: number) => {
     const rawValue = rawPriceInputs[planId]?.pps;
     if (rawValue === undefined) return;
 
