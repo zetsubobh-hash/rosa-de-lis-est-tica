@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
+import DayTimelineView from "@/components/admin/DayTimelineView";
 import { cn } from "@/lib/utils";
 
 interface Profile {
