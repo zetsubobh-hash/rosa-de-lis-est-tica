@@ -883,6 +883,9 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                 <EditableWrapper section="new-plan">
                   {editingSection === "new-plan" ? (
                     <div
+                      ref={(node) => {
+                        if (editingSection === "new-plan") activePlanEditorRef.current = node;
+                      }}
                       className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3"
                       onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => e.stopPropagation()}
