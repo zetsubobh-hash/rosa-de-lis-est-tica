@@ -161,11 +161,16 @@ const AdminAgenda = () => {
 
     if (partnersRes.data) setPartnerOptions(partnersRes.data);
     if (plansRes.data) setClientPlans(plansRes.data as ClientPlan[]);
+    if (servicesRes.data) setAllServices(servicesRes.data);
 
     const profileMap: Record<string, Profile> = {};
     profilesRes.data?.forEach((p: any) => {
       profileMap[p.user_id] = p;
     });
+
+    if (profilesRes.data) {
+      setAllProfiles(profilesRes.data.map((p: any) => ({ user_id: p.user_id, full_name: p.full_name })));
+    }
 
     if (appointmentsRes.data) {
       setAppointments(
