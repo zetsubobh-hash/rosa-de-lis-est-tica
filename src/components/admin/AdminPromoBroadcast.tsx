@@ -70,6 +70,11 @@ const AdminPromoBroadcast = () => {
   const [instForm, setInstForm] = useState({ name: "", api_url: "", api_key: "", instance_name: "", msgs_per_cycle: 10 });
   const [savingInst, setSavingInst] = useState(false);
 
+  // ── per-instance connection state
+  const [instanceStatus, setInstanceStatus] = useState<Record<string, string>>({});
+  const [instanceQr, setInstanceQr] = useState<Record<string, string | null>>({});
+  const [instanceLoading, setInstanceLoading] = useState<Record<string, string | null>>({});
+
   // ── campaigns state
   const [campaigns, setCampaigns] = useState<PromoCampaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
