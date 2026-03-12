@@ -70,6 +70,8 @@ interface DayTimelineViewProps {
   getAppointmentPrice?: (apt: TimelineAppointment, prices: any[]) => string;
   getInitials?: (name: string) => string;
   onAnamnesis?: (userId: string, name: string) => void;
+  /** Called when an empty time slot is clicked */
+  onSlotClick?: (time: string) => void;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
 }
@@ -136,6 +138,7 @@ const DayTimelineView = ({
   getAppointmentPrice,
   getInitials = defaultGetInitials,
   onAnamnesis,
+  onSlotClick,
   readOnly = false,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
@@ -215,10 +218,14 @@ const DayTimelineView = ({
                 {label}
               </span>
             </div>
-            <div className={cn(
-              "flex-1 border-t",
-              i % 2 === 0 ? "border-border" : "border-border/30 border-dashed"
-            )} />
+            <div
+              className={cn(
+                "flex-1 border-t",
+                i % 2 === 0 ? "border-border" : "border-border/30 border-dashed",
+                onSlotClick && !readOnly && "cursor-pointer hover:bg-primary/5 transition-colors"
+              )}
+              onClick={() => onSlotClick && !readOnly && onSlotClick(label)}
+            />
           </div>
         ))}
 

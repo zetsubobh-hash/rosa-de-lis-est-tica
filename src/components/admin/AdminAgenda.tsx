@@ -121,11 +121,19 @@ const AdminAgenda = () => {
   const [saving, setSaving] = useState(false);
   const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
 
+  // Quick-book from timeline slot
+  const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
+  const [qbUserId, setQbUserId] = useState("");
+  const [qbServiceSlug, setQbServiceSlug] = useState("");
+  const [qbSaving, setQbSaving] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
+
   const fetchAll = async () => {
     setLoading(true);
 
     // Run ALL queries in parallel
-    const [appointmentsRes, profilesRes, partnersRes, plansRes] = await Promise.all([
+    const [appointmentsRes, profilesRes, partnersRes, plansRes, servicesRes] = await Promise.all([
       supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
@@ -144,15 +152,25 @@ const AdminAgenda = () => {
         .from("client_plans")
         .select("id, user_id, service_slug, service_title, plan_name, total_sessions, completed_sessions, status")
         .in("status", ["active", "completed"]),
+      supabase
+        .from("services")
+        .select("slug, title")
+        .eq("is_active", true)
+        .order("sort_order"),
     ]);
 
     if (partnersRes.data) setPartnerOptions(partnersRes.data);
     if (plansRes.data) setClientPlans(plansRes.data as ClientPlan[]);
+    if (servicesRes.data) setAllServices(servicesRes.data);
 
     const profileMap: Record<string, Profile> = {};
     profilesRes.data?.forEach((p: any) => {
       profileMap[p.user_id] = p;
     });
+
+    if (profilesRes.data) {
+      setAllProfiles(profilesRes.data.map((p: any) => ({ user_id: p.user_id, full_name: p.full_name })));
+    }
 
     if (appointmentsRes.data) {
       setAppointments(
@@ -487,12 +505,7 @@ const AdminAgenda = () => {
         </div>
       </div>
 
-      {groupedEntries.length === 0 ? (
-        <div className="bg-card rounded-2xl border border-border p-12 text-center">
-          <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="font-body text-muted-foreground">Nenhum agendamento para esta data.</p>
-        </div>
-      ) : filterDate ? (
+      {filterDate ? (
         <DayTimelineView
           appointments={filtered}
           expandedAptId={expandedApt}
@@ -510,7 +523,17 @@ const AdminAgenda = () => {
           isRescheduled={isRescheduled}
           getAppointmentPrice={getAppointmentPrice}
           getInitials={getInitials}
+          onSlotClick={(time) => {
+            setQuickBook({ time });
+            setQbUserId("");
+            setQbServiceSlug("");
+          }}
         />
+      ) : groupedEntries.length === 0 ? (
+        <div className="bg-card rounded-2xl border border-border p-12 text-center">
+          <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="font-body text-muted-foreground">Nenhum agendamento encontrado.</p>
+        </div>
       ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {groupedEntries.map((group, i) => {
@@ -991,6 +1014,99 @@ const AdminAgenda = () => {
           userId={scheduleModal.userId}
         />
       )}
+
+      {/* Quick Book Modal */}
+      <AnimatePresence>
+        {quickBook && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setQuickBook(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card rounded-2xl border border-border shadow-xl w-full max-w-md p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-heading text-base font-bold text-foreground">
+                  Agendar às {quickBook.time}
+                </h3>
+                <button onClick={() => setQuickBook(null)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="font-body text-sm text-muted-foreground">
+                {filterDate ? format(filterDate, "dd/MM/yyyy") : ""}
+              </p>
+
+              {/* Client select */}
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground block mb-1.5">Cliente</label>
+                <select
+                  value={qbUserId}
+                  onChange={(e) => setQbUserId(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Selecione o cliente...</option>
+                  {allProfiles.map((p) => (
+                    <option key={p.user_id} value={p.user_id}>{p.full_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Service select */}
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground block mb-1.5">Procedimento</label>
+                <select
+                  value={qbServiceSlug}
+                  onChange={(e) => setQbServiceSlug(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Selecione o procedimento...</option>
+                  {allServices.map((s) => (
+                    <option key={s.slug} value={s.slug}>{s.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                disabled={qbSaving || !qbUserId || !qbServiceSlug || !filterDate}
+                onClick={async () => {
+                  if (!filterDate || !qbUserId || !qbServiceSlug) return;
+                  setQbSaving(true);
+                  const service = allServices.find((s) => s.slug === qbServiceSlug);
+                  const dateStr = format(filterDate, "yyyy-MM-dd");
+                  const { error } = await supabase.from("appointments").insert({
+                    user_id: qbUserId,
+                    service_slug: qbServiceSlug,
+                    service_title: service?.title || qbServiceSlug,
+                    appointment_date: dateStr,
+                    appointment_time: quickBook.time,
+                    status: "confirmed",
+                  });
+                  setQbSaving(false);
+                  if (error) {
+                    toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
+                  } else {
+                    toast({ title: "Agendamento criado ✅" });
+                    setQuickBook(null);
+                    fetchAll();
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {qbSaving ? "Agendando..." : "Confirmar Agendamento"}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
