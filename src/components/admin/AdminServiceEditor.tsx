@@ -849,16 +849,17 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           type="text"
                           inputMode="decimal"
                           value={newPlanRaw.pps}
-                          onFocus={(e) => e.currentTarget.select()}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") e.preventDefault();
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              commitNewPlanPricePerSession();
+                              (e.currentTarget as HTMLInputElement).blur();
+                            }
                           }}
                           onChange={(e) => {
-                            const parsed = parseMoneyInput(e.target.value);
-                            setNewPlanRaw({ pps: parsed.display, total: centsToStr(parsed.cents * newPlan.sessions) });
-                            setNewPlan((p) => ({ ...p, price_per_session_cents: parsed.cents, total_price_cents: parsed.cents * p.sessions }));
+                            setNewPlanRaw((p) => ({ ...p, pps: e.target.value }));
                           }}
-                          onBlur={() => setNewPlanRaw((p) => ({ ...p, pps: centsToStr(newPlan.price_per_session_cents) }))}
+                          onBlur={() => commitNewPlanPricePerSession()}
                           className="h-8 font-body text-sm"
                         />
                       </div>
@@ -866,18 +867,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
                         <Input
                           type="text"
-                          inputMode="decimal"
+                          readOnly
                           value={newPlanRaw.total}
-                          onFocus={(e) => e.currentTarget.select()}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") e.preventDefault();
-                          }}
-                          onChange={(e) => {
-                            const parsed = parseMoneyInput(e.target.value);
-                            setNewPlanRaw((p) => ({ ...p, total: parsed.display }));
-                            setNewPlan((p) => ({ ...p, total_price_cents: parsed.cents }));
-                          }}
-                          onBlur={() => setNewPlanRaw((p) => ({ ...p, total: centsToStr(newPlan.total_price_cents) }))}
                           className="h-8 font-body text-sm"
                         />
                       </div>
