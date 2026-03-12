@@ -51,8 +51,18 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const [rawPriceInputs, setRawPriceInputs] = useState<Record<string, { pps?: string; total?: string }>>({});
   const [newPlanRaw, setNewPlanRaw] = useState({ pps: "0,00", total: "0,00" });
 
-  const centsToStr = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
-  const strToCents = (str: string) => Math.round(parseFloat(str.replace(",", ".")) * 100) || 0;
+  const centsToStr = (cents: number) => {
+    return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+  const strToCents = (str: string) => {
+    const digits = str.replace(/\D/g, "");
+    return parseInt(digits, 10) || 0;
+  };
+  const maskBRL = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    const cents = parseInt(digits, 10) || 0;
+    return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   const Icon = getIconByName(service.icon_name);
 
@@ -595,16 +605,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               type="text"
                               value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
                               onChange={(e) => {
-                                const raw = e.target.value;
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: raw } }));
-                                const v = strToCents(raw);
+                                const masked = maskBRL(e.target.value);
+                                const v = strToCents(e.target.value);
                                 const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { pps: masked, total: centsToStr(v * currentSessions) } }));
                                 setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: v, total_price_cents: v * currentSessions } }));
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: raw, total: centsToStr(v * currentSessions) } }));
                                 setHasChanges(true);
-                              }}
-                              onBlur={() => {
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -615,14 +621,11 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               type="text"
                               value={rawPriceInputs[plan.id]?.total ?? centsToStr(total)}
                               onChange={(e) => {
-                                const raw = e.target.value;
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: raw } }));
-                                const v = strToCents(raw);
+                                const masked = maskBRL(e.target.value);
+                                const v = strToCents(e.target.value);
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: masked } }));
                                 setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: v } }));
                                 setHasChanges(true);
-                              }}
-                              onBlur={() => {
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(editedPrices[plan.id]?.total_price_cents ?? plan.total_price_cents) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -679,25 +682,22 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
                         <Input type="text" value={newPlanRaw.pps}
                           onChange={(e) => {
-                            const raw = e.target.value;
-                            setNewPlanRaw(p => ({ ...p, pps: raw }));
-                            const v = strToCents(raw);
+                            const masked = maskBRL(e.target.value);
+                            const v = strToCents(e.target.value);
+                            setNewPlanRaw({ pps: masked, total: centsToStr(v * newPlan.sessions) });
                             setNewPlan(p => ({ ...p, price_per_session_cents: v, total_price_cents: v * p.sessions }));
-                            setNewPlanRaw(p => ({ ...p, total: centsToStr(v * newPlan.sessions) }));
                           }}
-                          onBlur={() => setNewPlanRaw(p => ({ ...p, pps: centsToStr(newPlan.price_per_session_cents) }))}
                           className="h-8 font-body text-sm" />
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
                         <Input type="text" value={newPlanRaw.total}
                           onChange={(e) => {
-                            const raw = e.target.value;
-                            setNewPlanRaw(p => ({ ...p, total: raw }));
-                            const v = strToCents(raw);
+                            const masked = maskBRL(e.target.value);
+                            const v = strToCents(e.target.value);
+                            setNewPlanRaw(p => ({ ...p, total: masked }));
                             setNewPlan(p => ({ ...p, total_price_cents: v }));
                           }}
-                          onBlur={() => setNewPlanRaw(p => ({ ...p, total: centsToStr(newPlan.total_price_cents) }))}
                           className="h-8 font-body text-sm" />
                       </div>
                       <Button onClick={handleAddPlan} size="sm" className="w-full gap-1.5" disabled={!newPlan.plan_name}>
