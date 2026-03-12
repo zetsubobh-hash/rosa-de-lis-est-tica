@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, isBefore, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck, ChevronRight, Clock, ArrowLeft, Check, CalendarPlus, Plus, Trash2 } from "lucide-react";
+import { CalendarCheck, ChevronRight, Clock, ArrowLeft, Check, CalendarPlus, Plus, Trash2, User } from "lucide-react";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -22,7 +22,13 @@ const TIME_SLOTS = [
   "16:00", "17:00", "18:00",
 ];
 
-type Step = "calendar" | "time" | "confirm";
+type Step = "partner" | "calendar" | "time" | "confirm";
+
+interface PartnerInfo {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
 
 const Agendar = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -37,28 +43,62 @@ const Agendar = () => {
   const planName = searchParams.get("plan") || "";
   const planPrice = parseInt(searchParams.get("price") || "0");
 
+  const [partners, setPartners] = useState<PartnerInfo[]>([]);
+  const [selectedPartner, setSelectedPartner] = useState<PartnerInfo | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
-  const [step, setStep] = useState<Step>("calendar");
+  const [step, setStep] = useState<Step>("partner");
   const [loading, setLoading] = useState(false);
+  const [partnersLoading, setPartnersLoading] = useState(true);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   
-  // Grace period: don't redirect until auth has had time to settle after login
   const mountedAt = useRef(Date.now());
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Fetch active partners (that serve this service via partner_services, or all if no partner_services configured)
   useEffect(() => {
-    // Wait at least 2s after mount before redirecting unauthenticated users
-    // This prevents the loop where setSession hasn't propagated yet
+    if (!slug) return;
+    const fetchPartners = async () => {
+      setPartnersLoading(true);
+      // First check if there are partner_services entries for this slug
+      const { data: psData } = await supabase
+        .from("partner_services")
+        .select("partner_id")
+        .eq("service_slug", slug);
+
+      let query = supabase
+        .from("partners")
+        .select("id, full_name, avatar_url")
+        .eq("is_active", true)
+        .order("full_name");
+
+      if (psData && psData.length > 0) {
+        const partnerIds = psData.map((ps: any) => ps.partner_id);
+        query = query.in("id", partnerIds);
+      }
+
+      const { data } = await query;
+      setPartners(data || []);
+
+      // If only 1 partner, auto-select
+      if (data && data.length === 1) {
+        setSelectedPartner(data[0]);
+        setStep("calendar");
+      }
+      setPartnersLoading(false);
+    };
+    fetchPartners();
+  }, [slug]);
+
+  useEffect(() => {
     if (authLoading || servicesLoading) return;
     if (!user) {
       const elapsed = Date.now() - mountedAt.current;
       if (elapsed < 2000) {
         const timer = setTimeout(() => {
-          // Re-check after grace period
           if (!user) navigate(`/servico/${slug}`, { replace: true });
         }, 2000 - elapsed);
         return () => clearTimeout(timer);
@@ -68,47 +108,29 @@ const Agendar = () => {
   }, [user, authLoading, servicesLoading, slug, navigate]);
 
   useEffect(() => {
-    if (!selectedDate) return;
+    if (!selectedDate || !selectedPartner) return;
     const fetchBooked = async () => {
       await supabase.rpc("cleanup_stale_pending_appointments");
-
       const dateStr = format(selectedDate, "yyyy-MM-dd");
-      // Fetch all booked slots with partner info
+      // Fetch slots booked by this specific partner
       const { data } = await supabase
         .from("appointments")
-        .select("appointment_time, partner_id")
+        .select("appointment_time")
         .eq("appointment_date", dateStr)
+        .eq("partner_id", selectedPartner.id)
         .in("status", ["confirmed", "pending"]);
-
-      // Fetch active partner count
-      const { count: partnerCount } = await supabase
-        .from("partners")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
-
-      const totalPartners = partnerCount || 1;
-
-      // A slot is fully booked only when ALL partners are occupied at that time
-      // (or when unassigned appointments fill the slot)
-      const slotCounts: Record<string, Set<string>> = {};
-      data?.forEach((d: any) => {
-        if (!slotCounts[d.appointment_time]) slotCounts[d.appointment_time] = new Set();
-        slotCounts[d.appointment_time].add(d.partner_id || "__unassigned__");
-      });
-
-      const fullyBooked = Object.entries(slotCounts)
-        .filter(([_, partners]) => {
-          // If there's an unassigned appointment, count it as blocking one slot
-          const hasUnassigned = partners.has("__unassigned__");
-          const assignedCount = partners.size - (hasUnassigned ? 1 : 0);
-          return (assignedCount + (hasUnassigned ? 1 : 0)) >= totalPartners;
-        })
-        .map(([time]) => time);
-
-      setBookedSlots(fullyBooked);
+      setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
     };
     fetchBooked();
-  }, [selectedDate]);
+  }, [selectedDate, selectedPartner]);
+
+  const handlePartnerSelect = (partner: PartnerInfo) => {
+    setSelectedPartner(partner);
+    setSelectedDate(undefined);
+    setSelectedTime(undefined);
+    setBookedSlots([]);
+    setStep("calendar");
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
@@ -119,7 +141,7 @@ const Agendar = () => {
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
     setTimeout(() => {
-      if (service && selectedDate) {
+      if (service && selectedDate && selectedPartner) {
         addItem({
           serviceSlug: service.slug,
           serviceTitle: service.title,
@@ -128,6 +150,8 @@ const Agendar = () => {
           dateFormatted: format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR }),
           time,
           iconName: service.icon_name,
+          partnerId: selectedPartner.id,
+          partnerName: selectedPartner.full_name,
         });
       }
       setStep("confirm");
@@ -144,6 +168,7 @@ const Agendar = () => {
         service_title: item.serviceTitle,
         appointment_date: item.date,
         appointment_time: item.time,
+        partner_id: item.partnerId || null,
         status: "pending",
         notes: planPrice > 0 ? JSON.stringify({ plan: planName, price_cents: planPrice }) : null,
       }));
@@ -152,16 +177,16 @@ const Agendar = () => {
         if (error.code === "23505") {
           toast({
             title: "Horário indisponível",
-            description: "Alguém acabou de agendar nesse mesmo horário. Por favor, escolha outro.",
+            description: "Esse horário acabou de ser reservado. Por favor, escolha outro.",
             variant: "destructive",
           });
-          // Refresh booked slots
-          if (selectedDate) {
+          if (selectedDate && selectedPartner) {
             const dateStr = format(selectedDate, "yyyy-MM-dd");
             const { data: fresh } = await supabase
               .from("appointments")
               .select("appointment_time")
               .eq("appointment_date", dateStr)
+              .eq("partner_id", selectedPartner.id)
               .in("status", ["confirmed", "pending"]);
             setBookedSlots(fresh?.map((d: any) => d.appointment_time) || []);
           }
@@ -199,6 +224,9 @@ const Agendar = () => {
   const today = startOfDay(new Date());
   const maxDate = addDays(today, 60);
 
+  const getInitials = (name: string) =>
+    name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+
   if (servicesLoading || authLoading) {
     return (
       <>
@@ -225,6 +253,17 @@ const Agendar = () => {
   }
 
   const IconComponent = getIconByName(service.icon_name);
+
+  const stepLabels = [
+    { key: "partner", label: "Profissional" },
+    { key: "calendar", label: "Data" },
+    { key: "time", label: "Horário" },
+    { key: "confirm", label: "Confirmar" },
+  ];
+  // If only 1 partner, skip partner step in indicator
+  const visibleSteps = partners.length <= 1
+    ? stepLabels.filter((s) => s.key !== "partner")
+    : stepLabels;
 
   return (
     <div className="min-h-screen bg-background">
@@ -261,15 +300,12 @@ const Agendar = () => {
       {/* Steps indicator */}
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="flex items-center justify-center gap-2 mb-10">
-          {[
-            { key: "calendar", label: "Data" },
-            { key: "time", label: "Horário" },
-            { key: "confirm", label: "Confirmar" },
-          ].map((s, i) => {
+          {visibleSteps.map((s, i) => {
+            const stepOrder = visibleSteps.map((vs) => vs.key);
+            const currentIdx = stepOrder.indexOf(step);
+            const thisIdx = i;
             const isActive = step === s.key;
-            const isDone =
-              (s.key === "calendar" && (step === "time" || step === "confirm")) ||
-              (s.key === "time" && step === "confirm");
+            const isDone = thisIdx < currentIdx;
             return (
               <div key={s.key} className="flex items-center gap-2">
                 {i > 0 && <div className={`w-8 h-0.5 ${isDone || isActive ? "bg-primary" : "bg-border"} transition-colors`} />}
@@ -291,9 +327,74 @@ const Agendar = () => {
         </div>
 
         <AnimatePresence mode="wait">
-          {/* Step 1: Calendar */}
+          {/* Step: Partner selection */}
+          {step === "partner" && (
+            <motion.div key="partner" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex flex-col items-center">
+              <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-2 text-center">Escolha o profissional</h2>
+              <p className="font-body text-muted-foreground text-sm mb-8 text-center">Selecione quem vai realizar o atendimento</p>
+              {partnersLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : partners.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="font-body text-muted-foreground text-sm">Nenhum profissional disponível no momento.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
+                  {partners.map((partner, i) => (
+                    <motion.button
+                      key={partner.id}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.08 }}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => handlePartnerSelect(partner)}
+                      className="flex items-center gap-4 p-5 rounded-2xl border border-border bg-card hover:border-primary hover:shadow-md transition-all text-left"
+                    >
+                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden border-2 border-primary/20">
+                        {partner.avatar_url ? (
+                          <img src={partner.avatar_url} alt={partner.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="font-heading text-base font-bold text-primary">{getInitials(partner.full_name)}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-heading text-sm font-bold text-foreground truncate">{partner.full_name}</p>
+                        <p className="font-body text-xs text-muted-foreground">Profissional</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Step: Calendar */}
           {step === "calendar" && (
             <motion.div key="calendar" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex flex-col items-center">
+              {partners.length > 1 && (
+                <button onClick={() => { setStep("partner"); setSelectedPartner(null); }} className="flex items-center gap-1 text-primary font-body text-sm font-semibold mb-4 hover:underline self-start">
+                  <ArrowLeft className="w-4 h-4" /> Trocar profissional
+                </button>
+              )}
+              {selectedPartner && (
+                <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-2xl bg-primary/5 border border-primary/10">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
+                    {selectedPartner.avatar_url ? (
+                      <img src={selectedPartner.avatar_url} alt={selectedPartner.full_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-heading text-xs font-bold text-primary">{getInitials(selectedPartner.full_name)}</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Profissional</p>
+                    <p className="font-heading text-sm font-semibold text-foreground">{selectedPartner.full_name}</p>
+                  </div>
+                </div>
+              )}
               <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-2 text-center">Escolha a data</h2>
               <p className="font-body text-muted-foreground text-sm mb-6 text-center">Selecione um dia disponível no calendário</p>
               <div className="bg-card rounded-3xl border border-border shadow-sm p-4">
@@ -310,12 +411,26 @@ const Agendar = () => {
             </motion.div>
           )}
 
-          {/* Step 2: Time */}
+          {/* Step: Time */}
           {step === "time" && selectedDate && (
             <motion.div key="time" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
               <button onClick={() => setStep("calendar")} className="flex items-center gap-1 text-primary font-body text-sm font-semibold mb-6 hover:underline">
                 <ArrowLeft className="w-4 h-4" /> Voltar
               </button>
+              {selectedPartner && (
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
+                    {selectedPartner.avatar_url ? (
+                      <img src={selectedPartner.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-3.5 h-3.5 text-primary" />
+                    )}
+                  </div>
+                  <span className="font-body text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground">{selectedPartner.full_name}</span>
+                  </span>
+                </div>
+              )}
               <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-1">Escolha o horário</h2>
               <p className="font-body text-muted-foreground text-sm mb-6">
                 {format(selectedDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
@@ -323,7 +438,7 @@ const Agendar = () => {
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {TIME_SLOTS.map((time) => {
                   const booked = bookedSlots.includes(time);
-                  const inCart = items.some((item) => item.date === format(selectedDate, "yyyy-MM-dd") && item.time === time);
+                  const inCart = items.some((item) => item.date === format(selectedDate, "yyyy-MM-dd") && item.time === time && item.partnerId === selectedPartner?.id);
                   const isPast = isSameDay(selectedDate, today) && time <= format(new Date(), "HH:mm");
                   const disabled = booked || inCart || isPast;
                   return (
@@ -359,7 +474,7 @@ const Agendar = () => {
             </motion.div>
           )}
 
-          {/* Step 3: Confirm — shows ALL cart items */}
+          {/* Step: Confirm */}
           {step === "confirm" && items.length > 0 && (
             <motion.div key="confirm" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
               <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground mb-6 text-center">
@@ -389,6 +504,11 @@ const Agendar = () => {
                           <p className="font-body text-xs text-muted-foreground capitalize">
                             {item.dateFormatted} • {item.time}
                           </p>
+                          {item.partnerName && (
+                            <p className="font-body text-xs text-primary/70 mt-0.5">
+                              Profissional: {item.partnerName}
+                            </p>
+                          )}
                         </div>
                         <button
                           onClick={() => removeItem(idx)}
