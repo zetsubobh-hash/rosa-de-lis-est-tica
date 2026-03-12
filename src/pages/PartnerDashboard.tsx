@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
+import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 
 interface SessionInfo {
