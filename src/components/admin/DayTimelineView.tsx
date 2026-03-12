@@ -146,6 +146,9 @@ const DayTimelineView = ({
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
+  // Mobile: long-press to pick an appointment, then tap a slot to move it
+  const [mobileMovingId, setMobileMovingId] = useState<string | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const colorMap = useMemo(() => {
     const map: Record<string, { bg: string; text: string }> = {};
     const slugs = [...new Set(appointments.map((a) => a.service_slug))];
