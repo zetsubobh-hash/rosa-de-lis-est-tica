@@ -113,8 +113,16 @@ const AdminPartnerView = () => {
   const [cancelReason, setCancelReason] = useState<"no_show" | "other">("no_show");
   const [cancelReasonText, setCancelReasonText] = useState("");
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const [clientSearchName, setClientSearchName] = useState("");
+  const [clientSearchService, setClientSearchService] = useState("");
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
+
+  const filteredClientPlans = clientPlans.filter((plan) => {
+    const nameMatch = !clientSearchName || (plan.profile?.full_name || "").toLowerCase().includes(clientSearchName.toLowerCase());
+    const serviceMatch = !clientSearchService || (plan.service_title || "").toLowerCase().includes(clientSearchService.toLowerCase());
+    return nameMatch && serviceMatch;
+  });
 
   useEffect(() => {
     const interval = window.setInterval(() => setNowTick(Date.now()), 30000);
