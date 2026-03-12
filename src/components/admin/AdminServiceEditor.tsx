@@ -752,6 +752,9 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
                       {isEditingPlan ? (
                         <div
+                          ref={(node) => {
+                            if (isEditingPlan) activePlanEditorRef.current = node;
+                          }}
                           className="space-y-3"
                           onClick={(e) => e.stopPropagation()}
                           onMouseDown={(e) => e.stopPropagation()}
