@@ -52,6 +52,7 @@ const Admin = lazyRetry(() => import("./pages/Admin"));
 const PartnerDashboard = lazyRetry(() => import("./pages/PartnerDashboard"));
 const PoliticaPrivacidade = lazyRetry(() => import("./pages/PoliticaPrivacidade"));
 const Instalar = lazyRetry(() => import("./pages/Instalar"));
+const Cancelar = lazyRetry(() => import("./pages/Cancelar"));
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
