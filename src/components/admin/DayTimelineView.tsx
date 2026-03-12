@@ -513,6 +513,7 @@ const DayTimelineView = ({
                                           serviceSlug: plan.service_slug || block.service_slug,
                                           serviceTitle: plan.service_title || block.service_title,
                                           userId: block.user_id,
+                                          partnerId: block.partner_id,
                                         });
                                       }
                                     }}
