@@ -256,7 +256,7 @@ const DayTimelineView = ({
                   backgroundColor: color.bg,
                   color: color.text,
                 }}
-                onClick={() => onSelectAppointment(block.id)}
+                onClick={() => onSelectAppointment?.(block.id)}
               >
                 <p className="text-[11px] font-bold leading-tight truncate">{timeRange}</p>
                 <div className="flex items-center gap-1 mt-0.5">
