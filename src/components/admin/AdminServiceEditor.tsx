@@ -578,17 +578,32 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Sessões</label>
                             <Input
                               type="number" min={1} value={sessions}
-                              onChange={(e) => { setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], sessions: parseInt(e.target.value) || 1 } })); setHasChanges(true); }}
+                              onChange={(e) => {
+                                const newSessions = parseInt(e.target.value) || 1;
+                                const currentPps = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
+                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], sessions: newSessions, total_price_cents: currentPps * newSessions } }));
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(currentPps * newSessions) } }));
+                                setHasChanges(true);
+                              }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
                           </div>
                           <div>
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Preço/sessão (R$)</label>
                             <Input
-                              type="text" value={(pps / 100).toFixed(2).replace(".", ",")}
+                              type="text"
+                              value={rawPriceInputs[plan.id]?.pps ?? centsToStr(pps)}
                               onChange={(e) => {
-                                const v = Math.round(parseFloat(e.target.value.replace(",", ".")) * 100) || 0;
-                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: v } })); setHasChanges(true);
+                                const raw = e.target.value;
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: raw } }));
+                                const v = strToCents(raw);
+                                const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
+                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: v, total_price_cents: v * currentSessions } }));
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: raw, total: centsToStr(v * currentSessions) } }));
+                                setHasChanges(true);
+                              }}
+                              onBlur={() => {
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -596,10 +611,17 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           <div>
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Total (R$)</label>
                             <Input
-                              type="text" value={(total / 100).toFixed(2).replace(".", ",")}
+                              type="text"
+                              value={rawPriceInputs[plan.id]?.total ?? centsToStr(total)}
                               onChange={(e) => {
-                                const v = Math.round(parseFloat(e.target.value.replace(",", ".")) * 100) || 0;
-                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: v } })); setHasChanges(true);
+                                const raw = e.target.value;
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: raw } }));
+                                const v = strToCents(raw);
+                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: v } }));
+                                setHasChanges(true);
+                              }}
+                              onBlur={() => {
+                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(editedPrices[plan.id]?.total_price_cents ?? plan.total_price_cents) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
