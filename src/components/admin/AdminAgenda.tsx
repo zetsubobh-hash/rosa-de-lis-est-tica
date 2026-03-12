@@ -121,7 +121,7 @@ const AdminAgenda = () => {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [saving, setSaving] = useState(false);
-  const [filterDate, setFilterDate] = useState<Date | undefined>(new Date());
+  const [filterDate, setFilterDate] = useState<Date>(new Date());
 
   // Quick-book from timeline slot
   const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
