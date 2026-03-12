@@ -329,7 +329,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                               </select>
                             </div>
                           </div>
-                          <InfoRow icon={User} label="Usuário (login)" value={profile?.username} />
+                          <EditableRow icon={User} label="Usuário (login)" value={editData.username} onChange={(v) => setEditData(d => ({ ...d, username: v.toLowerCase().replace(/[^a-z0-9._-]/g, "") }))} placeholder="nome.usuario" />
                           <InfoRow icon={Calendar} label="Cadastro" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pt-BR") : null} />
                           <InfoRow icon={Clock} label="Último acesso" value={profile?.last_seen ? new Date(profile.last_seen).toLocaleString("pt-BR") : "Nunca acessou"} />
 
