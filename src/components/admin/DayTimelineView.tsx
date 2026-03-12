@@ -104,14 +104,17 @@ const formatTimeRange = (startTime: string, durationMin: number) => {
   return `${startTime} - ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
 };
 
+const defaultGetInitials = (name: string) =>
+  name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+
 const DayTimelineView = ({
   appointments,
-  expandedAptId,
+  expandedAptId = null,
   onSelectAppointment,
-  clientPlans,
-  partnerOptions,
-  allPrices,
-  updatingPlan,
+  clientPlans = [],
+  partnerOptions = [],
+  allPrices = [],
+  updatingPlan = null,
   onConfirmPayment,
   onComplete,
   onReschedule,
@@ -120,7 +123,8 @@ const DayTimelineView = ({
   onUpdateSessions,
   isRescheduled: isRescheduledFn,
   getAppointmentPrice,
-  getInitials,
+  getInitials = defaultGetInitials,
+  readOnly = false,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const colorMap = useMemo(() => {
