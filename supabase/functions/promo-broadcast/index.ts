@@ -72,13 +72,22 @@ Deno.serve(async (req) => {
     });
     if (profiles.length === 0) return json({ error: "Todos os clientes cancelaram o recebimento de promoções" }, 400);
 
-    // Get business name
-    const { data: siteSettings } = await supabase
+    // Get business name & site URL
+    const { data: settingsRows } = await supabase
       .from("site_settings")
       .select("key, value")
-      .eq("key", "business_name")
+      .in("key", ["business_name", "site_url"]);
+    const settingsMap: Record<string, string> = {};
+    (settingsRows || []).forEach((r: any) => { settingsMap[r.key] = r.value; });
+    const businessName = settingsMap.business_name || "Nossa Clínica";
+
+    // Build unsubscribe base URL
+    const { data: appUrlRow } = await supabase
+      .from("payment_settings")
+      .select("value")
+      .eq("key", "app_install_url")
       .maybeSingle();
-    const businessName = siteSettings?.value || "Nossa Clínica";
+    const siteBaseUrl = (appUrlRow?.value || settingsMap.site_url || "").replace(/\/+$/, "");
 
     // Get service title if specified
     let serviceTitle = "nossos serviços";
