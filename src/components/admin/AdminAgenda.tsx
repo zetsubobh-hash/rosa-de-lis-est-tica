@@ -586,7 +586,7 @@ const AdminAgenda = () => {
             setQbShowNewClient(false);
           }}
           onDragReschedule={handleDragReschedule}
-        />
+          onScheduleSession={(params) => setScheduleModal(params)}
       ) : groupedEntries.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
           <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
