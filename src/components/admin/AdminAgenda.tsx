@@ -800,7 +800,7 @@ const AdminAgenda = () => {
                                 <div>
                                   <p className="font-body text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
                                     <Hash className="w-3.5 h-3.5 text-primary" />
-                                    Progresso — {plan.plan_name}
+                                    Sessões — {plan.completed_sessions}/{plan.total_sessions}
                                   </p>
                                   <div className="flex gap-1.5 flex-wrap mb-3">
                                     {Array.from({ length: plan.total_sessions }).map((_, i) => {
