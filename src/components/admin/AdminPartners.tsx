@@ -922,8 +922,8 @@ const AdminPartners = () => {
                   </div>
                 )}
 
-                {/* Active & Agenda toggles */}
-                <div className="flex items-center gap-3 flex-wrap">
+                {/* Active toggle */}
+                <div className="flex items-center gap-3 mb-3">
                   <button
                     onClick={() => setEditing({ ...editing, is_active: !editing.is_active })}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
@@ -933,16 +933,33 @@ const AdminPartners = () => {
                     {editing.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     {editing.is_active ? "Ativo" : "Inativo"}
                   </button>
-                  <button
-                    onClick={() => setEditing({ ...editing, can_manage_agenda: !editing.can_manage_agenda })}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
-                      editing.can_manage_agenda ? "border-primary/20 text-primary" : "border-muted-foreground/20 text-muted-foreground"
-                    }`}
-                    title="Permite que o parceiro crie, edite e cancele agendamentos"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    {editing.can_manage_agenda ? "Gerenciar Agenda ✅" : "Gerenciar Agenda ❌"}
-                  </button>
+                </div>
+
+                {/* Granular permissions */}
+                <div className="space-y-2">
+                  <p className="font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Permissões da Agenda</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { key: "can_create_appointments" as const, label: "Agendar", icon: "📅" },
+                      { key: "can_reschedule" as const, label: "Remarcar", icon: "🔄" },
+                      { key: "can_cancel" as const, label: "Cancelar", icon: "❌" },
+                      { key: "can_complete" as const, label: "Concluir Sessão", icon: "✅" },
+                    ]).map((perm) => (
+                      <button
+                        key={perm.key}
+                        onClick={() => setEditing({ ...editing, [perm.key]: !editing[perm.key] })}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl font-body text-xs font-medium border transition-all ${
+                          editing[perm.key]
+                            ? "border-primary/30 bg-primary/5 text-primary"
+                            : "border-border bg-muted/30 text-muted-foreground"
+                        }`}
+                      >
+                        <span>{perm.icon}</span>
+                        <span>{perm.label}</span>
+                        <span className="ml-auto text-[10px]">{editing[perm.key] ? "ON" : "OFF"}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
