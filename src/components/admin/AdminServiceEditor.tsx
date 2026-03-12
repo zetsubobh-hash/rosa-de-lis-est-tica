@@ -826,9 +826,10 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                                 }
                               }}
                               onChange={(e) => {
+                                const parsed = parseMoneyInput(e.target.value);
                                 setRawPriceInputs((p) => ({
                                   ...p,
-                                  [plan.id]: { ...p[plan.id], pps: e.target.value, total: p[plan.id]?.total ?? centsToStr(total) },
+                                  [plan.id]: { ...p[plan.id], pps: parsed.display, total: p[plan.id]?.total ?? centsToStr(total) },
                                 }));
                                 setHasChanges(true);
                               }}
