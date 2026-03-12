@@ -41,13 +41,13 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const [service, setService] = useState<DBService>({ ...initialService, benefits: [...initialService.benefits] });
   const [editingSection, setEditingSection] = useState<EditingSection>(null);
   const [saving, setSaving] = useState(false);
+  const [savingPlanId, setSavingPlanId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(isNew);
   const { prices, loading: pricesLoading, refetch: refetchPrices } = useServicePrices(isNew ? undefined : service.slug);
   const [editedPrices, setEditedPrices] = useState<Record<string, Partial<ServicePrice>>>({});
   const [newPlan, setNewPlan] = useState({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Raw string states for price inputs so user can type freely
   const [rawPriceInputs, setRawPriceInputs] = useState<Record<string, { pps?: string; total?: string }>>({});
   const [newPlanRaw, setNewPlanRaw] = useState({ pps: "0,00", total: "0,00" });
 
