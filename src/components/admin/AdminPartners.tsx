@@ -801,16 +801,32 @@ const AdminPartners = () => {
                         <label className="font-body text-xs font-medium text-muted-foreground mb-1.5 block">
                           {hasRealAccount ? "Redefinir senha" : "Senha"}
                         </label>
-                        {hasRealAccount && (
+                        {hasRealAccount && !generatedPassword && (
                           <p className="font-body text-[11px] text-muted-foreground/70 mb-1.5 -mt-0.5">
-                            A senha atual é criptografada e não pode ser visualizada. Digite abaixo apenas se quiser alterá-la.
+                            A senha atual é criptografada e não pode ser visualizada.
                           </p>
+                        )}
+                        {generatedPassword && (
+                          <div className="flex items-center gap-2 mb-2 p-2 rounded-lg bg-accent/50 border border-border">
+                            <code className="font-mono text-sm font-bold text-foreground flex-1 select-all">{generatedPassword}</code>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(generatedPassword);
+                                toast({ title: "Senha copiada! 📋" });
+                              }}
+                              className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                              title="Copiar senha"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         )}
                         <div className="relative">
                           <Input
                             type={credShowPassword ? "text" : "password"}
                             value={credPassword}
-                            onChange={(e) => setCredPassword(e.target.value)}
+                            onChange={(e) => { setCredPassword(e.target.value); setGeneratedPassword(null); }}
                             placeholder={hasRealAccount ? "Nova senha (vazio = manter atual)" : "Mínimo 6 caracteres"}
                             className="font-body pr-10"
                           />
@@ -822,6 +838,43 @@ const AdminPartners = () => {
                             {credShowPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
+                        {hasRealAccount && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={generatingPassword}
+                            onClick={async () => {
+                              setGeneratingPassword(true);
+                              const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+                              const tempPass = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+                              try {
+                                const { data: { session } } = await supabase.auth.getSession();
+                                const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-update-credentials`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+                                  body: JSON.stringify({ target_user_id: editing!.user_id, new_password: tempPass }),
+                                });
+                                const result = await res.json();
+                                if (!res.ok) {
+                                  toast({ title: "Erro ao gerar senha", description: result.error, variant: "destructive" });
+                                } else {
+                                  setGeneratedPassword(tempPass);
+                                  setCredPassword(tempPass);
+                                  setCredShowPassword(true);
+                                  toast({ title: "Senha temporária gerada e aplicada ✅" });
+                                }
+                              } catch {
+                                toast({ title: "Erro ao gerar senha", variant: "destructive" });
+                              }
+                              setGeneratingPassword(false);
+                            }}
+                            className="gap-1.5 mt-1.5 text-xs w-full"
+                          >
+                            {generatingPassword ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                            {generatingPassword ? "Gerando..." : "Gerar Senha Temporária"}
+                          </Button>
+                        )}
                       </div>
                       {hasRealAccount ? (
                         <Button
