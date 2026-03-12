@@ -48,6 +48,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const [editedPrices, setEditedPrices] = useState<Record<string, Partial<ServicePrice>>>({});
   const [newPlan, setNewPlan] = useState({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activePlanEditorRef = useRef<HTMLDivElement | null>(null);
   const [rawPriceInputs, setRawPriceInputs] = useState<Record<string, { pps?: string; total?: string }>>({});
   const [newPlanRaw, setNewPlanRaw] = useState({ pps: "0,00", total: "0,00" });
 
