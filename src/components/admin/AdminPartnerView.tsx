@@ -108,6 +108,10 @@ const AdminPartnerView = () => {
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [decisionModal, setDecisionModal] = useState<{ apt: Appointment; type: "completed" | "cancelled" } | null>(null);
+  const [decisionNotes, setDecisionNotes] = useState("");
+  const [cancelReason, setCancelReason] = useState<"no_show" | "other">("no_show");
+  const [cancelReasonText, setCancelReasonText] = useState("");
   const [nowTick, setNowTick] = useState(() => Date.now());
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
