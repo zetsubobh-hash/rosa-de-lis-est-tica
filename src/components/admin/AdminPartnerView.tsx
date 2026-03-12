@@ -659,6 +659,12 @@ const AdminPartnerView = () => {
                       }}
                       onDragReschedule={handleDragReschedule}
                       onCancel={handleCancelAppointment}
+                      onSlotClick={(time) => {
+                        setQuickBook({ time });
+                        setQbUserId("");
+                        setQbServiceSlug("");
+                        setQbShowNewClient(false);
+                      }}
                     />
                   );
                 })()}
