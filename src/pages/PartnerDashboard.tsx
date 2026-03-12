@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AnamnesisModal from "@/components/AnamnesisModal";
+import DayTimelineView from "@/components/admin/DayTimelineView";
 
 interface SessionInfo {
   date: string;
@@ -73,6 +74,7 @@ const PartnerDashboard = () => {
   const [newNotifications, setNewNotifications] = useState<string[]>([]);
   const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
+  const [filterDate, setFilterDate] = useState<string | null>(null);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(installUrl)}`;
 
@@ -482,12 +484,44 @@ const PartnerDashboard = () => {
 
         {/* Tab Content */}
         {activeTab === "agenda" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
+            {/* Date filter buttons */}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setFilterDate(null)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  !filterDate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                Todos
+              </button>
+              {Object.keys(grouped).map((date) => (
+                <button
+                  key={date}
+                  onClick={() => setFilterDate(filterDate === date ? null : date)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    filterDate === date ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {formatDate(date)}
+                  {date === today && " (Hoje)"}
+                </button>
+              ))}
+            </div>
+
             {appointments.length === 0 ? (
               <div className="bg-card rounded-2xl border border-border p-12 text-center">
                 <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="font-body text-muted-foreground">Nenhum agendamento próximo.</p>
               </div>
+            ) : filterDate ? (
+              <DayTimelineView
+                appointments={appointments.filter((a) => a.appointment_date === filterDate).map((a) => ({
+                  ...a,
+                  profiles: a.profile ? { ...a.profile, phone: "", email: null } : null,
+                }))}
+                readOnly
+              />
             ) : (
               Object.entries(grouped).map(([date, apts]) => (
                 <div key={date}>

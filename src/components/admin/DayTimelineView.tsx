@@ -20,8 +20,8 @@ interface TimelineAppointment {
   status: string;
   user_id: string;
   session_number: number | null;
-  notes: string | null;
-  partner_id: string | null;
+  notes?: string | null;
+  partner_id?: string | null;
   plan_id: string | null;
   profiles?: Profile | null;
 }
@@ -44,21 +44,23 @@ interface PartnerOption {
 
 interface DayTimelineViewProps {
   appointments: TimelineAppointment[];
-  expandedAptId: string | null;
-  onSelectAppointment: (id: string) => void;
-  clientPlans: ClientPlan[];
-  partnerOptions: PartnerOption[];
-  allPrices: any[];
-  updatingPlan: string | null;
-  onConfirmPayment: (apt: TimelineAppointment) => void;
-  onComplete: (apt: TimelineAppointment) => void;
-  onReschedule: (apt: TimelineAppointment) => void;
-  onCancel: (id: string) => void;
-  onPartnerAssign: (aptId: string, partnerId: string | null) => void;
-  onUpdateSessions: (planId: string, delta: number) => void;
-  isRescheduled: (apt: TimelineAppointment) => boolean;
-  getAppointmentPrice: (apt: TimelineAppointment, prices: any[]) => string;
-  getInitials: (name: string) => string;
+  expandedAptId?: string | null;
+  onSelectAppointment?: (id: string) => void;
+  clientPlans?: ClientPlan[];
+  partnerOptions?: PartnerOption[];
+  allPrices?: any[];
+  updatingPlan?: string | null;
+  onConfirmPayment?: (apt: TimelineAppointment) => void;
+  onComplete?: (apt: TimelineAppointment) => void;
+  onReschedule?: (apt: TimelineAppointment) => void;
+  onCancel?: (id: string) => void;
+  onPartnerAssign?: (aptId: string, partnerId: string | null) => void;
+  onUpdateSessions?: (planId: string, delta: number) => void;
+  isRescheduled?: (apt: TimelineAppointment) => boolean;
+  getAppointmentPrice?: (apt: TimelineAppointment, prices: any[]) => string;
+  getInitials?: (name: string) => string;
+  /** Read-only mode hides action buttons */
+  readOnly?: boolean;
 }
 
 const PALETTE = [
@@ -102,14 +104,17 @@ const formatTimeRange = (startTime: string, durationMin: number) => {
   return `${startTime} - ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
 };
 
+const defaultGetInitials = (name: string) =>
+  name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+
 const DayTimelineView = ({
   appointments,
-  expandedAptId,
+  expandedAptId = null,
   onSelectAppointment,
-  clientPlans,
-  partnerOptions,
-  allPrices,
-  updatingPlan,
+  clientPlans = [],
+  partnerOptions = [],
+  allPrices = [],
+  updatingPlan = null,
   onConfirmPayment,
   onComplete,
   onReschedule,
@@ -118,7 +123,8 @@ const DayTimelineView = ({
   onUpdateSessions,
   isRescheduled: isRescheduledFn,
   getAppointmentPrice,
-  getInitials,
+  getInitials = defaultGetInitials,
+  readOnly = false,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
   const colorMap = useMemo(() => {
@@ -250,7 +256,7 @@ const DayTimelineView = ({
                   backgroundColor: color.bg,
                   color: color.text,
                 }}
-                onClick={() => onSelectAppointment(block.id)}
+                onClick={() => onSelectAppointment?.(block.id)}
               >
                 <p className="text-[11px] font-bold leading-tight truncate">{timeRange}</p>
                 <div className="flex items-center gap-1 mt-0.5">
@@ -277,7 +283,7 @@ const DayTimelineView = ({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="fixed inset-0 bg-black/40 z-[55]"
-                  onClick={() => onSelectAppointment(block.id)}
+                  onClick={() => onSelectAppointment?.(block.id)}
                 />
               )}
               {isExpanded && (
@@ -307,7 +313,7 @@ const DayTimelineView = ({
                     {/* Header */}
                     <div className="flex items-center justify-between">
                       <h3 className="font-heading text-sm font-bold text-foreground">{block.service_title}</h3>
-                      <button onClick={() => onSelectAppointment(block.id)} className="text-muted-foreground hover:text-foreground">
+                      <button onClick={() => onSelectAppointment?.(block.id)} className="text-muted-foreground hover:text-foreground">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -368,44 +374,54 @@ const DayTimelineView = ({
                     )}
 
                     {/* Partner */}
-                    <div className="flex items-center gap-2">
-                      <Handshake className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <select
-                        value={block.partner_id || ""}
-                        onChange={(e) => onPartnerAssign(block.id, e.target.value || null)}
-                        className="flex-1 h-7 rounded-lg border border-border bg-background px-2 text-[11px] font-body text-foreground focus:ring-1 focus:ring-primary"
-                      >
-                        <option value="">Sem parceiro</option>
-                        {partnerOptions.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
-                      </select>
-                    </div>
+                    {!readOnly && onPartnerAssign && (
+                      <div className="flex items-center gap-2">
+                        <Handshake className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <select
+                          value={block.partner_id || ""}
+                          onChange={(e) => onPartnerAssign(block.id, e.target.value || null)}
+                          className="flex-1 h-7 rounded-lg border border-border bg-background px-2 text-[11px] font-body text-foreground focus:ring-1 focus:ring-primary"
+                        >
+                          <option value="">Sem parceiro</option>
+                          {partnerOptions.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                        </select>
+                      </div>
+                    )}
 
                     {/* Actions */}
-                    <div className={cn("flex gap-2", isMobile ? "grid grid-cols-2" : "flex-wrap")}>
-                      {block.status === "pending" && (
-                        <button onClick={() => onConfirmPayment(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-emerald-400/40 text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all">
-                          <Banknote className="w-3.5 h-3.5" />Confirmar PIX
-                        </button>
-                      )}
-                      <button onClick={() => onComplete(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all">
-                        <CheckCircle2 className="w-3.5 h-3.5" />Finalizar
-                      </button>
-                      {plan && (
-                        <button
-                          onClick={() => { onUpdateSessions(plan.id, 1); onComplete(block); }}
-                          disabled={updatingPlan === plan.id}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all disabled:opacity-30"
-                        >
-                          <PlusCircle className="w-3.5 h-3.5" />Sessão Realizada
-                        </button>
-                      )}
-                      <button onClick={() => onReschedule(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all">
-                        <CalendarClock className="w-3.5 h-3.5" />Remarcar
-                      </button>
-                      <button onClick={() => onCancel(block.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all">
-                        <CalendarX className="w-3.5 h-3.5" />Cancelar
-                      </button>
-                    </div>
+                    {!readOnly && (
+                      <div className={cn("flex gap-2", isMobile ? "grid grid-cols-2" : "flex-wrap")}>
+                        {block.status === "pending" && onConfirmPayment && (
+                          <button onClick={() => onConfirmPayment(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-emerald-400/40 text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all">
+                            <Banknote className="w-3.5 h-3.5" />Confirmar PIX
+                          </button>
+                        )}
+                        {onComplete && (
+                          <button onClick={() => onComplete(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all">
+                            <CheckCircle2 className="w-3.5 h-3.5" />Finalizar
+                          </button>
+                        )}
+                        {plan && onUpdateSessions && onComplete && (
+                          <button
+                            onClick={() => { onUpdateSessions(plan.id, 1); onComplete(block); }}
+                            disabled={updatingPlan === plan.id}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all disabled:opacity-30"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" />Sessão Realizada
+                          </button>
+                        )}
+                        {onReschedule && (
+                          <button onClick={() => onReschedule(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all">
+                            <CalendarClock className="w-3.5 h-3.5" />Remarcar
+                          </button>
+                        )}
+                        {onCancel && (
+                          <button onClick={() => onCancel(block.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all">
+                            <CalendarX className="w-3.5 h-3.5" />Cancelar
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
