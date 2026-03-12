@@ -209,6 +209,12 @@ const DayTimelineView = ({
   const now = new Date();
   const nowSlot = (now.getHours() - START_HOUR) * 2 + now.getMinutes() / 30;
   const showNowLine = nowSlot >= 0 && nowSlot <= TOTAL_SLOTS;
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const isSlotInPast = (slotLabel: string) => {
+    const [h, m] = slotLabel.split(":").map(Number);
+    return (h * 60 + m) < nowMinutes;
+  };
 
   return (
     <motion.div
@@ -243,6 +249,10 @@ const DayTimelineView = ({
               )}
               onClick={() => {
                 if (mobileMovingId && onDragReschedule) {
+                  if (isSlotInPast(label)) {
+                    setMobileMovingId(null);
+                    return;
+                  }
                   onDragReschedule(mobileMovingId, label);
                   setMobileMovingId(null);
                   return;
@@ -251,6 +261,7 @@ const DayTimelineView = ({
               }}
               onDragOver={(e) => {
                 if (!onDragReschedule || readOnly) return;
+                if (isSlotInPast(label)) return; // Block past slots
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
                 setDragOverSlot(i);
@@ -259,6 +270,7 @@ const DayTimelineView = ({
               onDrop={(e) => {
                 e.preventDefault();
                 setDragOverSlot(null);
+                if (isSlotInPast(label)) return; // Block past slots
                 const aptId = e.dataTransfer.getData("text/appointment-id");
                 if (aptId && onDragReschedule) {
                   onDragReschedule(aptId, label);

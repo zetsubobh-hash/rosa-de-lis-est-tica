@@ -447,6 +447,21 @@ const AdminAgenda = () => {
     // Don't do anything if dropped on the same time
     if (apt.appointment_time === newTime) return;
 
+    // Block completed appointments
+    if (apt.status === "completed") {
+      toast({ title: "Procedimento já realizado", description: "Não é possível remarcar um procedimento concluído.", variant: "destructive" });
+      return;
+    }
+
+    // Block past time slots
+    const now = new Date();
+    const [nh, nm] = [now.getHours(), now.getMinutes()];
+    const [th, tm] = newTime.split(":").map(Number);
+    if (th * 60 + tm < nh * 60 + nm) {
+      toast({ title: "Horário já passou", description: "Não é possível remarcar para um horário que já passou.", variant: "destructive" });
+      return;
+    }
+
     // Check if slot is already occupied
     const dateStr = filterDate ? format(filterDate, "yyyy-MM-dd") : apt.appointment_date;
     const conflict = appointments.find(
