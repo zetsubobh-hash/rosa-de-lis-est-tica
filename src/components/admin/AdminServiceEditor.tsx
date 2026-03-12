@@ -363,7 +363,10 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
       className={`group relative cursor-pointer rounded-xl transition-all ${
         editingSection === section ? "ring-2 ring-primary/50 ring-offset-2" : "hover:ring-2 hover:ring-primary/20 hover:ring-offset-1"
       } ${className}`}
-      onClick={(e) => { e.stopPropagation(); setEditingSection(editingSection === section ? null : section); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (editingSection !== section) setEditingSection(section);
+      }}
     >
       {children}
       {editingSection !== section && (
@@ -453,7 +456,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
       </AnimatePresence>
 
       {/* ===== VISUAL PAGE PREVIEW ===== */}
-      <div onClick={() => setEditingSection(null)}>
+      <div>
 
         {/* Hero banner */}
         <section className="relative pt-4 overflow-hidden">
@@ -733,7 +736,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       )}
 
                       {isEditingPlan ? (
-                        <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="space-y-3"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
                           <h3 className="font-heading text-lg font-bold">{plan.plan_name}</h3>
                           <div>
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Sessões</label>
@@ -774,7 +782,10 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                                 }
                               }}
                               onChange={(e) => {
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: e.target.value } }));
+                                setRawPriceInputs((p) => ({
+                                  ...p,
+                                  [plan.id]: { ...p[plan.id], pps: e.target.value, total: p[plan.id]?.total ?? centsToStr(total) },
+                                }));
                                 setHasChanges(true);
                               }}
                               onBlur={() => {
@@ -853,7 +864,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
               {!isNew && (
                 <EditableWrapper section="new-plan">
                   {editingSection === "new-plan" ? (
-                    <div className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
                       <h3 className="font-heading text-lg font-bold text-foreground">Novo Plano</h3>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Nome</label>
