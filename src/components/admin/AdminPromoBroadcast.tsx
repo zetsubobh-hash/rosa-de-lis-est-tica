@@ -816,45 +816,110 @@ const AdminPromoBroadcast = () => {
             </div>
           )}
 
-          {campaigns.map((camp) => (
-            <div key={camp.id} className="p-4 rounded-xl border border-border bg-card space-y-3">
-              <div className="flex items-start justify-between gap-2 flex-wrap">
-                <div>
-                  <h3 className="font-semibold text-sm">{camp.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Início: {camp.start_time} · Intervalo: {camp.interval_seconds}s
-                    {camp.service_slug && ` · Serviço: ${services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug}`}
-                  </p>
+          {campaigns.map((camp) => {
+            const reportRows = campaignReports[camp.id] || [];
+            const reportSent = reportRows.filter((r) => r.status === "sent").length;
+            const reportFailed = reportRows.filter((r) => r.status === "failed").length;
+
+            return (
+              <div key={camp.id} className="p-4 rounded-xl border border-border bg-card space-y-3">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div>
+                    <h3 className="font-semibold text-sm">{camp.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Início: {camp.start_time} · Intervalo: {camp.interval_seconds}s
+                      {camp.service_slug && ` · Serviço: ${services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug}`}
+                    </p>
+                  </div>
+                  {statusBadge(camp.status)}
                 </div>
-                {statusBadge(camp.status)}
-              </div>
 
-              <div className="bg-muted/50 rounded-lg p-3 text-xs whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
-                {camp.message_template}
-              </div>
+                <div className="bg-muted/50 rounded-lg p-3 text-xs whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
+                  {camp.message_template}
+                </div>
 
-              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> {camp.total_sent} enviadas</span>
-                <span className="flex items-center gap-1"><XCircle className="w-3 h-3 text-destructive" /> {camp.total_failed} falhas</span>
-                <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {camp.total_target} alvo</span>
-              </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> {camp.total_sent} enviadas</span>
+                  <span className="flex items-center gap-1"><XCircle className="w-3 h-3 text-destructive" /> {camp.total_failed} falhas</span>
+                  <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {camp.total_target} alvo</span>
+                </div>
 
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  size="sm"
-                  className="gap-2"
-                  disabled={sendingCampId === camp.id || camp.status === "sending"}
-                  onClick={() => sendCampaign(camp)}
-                >
-                  {sendingCampId === camp.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {camp.status === "completed" ? "Reenviar" : "Disparar"}
-                </Button>
-                <Button size="sm" variant="destructive" className="gap-2" onClick={() => deleteCampaign(camp.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    disabled={sendingCampId === camp.id || camp.status === "sending"}
+                    onClick={() => sendCampaign(camp)}
+                  >
+                    {sendingCampId === camp.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {camp.status === "completed" ? "Reenviar" : "Disparar"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => toggleCampaignReport(camp.id)}
+                  >
+                    {campaignReportOpen[camp.id] ? "Ocultar relatório" : "Ver relatório"}
+                  </Button>
+                  <Button size="sm" variant="destructive" className="gap-2" onClick={() => deleteCampaign(camp.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <AnimatePresence>
+                  {campaignReportOpen[camp.id] && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="rounded-xl border border-border bg-background p-3 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                          <div className="rounded-lg bg-muted/50 px-3 py-2">Total histórico: <span className="font-semibold">{reportRows.length}</span></div>
+                          <div className="rounded-lg bg-muted/50 px-3 py-2">Enviadas: <span className="font-semibold">{reportSent}</span></div>
+                          <div className="rounded-lg bg-muted/50 px-3 py-2">Falhas: <span className="font-semibold">{reportFailed}</span></div>
+                        </div>
+
+                        {campaignReportLoading[camp.id] ? (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Carregando histórico...
+                          </div>
+                        ) : reportRows.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Ainda não há registros de envio para esta campanha.</p>
+                        ) : (
+                          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                            {reportRows.map((row) => (
+                              <div key={row.id} className="rounded-lg border border-border p-3 space-y-2">
+                                <div className="flex items-start justify-between gap-2 flex-wrap">
+                                  <div>
+                                    <p className="text-sm font-semibold text-foreground">{row.recipient_name}</p>
+                                    <p className="text-xs text-muted-foreground">{row.phone}</p>
+                                  </div>
+                                  {reportStatusBadge(row.status)}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                                  <p>Horário: {formatDateTime(row.sent_at || row.created_at)}</p>
+                                  <p>Instância: {row.instance_label}</p>
+                                </div>
+
+                                {row.error_message && (
+                                  <p className="text-xs text-destructive break-words">Erro: {row.error_message}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
