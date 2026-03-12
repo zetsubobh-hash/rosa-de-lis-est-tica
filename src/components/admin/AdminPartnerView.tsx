@@ -882,6 +882,53 @@ const AdminPartnerView = () => {
         />
       )}
 
+      {/* Drag Reschedule Confirmation */}
+      <AnimatePresence>
+        {dragConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm p-4 flex items-center justify-center"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setDragConfirm(null); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-2xl space-y-4"
+            >
+              <h3 className="font-heading text-base font-bold text-foreground">Confirmar remarcação</h3>
+              <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1">
+                <p className="font-heading text-sm font-bold text-foreground">
+                  {dragConfirm.apt.profile?.full_name || "Cliente"}
+                </p>
+                <p className="font-body text-xs text-muted-foreground">
+                  {dragConfirm.apt.service_title}
+                </p>
+                <p className="font-body text-sm text-foreground">
+                  {dragConfirm.apt.appointment_time} → <span className="font-bold text-primary">{dragConfirm.newTime}</span>
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setDragConfirm(null)}
+                  className="h-10 rounded-xl border border-border font-body text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDragReschedule}
+                  className="h-10 rounded-xl bg-primary text-primary-foreground font-body text-sm font-bold hover:opacity-90 transition-opacity"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {decisionModal && (
           <motion.div
