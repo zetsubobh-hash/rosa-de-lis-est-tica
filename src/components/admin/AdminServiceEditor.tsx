@@ -646,11 +646,16 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                                 if (e.key === "Enter") e.preventDefault();
                               }}
                               onChange={(e) => {
-                                const newSessions = parseInt(e.target.value) || 1;
-                                const currentPps = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
-                                setEditedPrices(p => ({ ...p, [plan.id]: { ...p[plan.id], sessions: newSessions, total_price_cents: currentPps * newSessions } }));
-                                setRawPriceInputs(p => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(currentPps * newSessions) } }));
+                                const newSessions = parseInt(e.target.value, 10) || 1;
+                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], sessions: newSessions } }));
                                 setHasChanges(true);
+                              }}
+                              onBlur={() => {
+                                const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
+                                const currentPps = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
+                                const recalculatedTotal = currentPps * currentSessions;
+                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: recalculatedTotal } }));
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], total: centsToStr(recalculatedTotal) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
@@ -667,14 +672,16 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               }}
                               onChange={(e) => {
                                 const parsed = parseMoneyInput(e.target.value);
-                                const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: parsed.display, total: centsToStr(parsed.cents * currentSessions) } }));
-                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: parsed.cents, total_price_cents: parsed.cents * currentSessions } }));
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: parsed.display } }));
+                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], price_per_session_cents: parsed.cents } }));
                                 setHasChanges(true);
                               }}
                               onBlur={() => {
-                                const current = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
-                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(current) } }));
+                                const currentPps = editedPrices[plan.id]?.price_per_session_cents ?? plan.price_per_session_cents;
+                                const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
+                                const recalculatedTotal = currentPps * currentSessions;
+                                setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], total_price_cents: recalculatedTotal } }));
+                                setRawPriceInputs((p) => ({ ...p, [plan.id]: { ...p[plan.id], pps: centsToStr(currentPps), total: centsToStr(recalculatedTotal) } }));
                               }}
                               className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
                             />
