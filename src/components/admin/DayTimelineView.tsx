@@ -472,9 +472,9 @@ const DayTimelineView = ({
                       if (totalSess <= 0) return null;
                       return (
                         <div className="pt-1">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center justify-between mb-2">
                             <p className="font-body text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                              Progresso do plano — {completedSess}/{totalSess} sessões
+                              Sessões — {completedSess}/{totalSess}
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
