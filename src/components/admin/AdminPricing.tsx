@@ -363,9 +363,12 @@ const AdminPricing = () => {
                     ) : (
                       svc.plans.map((plan) => {
                         const edited = editedPrices[plan.id];
+                        const rawInput = rawPriceInputs[plan.id];
                         const currentSessions = edited?.sessions ?? plan.sessions;
                         const currentPerSession = edited?.price_per_session_cents ?? plan.price_per_session_cents;
-                        const currentTotal = edited?.total_price_cents ?? plan.total_price_cents;
+                        const currentTotal = edited?.total_price_cents ?? currentPerSession * currentSessions;
+                        const perSessionDisplay = rawInput?.price_per_session_cents ?? formatInputCents(currentPerSession);
+                        const totalDisplay = rawInput?.total_price_cents ?? formatInputCents(currentTotal);
 
                         return (
                           <div key={plan.id} className="rounded-xl border border-border p-4">
@@ -389,7 +392,7 @@ const AdminPricing = () => {
                                   type="number"
                                   min={1}
                                   value={currentSessions}
-                                  onChange={(e) => handleChange(plan.id, "sessions", e.target.value)}
+                                  onChange={(e) => handleSessionsChange(plan.id, e.target.value)}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
@@ -397,8 +400,9 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
                                 <Input
                                   type="text"
-                                  value={(currentPerSession / 100).toFixed(2).replace(".", ",")}
-                                  onChange={(e) => handleChange(plan.id, "price_per_session_cents", e.target.value)}
+                                  value={perSessionDisplay}
+                                  onChange={(e) => handleMoneyInputChange(plan.id, "price_per_session_cents", e.target.value)}
+                                  onBlur={() => commitMoneyInput(plan.id, "price_per_session_cents")}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
@@ -406,8 +410,9 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
                                 <Input
                                   type="text"
-                                  value={(currentTotal / 100).toFixed(2).replace(".", ",")}
-                                  onChange={(e) => handleChange(plan.id, "total_price_cents", e.target.value)}
+                                  value={totalDisplay}
+                                  onChange={(e) => handleMoneyInputChange(plan.id, "total_price_cents", e.target.value)}
+                                  onBlur={() => commitMoneyInput(plan.id, "total_price_cents")}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
