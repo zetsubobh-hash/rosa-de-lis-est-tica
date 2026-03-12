@@ -736,7 +736,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       )}
 
                       {isEditingPlan ? (
-                        <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="space-y-3"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
                           <h3 className="font-heading text-lg font-bold">{plan.plan_name}</h3>
                           <div>
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Sessões</label>
