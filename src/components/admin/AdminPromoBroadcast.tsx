@@ -757,6 +757,30 @@ const AdminPromoBroadcast = () => {
 
                     <div className="md:col-span-2">
                       <Label className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-primary" />
+                        Público-Alvo (Filtro de Audiência)
+                      </Label>
+                      <Select value={campForm.audience_filter} onValueChange={(v) => setCampForm(p => ({ ...p, audience_filter: v }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os clientes" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {AUDIENCE_FILTERS.map(f => (
+                            <SelectItem key={f.value} value={f.value}>
+                              <div className="flex flex-col">
+                                <span>{f.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {AUDIENCE_FILTERS.find(f => f.value === campForm.audience_filter)?.description || ""}
+                      </p>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label className="flex items-center gap-2">
                         <Pencil className="w-4 h-4 text-primary" />
                         Mensagem da Promoção
                       </Label>
