@@ -652,7 +652,10 @@ const PartnerDashboard = () => {
                 onAnamnesis={partnerId ? (userId, name) => setAnamnesisClient({ userId, name }) : undefined}
                 onHistory={(userId, name) => setHistoryClient({ userId, name })}
                 onScheduleSession={(params) => setScheduleModal(params)}
-                readOnly
+                onComplete={(apt) => {
+                  const fullApt = appointments.find(a => a.id === apt.id);
+                  if (fullApt) handleMarkAppointment(fullApt, true);
+                }}
               />
             ) : (
               Object.entries(grouped).map(([date, apts]) => (
