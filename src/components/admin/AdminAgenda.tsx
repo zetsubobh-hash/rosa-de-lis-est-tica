@@ -109,6 +109,7 @@ const AdminAgenda = () => {
   const [updatingPlan, setUpdatingPlan] = useState<string | null>(null);
   const [cancelAllPlanId, setCancelAllPlanId] = useState<string | null>(null);
   const [activeSession, setActiveSession] = useState<{ planId: string; sessionNum: number } | null>(null);
+  const [dragConfirm, setDragConfirm] = useState<{ appointmentId: string; newTime: string; apt: Appointment } | null>(null);
 
   // Schedule modal state (for admin scheduling sessions)
   const [scheduleModal, setScheduleModal] = useState<{
