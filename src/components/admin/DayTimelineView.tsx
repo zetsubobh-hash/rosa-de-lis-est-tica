@@ -369,6 +369,12 @@ const DayTimelineView = ({
                     <span className="text-[10px] font-medium truncate opacity-80">{block.service_title}</span>
                   </div>
                 )}
+                {isCompleted && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                    <span className="text-[10px] font-bold truncate">Realizado ✓</span>
+                  </div>
+                )}
               </motion.div>
 
               {/* Expanded detail card */}
