@@ -27,6 +27,31 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
 
   const [pixSettingsOpen, setPixSettingsOpen] = useState(false);
   const [qrKey, setQrKey] = useState(Date.now());
+  const [pixAmount, setPixAmount] = useState("");
+
+  const handlePixAmountChange = (val: string) => {
+    // Allow only digits and comma/dot
+    const digits = val.replace(/[^\d]/g, "");
+    if (!digits) { setPixAmount(""); return; }
+    const cents = parseInt(digits, 10);
+    const formatted = (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    setPixAmount(formatted);
+  };
+
+  const pixAmountNumber = useMemo(() => {
+    if (!pixAmount) return 0;
+    const clean = pixAmount.replace(/\./g, "").replace(",", ".");
+    return parseFloat(clean) || 0;
+  }, [pixAmount]);
+
+  const pixPayloadString = useMemo(() => {
+    if (!pixKey) return "";
+    return generatePixPayload({
+      pixKey,
+      beneficiaryName: pixBeneficiary || "LOJA",
+      amount: pixAmountNumber > 0 ? pixAmountNumber : undefined,
+    });
+  }, [pixKey, pixBeneficiary, pixAmountNumber, qrKey]);
 
   const handleSave = async () => {
     setSaving(true);
