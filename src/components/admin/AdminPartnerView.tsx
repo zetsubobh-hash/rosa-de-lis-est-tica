@@ -544,7 +544,6 @@ const AdminPartnerView = () => {
                     </div>
                   ))
                 )}
-                )}
               </div>
             )}
 
