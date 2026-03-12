@@ -121,7 +121,7 @@ const UserHistoryModal = ({ open, onClose, userId, userName, hidePayments = fals
 
   const tabs = [
     { key: "appointments" as const, label: "Procedimentos", icon: CalendarCheck, count: appointments.length },
-    { key: "payments" as const, label: "Pagamentos", icon: CreditCard, count: payments.length },
+    ...(!hidePayments ? [{ key: "payments" as const, label: "Pagamentos", icon: CreditCard, count: payments.length }] : []),
     { key: "plans" as const, label: "Planos", icon: Package, count: plans.length },
   ];
 
