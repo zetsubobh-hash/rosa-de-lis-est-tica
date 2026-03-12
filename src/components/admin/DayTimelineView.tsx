@@ -135,6 +135,7 @@ const DayTimelineView = ({
   isRescheduled: isRescheduledFn,
   getAppointmentPrice,
   getInitials = defaultGetInitials,
+  onAnamnesis,
   readOnly = false,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
