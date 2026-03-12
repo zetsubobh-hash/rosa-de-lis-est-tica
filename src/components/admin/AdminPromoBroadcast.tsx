@@ -186,7 +186,6 @@ const AdminPromoBroadcast = () => {
             .order("sort_order");
 
           finalInstances = (importedInstances || []) as EvolutionInstance[];
-          toast({ title: "Instância conectada encontrada", description: "A instância principal já existente foi carregada automaticamente." });
         }
       }
     }
