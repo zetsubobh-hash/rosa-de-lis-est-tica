@@ -47,6 +47,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
   const [editedPrices, setEditedPrices] = useState<Record<string, Partial<ServicePrice>>>({});
   const [newPlan, setNewPlan] = useState({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Raw string states for price inputs so user can type freely
+  const [rawPriceInputs, setRawPriceInputs] = useState<Record<string, { pps?: string; total?: string }>>({});
+  const [newPlanRaw, setNewPlanRaw] = useState({ pps: "0,00", total: "0,00" });
+
+  const centsToStr = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
+  const strToCents = (str: string) => Math.round(parseFloat(str.replace(",", ".")) * 100) || 0;
 
   const Icon = getIconByName(service.icon_name);
 
