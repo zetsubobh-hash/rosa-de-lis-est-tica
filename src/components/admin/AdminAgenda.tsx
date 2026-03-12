@@ -140,7 +140,7 @@ const AdminAgenda = () => {
       supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
-        .in("status", ["confirmed", "pending"])
+        .in("status", ["confirmed", "pending", "completed"])
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true }),
       supabase
@@ -200,10 +200,10 @@ const AdminAgenda = () => {
       if (newStatus === "completed") {
         await supabase.from("appointments").update({ status: "completed" }).eq("plan_id", planId).in("status", ["confirmed", "pending"]);
         await supabase.from("appointments").update({ status: "completed" }).eq("user_id", plan.user_id).eq("service_slug", plan.service_slug).in("status", ["confirmed", "pending"]);
-        setAppointments((prev) => prev.filter((a) => {
-          if (a.plan_id === planId) return false;
-          if (a.user_id === plan.user_id && a.service_slug === plan.service_slug) return false;
-          return true;
+        setAppointments((prev) => prev.map((a) => {
+          if (a.plan_id === planId) return { ...a, status: "completed" };
+          if (a.user_id === plan.user_id && a.service_slug === plan.service_slug) return { ...a, status: "completed" };
+          return a;
         }));
       }
     }
@@ -260,7 +260,7 @@ const AdminAgenda = () => {
         setClientPlans((prev) => prev.map((p) => p.id === plan.id ? { ...p, completed_sessions: newCompleted, status: newStatus } : p));
       }
       toast({ title: "Procedimento finalizado ✅" });
-      setAppointments((prev) => prev.filter((a) => a.id !== apt.id));
+      setAppointments((prev) => prev.map((a) => a.id === apt.id ? { ...a, status: "completed" } : a));
     }
   };
 
@@ -542,7 +542,7 @@ const AdminAgenda = () => {
     // Only hide appointments that are explicitly linked to a completed plan
     if (a.plan_id) {
       const linkedPlan = clientPlans.find((p) => p.id === a.plan_id);
-      if (linkedPlan && linkedPlan.status === "completed") return false;
+      if (linkedPlan && linkedPlan.status === "completed" && a.status !== "completed") return false;
     }
     return true;
   });
