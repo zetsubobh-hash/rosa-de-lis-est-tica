@@ -582,6 +582,7 @@ const AdminAgenda = () => {
             setQbUserId("");
             setQbServiceSlug("");
           }}
+          onDragReschedule={handleDragReschedule}
         />
       ) : groupedEntries.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
