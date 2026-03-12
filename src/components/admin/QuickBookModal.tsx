@@ -92,10 +92,12 @@ const QuickBookModal = ({
 
     try {
       if (selectedPlan) {
-        // Create client_plan + first appointment
-        const { data: plan, error: planError } = await supabase
+        // Generate plan ID client-side to avoid SELECT after INSERT (RLS issue for partners)
+        const planId = crypto.randomUUID();
+        const { error: planError } = await supabase
           .from("client_plans")
           .insert({
+            id: planId,
             user_id: userId,
             service_slug: serviceSlug,
             service_title: serviceTitle,
@@ -104,9 +106,7 @@ const QuickBookModal = ({
             completed_sessions: 0,
             status: "active",
             created_by: "admin",
-          })
-          .select("id")
-          .single();
+          });
 
         if (planError) throw planError;
 
@@ -118,7 +118,7 @@ const QuickBookModal = ({
           appointment_time: time,
           status: "confirmed",
           partner_id: partnerId,
-          plan_id: plan.id,
+          plan_id: planId,
           session_number: 1,
         });
 
