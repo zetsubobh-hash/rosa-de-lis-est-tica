@@ -343,6 +343,9 @@ const PartnerDashboard = () => {
 
   const today = new Date().toISOString().split("T")[0];
   const todayCount = appointments.filter((a) => a.appointment_date === today).length;
+  const overdueAppointments = appointments.filter((a) => isAppointmentOverdue(a));
+  const overdueCount = overdueAppointments.length;
+  const nextOverdueAppointment = overdueAppointments[0] ?? null;
 
   const tabs: { key: Tab; label: string; icon: typeof Calendar; count?: number }[] = [
     { key: "agenda", label: "Agenda", icon: CalendarCheck, count: appointments.length },
