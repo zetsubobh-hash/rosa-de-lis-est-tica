@@ -150,12 +150,18 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Build message
-      const message = template
+      // Build message with unsubscribe footer
+      let message = template
         .replace(/{nome}/g, profile?.full_name || "Cliente")
         .replace(/{servico}/g, serviceTitle)
         .replace(/{empresa}/g, businessName)
         .replace(/{telefone}/g, record.phone || profile?.phone || "");
+
+      // Append opt-out link
+      if (siteBaseUrl) {
+        const unsubUrl = `${siteBaseUrl}/cancelar?phone=${encodeURIComponent(phone)}`;
+        message += `\n\n---\n_Não deseja mais receber promoções? Cancele aqui:_ ${unsubUrl}`;
+      }
 
       // Send via Evolution API
       try {
