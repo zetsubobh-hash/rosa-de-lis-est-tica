@@ -139,7 +139,7 @@ const PartnerDashboard = () => {
       setPartnerId(partner.id);
       setPartnerName(partner.full_name);
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatLocalDate(new Date());
 
       // Fetch upcoming and past appointments in parallel
       const [{ data: upcoming }, { data: past }] = await Promise.all([
