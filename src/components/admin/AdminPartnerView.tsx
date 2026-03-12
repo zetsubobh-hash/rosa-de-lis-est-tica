@@ -677,7 +677,7 @@ const AdminPartnerView = () => {
                     }}
                     onAnamnesis={(userId, name) => setAnamnesisClient({ userId, name })}
                     onHistory={(userId, name) => setHistoryClient({ userId, name })}
-                    onScheduleSession={(params) => setScheduleModal(params)}
+                    onScheduleSession={undefined}
                     onComplete={(apt) => {
                       const fullApt = appointments.find((a) => a.id === apt.id);
                       if (fullApt) openDecisionModal(fullApt, "completed");
