@@ -14,6 +14,7 @@ import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
+import WelcomeRoulette from "@/components/WelcomeRoulette";
 
 interface SessionInfo {
   date: string;
