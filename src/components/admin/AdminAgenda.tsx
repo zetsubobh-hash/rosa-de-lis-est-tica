@@ -452,19 +452,30 @@ const AdminAgenda = () => {
       return;
     }
 
-    // Block past time slots
-    const now = new Date();
-    const [nh, nm] = [now.getHours(), now.getMinutes()];
-    const [th, tm] = newTime.split(":").map(Number);
-    if (th * 60 + tm < nh * 60 + nm) {
-      toast({ title: "Horário já passou", description: "Não é possível remarcar para um horário que já passou.", variant: "destructive" });
+    // Block past slots considering the selected date
+    const dateStr = filterDate ? format(filterDate, "yyyy-MM-dd") : apt.appointment_date;
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    if (dateStr < todayStr) {
+      toast({ title: "Horário já passou", description: "Não é possível remarcar para um dia que já passou.", variant: "destructive" });
       return;
     }
+    if (dateStr === todayStr) {
+      const now = new Date();
+      const [nh, nm] = [now.getHours(), now.getMinutes()];
+      const [th, tm] = newTime.split(":").map(Number);
+      if (th * 60 + tm < nh * 60 + nm) {
+        toast({ title: "Horário já passou", description: "Não é possível remarcar para um horário que já passou.", variant: "destructive" });
+        return;
+      }
+    }
 
-    // Check if slot is already occupied
-    const dateStr = filterDate ? format(filterDate, "yyyy-MM-dd") : apt.appointment_date;
+    // Check if slot is already occupied for the same partner
     const conflict = appointments.find(
-      (a) => a.id !== appointmentId && a.appointment_date === dateStr && a.appointment_time === newTime
+      (a) =>
+        a.id !== appointmentId &&
+        a.appointment_date === dateStr &&
+        a.appointment_time === newTime &&
+        (a.partner_id || null) === (apt.partner_id || null)
     );
     if (conflict) {
       toast({ title: "Horário ocupado", description: `Já existe um agendamento às ${newTime}.`, variant: "destructive" });
@@ -587,6 +598,7 @@ const AdminAgenda = () => {
 
       <DayTimelineView
         appointments={filtered}
+        timelineDate={filterDateStr}
         expandedAptId={expandedApt}
         onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
         clientPlans={clientPlans}

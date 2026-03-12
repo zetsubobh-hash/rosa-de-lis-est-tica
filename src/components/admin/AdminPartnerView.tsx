@@ -410,10 +410,17 @@ const AdminPartnerView = () => {
       return;
     }
     const now = new Date();
-    const [th, tm] = newTime.split(":").map(Number);
-    if (th * 60 + tm < now.getHours() * 60 + now.getMinutes()) {
-      toast.error("Não é possível remarcar para um horário que já passou.");
+    const todayStr = format(now, "yyyy-MM-dd");
+    if (apt.appointment_date < todayStr) {
+      toast.error("Não é possível remarcar para um dia que já passou.");
       return;
+    }
+    if (apt.appointment_date === todayStr) {
+      const [th, tm] = newTime.split(":").map(Number);
+      if (th * 60 + tm < now.getHours() * 60 + now.getMinutes()) {
+        toast.error("Não é possível remarcar para um horário que já passou.");
+        return;
+      }
     }
     const conflict = appointments.find(
       (a) => a.id !== appointmentId && a.appointment_date === apt.appointment_date && a.appointment_time === newTime
@@ -612,6 +619,7 @@ const AdminPartnerView = () => {
                   const dayApts = appointments.filter((a) => a.appointment_date === dateStr);
                   return (
                     <DayTimelineView
+                      timelineDate={dateStr}
                       appointments={dayApts.map((a) => ({
                         ...a,
                         service_slug: a.service_slug || "",
