@@ -825,7 +825,22 @@ const PartnerDashboard = () => {
         {activeTab === "agenda" && (
           <div className="space-y-4">
             {/* Date filter buttons */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
+              <CalendarPopoverFilter
+                date={filterDate ? new Date(filterDate + "T12:00:00") : new Date()}
+                onSelect={(d) => {
+                  const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                  setFilterDate(ds);
+                }}
+              />
+              <button
+                onClick={() => setFilterDate(today)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filterDate === today ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                Hoje
+              </button>
               <button
                 onClick={() => setFilterDate(null)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -834,18 +849,6 @@ const PartnerDashboard = () => {
               >
                 Todos
               </button>
-                {[...new Set([today, ...Object.keys(grouped)])].sort().map((date) => (
-                  <button
-                    key={date}
-                    onClick={() => setFilterDate(filterDate === date ? null : date)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      filterDate === date ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {formatDate(date)}
-                    {date === today && " (Hoje)"}
-                  </button>
-                ))}
             </div>
 
             {appointments.length === 0 ? (
