@@ -21,7 +21,7 @@ interface TimelineAppointment {
   user_id: string;
   session_number: number | null;
   notes?: string | null;
-  partner_id: string | null;
+  partner_id?: string | null;
   plan_id: string | null;
   profiles?: Profile | null;
 }
