@@ -29,18 +29,16 @@ const AdminPricing = () => {
   } | null>(null);
   const [addingPlan, setAddingPlan] = useState(false);
 
-  const formatInputCents = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
+  const formatInputCents = (cents: number) => {
+    return (cents / 100).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
   const parseCurrencyToCents = (value: string) => {
-    const normalizedValue = value.replace(/\./g, ",");
-    const clean = normalizedValue.replace(/[^\d,]/g, "");
-    if (!clean) return 0;
-
-    const [intPart = "", decPart = ""] = clean.split(",");
-    const integer = parseInt(intPart.replace(/^0+(?=\d)/, ""), 10) || 0;
-    const decimals = parseInt(decPart.slice(0, 2).padEnd(2, "0"), 10) || 0;
-
-    return integer * 100 + decimals;
+    const digitsOnly = value.replace(/\D/g, "");
+    return digitsOnly ? parseInt(digitsOnly, 10) : 0;
   };
 
   const handleSessionsChange = (id: string, value: string) => {
@@ -70,11 +68,22 @@ const AdminPricing = () => {
     field: "price_per_session_cents" | "total_price_cents",
     value: string
   ) => {
+    const cents = parseCurrencyToCents(value);
+    const maskedValue = formatInputCents(cents);
+
     setRawPriceInputs((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
-        [field]: value,
+        [field]: maskedValue,
+      },
+    }));
+
+    setEditedPrices((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: cents,
       },
     }));
   };
@@ -161,8 +170,8 @@ const AdminPricing = () => {
 
     setAddingPlan(true);
     const sessions = parseInt(newPlan.sessions) || 1;
-    const pricePerSession = Math.round(parseFloat(newPlan.price_per_session.replace(",", ".")) * 100) || 0;
-    const totalPrice = Math.round(parseFloat(newPlan.total_price.replace(",", ".")) * 100) || pricePerSession * sessions;
+    const pricePerSession = parseCurrencyToCents(newPlan.price_per_session);
+    const totalPrice = parseCurrencyToCents(newPlan.total_price) || pricePerSession * sessions;
 
     const { error } = await supabase.from("service_prices").insert({
       service_slug: newPlan.service_slug,
@@ -281,7 +290,17 @@ const AdminPricing = () => {
                 type="number"
                 min={1}
                 value={newPlan.sessions}
-                onChange={(e) => setNewPlan({ ...newPlan, sessions: e.target.value })}
+                onChange={(e) => {
+                  const sessions = e.target.value;
+                  const sessionsNumber = Math.max(1, parseInt(sessions, 10) || 1);
+                  const currentPpsCents = parseCurrencyToCents(newPlan.price_per_session);
+
+                  setNewPlan({
+                    ...newPlan,
+                    sessions,
+                    total_price: formatInputCents(currentPpsCents * sessionsNumber),
+                  });
+                }}
                 className="font-body text-sm h-9"
               />
             </div>
@@ -289,9 +308,20 @@ const AdminPricing = () => {
               <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
               <Input
                 type="text"
+                inputMode="numeric"
                 placeholder="0,00"
                 value={newPlan.price_per_session}
-                onChange={(e) => setNewPlan({ ...newPlan, price_per_session: e.target.value })}
+                onChange={(e) => {
+                  const ppsCents = parseCurrencyToCents(e.target.value);
+                  const maskedPps = formatInputCents(ppsCents);
+                  const sessionsNumber = Math.max(1, parseInt(newPlan.sessions, 10) || 1);
+
+                  setNewPlan({
+                    ...newPlan,
+                    price_per_session: maskedPps,
+                    total_price: formatInputCents(ppsCents * sessionsNumber),
+                  });
+                }}
                 className="font-body text-sm h-9"
               />
             </div>
@@ -299,9 +329,13 @@ const AdminPricing = () => {
               <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
               <Input
                 type="text"
+                inputMode="numeric"
                 placeholder="0,00"
                 value={newPlan.total_price}
-                onChange={(e) => setNewPlan({ ...newPlan, total_price: e.target.value })}
+                onChange={(e) => {
+                  const totalCents = parseCurrencyToCents(e.target.value);
+                  setNewPlan({ ...newPlan, total_price: formatInputCents(totalCents) });
+                }}
                 className="font-body text-sm h-9"
               />
             </div>
