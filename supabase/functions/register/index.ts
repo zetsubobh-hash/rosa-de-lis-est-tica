@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { username, password, full_name, sex, phone, address, email } = await req.json();
+    const { username, password, full_name, sex, phone, address, email, birth_date } = await req.json();
 
     if (!username || !password || !full_name || !sex || !phone || !address) {
       return new Response(
@@ -75,8 +75,8 @@ serve(async (req) => {
       );
     }
 
-    // Create profile
-    const { error: profileError } = await supabaseAdmin.from("profiles").insert({
+    // Create profile (with optional birth_date)
+    const profileData: Record<string, unknown> = {
       user_id: userData.user.id,
       full_name: full_name.trim(),
       username: sanitizedUsername,
@@ -84,7 +84,13 @@ serve(async (req) => {
       sex,
       phone: phone.trim(),
       address: address.trim(),
-    });
+    };
+
+    if (birth_date) {
+      profileData.birth_date = birth_date;
+    }
+
+    const { error: profileError } = await supabaseAdmin.from("profiles").insert(profileData);
 
     if (profileError) {
       console.error("Profile error:", profileError);
