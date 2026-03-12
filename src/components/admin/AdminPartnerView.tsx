@@ -7,6 +7,7 @@ import {
   Users, History, ClipboardList, CheckCircle2, Home, LogOut, FileText, Smartphone, Share2, X, Search, Gift
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import CalendarPopoverFilter from "@/components/admin/CalendarPopoverFilter";
