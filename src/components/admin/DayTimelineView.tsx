@@ -375,7 +375,7 @@ const DayTimelineView = ({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2 flex-wrap">
+                    <div className={cn("flex gap-2", isMobile ? "grid grid-cols-2" : "flex-wrap")}>
                       {block.status === "pending" && (
                         <button onClick={() => onConfirmPayment(block)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border-2 border-emerald-400/40 text-emerald-600 bg-emerald-50 hover:bg-emerald-500 hover:text-white transition-all">
                           <Banknote className="w-3.5 h-3.5" />Confirmar PIX
