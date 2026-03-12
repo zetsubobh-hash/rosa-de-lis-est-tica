@@ -66,6 +66,11 @@ const Admin = () => {
     }
     setActiveTab(tab);
     setMobileMenuOpen(false);
+    // Clean tab param from URL
+    if (searchParams.has("tab")) {
+      searchParams.delete("tab");
+      setSearchParams(searchParams, { replace: true });
+    }
   };
 
   useEffect(() => {
