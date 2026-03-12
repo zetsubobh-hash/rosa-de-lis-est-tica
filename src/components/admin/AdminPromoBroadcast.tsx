@@ -68,6 +68,16 @@ const DYNAMIC_VARS = [
   { key: "{telefone}", label: "Telefone do cliente" },
 ];
 
+const AUDIENCE_FILTERS = [
+  { value: "all", label: "Todos os clientes", description: "Envia para todos com telefone cadastrado" },
+  { value: "new_clients", label: "Clientes novos", description: "Cadastrados nos últimos 30 dias" },
+  { value: "inactive", label: "Clientes inativos", description: "Sem agendamentos nos últimos 90 dias" },
+  { value: "recent", label: "Clientes recentes", description: "Com agendamentos nos últimos 30 dias" },
+  { value: "birthday_today", label: "Aniversariantes do dia", description: "Clientes que fazem aniversário hoje" },
+  { value: "birthday_week", label: "Aniversariantes da semana", description: "Clientes que fazem aniversário esta semana" },
+  { value: "birthday_month", label: "Aniversariantes do mês", description: "Clientes que fazem aniversário este mês" },
+];
+
 const DEFAULT_TEMPLATE =
   "Olá {nome}! 🌸\n\nTemos uma promoção especial para você em *{servico}*!\n\nAgende agora e garanta condições exclusivas.\n\n_{empresa}_\n\n---\n_Não deseja mais receber promoções? Responda SAIR._";
 
