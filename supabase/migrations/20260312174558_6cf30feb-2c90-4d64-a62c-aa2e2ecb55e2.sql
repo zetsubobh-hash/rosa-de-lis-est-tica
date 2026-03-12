@@ -1,0 +1,1 @@
+ALTER TABLE public.promo_campaigns ADD COLUMN audience_filter jsonb NOT NULL DEFAULT '{"type":"all"}'::jsonb;
