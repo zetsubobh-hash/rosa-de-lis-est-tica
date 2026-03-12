@@ -206,6 +206,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     } else {
       toast({ title: "Plano adicionado ✅" });
       setNewPlan({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
+      setNewPlanRaw({ pps: "0,00", total: "0,00" });
       setEditingSection(null);
       refetchPrices();
     }
