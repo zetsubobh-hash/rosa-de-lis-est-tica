@@ -370,7 +370,8 @@ const AdminPromoBroadcast = () => {
       message_template: campForm.message_template,
       start_time: campForm.start_time,
       interval_seconds: Math.max(5, campForm.interval_seconds),
-    });
+      audience_filter: { type: campForm.audience_filter },
+    } as any);
     toast({ title: "Campanha criada com sucesso!" });
     setCampaignFormOpen(false);
     setSavingCamp(false);
