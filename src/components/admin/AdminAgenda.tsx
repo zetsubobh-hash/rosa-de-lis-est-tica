@@ -439,8 +439,8 @@ const AdminAgenda = () => {
     setSaving(false);
   };
 
-  /** Drag-and-drop reschedule: update time within the same day */
-  const handleDragReschedule = async (appointmentId: string, newTime: string) => {
+  /** Drag-and-drop reschedule: show confirmation first */
+  const handleDragReschedule = (appointmentId: string, newTime: string) => {
     const apt = appointments.find((a) => a.id === appointmentId);
     if (!apt) return;
 
@@ -456,6 +456,15 @@ const AdminAgenda = () => {
       toast({ title: "Horário ocupado", description: `Já existe um agendamento às ${newTime}.`, variant: "destructive" });
       return;
     }
+
+    // Show confirmation popup
+    setDragConfirm({ appointmentId, newTime, apt });
+  };
+
+  const confirmDragReschedule = async () => {
+    if (!dragConfirm) return;
+    const { appointmentId, newTime, apt } = dragConfirm;
+    setDragConfirm(null);
 
     // Build notes with rescheduled flag
     let noteData: any = {};
