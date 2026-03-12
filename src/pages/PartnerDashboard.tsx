@@ -880,14 +880,14 @@ const PartnerDashboard = () => {
               )}
             </div>
 
-            {(!filterDate && appointments.length === 0) ? (
+            {(!permissions.can_create_appointments && !filterDate && appointments.length === 0) ? (
               <div className="bg-card rounded-2xl border border-border p-12 text-center">
                 <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="font-body text-muted-foreground">Nenhum agendamento próximo.</p>
               </div>
-            ) : filterDate ? (
+            ) : (filterDate || permissions.can_create_appointments) ? (
               <DayTimelineView
-                appointments={appointments.filter((a) => a.appointment_date === filterDate).map((a) => ({
+                appointments={appointments.filter((a) => a.appointment_date === selectedAgendaDate).map((a) => ({
                   ...a,
                   service_slug: a.service_slug || "",
                   total_sessions: a.total_sessions || null,
