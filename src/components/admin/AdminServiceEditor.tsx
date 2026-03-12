@@ -363,7 +363,10 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
       className={`group relative cursor-pointer rounded-xl transition-all ${
         editingSection === section ? "ring-2 ring-primary/50 ring-offset-2" : "hover:ring-2 hover:ring-primary/20 hover:ring-offset-1"
       } ${className}`}
-      onClick={(e) => { e.stopPropagation(); setEditingSection(editingSection === section ? null : section); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (editingSection !== section) setEditingSection(section);
+      }}
     >
       {children}
       {editingSection !== section && (
