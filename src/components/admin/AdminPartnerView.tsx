@@ -106,6 +106,7 @@ const AdminPartnerView = () => {
   const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
   const [historyClient, setHistoryClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
+  const [showDemoRoulette, setShowDemoRoulette] = useState(false);
   const [filterDate, setFilterDate] = useState<Date>(new Date());
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
   const [scheduleModal, setScheduleModal] = useState<{
