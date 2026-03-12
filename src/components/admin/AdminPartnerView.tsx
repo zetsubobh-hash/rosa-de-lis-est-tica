@@ -127,7 +127,7 @@ const AdminPartnerView = () => {
 
     const [{ data: profiles }, planByIdResult, clientPlansResult] = await Promise.all([
       userIds.length > 0
-        ? supabase.from("profiles").select("user_id, full_name, avatar_url").in("user_id", userIds)
+        ? supabase.from("profiles").select("user_id, full_name, avatar_url, phone").in("user_id", userIds)
         : Promise.resolve({ data: [] as any[] }),
       planIds.length > 0
         ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("id", planIds)
