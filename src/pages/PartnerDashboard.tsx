@@ -1253,7 +1253,7 @@ const PartnerDashboard = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4"
+          className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm p-4 flex items-end sm:items-center justify-center"
           onClick={() => setQuickBook(null)}
         >
           <motion.div
