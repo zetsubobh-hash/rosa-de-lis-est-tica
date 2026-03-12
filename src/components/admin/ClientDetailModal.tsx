@@ -124,7 +124,10 @@ const AnamnesisField = ({ label, value }: { label: string; value: any }) => {
   );
 };
 
+const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
+
 const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props) => {
+  const isMasterAdmin = userId === MASTER_ADMIN_ID;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
