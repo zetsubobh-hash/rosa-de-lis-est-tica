@@ -87,6 +87,13 @@ const QuickBookModal = ({
     if (!dateStr || !userId || !serviceSlug) return;
     setSaving(true);
 
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast.error("Sessão expirada. Faça login novamente.");
+      setSaving(false);
+      return;
+    }
+
     const service = allServices.find((s) => s.slug === serviceSlug);
     const serviceTitle = service?.title || serviceSlug;
 
