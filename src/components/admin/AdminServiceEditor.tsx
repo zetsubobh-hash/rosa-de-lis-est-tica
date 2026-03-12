@@ -676,19 +676,28 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Preço/sessão (R$)</label>
-                        <Input type="text" value={(newPlan.price_per_session_cents / 100).toFixed(2).replace(".", ",")}
+                        <Input type="text" value={newPlanRaw.pps}
                           onChange={(e) => {
-                            const v = Math.round(parseFloat(e.target.value.replace(",", ".")) * 100) || 0;
-                            setNewPlan(p => ({ ...p, price_per_session_cents: v }));
-                          }} className="h-8 font-body text-sm" />
+                            const raw = e.target.value;
+                            setNewPlanRaw(p => ({ ...p, pps: raw }));
+                            const v = strToCents(raw);
+                            setNewPlan(p => ({ ...p, price_per_session_cents: v, total_price_cents: v * p.sessions }));
+                            setNewPlanRaw(p => ({ ...p, total: centsToStr(v * newPlan.sessions) }));
+                          }}
+                          onBlur={() => setNewPlanRaw(p => ({ ...p, pps: centsToStr(newPlan.price_per_session_cents) }))}
+                          className="h-8 font-body text-sm" />
                       </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Total (R$)</label>
-                        <Input type="text" value={(newPlan.total_price_cents / 100).toFixed(2).replace(".", ",")}
+                        <Input type="text" value={newPlanRaw.total}
                           onChange={(e) => {
-                            const v = Math.round(parseFloat(e.target.value.replace(",", ".")) * 100) || 0;
+                            const raw = e.target.value;
+                            setNewPlanRaw(p => ({ ...p, total: raw }));
+                            const v = strToCents(raw);
                             setNewPlan(p => ({ ...p, total_price_cents: v }));
-                          }} className="h-8 font-body text-sm" />
+                          }}
+                          onBlur={() => setNewPlanRaw(p => ({ ...p, total: centsToStr(newPlan.total_price_cents) }))}
+                          className="h-8 font-body text-sm" />
                       </div>
                       <Button onClick={handleAddPlan} size="sm" className="w-full gap-1.5" disabled={!newPlan.plan_name}>
                         <Check className="w-3.5 h-3.5" />
