@@ -13,24 +13,94 @@ const AdminPricing = () => {
   const { prices, loading, refetch } = useAllServicePrices();
   const { services: dbServices, loading: servicesLoading } = useServices();
   const [editedPrices, setEditedPrices] = useState<Record<string, Partial<ServicePrice>>>({});
+  const [rawPriceInputs, setRawPriceInputs] = useState<
+    Record<string, Partial<Record<"price_per_session_cents" | "total_price_cents", string>>>
+  >({});
   const [saving, setSaving] = useState(false);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
 
-  // New plan form state
-  const [newPlan, setNewPlan] = useState<{
-    service_slug: string;
-    plan_name: string;
-    sessions: string;
-    price_per_session: string;
-    total_price: string;
-  } | null>(null);
-  const [addingPlan, setAddingPlan] = useState(false);
+  const formatInputCents = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
 
-  const handleChange = (id: string, field: keyof ServicePrice, value: string) => {
-    const numValue = field === "sessions" ? parseInt(value) || 0 : Math.round(parseFloat(value.replace(",", ".")) * 100) || 0;
-    setEditedPrices((prev) => ({
+  const parseCurrencyToCents = (value: string) => {
+    const normalizedValue = value.replace(/\./g, ",");
+    const clean = normalizedValue.replace(/[^\d,]/g, "");
+    if (!clean) return 0;
+
+    const [intPart = "", decPart = ""] = clean.split(",");
+    const integer = parseInt(intPart.replace(/^0+(?=\d)/, ""), 10) || 0;
+    const decimals = parseInt(decPart.slice(0, 2).padEnd(2, "0"), 10) || 0;
+
+    return integer * 100 + decimals;
+  };
+
+  const handleSessionsChange = (id: string, value: string) => {
+    const sessions = Math.max(1, parseInt(value, 10) || 1);
+
+    setEditedPrices((prev) => {
+      const original = prices.find((p) => p.id === id);
+      if (!original) return prev;
+
+      const next = { ...prev[id], sessions };
+      const shouldRecalculateTotal = prev[id]?.total_price_cents === undefined;
+
+      if (shouldRecalculateTotal) {
+        const currentPps = next.price_per_session_cents ?? original.price_per_session_cents;
+        next.total_price_cents = currentPps * sessions;
+      }
+
+      return {
+        ...prev,
+        [id]: next,
+      };
+    });
+  };
+
+  const handleMoneyInputChange = (
+    id: string,
+    field: "price_per_session_cents" | "total_price_cents",
+    value: string
+  ) => {
+    setRawPriceInputs((prev) => ({
       ...prev,
-      [id]: { ...prev[id], [field]: numValue },
+      [id]: {
+        ...prev[id],
+        [field]: value,
+      },
+    }));
+  };
+
+  const commitMoneyInput = (id: string, field: "price_per_session_cents" | "total_price_cents") => {
+    const rawValue = rawPriceInputs[id]?.[field];
+    if (rawValue === undefined) return;
+
+    const cents = parseCurrencyToCents(rawValue);
+
+    setEditedPrices((prev) => {
+      const original = prices.find((p) => p.id === id);
+      if (!original) return prev;
+
+      const next = {
+        ...prev[id],
+        [field]: cents,
+      };
+
+      if (field === "price_per_session_cents" && prev[id]?.total_price_cents === undefined) {
+        const currentSessions = next.sessions ?? original.sessions;
+        next.total_price_cents = cents * currentSessions;
+      }
+
+      return {
+        ...prev,
+        [id]: next,
+      };
+    });
+
+    setRawPriceInputs((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: formatInputCents(cents),
+      },
     }));
   };
 
