@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Save, QrCode, CreditCard, Eye, EyeOff, ChevronDown, RefreshCw, Settings } from "lucide-react";
+import { Save, QrCode, CreditCard, Eye, EyeOff, ChevronDown, RefreshCw, Settings, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +28,7 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
   const [pixSettingsOpen, setPixSettingsOpen] = useState(false);
   const [qrKey, setQrKey] = useState(Date.now());
   const [pixAmount, setPixAmount] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const handlePixAmountChange = (val: string) => {
     // Allow only digits and comma/dot
@@ -150,6 +151,20 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
                 </div>
                 <Button
                   variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(pixPayloadString);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                    toast({ title: "PIX Copia e Cola copiado!" });
+                  }}
+                  className="gap-2 mx-auto"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? "Copiado!" : "Copiar PIX Copia e Cola"}
+                </Button>
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => setQrKey(Date.now())}
                   className="gap-2 mx-auto"
