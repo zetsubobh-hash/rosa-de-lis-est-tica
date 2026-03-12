@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Save, Send, Pencil, Server, Megaphone, Clock,
   Hash, ChevronDown, ChevronUp, Loader2, CheckCircle2, XCircle,
-  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff
+  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff, Users, Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
