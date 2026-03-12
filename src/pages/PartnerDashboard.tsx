@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
-  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle
+  Users, History, ClipboardList, CheckCircle2, FileText, Share2, X, Smartphone, Gift, AlertCircle, XCircle, UserPlus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
@@ -14,6 +14,7 @@ import AnamnesisModal from "@/components/AnamnesisModal";
 import UserHistoryModal from "@/components/admin/UserHistoryModal";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
+import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import CalendarPopoverFilter from "@/components/admin/CalendarPopoverFilter";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 
@@ -115,6 +116,13 @@ const PartnerDashboard = () => {
   const [showDemoRoulette, setShowDemoRoulette] = useState(false);
   const [filterDate, setFilterDate] = useState<string | null>(formatLocalDate(new Date()));
   const [expandedAptId, setExpandedAptId] = useState<string | null>(null);
+  const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
+  const [qbUserId, setQbUserId] = useState("");
+  const [qbServiceSlug, setQbServiceSlug] = useState("");
+  const [qbSaving, setQbSaving] = useState(false);
+  const [qbShowNewClient, setQbShowNewClient] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
   const [scheduleModal, setScheduleModal] = useState<{
     planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null;
   } | null>(null);
@@ -278,6 +286,20 @@ const PartnerDashboard = () => {
 
     init();
   }, [user, navigate]);
+
+  // Fetch all profiles + services for quick-book
+  useEffect(() => {
+    if (!permissions.can_create_appointments) return;
+    const load = async () => {
+      const [{ data: profs }, { data: svcs }] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name").order("full_name"),
+        supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
+      ]);
+      setAllProfiles(profs || []);
+      setAllServices(svcs || []);
+    };
+    load();
+  }, [permissions.can_create_appointments]);
 
   // Real-time subscription
   useEffect(() => {
@@ -915,6 +937,14 @@ const PartnerDashboard = () => {
                   },
                 } : {})}
                 {...(permissions.can_cancel ? { onCancel: handleCancelAppointment } : {})}
+                {...(permissions.can_create_appointments ? {
+                  onSlotClick: (time: string) => {
+                    setQuickBook({ time });
+                    setQbUserId("");
+                    setQbServiceSlug("");
+                    setQbShowNewClient(false);
+                  },
+                } : {})}
               />
             ) : (
               Object.entries(grouped).map(([date, apts]) => (
@@ -1210,6 +1240,144 @@ const PartnerDashboard = () => {
             >
               <Share2 className="w-4 h-4" />
               Compartilhar Link
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Quick Book Modal */}
+    <AnimatePresence>
+      {quickBook && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm p-4 flex items-end sm:items-center justify-center"
+          onClick={() => setQuickBook(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 100 }}
+            className="bg-card rounded-t-2xl sm:rounded-2xl border border-border shadow-xl w-full sm:max-w-md p-5 sm:p-6 space-y-4 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex sm:hidden justify-center -mt-2 pb-1">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-base font-bold text-foreground">
+                Agendar às {quickBook.time}
+              </h3>
+              <button onClick={() => setQuickBook(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="font-body text-sm text-muted-foreground">
+              {filterDate ? formatDate(filterDate) : ""}
+            </p>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="font-body text-xs font-semibold text-foreground">Cliente</label>
+                <button
+                  type="button"
+                  onClick={() => setQbShowNewClient(!qbShowNewClient)}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-primary hover:bg-primary/10 transition-colors"
+                >
+                  {qbShowNewClient ? <><X className="w-3 h-3" /> Cancelar</> : <><UserPlus className="w-3 h-3" /> Novo Cliente</>}
+                </button>
+              </div>
+
+              {qbShowNewClient ? (
+                <NewClientInlineForm
+                  onClientCreated={(client) => {
+                    setAllProfiles((prev) => [{ user_id: client.user_id, full_name: client.full_name }, ...prev]);
+                    setQbUserId(client.user_id);
+                    setQbShowNewClient(false);
+                  }}
+                  onCancel={() => setQbShowNewClient(false)}
+                />
+              ) : (
+                <select
+                  value={qbUserId}
+                  onChange={(e) => setQbUserId(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Selecione o cliente...</option>
+                  {allProfiles.map((p) => (
+                    <option key={p.user_id} value={p.user_id}>{p.full_name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div>
+              <label className="font-body text-xs font-semibold text-foreground block mb-1.5">Procedimento</label>
+              <select
+                value={qbServiceSlug}
+                onChange={(e) => setQbServiceSlug(e.target.value)}
+                className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+              >
+                <option value="">Selecione o procedimento...</option>
+                {allServices.map((s) => (
+                  <option key={s.slug} value={s.slug}>{s.title}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              disabled={qbSaving || !qbUserId || !qbServiceSlug || !filterDate}
+              onClick={async () => {
+                if (!filterDate || !qbUserId || !qbServiceSlug) return;
+                setQbSaving(true);
+                const service = allServices.find((s) => s.slug === qbServiceSlug);
+                const { data, error } = await supabase
+                  .from("appointments")
+                  .insert({
+                    user_id: qbUserId,
+                    service_slug: qbServiceSlug,
+                    service_title: service?.title || qbServiceSlug,
+                    appointment_date: filterDate,
+                    appointment_time: quickBook.time,
+                    status: "confirmed",
+                    partner_id: partnerId,
+                  })
+                  .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, notes")
+                  .single();
+                setQbSaving(false);
+
+                if (error) {
+                  toast.error("Erro ao agendar: " + error.message);
+                  return;
+                }
+
+                const selectedProfile = allProfiles.find((p) => p.user_id === qbUserId);
+                const createdApt: Appointment = {
+                  ...(data as any),
+                  plan_id: (data as any)?.plan_id ?? null,
+                  session_number: (data as any)?.session_number ?? null,
+                  notes: (data as any)?.notes ?? null,
+                  profile: selectedProfile ? { full_name: selectedProfile.full_name, avatar_url: null } : null,
+                  total_sessions: null,
+                  completed_sessions: null,
+                  planSessions: [],
+                };
+
+                setAppointments((prev) =>
+                  [...prev, createdApt].sort((a, b) =>
+                    `${a.appointment_date}${a.appointment_time}`.localeCompare(`${b.appointment_date}${b.appointment_time}`)
+                  )
+                );
+                toast.success("Agendamento criado ✅");
+                setQuickBook(null);
+              }}
+              className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {qbSaving ? "Agendando..." : "Confirmar Agendamento"}
             </button>
           </motion.div>
         </motion.div>
