@@ -76,6 +76,7 @@ const AdminPartnerView = () => {
   const [dataLoading, setDataLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("agenda");
   const [anamnesisClient, setAnamnesisClient] = useState<{ userId: string; name: string } | null>(null);
+  const [historyClient, setHistoryClient] = useState<{ userId: string; name: string } | null>(null);
   const [showInstallQR, setShowInstallQR] = useState(false);
   const [filterDate, setFilterDate] = useState<string | null>(new Date().toISOString().split("T")[0]);
   const installUrl = typeof window !== "undefined" ? `${window.location.origin}/instalar` : "/instalar";
