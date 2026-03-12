@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -352,14 +351,133 @@ const AdminPromoBroadcast = () => {
               <Megaphone className="w-5 h-5 text-primary" />
               Campanhas de Promoção
             </CardTitle>
-            <Button onClick={openNewCampaign} className="gap-2" size="sm">
-              <Plus className="w-4 h-4" />
-              Nova Campanha
-            </Button>
+            {!campaignFormOpen && (
+              <Button onClick={openNewCampaign} className="gap-2" size="sm">
+                <Plus className="w-4 h-4" />
+                Nova Campanha
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {campaigns.length === 0 && (
+          {/* ─── INLINE CAMPAIGN FORM ─── */}
+          <AnimatePresence>
+            {campaignFormOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="p-4 md:p-6 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-4">
+                  <h3 className="font-semibold text-base flex items-center gap-2">
+                    <Megaphone className="w-4 h-4 text-primary" />
+                    Nova Campanha de Promoção
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <Label>Título da Campanha</Label>
+                      <Input
+                        value={campForm.title}
+                        onChange={(e) => setCampForm(p => ({ ...p, title: e.target.value }))}
+                        placeholder="Ex: Promoção de Verão"
+                        maxLength={100}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label>Serviço / Procedimento</Label>
+                      <Select value={campForm.service_slug} onValueChange={(v) => setCampForm(p => ({ ...p, service_slug: v }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todos os serviços" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os serviços (genérico)</SelectItem>
+                          {services.map(s => (
+                            <SelectItem key={s.slug} value={s.slug}>{s.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">A variável {"{servico}"} será preenchida com o procedimento selecionado.</p>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label className="flex items-center gap-2">
+                        <Pencil className="w-4 h-4 text-primary" />
+                        Mensagem da Promoção
+                      </Label>
+                      <Textarea
+                        value={campForm.message_template}
+                        onChange={(e) => setCampForm(p => ({ ...p, message_template: e.target.value }))}
+                        rows={6}
+                        className="font-mono text-sm"
+                        maxLength={2000}
+                      />
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {DYNAMIC_VARS.map(v => (
+                          <Button
+                            key={v.key}
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7 gap-1"
+                            onClick={() => insertVar(v.key)}
+                          >
+                            <Plus className="w-3 h-3" />
+                            {v.key}
+                          </Button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Clique para inserir variáveis dinâmicas na mensagem.</p>
+                    </div>
+
+                    <div>
+                      <Label className="flex items-center gap-1"><Clock className="w-4 h-4" /> Hora de Início</Label>
+                      <Input
+                        type="time"
+                        value={campForm.start_time}
+                        onChange={(e) => setCampForm(p => ({ ...p, start_time: e.target.value }))}
+                        className="text-lg font-semibold text-center h-12"
+                      />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-1"><RefreshCw className="w-4 h-4" /> Intervalo (segundos)</Label>
+                      <Input
+                        type="number"
+                        min={5}
+                        max={600}
+                        value={campForm.interval_seconds}
+                        onChange={(e) => setCampForm(p => ({ ...p, interval_seconds: parseInt(e.target.value) || 30 }))}
+                        className="text-2xl font-bold text-center h-14"
+                      />
+                      <p className="text-xs text-muted-foreground text-center mt-1">entre cada mensagem</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground space-y-1">
+                    <p className="font-semibold flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Como funciona o envio:</p>
+                    <p>1. As mensagens são enviadas para todos os clientes cadastrados com telefone.</p>
+                    <p>2. O sistema usa a 1ª instância ativa até atingir o limite de msgs/ciclo.</p>
+                    <p>3. Então pula automaticamente para a próxima instância e assim por diante.</p>
+                    <p>4. Ao terminar todas, reinicia o ciclo na 1ª instância.</p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                    <Button onClick={saveCampaign} disabled={savingCamp} className="gap-2 flex-1 sm:flex-none">
+                      {savingCamp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      Criar Campanha
+                    </Button>
+                    <Button variant="outline" onClick={() => setCampaignFormOpen(false)} className="flex-1 sm:flex-none">
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {campaigns.length === 0 && !campaignFormOpen && (
             <div className="text-center py-8 text-muted-foreground">
               <Megaphone className="w-10 h-10 mx-auto mb-2 opacity-40" />
               <p>Nenhuma campanha criada</p>
@@ -469,113 +587,6 @@ const AdminPromoBroadcast = () => {
             <Button onClick={saveInstance} disabled={savingInst} className="gap-2">
               {savingInst ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ─── CAMPAIGN FORM DIALOG ─── */}
-      <Dialog open={campaignFormOpen} onOpenChange={setCampaignFormOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Nova Campanha de Promoção</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Título da Campanha</Label>
-              <Input
-                value={campForm.title}
-                onChange={(e) => setCampForm(p => ({ ...p, title: e.target.value }))}
-                placeholder="Ex: Promoção de Verão"
-                maxLength={100}
-              />
-            </div>
-
-            <div>
-              <Label>Serviço / Procedimento</Label>
-              <Select value={campForm.service_slug} onValueChange={(v) => setCampForm(p => ({ ...p, service_slug: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os serviços" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os serviços (genérico)</SelectItem>
-                  {services.map(s => (
-                    <SelectItem key={s.slug} value={s.slug}>{s.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">Se selecionado, a variável {"{servico}"} será preenchida com este procedimento.</p>
-            </div>
-
-            <div>
-              <Label className="flex items-center gap-2">
-                <Pencil className="w-4 h-4 text-primary" />
-                Mensagem da Promoção
-              </Label>
-              <Textarea
-                value={campForm.message_template}
-                onChange={(e) => setCampForm(p => ({ ...p, message_template: e.target.value }))}
-                rows={6}
-                className="font-mono text-sm"
-                maxLength={2000}
-              />
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {DYNAMIC_VARS.map(v => (
-                  <Button
-                    key={v.key}
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="text-xs h-7 gap-1"
-                    onClick={() => insertVar(v.key)}
-                  >
-                    <Plus className="w-3 h-3" />
-                    {v.key}
-                  </Button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Clique para inserir variáveis dinâmicas na mensagem.</p>
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="flex items-center gap-1"><Clock className="w-4 h-4" /> Hora de Início</Label>
-                <Input
-                  type="time"
-                  value={campForm.start_time}
-                  onChange={(e) => setCampForm(p => ({ ...p, start_time: e.target.value }))}
-                  className="text-lg font-semibold text-center h-12"
-                />
-              </div>
-              <div>
-                <Label className="flex items-center gap-1"><RefreshCw className="w-4 h-4" /> Intervalo (segundos)</Label>
-                <Input
-                  type="number"
-                  min={5}
-                  max={600}
-                  value={campForm.interval_seconds}
-                  onChange={(e) => setCampForm(p => ({ ...p, interval_seconds: parseInt(e.target.value) || 30 }))}
-                  className="text-2xl font-bold text-center h-14"
-                />
-                <p className="text-xs text-muted-foreground text-center mt-1">entre cada mensagem</p>
-              </div>
-            </div>
-
-            <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground space-y-1">
-              <p className="font-semibold flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Como funciona o envio:</p>
-              <p>1. As mensagens são enviadas para todos os clientes cadastrados com telefone.</p>
-              <p>2. O sistema usa a 1ª instância ativa até atingir o limite de msgs/ciclo.</p>
-              <p>3. Então pula automaticamente para a próxima instância e assim por diante.</p>
-              <p>4. Ao terminar todas, reinicia o ciclo na 1ª instância.</p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCampaignFormOpen(false)}>Cancelar</Button>
-            <Button onClick={saveCampaign} disabled={savingCamp} className="gap-2">
-              {savingCamp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Criar Campanha
             </Button>
           </DialogFooter>
         </DialogContent>
