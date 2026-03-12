@@ -291,6 +291,7 @@ const Admin = () => {
         <div className="p-4 md:p-8">
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "agenda" && <AdminAgenda />}
+          {activeTab === "clients" && <AdminClients />}
           {activeTab === "counter-sales" && <AdminCounterSales />}
           {activeTab === "services" && <AdminServices />}
           {activeTab === "pricing" && <AdminPricing />}
