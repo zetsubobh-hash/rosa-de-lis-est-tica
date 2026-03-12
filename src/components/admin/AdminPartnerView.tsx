@@ -788,6 +788,19 @@ const AdminPartnerView = () => {
         />
       )}
 
+      {scheduleModal && (
+        <SessionScheduleModal
+          open={!!scheduleModal}
+          onClose={() => setScheduleModal(null)}
+          onScheduled={() => { fetchData(selectedPartner); setScheduleModal(null); }}
+          planId={scheduleModal.planId}
+          sessionNumber={scheduleModal.sessionNumber}
+          serviceSlug={scheduleModal.serviceSlug}
+          serviceTitle={scheduleModal.serviceTitle}
+          userId={scheduleModal.userId}
+        />
+      )}
+
       <AnimatePresence>
         {showInstallQR && (
           <motion.div
