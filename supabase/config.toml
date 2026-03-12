@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.evolution-instance]
 verify_jwt = false
+
+[functions.reset-password]
+verify_jwt = false
