@@ -278,7 +278,7 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
           <label className="font-body text-[10px] font-medium text-foreground">Sexo *</label>
           <Select value={form.sex} onValueChange={(v) => setForm(prev => ({ ...prev, sex: v }))}>
             <SelectTrigger className="font-body h-8 text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
               <SelectItem value="F">Feminino</SelectItem>
               <SelectItem value="M">Masculino</SelectItem>
               <SelectItem value="O">Outro</SelectItem>
