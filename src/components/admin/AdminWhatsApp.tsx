@@ -625,12 +625,15 @@ const AdminWhatsApp = () => {
                           </div>
                         </div>
 
-                        {/* Per-template test send */}
-                        <div className="border-t border-border pt-3 space-y-2">
-                          <label className="font-body text-xs font-semibold text-foreground flex items-center gap-1.5">
-                            <Send className="w-3.5 h-3.5 text-primary" />
-                            Enviar teste desta mensagem
+                        {/* Per-template test send — prominent section */}
+                        <div className="border-2 border-dashed border-primary/30 rounded-xl p-3 space-y-2 bg-primary/5">
+                          <label className="font-body text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <Send className="w-4 h-4 text-primary" />
+                            📲 Enviar teste desta mensagem
                           </label>
+                          <p className="font-body text-[11px] text-muted-foreground">
+                            Digite um número e envie para ver como a mensagem chega no WhatsApp — com dados reais do sistema.
+                          </p>
                           <div className="flex flex-col sm:flex-row gap-2">
                             <input
                               type="text"
@@ -642,13 +645,12 @@ const AdminWhatsApp = () => {
                             <button
                               onClick={() => handleSendTemplateTest(tpl.key, tpl.textKey)}
                               disabled={tplTestSending[tpl.key]}
-                              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-body text-xs font-semibold hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-body text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                             >
-                              {tplTestSending[tpl.key] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                              Testar
+                              {tplTestSending[tpl.key] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                              Enviar Teste
                             </button>
                           </div>
-                          <p className="font-body text-[10px] text-muted-foreground">As variáveis serão substituídas por dados de exemplo.</p>
                         </div>
                       </div>
                     </motion.div>
