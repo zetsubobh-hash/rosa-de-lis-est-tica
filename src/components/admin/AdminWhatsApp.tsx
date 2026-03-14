@@ -435,7 +435,7 @@ const AdminWhatsApp = () => {
         .replace(/{servico}/g, "Limpeza de Pele")
         .replace(/{data}/g, "15/04/2026")
         .replace(/{hora}/g, "14:00")
-        .replace(/{empresa}/g, "Rosa de Lis")
+        .replace(/{empresa}/g, businessName)
         .replace(/{idade}/g, "30")
         .replace(/{telefone}/g, "(11) 99999-9999")
         .replace(/{cupom}/g, sampleCoupon || "ANIV-TEST-2026")
