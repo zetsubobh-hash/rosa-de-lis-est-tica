@@ -59,6 +59,14 @@ serve(async (req) => {
     const reminderTemplate = cfg.whatsapp_msg_reminder_text || 
       "Olá {nome}! 🔔 Lembrete: você tem um agendamento de *{servico}* hoje às *{hora}*. Te esperamos! 💖";
 
+    // Fetch business name for {empresa} variable
+    const { data: siteSettingsData } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .eq("key", "business_name")
+      .maybeSingle();
+    const businessName = siteSettingsData?.value || "Rosa de Lis Estética";
+
     // Get current time in Brasília timezone (UTC-3)
     const now = new Date();
     const brasiliaOffset = -3 * 60; // minutes
@@ -123,7 +131,8 @@ serve(async (req) => {
         .replace(/{nome}/g, client.full_name || "Cliente")
         .replace(/{servico}/g, apt.service_title)
         .replace(/{data}/g, dateFormatted)
-        .replace(/{hora}/g, apt.appointment_time);
+        .replace(/{hora}/g, apt.appointment_time)
+        .replace(/{empresa}/g, businessName);
 
       const cleanPhone = client.phone.replace(/\D/g, "");
       const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;

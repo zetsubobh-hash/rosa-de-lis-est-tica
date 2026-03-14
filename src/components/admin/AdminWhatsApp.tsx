@@ -178,17 +178,20 @@ const AdminWhatsApp = () => {
   const [broadcastMsg, setBroadcastMsg] = useState(DEFAULT_BROADCAST_MSG);
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [showRouletteTest, setShowRouletteTest] = useState(false);
+  const [businessName, setBusinessName] = useState("Rosa de Lis Estética");
   const [showClientPreview, setShowClientPreview] = useState(false);
 
   useEffect(() => {
     const fetchExtras = async () => {
-      const [{ data: svcData }, { data: partnerData }, { data: adminRoles }] = await Promise.all([
+      const [{ data: svcData }, { data: partnerData }, { data: adminRoles }, { data: siteData }] = await Promise.all([
         supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
         supabase.from("partners").select("id, full_name, phone, user_id").eq("is_active", true).order("full_name"),
         supabase.from("user_roles").select("user_id").eq("role", "admin"),
+        supabase.from("site_settings" as any).select("value").eq("key", "business_name").maybeSingle(),
       ]);
       setServices(svcData || []);
       setPartners(partnerData || []);
+      if ((siteData as any)?.value) setBusinessName((siteData as any).value);
       // Fetch admin profiles
       if (adminRoles && adminRoles.length > 0) {
         const adminUserIds = adminRoles.map((r: any) => r.user_id);
@@ -432,7 +435,7 @@ const AdminWhatsApp = () => {
         .replace(/{servico}/g, "Limpeza de Pele")
         .replace(/{data}/g, "15/04/2026")
         .replace(/{hora}/g, "14:00")
-        .replace(/{empresa}/g, "Rosa de Lis")
+        .replace(/{empresa}/g, businessName)
         .replace(/{idade}/g, "30")
         .replace(/{telefone}/g, "(11) 99999-9999")
         .replace(/{cupom}/g, sampleCoupon || "ANIV-TEST-2026")
@@ -942,7 +945,7 @@ const AdminWhatsApp = () => {
               const rawPhone = `55${r.phone.replace(/\D/g, "")}`;
               const text = broadcastMsg
                 .replace(/{nome}/g, r.name)
-                .replace(/{empresa}/g, "Rosa de Lis");
+                .replace(/{empresa}/g, businessName);
               try {
                 const res = await fetch(`${SUPABASE_URL}/functions/v1/evolution`, {
                   method: "POST",
