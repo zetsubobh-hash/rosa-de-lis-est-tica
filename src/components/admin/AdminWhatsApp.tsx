@@ -427,20 +427,49 @@ const AdminWhatsApp = () => {
     setTplTestSending((prev) => ({ ...prev, [tplKey]: true }));
     try {
       const { data: { session } } = await supabase.auth.getSession();
+
+      // Fetch real data from database for realistic test
+      const [{ data: randomProfile }, { data: randomService }, { data: recentAppointment }] = await Promise.all([
+        supabase.from("profiles").select("full_name, phone, birth_date").limit(1).order("created_at", { ascending: false }).maybeSingle(),
+        supabase.from("services").select("title").eq("is_active", true).limit(1).order("sort_order").maybeSingle(),
+        supabase.from("appointments").select("appointment_date, appointment_time, service_title").eq("status", "confirmed").limit(1).order("created_at", { ascending: false }).maybeSingle(),
+      ]);
+
+      // Build realistic values from real DB data
+      const realName = randomProfile?.full_name || "Maria Exemplo";
+      const realPhone = randomProfile?.phone || "(11) 99999-9999";
+      const realService = recentAppointment?.service_title || randomService?.title || "Limpeza de Pele";
+
+      let realDate = "15/04/2026";
+      let realTime = "14:00";
+      if (recentAppointment) {
+        const [y, m, d] = recentAppointment.appointment_date.split("-");
+        realDate = `${d}/${m}/${y}`;
+        realTime = recentAppointment.appointment_time;
+      }
+
+      let realAge = "30";
+      if (randomProfile?.birth_date) {
+        const birthYear = parseInt(randomProfile.birth_date.split("-")[0]);
+        realAge = String(new Date().getFullYear() - birthYear);
+      }
+
       const sampleCoupon = settings.birthday_gift_type === "discount" ? "ANIV-TEST-2026" : "";
       const giftText = buildGiftText(sampleCoupon);
-      // Replace variables with example values
+
+      // Replace variables with real data
       const text = (settings[textKey] || "")
-        .replace(/{nome}/g, "Maria Exemplo")
-        .replace(/{servico}/g, "Limpeza de Pele")
-        .replace(/{data}/g, "15/04/2026")
-        .replace(/{hora}/g, "14:00")
+        .replace(/{nome}/g, realName)
+        .replace(/{servico}/g, realService)
+        .replace(/{data}/g, realDate)
+        .replace(/{hora}/g, realTime)
         .replace(/{empresa}/g, businessName)
-        .replace(/{idade}/g, "30")
-        .replace(/{telefone}/g, "(11) 99999-9999")
+        .replace(/{idade}/g, realAge)
+        .replace(/{telefone}/g, realPhone)
         .replace(/{cupom}/g, sampleCoupon || "ANIV-TEST-2026")
         .replace(/{brinde}/g, giftText)
         .replace(/{premio}/g, "40% de desconto");
+
       const res = await fetch(
         `${SUPABASE_URL}/functions/v1/evolution`,
         {
@@ -459,7 +488,7 @@ const AdminWhatsApp = () => {
       }
       const data = await res.json();
       if (data.success) {
-        toast({ title: "✅ Teste enviado!", description: `Mensagem enviada para ${phone}` });
+        toast({ title: "✅ Teste enviado!", description: `Mensagem enviada para ${phone} com dados reais` });
       } else {
         toast({ title: "Erro ao enviar", description: data.error || "Falha", variant: "destructive" });
       }
