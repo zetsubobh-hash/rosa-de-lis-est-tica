@@ -59,6 +59,14 @@ serve(async (req) => {
     const reminderTemplate = cfg.whatsapp_msg_reminder_text || 
       "Olá {nome}! 🔔 Lembrete: você tem um agendamento de *{servico}* hoje às *{hora}*. Te esperamos! 💖";
 
+    // Fetch business name for {empresa} variable
+    const { data: siteSettingsData } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .eq("key", "business_name")
+      .maybeSingle();
+    const businessName = siteSettingsData?.value || "Rosa de Lis Estética";
+
     // Get current time in Brasília timezone (UTC-3)
     const now = new Date();
     const brasiliaOffset = -3 * 60; // minutes
