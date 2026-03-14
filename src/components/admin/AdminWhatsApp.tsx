@@ -945,7 +945,7 @@ const AdminWhatsApp = () => {
               const rawPhone = `55${r.phone.replace(/\D/g, "")}`;
               const text = broadcastMsg
                 .replace(/{nome}/g, r.name)
-                .replace(/{empresa}/g, "Rosa de Lis");
+                .replace(/{empresa}/g, businessName);
               try {
                 const res = await fetch(`${SUPABASE_URL}/functions/v1/evolution`, {
                   method: "POST",
