@@ -131,7 +131,8 @@ serve(async (req) => {
         .replace(/{nome}/g, client.full_name || "Cliente")
         .replace(/{servico}/g, apt.service_title)
         .replace(/{data}/g, dateFormatted)
-        .replace(/{hora}/g, apt.appointment_time);
+        .replace(/{hora}/g, apt.appointment_time)
+        .replace(/{empresa}/g, businessName);
 
       const cleanPhone = client.phone.replace(/\D/g, "");
       const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
