@@ -27,6 +27,7 @@ const AdminWelcomeRoulette = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [items, setItems] = useState<RouletteItem[]>(DEFAULT_ITEMS);
   const [savingItems, setSavingItems] = useState(false);
+  const [services, setServices] = useState<{ slug: string; title: string }[]>([]);
 
   useEffect(() => {
     loadData();
