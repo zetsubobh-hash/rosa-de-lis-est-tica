@@ -239,7 +239,7 @@ const AdminWelcomeRoulette = () => {
                   onCheckedChange={(v) => updateItem(it.id, { enabled: v })}
                 />
               </div>
-              <div className="col-span-12 sm:col-span-4">
+              <div className="col-span-12 sm:col-span-3">
                 <Input
                   value={it.label}
                   onChange={(e) => updateItem(it.id, { label: e.target.value })}
@@ -272,7 +272,7 @@ const AdminWelcomeRoulette = () => {
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                 </div>
               </div>
-              <div className="col-span-8 sm:col-span-2">
+              <div className="col-span-6 sm:col-span-2">
                 <div className="relative">
                   <Input
                     type="number"
@@ -287,7 +287,22 @@ const AdminWelcomeRoulette = () => {
                   </span>
                 </div>
               </div>
-              <div className="col-span-4 sm:col-span-1 flex justify-end">
+              <div className="col-span-4 sm:col-span-1">
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={it.expiresDays}
+                    disabled={it.type === "none"}
+                    onChange={(e) => updateItem(it.id, { expiresDays: Math.max(1, Number(e.target.value) || 1) })}
+                    placeholder="dias"
+                    title="Validade do cupom em dias"
+                    className="h-9 pr-8"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">dias</span>
+                </div>
+              </div>
+              <div className="col-span-2 sm:col-span-1 flex justify-end">
                 <button
                   onClick={() => removeItem(it.id)}
                   className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
