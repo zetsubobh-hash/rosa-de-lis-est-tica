@@ -12,6 +12,7 @@ import QRCodeCardModal from "./QRCodeCardModal";
 interface WelcomeCoupon {
   id: string;
   code: string;
+  discount_type?: string;
   discount_value: number;
   is_used: boolean;
   used_at: string | null;
@@ -398,16 +399,19 @@ const AdminWelcomeRoulette = () => {
       </div>
 
 
-      {/* Prize Coupons Table */}
+      {/* All Spins Table */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         <div className="p-4 border-b border-border flex items-center gap-2">
           <Ticket className="w-4 h-4 text-primary" />
-          <h3 className="font-heading text-sm font-bold text-foreground">Cupons de Boas-Vindas (prêmios)</h3>
+          <h3 className="font-heading text-sm font-bold text-foreground">Histórico de Giros (todos)</h3>
+          <span className="ml-auto font-body text-[11px] text-muted-foreground">
+            {prizeCoupons.length} prêmios • {noWinEntries.length} não ganharam
+          </span>
         </div>
 
-        {prizeCoupons.length === 0 ? (
+        {coupons.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="font-body text-sm text-muted-foreground">Nenhum cupom de boas-vindas gerado ainda.</p>
+            <p className="font-body text-sm text-muted-foreground">Nenhum giro registrado ainda.</p>
           </div>
         ) : (
           <>
@@ -418,31 +422,49 @@ const AdminWelcomeRoulette = () => {
                   <tr className="border-b border-border bg-muted/30">
                     <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cliente</th>
                     <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Código</th>
-                    <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Desconto</th>
+                    <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Prêmio</th>
                     <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Validade</th>
                     <th className="text-left p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                     <th className="text-right p-3 font-body text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {prizeCoupons.map((coupon) => {
+                  {coupons.map((coupon) => {
+                    const isNoWin = coupon.code.startsWith("BV-NADA");
+                    const isService = coupon.discount_type === "service" || coupon.code.startsWith("BV-SRV");
                     const expired = new Date(coupon.expires_at) < new Date();
                     return (
-                      <tr key={coupon.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                      <tr key={coupon.id} className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${isNoWin ? "opacity-70" : ""}`}>
                         <td className="p-3 font-body text-sm text-foreground">{coupon.user_name}</td>
-                        <td className="p-3 font-mono text-sm text-foreground">{coupon.code}</td>
-                        <td className="p-3 font-body text-sm font-bold text-primary">{coupon.discount_value}%</td>
-                        <td className="p-3">
-                          <input
-                            type="date"
-                            value={coupon.expires_at.slice(0, 10)}
-                            onChange={(e) => updateExpiry(coupon.id, e.target.value)}
-                            className="h-8 px-2 rounded-md border border-input bg-background text-xs text-foreground"
-                            title="Editar validade"
-                          />
+                        <td className="p-3 font-mono text-xs text-foreground">{coupon.code}</td>
+                        <td className="p-3 font-body text-sm">
+                          {isNoWin ? (
+                            <span className="text-muted-foreground italic">Não ganhou</span>
+                          ) : isService ? (
+                            <span className="font-bold text-primary">🎁 Sessão grátis</span>
+                          ) : (
+                            <span className="font-bold text-primary">{coupon.discount_value}% OFF</span>
+                          )}
                         </td>
                         <td className="p-3">
-                          {coupon.is_used ? (
+                          {isNoWin ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            <input
+                              type="date"
+                              value={coupon.expires_at.slice(0, 10)}
+                              onChange={(e) => updateExpiry(coupon.id, e.target.value)}
+                              className="h-8 px-2 rounded-md border border-input bg-background text-xs text-foreground"
+                              title="Editar validade"
+                            />
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {isNoWin ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold uppercase">
+                              <XCircle className="w-3 h-3" /> Sem prêmio
+                            </span>
+                          ) : coupon.is_used ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase">
                               <CheckCircle2 className="w-3 h-3" /> Usado
                             </span>
@@ -458,7 +480,7 @@ const AdminWelcomeRoulette = () => {
                         </td>
                         <td className="p-3 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            {!coupon.is_used && !expired && (
+                            {!isNoWin && !coupon.is_used && !expired && (
                               <button
                                 onClick={() => markUsed(coupon.id)}
                                 className="p-1.5 rounded-lg hover:bg-muted transition-colors"
@@ -485,13 +507,19 @@ const AdminWelcomeRoulette = () => {
 
             {/* Mobile cards */}
             <div className="md:hidden divide-y divide-border">
-              {prizeCoupons.map((coupon) => {
+              {coupons.map((coupon) => {
+                const isNoWin = coupon.code.startsWith("BV-NADA");
+                const isService = coupon.discount_type === "service" || coupon.code.startsWith("BV-SRV");
                 const expired = new Date(coupon.expires_at) < new Date();
                 return (
-                  <div key={coupon.id} className="p-4 space-y-2">
+                  <div key={coupon.id} className={`p-4 space-y-2 ${isNoWin ? "opacity-70" : ""}`}>
                     <div className="flex items-center justify-between">
                       <p className="font-body text-sm font-semibold text-foreground truncate">{coupon.user_name}</p>
-                      {coupon.is_used ? (
+                      {isNoWin ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold uppercase flex-shrink-0">
+                          <XCircle className="w-3 h-3" /> Sem prêmio
+                        </span>
+                      ) : coupon.is_used ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase flex-shrink-0">
                           <CheckCircle2 className="w-3 h-3" /> Usado
                         </span>
@@ -509,20 +537,22 @@ const AdminWelcomeRoulette = () => {
                       <div className="min-w-0 flex-1">
                         <p className="font-mono text-xs text-muted-foreground truncate">{coupon.code}</p>
                         <p className="font-body text-xs text-muted-foreground">
-                          {coupon.discount_value}% OFF
+                          {isNoWin ? "Não ganhou" : isService ? "🎁 Sessão grátis" : `${coupon.discount_value}% OFF`}
                         </p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <label className="font-body text-[10px] text-muted-foreground">Validade:</label>
-                          <input
-                            type="date"
-                            value={coupon.expires_at.slice(0, 10)}
-                            onChange={(e) => updateExpiry(coupon.id, e.target.value)}
-                            className="h-7 px-2 rounded-md border border-input bg-background text-xs text-foreground"
-                          />
-                        </div>
+                        {!isNoWin && (
+                          <div className="mt-1 flex items-center gap-2">
+                            <label className="font-body text-[10px] text-muted-foreground">Validade:</label>
+                            <input
+                              type="date"
+                              value={coupon.expires_at.slice(0, 10)}
+                              onChange={(e) => updateExpiry(coupon.id, e.target.value)}
+                              className="h-7 px-2 rounded-md border border-input bg-background text-xs text-foreground"
+                            />
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
-                        {!coupon.is_used && !expired && (
+                        {!isNoWin && !coupon.is_used && !expired && (
                           <button
                             onClick={() => markUsed(coupon.id)}
                             className="p-2 rounded-lg hover:bg-muted transition-colors"
