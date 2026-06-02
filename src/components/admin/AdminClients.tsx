@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Search, Users, Phone, Mail, MessageCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Users, Phone, Mail, MessageCircle, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
+import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 
 interface Client {
   user_id: string;
@@ -25,6 +26,7 @@ const AdminClients = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showNewClient, setShowNewClient] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -59,17 +61,50 @@ const AdminClients = () => {
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Buscar por nome, telefone ou e-mail..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-10 pl-9 pr-3 rounded-xl border border-border bg-background font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none"
-        />
+      {/* Header: search + new client button */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, telefone ou e-mail..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-10 pl-9 pr-3 rounded-xl border border-border bg-background font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none"
+          />
+        </div>
+        <button
+          onClick={() => setShowNewClient((v) => !v)}
+          className="h-10 px-4 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shrink-0"
+        >
+          {showNewClient ? <UserPlus className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+          {showNewClient ? "Fechar Cadastro" : "Novo Cliente"}
+        </button>
       </div>
+
+      {/* New client form */}
+      <AnimatePresence>
+        {showNewClient && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <NewClientInlineForm
+              onClientCreated={(client) => {
+                setShowNewClient(false);
+                setClients((prev) => {
+                  const updated = [client as unknown as Client, ...prev];
+                  return updated.sort((a, b) => a.full_name.localeCompare(b.full_name));
+                });
+                setSearch("");
+              }}
+              onCancel={() => setShowNewClient(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <p className="font-body text-xs text-muted-foreground">
         {filtered.length} cliente{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
