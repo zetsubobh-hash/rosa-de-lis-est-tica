@@ -244,7 +244,7 @@ const AdminWelcomeRoulette = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={addItem} className="gap-1">
+            <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)} className="gap-1">
               <Plus className="w-4 h-4" /> Adicionar
             </Button>
             <Button size="sm" onClick={saveItems} disabled={savingItems} className="gap-1">
