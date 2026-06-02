@@ -825,14 +825,14 @@ const AdminAgenda = () => {
                   setQbSaving(true);
                   const service = allServices.find((s) => s.slug === qbServiceSlug);
                   const dateStr = format(filterDate, "yyyy-MM-dd");
-                  const { error } = await supabase.from("appointments").insert({
+                  const { data: inserted, error } = await supabase.from("appointments").insert({
                     user_id: qbUserId,
                     service_slug: qbServiceSlug,
                     service_title: service?.title || qbServiceSlug,
                     appointment_date: dateStr,
                     appointment_time: quickBook.time,
                     status: "confirmed",
-                  });
+                  }).select("id").single();
                   setQbSaving(false);
                   if (error) {
                     toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
@@ -840,6 +840,19 @@ const AdminAgenda = () => {
                     toast({ title: "Agendamento criado ✅" });
                     setQuickBook(null);
                     fetchAll();
+                    // Fire WhatsApp confirmation
+                    if (inserted?.id) {
+                      const { data: { session } } = await supabase.auth.getSession();
+                      fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${session?.access_token}`,
+                          apikey: SUPABASE_ANON_KEY,
+                        },
+                        body: JSON.stringify({ appointment_ids: [inserted.id] }),
+                      }).catch((e) => console.warn("WhatsApp notification failed:", e));
+                    }
                   }
                 }}
                 className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"

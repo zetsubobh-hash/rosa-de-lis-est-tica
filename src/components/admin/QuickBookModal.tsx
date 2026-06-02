@@ -2,8 +2,22 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, UserPlus, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
+
+const notifyWhatsApp = (appointmentId: string | undefined, accessToken: string | undefined) => {
+  if (!appointmentId) return;
+  return fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      apikey: SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ appointment_ids: [appointmentId] }),
+  }).catch((e) => console.warn("WhatsApp notification failed:", e));
+};
 
 interface ServicePrice {
   id: string;
@@ -117,7 +131,7 @@ const QuickBookModal = ({
 
         if (planError) throw planError;
 
-        const { error: aptError } = await supabase.from("appointments").insert({
+        const { data: insertedPlanApt, error: aptError } = await supabase.from("appointments").insert({
           user_id: userId,
           service_slug: serviceSlug,
           service_title: serviceTitle,
@@ -127,7 +141,7 @@ const QuickBookModal = ({
           partner_id: partnerId,
           plan_id: planId,
           session_number: 1,
-        });
+        }).select("id").single();
 
         if (aptError) {
           if (aptError.code === "23505") {
@@ -140,9 +154,10 @@ const QuickBookModal = ({
         }
 
         toast.success(`Pacote ${selectedPlan.plan_name} criado + sessão 1 agendada ✅`);
+        await notifyWhatsApp(insertedPlanApt?.id, session.access_token);
       } else {
         // Sessão avulsa
-        const { error } = await supabase.from("appointments").insert({
+        const { data: insertedApt, error } = await supabase.from("appointments").insert({
           user_id: userId,
           service_slug: serviceSlug,
           service_title: serviceTitle,
@@ -150,7 +165,7 @@ const QuickBookModal = ({
           appointment_time: time,
           status: "confirmed",
           partner_id: partnerId,
-        });
+        }).select("id").single();
 
         if (error) {
           if (error.code === "23505") {
@@ -163,6 +178,7 @@ const QuickBookModal = ({
         }
 
         toast.success("Agendamento criado ✅");
+        await notifyWhatsApp(insertedApt?.id, session.access_token);
       }
 
       onBooked();
