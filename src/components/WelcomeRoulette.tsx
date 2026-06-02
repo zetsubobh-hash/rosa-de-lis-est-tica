@@ -168,12 +168,12 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
     setSpinning(true);
     setResult(null);
 
-    const segments = SEGMENTS;
+    if (segments.length === 0) { setSpinning(false); return; }
     const arc = (2 * Math.PI) / segments.length;
 
-    // Weighted random: "none" segments have higher chance
-    // Simply pick random segment - distribution is already 60% none / 40% prize
-    const winIndex = Math.floor(Math.random() * segments.length);
+    // Weighted random pick using item weights, then map to displayed segment index
+    const winnerOriginalIndex = pickWinnerIndex(items);
+    const winIndex = Math.max(0, segments.findIndex((s) => s.originalIndex === winnerOriginalIndex));
 
     const targetRot = (3 * Math.PI / 2) - winIndex * arc - arc / 2;
     const jitter = (Math.random() - 0.5) * arc * 0.6;
