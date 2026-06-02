@@ -107,6 +107,23 @@ const AdminWelcomeRoulette = () => {
     loadData();
   };
 
+  const updateExpiry = async (couponId: string, newDate: string) => {
+    if (!newDate) return;
+    // Set to end-of-day local time so the date is fully valid through that day
+    const iso = new Date(newDate + "T23:59:59").toISOString();
+    const { error } = await supabase
+      .from("coupons")
+      .update({ expires_at: iso })
+      .eq("id", couponId);
+    if (error) {
+      toast.error("Erro ao atualizar validade.");
+      return;
+    }
+    toast.success("Validade atualizada! ✨");
+    loadData();
+  };
+
+
   const updateItem = (id: string, patch: Partial<RouletteItem>) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   };
