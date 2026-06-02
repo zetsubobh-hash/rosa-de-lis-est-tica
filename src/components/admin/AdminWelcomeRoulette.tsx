@@ -536,7 +536,7 @@ const AdminWelcomeRoulette = () => {
 
       {/* Preview modal */}
       {showPreview && (
-        <WelcomeRoulettePreview onClose={() => setShowPreview(false)} />
+        <WelcomeRoulettePreview items={items} onClose={() => setShowPreview(false)} />
       )}
 
       {/* Add item modal */}
@@ -786,8 +786,8 @@ const AddItemModal = ({ services, onClose, onAdd }: AddItemModalProps) => {
 
 import WelcomeRouletteComponent from "@/components/WelcomeRoulette";
 
-const WelcomeRoulettePreview = ({ onClose }: { onClose: () => void }) => {
-  return <WelcomeRouletteComponent testMode onClose={onClose} />;
+const WelcomeRoulettePreview = ({ items, onClose }: { items: RouletteItem[]; onClose: () => void }) => {
+  return <WelcomeRouletteComponent testMode previewItems={items} onClose={onClose} />;
 };
 
 export default AdminWelcomeRoulette;

@@ -32,22 +32,28 @@ const buildSegments = (items: RouletteItem[]): RouletteSegment[] => {
 interface WelcomeRouletteProps {
   testMode?: boolean;
   onClose?: () => void;
+  previewItems?: RouletteItem[];
 }
 
-const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) => {
+const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRouletteProps) => {
   const { user } = useAuth();
   const [show, setShow] = useState(testMode);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<RouletteSegment | null>(null);
   const [rotation, setRotation] = useState(0);
   const [loading, setLoading] = useState(!testMode);
-  const [items, setItems] = useState<RouletteItem[]>(DEFAULT_ITEMS);
-  const [segments, setSegments] = useState<RouletteSegment[]>(() => buildSegments(DEFAULT_ITEMS));
+  const [items, setItems] = useState<RouletteItem[]>(previewItems ?? DEFAULT_ITEMS);
+  const [segments, setSegments] = useState<RouletteSegment[]>(() => buildSegments(previewItems ?? DEFAULT_ITEMS));
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (previewItems) {
+      setItems(previewItems);
+      setSegments(buildSegments(previewItems));
+      return;
+    }
     loadItems();
-  }, []);
+  }, [previewItems]);
 
   useEffect(() => {
     if (testMode) {
@@ -71,9 +77,9 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
       .maybeSingle();
     const parsed = parseItems((data as any)?.value);
     setItems(parsed);
-    const segs = buildSegments(parsed);
-    if (segs.length > 0) setSegments(segs);
+    setSegments(buildSegments(parsed));
   };
+
 
   const checkEligibility = async () => {
     if (!user) return;
