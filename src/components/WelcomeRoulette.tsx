@@ -39,7 +39,13 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
   const [result, setResult] = useState<RouletteSegment | null>(null);
   const [rotation, setRotation] = useState(0);
   const [loading, setLoading] = useState(!testMode);
+  const [items, setItems] = useState<RouletteItem[]>(DEFAULT_ITEMS);
+  const [segments, setSegments] = useState<RouletteSegment[]>(() => buildSegments(DEFAULT_ITEMS));
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    loadItems();
+  }, []);
 
   useEffect(() => {
     if (testMode) {
@@ -53,7 +59,19 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
 
   useEffect(() => {
     if (show) drawWheel(0);
-  }, [show]);
+  }, [show, segments]);
+
+  const loadItems = async () => {
+    const { data } = await supabase
+      .from("payment_settings")
+      .select("value")
+      .eq("key", "welcome_roulette_items")
+      .maybeSingle();
+    const parsed = parseItems((data as any)?.value);
+    setItems(parsed);
+    const segs = buildSegments(parsed);
+    if (segs.length > 0) setSegments(segs);
+  };
 
   const checkEligibility = async () => {
     if (!user) return;
