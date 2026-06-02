@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2, Plus, Save, Percent } from "lucide-react";
+import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2, Plus, Save, Percent, AlertCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
