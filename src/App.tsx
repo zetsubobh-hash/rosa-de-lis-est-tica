@@ -53,6 +53,7 @@ const PartnerDashboard = lazyRetry(() => import("./pages/PartnerDashboard"));
 const PoliticaPrivacidade = lazyRetry(() => import("./pages/PoliticaPrivacidade"));
 const Instalar = lazyRetry(() => import("./pages/Instalar"));
 const Cancelar = lazyRetry(() => import("./pages/Cancelar"));
+const RoletaPremio = lazyRetry(() => import("./pages/RoletaPremio"));
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
@@ -94,6 +95,7 @@ const App = () => (
                 <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
                 <Route path="/instalar" element={<Instalar />} />
                 <Route path="/cancelar" element={<Cancelar />} />
+                <Route path="/roleta-premio" element={<RoletaPremio />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
