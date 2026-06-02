@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Search, Users, Phone, Mail, MessageCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Users, Phone, Mail, MessageCircle, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
+import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 
 interface Client {
   user_id: string;
