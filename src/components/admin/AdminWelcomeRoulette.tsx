@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2 } from "lucide-react";
+import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2, Plus, Save, Percent } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DEFAULT_ITEMS, RouletteItem, computeChances, parseItems } from "@/lib/welcomeRouletteItems";
 
 interface WelcomeCoupon {
   id: string;
