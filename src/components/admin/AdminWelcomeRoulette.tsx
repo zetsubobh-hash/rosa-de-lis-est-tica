@@ -239,12 +239,19 @@ const AdminWelcomeRoulette = () => {
             <div>
               <h3 className="font-heading text-sm font-bold text-foreground">Itens da Roleta</h3>
               <p className="font-body text-xs text-muted-foreground">
-                {activeCount} item(s) ativo(s) — chances normalizadas automaticamente
+                {items.length}/10 itens — {activeCount} ativo(s) — chances normalizadas automaticamente
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)} className="gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+              disabled={items.length >= 10}
+              className="gap-1"
+              title={items.length >= 10 ? "Limite de 10 itens atingido. Delete um item para adicionar outro." : "Adicionar item"}
+            >
               <Plus className="w-4 h-4" /> Adicionar
             </Button>
             <Button size="sm" onClick={saveItems} disabled={savingItems} className="gap-1">
