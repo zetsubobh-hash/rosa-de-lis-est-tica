@@ -208,6 +208,111 @@ const AdminWelcomeRoulette = () => {
         </div>
       </div>
 
+      {/* Items Editor */}
+      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+        <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Percent className="w-4 h-4 text-primary" />
+            <div>
+              <h3 className="font-heading text-sm font-bold text-foreground">Itens da Roleta</h3>
+              <p className="font-body text-xs text-muted-foreground">
+                {activeCount} item(s) ativo(s) — chances normalizadas automaticamente
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={addItem} className="gap-1">
+              <Plus className="w-4 h-4" /> Adicionar
+            </Button>
+            <Button size="sm" onClick={saveItems} disabled={savingItems} className="gap-1">
+              <Save className="w-4 h-4" /> {savingItems ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="divide-y divide-border">
+          {itemsWithChance.map((it) => (
+            <div key={it.id} className="p-3 grid grid-cols-12 gap-2 items-center">
+              <div className="col-span-12 sm:col-span-1 flex justify-start sm:justify-center">
+                <Switch
+                  checked={it.enabled}
+                  onCheckedChange={(v) => updateItem(it.id, { enabled: v })}
+                />
+              </div>
+              <div className="col-span-12 sm:col-span-4">
+                <Input
+                  value={it.label}
+                  onChange={(e) => updateItem(it.id, { label: e.target.value })}
+                  placeholder="Texto exibido"
+                  className="h-9"
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-2">
+                <select
+                  value={it.type}
+                  onChange={(e) => updateItem(it.id, { type: e.target.value as "discount" | "none" })}
+                  className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value="discount">Desconto</option>
+                  <option value="none">Sem prêmio</option>
+                </select>
+              </div>
+              <div className="col-span-6 sm:col-span-2">
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={it.value}
+                    disabled={it.type === "none"}
+                    onChange={(e) => updateItem(it.id, { value: Number(e.target.value) || 0 })}
+                    placeholder="% OFF"
+                    className="h-9 pr-7"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                </div>
+              </div>
+              <div className="col-span-8 sm:col-span-2">
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={it.weight}
+                    onChange={(e) => updateItem(it.id, { weight: Math.max(0, Number(e.target.value) || 0) })}
+                    placeholder="Peso"
+                    className="h-9 pr-14"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-primary">
+                    {it.chance.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <div className="col-span-4 sm:col-span-1 flex justify-end">
+                <button
+                  onClick={() => removeItem(it.id)}
+                  className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
+                  title="Remover item"
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </button>
+              </div>
+            </div>
+          ))}
+          {items.length === 0 && (
+            <div className="p-6 text-center font-body text-sm text-muted-foreground">
+              Nenhum item — adicione ao menos um para a roleta funcionar.
+            </div>
+          )}
+        </div>
+
+        <div className="p-3 bg-muted/30 border-t border-border">
+          <p className="font-body text-[11px] text-muted-foreground leading-relaxed">
+            💡 <strong>Como funciona:</strong> o "Peso" define a chance relativa de cada item. A % real é calculada dividindo o peso pelo total de pesos ativos. Ex.: 2 itens com peso 10 e 30 = 25% e 75%.
+          </p>
+        </div>
+      </div>
+
+
       {/* Prize Coupons Table */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         <div className="p-4 border-b border-border flex items-center gap-2">
