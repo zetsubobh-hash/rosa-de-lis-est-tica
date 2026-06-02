@@ -379,8 +379,14 @@ const AdminWelcomeRoulette = () => {
                         <td className="p-3 font-body text-sm text-foreground">{coupon.user_name}</td>
                         <td className="p-3 font-mono text-sm text-foreground">{coupon.code}</td>
                         <td className="p-3 font-body text-sm font-bold text-primary">{coupon.discount_value}%</td>
-                        <td className="p-3 font-body text-xs text-muted-foreground">
-                          {new Date(coupon.expires_at).toLocaleDateString("pt-BR")}
+                        <td className="p-3">
+                          <input
+                            type="date"
+                            value={coupon.expires_at.slice(0, 10)}
+                            onChange={(e) => updateExpiry(coupon.id, e.target.value)}
+                            className="h-8 px-2 rounded-md border border-input bg-background text-xs text-foreground"
+                            title="Editar validade"
+                          />
                         </td>
                         <td className="p-3">
                           {coupon.is_used ? (
