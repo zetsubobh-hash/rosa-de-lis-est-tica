@@ -20,6 +20,8 @@ interface WelcomeCoupon {
   user_name?: string;
 }
 
+const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 30, 40, 50];
+
 const AdminWelcomeRoulette = () => {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,7 @@ const AdminWelcomeRoulette = () => {
   const [items, setItems] = useState<RouletteItem[]>(DEFAULT_ITEMS);
   const [savingItems, setSavingItems] = useState(false);
   const [services, setServices] = useState<{ slug: string; title: string }[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     loadData();
