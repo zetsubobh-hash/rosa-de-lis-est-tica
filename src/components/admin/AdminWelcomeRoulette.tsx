@@ -107,6 +107,38 @@ const AdminWelcomeRoulette = () => {
     loadData();
   };
 
+  const updateItem = (id: string, patch: Partial<RouletteItem>) => {
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  };
+
+  const addItem = () => {
+    const newId = String(Date.now());
+    setItems((prev) => [
+      ...prev,
+      { id: newId, label: "Novo item", type: "none", value: 0, weight: 5, enabled: true },
+    ]);
+  };
+
+  const removeItem = (id: string) => {
+    setItems((prev) => prev.filter((it) => it.id !== id));
+  };
+
+  const saveItems = async () => {
+    setSavingItems(true);
+    const { error } = await supabase
+      .from("payment_settings")
+      .upsert({ key: "welcome_roulette_items", value: JSON.stringify(items) }, { onConflict: "key" });
+    setSavingItems(false);
+    if (error) {
+      toast.error("Erro ao salvar itens da roleta.");
+      return;
+    }
+    toast.success("Itens da roleta salvos! ✨");
+  };
+
+  const itemsWithChance = useMemo(() => computeChances(items), [items]);
+  const activeCount = items.filter((i) => i.enabled && i.weight > 0).length;
+
   // Separate prize coupons from "no win" markers
   const prizeCoupons = coupons.filter(c => !c.code.startsWith("BV-NADA"));
   const noWinEntries = coupons.filter(c => c.code.startsWith("BV-NADA"));
