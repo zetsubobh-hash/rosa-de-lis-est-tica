@@ -27,16 +27,65 @@ function crc16CCITT(str: string): string {
   return crc.toString(16).toUpperCase().padStart(4, "0");
 }
 
+export type PixKeyType = "cpf" | "cnpj" | "email" | "phone" | "random";
+
 export interface PixPayloadParams {
   pixKey: string;
+  pixKeyType?: PixKeyType;
   beneficiaryName: string;
   city?: string;
   amount?: number; // in BRL (e.g. 150.50)
   txid?: string;
 }
 
+/**
+ * Normalize PIX key per BCB spec — payload must carry the "raw" key:
+ * - CPF: 11 digits, CNPJ: 14 digits (no punctuation)
+ * - Phone: E.164 with +55 prefix (e.g. +5531999999999)
+ * - Email: lowercase, trimmed
+ * - Random (EVP): lowercase UUID
+ * If type is not provided, auto-detect from the value.
+ */
+export function normalizePixKey(rawKey: string, type?: PixKeyType): string {
+  const key = (rawKey || "").trim();
+  if (!key) return "";
+
+  const onlyDigits = key.replace(/\D/g, "");
+  const detected: PixKeyType =
+    type ||
+    (key.includes("@")
+      ? "email"
+      : /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)
+      ? "random"
+      : onlyDigits.length === 11 && !key.startsWith("+")
+      ? "cpf"
+      : onlyDigits.length === 14
+      ? "cnpj"
+      : "phone");
+
+  switch (detected) {
+    case "cpf":
+      return onlyDigits.slice(0, 11);
+    case "cnpj":
+      return onlyDigits.slice(0, 14);
+    case "email":
+      return key.toLowerCase();
+    case "random":
+      return key.toLowerCase();
+    case "phone": {
+      // E.164 with country code 55
+      let d = onlyDigits;
+      if (!d.startsWith("55")) d = "55" + d;
+      return "+" + d;
+    }
+    default:
+      return key;
+  }
+}
+
 export function generatePixPayload({
   pixKey,
+  pixKeyType,
   beneficiaryName,
   city = "SAO PAULO",
   amount,
@@ -54,10 +103,11 @@ export function generatePixPayload({
 
   const name = normalizeName(beneficiaryName || "LOJA", 25);
   const cityNorm = normalizeName(city, 15);
+  const normalizedKey = normalizePixKey(pixKey, pixKeyType);
 
   // Build Merchant Account Information (ID 26)
   const gui = tlv("00", "br.gov.bcb.pix");
-  const key = tlv("01", pixKey);
+  const key = tlv("01", normalizedKey);
   const merchantAccountInfo = tlv("26", gui + key);
 
   // Build Additional Data Field (ID 62)
