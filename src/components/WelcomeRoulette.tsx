@@ -362,6 +362,22 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
                       Mas não desanime, temos ótimos serviços esperando por você! 💕
                     </p>
                   </>
+                ) : result.type === "service" ? (
+                  <>
+                    <Sparkles className="w-6 h-6 text-primary mx-auto mb-2" />
+                    <p className="font-heading text-base font-bold text-foreground">
+                      Você ganhou!
+                    </p>
+                    <p className="font-body text-lg font-bold text-primary mt-1">
+                      1 sessão grátis
+                    </p>
+                    <p className="font-body text-sm font-semibold text-foreground mt-1">
+                      {result.serviceTitle || result.label}
+                    </p>
+                    <p className="font-body text-xs text-muted-foreground mt-2">
+                      Sua sessão grátis foi adicionada à sua conta. Agende quando quiser! 🎁
+                    </p>
+                  </>
                 ) : (
                   <>
                     <Sparkles className="w-6 h-6 text-primary mx-auto mb-2" />
