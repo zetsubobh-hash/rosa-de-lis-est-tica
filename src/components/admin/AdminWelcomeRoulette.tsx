@@ -20,6 +20,8 @@ interface WelcomeCoupon {
   user_name?: string;
 }
 
+const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 30, 40, 50];
+
 const AdminWelcomeRoulette = () => {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,7 @@ const AdminWelcomeRoulette = () => {
   const [items, setItems] = useState<RouletteItem[]>(DEFAULT_ITEMS);
   const [savingItems, setSavingItems] = useState(false);
   const [services, setServices] = useState<{ slug: string; title: string }[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -132,12 +135,11 @@ const AdminWelcomeRoulette = () => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   };
 
-  const addItem = () => {
+  const addItemFromPicker = (item: Omit<RouletteItem, "id">) => {
     const newId = String(Date.now());
-    setItems((prev) => [
-      ...prev,
-      { id: newId, label: "Novo item", type: "none", value: 0, weight: 5, enabled: true, expiresDays: 30 },
-    ]);
+    setItems((prev) => [...prev, { id: newId, ...item }]);
+    setShowAddModal(false);
+    toast.success("Item adicionado! Não esqueça de salvar.");
   };
 
   const removeItem = (id: string) => {
@@ -242,7 +244,7 @@ const AdminWelcomeRoulette = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={addItem} className="gap-1">
+            <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)} className="gap-1">
               <Plus className="w-4 h-4" /> Adicionar
             </Button>
             <Button size="sm" onClick={saveItems} disabled={savingItems} className="gap-1">
@@ -525,6 +527,248 @@ const AdminWelcomeRoulette = () => {
       {showPreview && (
         <WelcomeRoulettePreview onClose={() => setShowPreview(false)} />
       )}
+
+      {/* Add item modal */}
+      {showAddModal && (
+        <AddItemModal
+          services={services}
+          onClose={() => setShowAddModal(false)}
+          onAdd={addItemFromPicker}
+        />
+      )}
+    </div>
+  );
+};
+
+interface AddItemModalProps {
+  services: { slug: string; title: string }[];
+  onClose: () => void;
+  onAdd: (item: Omit<RouletteItem, "id">) => void;
+}
+
+const AddItemModal = ({ services, onClose, onAdd }: AddItemModalProps) => {
+  const [tab, setTab] = useState<"discount" | "service" | "none">("discount");
+  const [discount, setDiscount] = useState<number>(10);
+  const [customDiscount, setCustomDiscount] = useState<string>("");
+  const [serviceSlug, setServiceSlug] = useState<string>("");
+  const [weight, setWeight] = useState<number>(10);
+  const [expiresDays, setExpiresDays] = useState<number>(30);
+  const [label, setLabel] = useState<string>("");
+
+  const handleAdd = () => {
+    if (tab === "discount") {
+      const finalDiscount = customDiscount ? Math.max(1, Math.min(100, Number(customDiscount) || 0)) : discount;
+      if (!finalDiscount) {
+        toast.error("Informe um valor de desconto válido.");
+        return;
+      }
+      onAdd({
+        label: label || `${finalDiscount}% OFF`,
+        type: "discount",
+        value: finalDiscount,
+        weight: Math.max(0, weight),
+        enabled: true,
+        expiresDays: Math.max(1, expiresDays),
+      });
+    } else if (tab === "service") {
+      if (!serviceSlug) {
+        toast.error("Selecione um serviço.");
+        return;
+      }
+      const svc = services.find((s) => s.slug === serviceSlug);
+      onAdd({
+        label: label || `${svc?.title} Grátis`,
+        type: "service",
+        value: 0,
+        weight: Math.max(0, weight),
+        enabled: true,
+        expiresDays: Math.max(1, expiresDays),
+        serviceSlug,
+        serviceTitle: svc?.title,
+      });
+    } else {
+      onAdd({
+        label: label || "Tente novamente",
+        type: "none",
+        value: 0,
+        weight: Math.max(0, weight),
+        enabled: true,
+        expiresDays: 30,
+      });
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-card rounded-2xl border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
+          <div className="flex items-center gap-2">
+            <Plus className="w-4 h-4 text-primary" />
+            <h3 className="font-heading text-sm font-bold text-foreground">Adicionar item à roleta</h3>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted">
+            <XCircle className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Type tabs */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { id: "discount" as const, label: "Desconto %", icon: Percent },
+              { id: "service" as const, label: "Serviço grátis", icon: Gift },
+              { id: "none" as const, label: "Sem prêmio", icon: XCircle },
+            ].map((t) => {
+              const Icon = t.icon;
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-1 ${
+                    active
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-muted/30 text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="font-body text-[11px] font-semibold">{t.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Discount picker */}
+          {tab === "discount" && (
+            <div className="space-y-3">
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground mb-2 block">
+                  Escolha um valor de desconto
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {DISCOUNT_PRESETS.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => { setDiscount(d); setCustomDiscount(""); }}
+                      className={`p-3 rounded-xl border font-heading text-sm font-bold transition-all ${
+                        discount === d && !customDiscount
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-muted/30 text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {d}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground mb-1 block">
+                  Ou valor personalizado (%)
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={customDiscount}
+                  onChange={(e) => setCustomDiscount(e.target.value)}
+                  placeholder="ex: 35"
+                  className="h-9"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Service picker */}
+          {tab === "service" && (
+            <div>
+              <label className="font-body text-xs font-semibold text-foreground mb-2 block">
+                Escolha um serviço disponível
+              </label>
+              {services.length === 0 ? (
+                <p className="font-body text-xs text-muted-foreground p-4 bg-muted/30 rounded-xl text-center">
+                  Nenhum serviço ativo cadastrado.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                  {services.map((s) => (
+                    <button
+                      key={s.slug}
+                      onClick={() => setServiceSlug(s.slug)}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        serviceSlug === s.slug
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-muted/30 hover:bg-muted"
+                      }`}
+                    >
+                      <p className="font-body text-sm font-semibold text-foreground">{s.title}</p>
+                      <p className="font-mono text-[10px] text-muted-foreground">{s.slug}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Common fields */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <div>
+              <label className="font-body text-xs font-semibold text-foreground mb-1 block">
+                Texto exibido na roleta (opcional)
+              </label>
+              <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder={
+                  tab === "discount"
+                    ? `${customDiscount || discount}% OFF`
+                    : tab === "service"
+                    ? "Serviço Grátis"
+                    : "Tente novamente"
+                }
+                className="h-9"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground mb-1 block">
+                  Peso (chance relativa)
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={weight}
+                  onChange={(e) => setWeight(Math.max(0, Number(e.target.value) || 0))}
+                  className="h-9"
+                />
+              </div>
+              {tab !== "none" && (
+                <div>
+                  <label className="font-body text-xs font-semibold text-foreground mb-1 block">
+                    Validade (dias)
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={expiresDays}
+                    onChange={(e) => setExpiresDays(Math.max(1, Number(e.target.value) || 1))}
+                    className="h-9"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-border flex gap-2 justify-end sticky bottom-0 bg-card">
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={handleAdd} className="gap-1">
+            <Plus className="w-4 h-4" /> Adicionar à roleta
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
