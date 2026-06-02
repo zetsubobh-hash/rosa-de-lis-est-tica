@@ -2,8 +2,22 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, UserPlus, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
+
+const notifyWhatsApp = (appointmentId: string | undefined, accessToken: string | undefined) => {
+  if (!appointmentId) return;
+  return fetch(`${SUPABASE_URL}/functions/v1/evolution-notify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      apikey: SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ appointment_ids: [appointmentId] }),
+  }).catch((e) => console.warn("WhatsApp notification failed:", e));
+};
 
 interface ServicePrice {
   id: string;
