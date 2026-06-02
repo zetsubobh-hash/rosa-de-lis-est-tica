@@ -26,6 +26,7 @@ const AdminClients = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showNewClient, setShowNewClient] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
