@@ -4,40 +4,28 @@ import { Gift, Sparkles, X, Frown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { DEFAULT_ITEMS, ITEM_COLORS, parseItems, pickWinnerIndex, RouletteItem } from "@/lib/welcomeRouletteItems";
 
 interface RouletteSegment {
   label: string;
   type: "discount" | "none";
   value: number;
   color: string;
+  originalIndex: number;
 }
 
-const COLORS = [
-  "hsl(340, 82%, 52%)",
-  "hsl(0, 0%, 45%)",
-  "hsl(200, 80%, 50%)",
-  "hsl(0, 0%, 40%)",
-  "hsl(45, 90%, 50%)",
-  "hsl(0, 0%, 50%)",
-  "hsl(150, 60%, 45%)",
-  "hsl(0, 0%, 42%)",
-  "hsl(280, 60%, 55%)",
-  "hsl(0, 0%, 48%)",
-];
-
-// 10 segments: 4 prizes + 6 "no prize" = 60% chance of nothing
-const SEGMENTS: RouletteSegment[] = [
-  { label: "10% OFF", type: "discount", value: 10, color: COLORS[0] },
-  { label: "Não foi dessa vez", type: "none", value: 0, color: COLORS[1] },
-  { label: "15% OFF", type: "discount", value: 15, color: COLORS[2] },
-  { label: "Tente na próxima", type: "none", value: 0, color: COLORS[3] },
-  { label: "20% OFF", type: "discount", value: 20, color: COLORS[4] },
-  { label: "Quase!", type: "none", value: 0, color: COLORS[5] },
-  { label: "30% OFF", type: "discount", value: 30, color: COLORS[6] },
-  { label: "Não foi dessa vez", type: "none", value: 0, color: COLORS[7] },
-  { label: "Que pena!", type: "none", value: 0, color: COLORS[8] },
-  { label: "Tente na próxima", type: "none", value: 0, color: COLORS[9] },
-];
+const buildSegments = (items: RouletteItem[]): RouletteSegment[] => {
+  const enabled = items
+    .map((it, i) => ({ it, i }))
+    .filter(({ it }) => it.enabled && it.weight > 0);
+  return enabled.map(({ it, i }, displayIdx) => ({
+    label: it.label,
+    type: it.type,
+    value: it.value,
+    color: ITEM_COLORS[displayIdx % ITEM_COLORS.length],
+    originalIndex: i,
+  }));
+};
 
 interface WelcomeRouletteProps {
   testMode?: boolean;
