@@ -4,14 +4,15 @@ import { Gift, Sparkles, X, Frown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { DEFAULT_ITEMS, ITEM_COLORS, parseItems, pickWinnerIndex, RouletteItem } from "@/lib/welcomeRouletteItems";
+import { DEFAULT_ITEMS, ITEM_COLORS, parseItems, pickWinnerIndex, RouletteItem, RouletteItemType } from "@/lib/welcomeRouletteItems";
 
 interface RouletteSegment {
   label: string;
-  type: "discount" | "none";
+  type: RouletteItemType;
   value: number;
   color: string;
   originalIndex: number;
+  serviceTitle?: string;
 }
 
 const buildSegments = (items: RouletteItem[]): RouletteSegment[] => {
@@ -24,6 +25,7 @@ const buildSegments = (items: RouletteItem[]): RouletteSegment[] => {
     value: it.value,
     color: ITEM_COLORS[displayIdx % ITEM_COLORS.length],
     originalIndex: i,
+    serviceTitle: it.serviceTitle,
   }));
 };
 
