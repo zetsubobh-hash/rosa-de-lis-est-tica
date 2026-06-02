@@ -4,40 +4,28 @@ import { Gift, Sparkles, X, Frown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { DEFAULT_ITEMS, ITEM_COLORS, parseItems, pickWinnerIndex, RouletteItem } from "@/lib/welcomeRouletteItems";
 
 interface RouletteSegment {
   label: string;
   type: "discount" | "none";
   value: number;
   color: string;
+  originalIndex: number;
 }
 
-const COLORS = [
-  "hsl(340, 82%, 52%)",
-  "hsl(0, 0%, 45%)",
-  "hsl(200, 80%, 50%)",
-  "hsl(0, 0%, 40%)",
-  "hsl(45, 90%, 50%)",
-  "hsl(0, 0%, 50%)",
-  "hsl(150, 60%, 45%)",
-  "hsl(0, 0%, 42%)",
-  "hsl(280, 60%, 55%)",
-  "hsl(0, 0%, 48%)",
-];
-
-// 10 segments: 4 prizes + 6 "no prize" = 60% chance of nothing
-const SEGMENTS: RouletteSegment[] = [
-  { label: "10% OFF", type: "discount", value: 10, color: COLORS[0] },
-  { label: "Não foi dessa vez", type: "none", value: 0, color: COLORS[1] },
-  { label: "15% OFF", type: "discount", value: 15, color: COLORS[2] },
-  { label: "Tente na próxima", type: "none", value: 0, color: COLORS[3] },
-  { label: "20% OFF", type: "discount", value: 20, color: COLORS[4] },
-  { label: "Quase!", type: "none", value: 0, color: COLORS[5] },
-  { label: "30% OFF", type: "discount", value: 30, color: COLORS[6] },
-  { label: "Não foi dessa vez", type: "none", value: 0, color: COLORS[7] },
-  { label: "Que pena!", type: "none", value: 0, color: COLORS[8] },
-  { label: "Tente na próxima", type: "none", value: 0, color: COLORS[9] },
-];
+const buildSegments = (items: RouletteItem[]): RouletteSegment[] => {
+  const enabled = items
+    .map((it, i) => ({ it, i }))
+    .filter(({ it }) => it.enabled && it.weight > 0);
+  return enabled.map(({ it, i }, displayIdx) => ({
+    label: it.label,
+    type: it.type,
+    value: it.value,
+    color: ITEM_COLORS[displayIdx % ITEM_COLORS.length],
+    originalIndex: i,
+  }));
+};
 
 interface WelcomeRouletteProps {
   testMode?: boolean;
@@ -51,7 +39,13 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
   const [result, setResult] = useState<RouletteSegment | null>(null);
   const [rotation, setRotation] = useState(0);
   const [loading, setLoading] = useState(!testMode);
+  const [items, setItems] = useState<RouletteItem[]>(DEFAULT_ITEMS);
+  const [segments, setSegments] = useState<RouletteSegment[]>(() => buildSegments(DEFAULT_ITEMS));
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    loadItems();
+  }, []);
 
   useEffect(() => {
     if (testMode) {
@@ -65,7 +59,19 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
 
   useEffect(() => {
     if (show) drawWheel(0);
-  }, [show]);
+  }, [show, segments]);
+
+  const loadItems = async () => {
+    const { data } = await supabase
+      .from("payment_settings")
+      .select("value")
+      .eq("key", "welcome_roulette_items")
+      .maybeSingle();
+    const parsed = parseItems((data as any)?.value);
+    setItems(parsed);
+    const segs = buildSegments(parsed);
+    if (segs.length > 0) setSegments(segs);
+  };
 
   const checkEligibility = async () => {
     if (!user) return;
@@ -108,7 +114,7 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const segments = SEGMENTS;
+    if (segments.length === 0) return;
     const size = canvas.width;
     const center = size / 2;
     const radius = center - 4;
@@ -162,12 +168,12 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
     setSpinning(true);
     setResult(null);
 
-    const segments = SEGMENTS;
+    if (segments.length === 0) { setSpinning(false); return; }
     const arc = (2 * Math.PI) / segments.length;
 
-    // Weighted random: "none" segments have higher chance
-    // Simply pick random segment - distribution is already 60% none / 40% prize
-    const winIndex = Math.floor(Math.random() * segments.length);
+    // Weighted random pick using item weights, then map to displayed segment index
+    const winnerOriginalIndex = pickWinnerIndex(items);
+    const winIndex = Math.max(0, segments.findIndex((s) => s.originalIndex === winnerOriginalIndex));
 
     const targetRot = (3 * Math.PI / 2) - winIndex * arc - arc / 2;
     const jitter = (Math.random() - 0.5) * arc * 0.6;
