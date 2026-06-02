@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2, Plus, Save, Percent } from "lucide-react";
+import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2, Plus, Save, Percent, AlertCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,10 @@ const AdminWelcomeRoulette = () => {
   };
 
   const addItemFromPicker = (item: Omit<RouletteItem, "id">) => {
+    if (items.length >= 10) {
+      toast.error("Limite de 10 itens atingido. Delete um item para adicionar outro.");
+      return;
+    }
     const newId = String(Date.now());
     setItems((prev) => [...prev, { id: newId, ...item }]);
     setShowAddModal(false);
@@ -239,12 +243,19 @@ const AdminWelcomeRoulette = () => {
             <div>
               <h3 className="font-heading text-sm font-bold text-foreground">Itens da Roleta</h3>
               <p className="font-body text-xs text-muted-foreground">
-                {activeCount} item(s) ativo(s) — chances normalizadas automaticamente
+                {items.length}/10 itens — {activeCount} ativo(s) — chances normalizadas automaticamente
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)} className="gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+              disabled={items.length >= 10}
+              className="gap-1"
+              title={items.length >= 10 ? "Limite de 10 itens atingido. Delete um item para adicionar outro." : "Adicionar item"}
+            >
               <Plus className="w-4 h-4" /> Adicionar
             </Button>
             <Button size="sm" onClick={saveItems} disabled={savingItems} className="gap-1">
