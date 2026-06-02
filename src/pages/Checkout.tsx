@@ -422,6 +422,7 @@ const Checkout = () => {
                   const amount = finalCents > 0 ? finalCents / 100 : undefined;
                   const payload = generatePixPayload({
                     pixKey: settings.pix_key,
+                    pixKeyType: settings.pix_key_type as any,
                     beneficiaryName: settings.pix_beneficiary || "LOJA",
                     amount,
                   });
