@@ -114,7 +114,7 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const segments = SEGMENTS;
+    if (segments.length === 0) return;
     const size = canvas.width;
     const center = size / 2;
     const radius = center - 4;
