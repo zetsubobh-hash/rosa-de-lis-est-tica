@@ -27,6 +27,7 @@ const AdminWelcomeRoulette = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [items, setItems] = useState<RouletteItem[]>(DEFAULT_ITEMS);
   const [savingItems, setSavingItems] = useState(false);
+  const [services, setServices] = useState<{ slug: string; title: string }[]>([]);
 
   useEffect(() => {
     loadData();
@@ -35,11 +36,14 @@ const AdminWelcomeRoulette = () => {
   const loadData = async () => {
     setLoading(true);
 
-    const [settingsRes, itemsRes, couponsRes] = await Promise.all([
+    const [settingsRes, itemsRes, couponsRes, servicesRes] = await Promise.all([
       supabase.from("payment_settings").select("key, value").eq("key", "welcome_roulette_enabled").maybeSingle(),
       supabase.from("payment_settings").select("value").eq("key", "welcome_roulette_items").maybeSingle(),
       supabase.from("coupons").select("*").like("code", "BV-%").order("created_at", { ascending: false }).limit(100),
+      supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
     ]);
+
+    if (servicesRes.data) setServices(servicesRes.data as any);
 
     if (settingsRes.data) {
       setEnabled(settingsRes.data.value === "true");
@@ -267,27 +271,51 @@ const AdminWelcomeRoulette = () => {
               <div className="col-span-6 sm:col-span-2">
                 <select
                   value={it.type}
-                  onChange={(e) => updateItem(it.id, { type: e.target.value as "discount" | "none" })}
+                  onChange={(e) => {
+                    const newType = e.target.value as "discount" | "none" | "service";
+                    updateItem(it.id, { type: newType });
+                  }}
                   className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
                 >
-                  <option value="discount">Desconto</option>
+                  <option value="discount">Desconto %</option>
+                  <option value="service">Serviço grátis</option>
                   <option value="none">Sem prêmio</option>
                 </select>
               </div>
               <div className="col-span-6 sm:col-span-2">
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={it.value}
-                    disabled={it.type === "none"}
-                    onChange={(e) => updateItem(it.id, { value: Number(e.target.value) || 0 })}
-                    placeholder="% OFF"
-                    className="h-9 pr-7"
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-                </div>
+                {it.type === "service" ? (
+                  <select
+                    value={it.serviceSlug || ""}
+                    onChange={(e) => {
+                      const slug = e.target.value;
+                      const svc = services.find((s) => s.slug === slug);
+                      updateItem(it.id, {
+                        serviceSlug: slug || undefined,
+                        serviceTitle: svc?.title,
+                      });
+                    }}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  >
+                    <option value="">Selecione…</option>
+                    {services.map((s) => (
+                      <option key={s.slug} value={s.slug}>{s.title}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={it.value}
+                      disabled={it.type === "none"}
+                      onChange={(e) => updateItem(it.id, { value: Number(e.target.value) || 0 })}
+                      placeholder="% OFF"
+                      className="h-9 pr-7"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                  </div>
+                )}
               </div>
               <div className="col-span-6 sm:col-span-2">
                 <div className="relative">

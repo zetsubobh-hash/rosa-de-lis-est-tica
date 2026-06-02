@@ -1,11 +1,15 @@
+export type RouletteItemType = "discount" | "none" | "service";
+
 export interface RouletteItem {
   id: string;
   label: string;
-  type: "discount" | "none";
+  type: RouletteItemType;
   value: number; // percent (only for discount)
   weight: number; // relative chance
   enabled: boolean;
   expiresDays: number; // validity in days for the generated coupon
+  serviceSlug?: string; // when type === 'service'
+  serviceTitle?: string; // cached for display
 }
 
 export const DEFAULT_EXPIRES_DAYS = 30;
@@ -38,6 +42,12 @@ export const ITEM_COLORS = [
   "hsl(0, 0%, 38%)",
 ];
 
+const normalizeType = (t: any): RouletteItemType => {
+  if (t === "discount") return "discount";
+  if (t === "service") return "service";
+  return "none";
+};
+
 export const parseItems = (raw: string | null | undefined): RouletteItem[] => {
   if (!raw) return DEFAULT_ITEMS;
   try {
@@ -46,11 +56,13 @@ export const parseItems = (raw: string | null | undefined): RouletteItem[] => {
       return parsed.map((p: any, i: number) => ({
         id: String(p.id ?? i + 1),
         label: String(p.label ?? "Prêmio"),
-        type: p.type === "discount" ? "discount" : "none",
+        type: normalizeType(p.type),
         value: Number(p.value) || 0,
         weight: Math.max(0, Number(p.weight) || 0),
         enabled: p.enabled !== false,
         expiresDays: Math.max(1, Number(p.expiresDays) || DEFAULT_EXPIRES_DAYS),
+        serviceSlug: p.serviceSlug || undefined,
+        serviceTitle: p.serviceTitle || undefined,
       }));
     }
   } catch {}

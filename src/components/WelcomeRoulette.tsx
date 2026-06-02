@@ -4,14 +4,15 @@ import { Gift, Sparkles, X, Frown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { DEFAULT_ITEMS, ITEM_COLORS, parseItems, pickWinnerIndex, RouletteItem } from "@/lib/welcomeRouletteItems";
+import { DEFAULT_ITEMS, ITEM_COLORS, parseItems, pickWinnerIndex, RouletteItem, RouletteItemType } from "@/lib/welcomeRouletteItems";
 
 interface RouletteSegment {
   label: string;
-  type: "discount" | "none";
+  type: RouletteItemType;
   value: number;
   color: string;
   originalIndex: number;
+  serviceTitle?: string;
 }
 
 const buildSegments = (items: RouletteItem[]): RouletteSegment[] => {
@@ -24,6 +25,7 @@ const buildSegments = (items: RouletteItem[]): RouletteSegment[] => {
     value: it.value,
     color: ITEM_COLORS[displayIdx % ITEM_COLORS.length],
     originalIndex: i,
+    serviceTitle: it.serviceTitle,
   }));
 };
 
@@ -210,10 +212,14 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
   };
 
   const saveCoupon = async (winner: RouletteSegment) => {
+    const winnerItem = items[winner.originalIndex];
+
     if (testMode) {
       setSpinning(false);
       if (winner.type === "none") {
         toast.info("😢 Teste! Não ganhou nada dessa vez.");
+      } else if (winner.type === "service") {
+        toast.success(`🎉 Teste! Sessão grátis: ${winnerItem?.serviceTitle || winner.label}`);
       } else {
         toast.success("🎉 Teste! Prêmio: " + `${winner.value}% OFF`);
       }
@@ -224,26 +230,24 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
 
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let code = "BV-";
-    if (winner.type === "none") {
-      code += "NADA-";
-    }
+    if (winner.type === "none") code += "NADA-";
+    else if (winner.type === "service") code += "SRV-";
     for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
     if (winner.type !== "none") {
       code += "-";
       for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
     }
 
-    const winnerItem = items[winner.originalIndex];
     const days = Math.max(1, winnerItem?.expiresDays || 30);
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
     const { error } = await supabase.from("coupons").insert({
       code,
       user_id: user.id,
-      discount_type: "percent",
-      discount_value: winner.value,
+      discount_type: winner.type === "service" ? "service" : "percent",
+      discount_value: winner.type === "service" ? 0 : winner.value,
       expires_at: expiresAt,
-      is_used: winner.type === "none", // mark "none" as used immediately
+      is_used: winner.type === "none",
     });
 
     if (error) {
@@ -253,10 +257,29 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
       return;
     }
 
+    // For service prizes, also create a free session plan
+    if (winner.type === "service" && winnerItem?.serviceSlug) {
+      const { error: planError } = await supabase.from("client_plans").insert({
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        service_slug: winnerItem.serviceSlug,
+        service_title: winnerItem.serviceTitle || winner.label,
+        plan_name: "Brinde Boas-Vindas",
+        total_sessions: 1,
+        completed_sessions: 0,
+        status: "active",
+        created_by: "welcome_roulette",
+        notes: `Sessão grátis ganha na roleta de boas-vindas (cupom ${code})`,
+      });
+      if (planError) console.error("Error creating welcome plan:", planError);
+    }
+
     setSpinning(false);
 
     if (winner.type === "none") {
       toast.info("😢 Não foi dessa vez! Mas continue usando nosso app.");
+    } else if (winner.type === "service") {
+      toast.success("🎉 Parabéns! Sua sessão grátis foi adicionada à sua conta!");
     } else {
       toast.success("🎉 Parabéns! Seu cupom de boas-vindas foi gerado!");
     }
@@ -337,6 +360,22 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
                     </p>
                     <p className="font-body text-sm text-muted-foreground mt-1">
                       Mas não desanime, temos ótimos serviços esperando por você! 💕
+                    </p>
+                  </>
+                ) : result.type === "service" ? (
+                  <>
+                    <Sparkles className="w-6 h-6 text-primary mx-auto mb-2" />
+                    <p className="font-heading text-base font-bold text-foreground">
+                      Você ganhou!
+                    </p>
+                    <p className="font-body text-lg font-bold text-primary mt-1">
+                      1 sessão grátis
+                    </p>
+                    <p className="font-body text-sm font-semibold text-foreground mt-1">
+                      {result.serviceTitle || result.label}
+                    </p>
+                    <p className="font-body text-xs text-muted-foreground mt-2">
+                      Sua sessão grátis foi adicionada à sua conta. Agende quando quiser! 🎁
                     </p>
                   </>
                 ) : (
