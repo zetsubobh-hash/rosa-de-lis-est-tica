@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2, Plus, Save, Percent, AlertCircle } from "lucide-react";
+import { Gift, Ticket, CheckCircle2, XCircle, Eye, Trash2, Plus, Save, Percent, AlertCircle, QrCode } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DEFAULT_ITEMS, RouletteItem, computeChances, parseItems } from "@/lib/welcomeRouletteItems";
+import QRCodeCardModal from "./QRCodeCardModal";
 
 interface WelcomeCoupon {
   id: string;
@@ -31,6 +32,7 @@ const AdminWelcomeRoulette = () => {
   const [savingItems, setSavingItems] = useState(false);
   const [services, setServices] = useState<{ slug: string; title: string }[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -202,7 +204,7 @@ const AdminWelcomeRoulette = () => {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowPreview(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 transition-all font-body text-xs font-semibold text-foreground"
@@ -210,8 +212,18 @@ const AdminWelcomeRoulette = () => {
             <Eye className="w-4 h-4" />
             Pré-visualizar Roleta
           </button>
+          <button
+            onClick={() => setShowQRModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all font-body text-xs font-semibold text-primary"
+            title="Gerar QR Code para imprimir nos cartões de prêmio"
+          >
+            <QrCode className="w-4 h-4" />
+            QR Code do Cartão
+          </button>
         </div>
       </div>
+
+      <QRCodeCardModal open={showQRModal} onClose={() => setShowQRModal(false)} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
