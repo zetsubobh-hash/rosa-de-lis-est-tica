@@ -133,7 +133,7 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-border inline-block">
                     <img
                       key={qrKey + pixAmount}
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pixPayloadString)}&margin=8`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pixPayloadString)}&margin=8&_=${qrKey}`}
                       alt="QR Code PIX"
                       className="w-52 h-52"
                     />
@@ -167,7 +167,10 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setQrKey(Date.now())}
+                  onClick={() => {
+                    setQrKey(Date.now());
+                    toast({ title: "QR Code regerado ✨" });
+                  }}
                   className="gap-2 mx-auto"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
