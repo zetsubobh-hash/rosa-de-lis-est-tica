@@ -233,7 +233,9 @@ const WelcomeRoulette = ({ testMode = false, onClose }: WelcomeRouletteProps) =>
       for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
     }
 
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const winnerItem = items[winner.originalIndex];
+    const days = Math.max(1, winnerItem?.expiresDays || 30);
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
     const { error } = await supabase.from("coupons").insert({
       code,

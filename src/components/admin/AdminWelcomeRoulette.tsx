@@ -107,6 +107,23 @@ const AdminWelcomeRoulette = () => {
     loadData();
   };
 
+  const updateExpiry = async (couponId: string, newDate: string) => {
+    if (!newDate) return;
+    // Set to end-of-day local time so the date is fully valid through that day
+    const iso = new Date(newDate + "T23:59:59").toISOString();
+    const { error } = await supabase
+      .from("coupons")
+      .update({ expires_at: iso })
+      .eq("id", couponId);
+    if (error) {
+      toast.error("Erro ao atualizar validade.");
+      return;
+    }
+    toast.success("Validade atualizada! ✨");
+    loadData();
+  };
+
+
   const updateItem = (id: string, patch: Partial<RouletteItem>) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   };
@@ -115,7 +132,7 @@ const AdminWelcomeRoulette = () => {
     const newId = String(Date.now());
     setItems((prev) => [
       ...prev,
-      { id: newId, label: "Novo item", type: "none", value: 0, weight: 5, enabled: true },
+      { id: newId, label: "Novo item", type: "none", value: 0, weight: 5, enabled: true, expiresDays: 30 },
     ]);
   };
 
@@ -239,7 +256,7 @@ const AdminWelcomeRoulette = () => {
                   onCheckedChange={(v) => updateItem(it.id, { enabled: v })}
                 />
               </div>
-              <div className="col-span-12 sm:col-span-4">
+              <div className="col-span-12 sm:col-span-3">
                 <Input
                   value={it.label}
                   onChange={(e) => updateItem(it.id, { label: e.target.value })}
@@ -272,7 +289,7 @@ const AdminWelcomeRoulette = () => {
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                 </div>
               </div>
-              <div className="col-span-8 sm:col-span-2">
+              <div className="col-span-6 sm:col-span-2">
                 <div className="relative">
                   <Input
                     type="number"
@@ -287,7 +304,22 @@ const AdminWelcomeRoulette = () => {
                   </span>
                 </div>
               </div>
-              <div className="col-span-4 sm:col-span-1 flex justify-end">
+              <div className="col-span-4 sm:col-span-1">
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={it.expiresDays}
+                    disabled={it.type === "none"}
+                    onChange={(e) => updateItem(it.id, { expiresDays: Math.max(1, Number(e.target.value) || 1) })}
+                    placeholder="dias"
+                    title="Validade do cupom em dias"
+                    className="h-9 pr-8"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">dias</span>
+                </div>
+              </div>
+              <div className="col-span-2 sm:col-span-1 flex justify-end">
                 <button
                   onClick={() => removeItem(it.id)}
                   className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
@@ -347,8 +379,14 @@ const AdminWelcomeRoulette = () => {
                         <td className="p-3 font-body text-sm text-foreground">{coupon.user_name}</td>
                         <td className="p-3 font-mono text-sm text-foreground">{coupon.code}</td>
                         <td className="p-3 font-body text-sm font-bold text-primary">{coupon.discount_value}%</td>
-                        <td className="p-3 font-body text-xs text-muted-foreground">
-                          {new Date(coupon.expires_at).toLocaleDateString("pt-BR")}
+                        <td className="p-3">
+                          <input
+                            type="date"
+                            value={coupon.expires_at.slice(0, 10)}
+                            onChange={(e) => updateExpiry(coupon.id, e.target.value)}
+                            className="h-8 px-2 rounded-md border border-input bg-background text-xs text-foreground"
+                            title="Editar validade"
+                          />
                         </td>
                         <td className="p-3">
                           {coupon.is_used ? (
@@ -415,11 +453,20 @@ const AdminWelcomeRoulette = () => {
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-mono text-xs text-muted-foreground">{coupon.code}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-mono text-xs text-muted-foreground truncate">{coupon.code}</p>
                         <p className="font-body text-xs text-muted-foreground">
-                          {coupon.discount_value}% OFF • Até {new Date(coupon.expires_at).toLocaleDateString("pt-BR")}
+                          {coupon.discount_value}% OFF
                         </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <label className="font-body text-[10px] text-muted-foreground">Validade:</label>
+                          <input
+                            type="date"
+                            value={coupon.expires_at.slice(0, 10)}
+                            onChange={(e) => updateExpiry(coupon.id, e.target.value)}
+                            className="h-7 px-2 rounded-md border border-input bg-background text-xs text-foreground"
+                          />
+                        </div>
                       </div>
                       <div className="flex items-center gap-1">
                         {!coupon.is_used && !expired && (

@@ -5,19 +5,22 @@ export interface RouletteItem {
   value: number; // percent (only for discount)
   weight: number; // relative chance
   enabled: boolean;
+  expiresDays: number; // validity in days for the generated coupon
 }
 
+export const DEFAULT_EXPIRES_DAYS = 30;
+
 export const DEFAULT_ITEMS: RouletteItem[] = [
-  { id: "1", label: "10% OFF", type: "discount", value: 10, weight: 10, enabled: true },
-  { id: "2", label: "Não foi dessa vez", type: "none", value: 0, weight: 15, enabled: true },
-  { id: "3", label: "15% OFF", type: "discount", value: 15, weight: 8, enabled: true },
-  { id: "4", label: "Tente na próxima", type: "none", value: 0, weight: 15, enabled: true },
-  { id: "5", label: "20% OFF", type: "discount", value: 20, weight: 5, enabled: true },
-  { id: "6", label: "Quase!", type: "none", value: 0, weight: 12, enabled: true },
-  { id: "7", label: "30% OFF", type: "discount", value: 30, weight: 2, enabled: true },
-  { id: "8", label: "Não foi dessa vez", type: "none", value: 0, weight: 15, enabled: true },
-  { id: "9", label: "Que pena!", type: "none", value: 0, weight: 10, enabled: true },
-  { id: "10", label: "Tente na próxima", type: "none", value: 0, weight: 8, enabled: true },
+  { id: "1", label: "10% OFF", type: "discount", value: 10, weight: 10, enabled: true, expiresDays: 30 },
+  { id: "2", label: "Não foi dessa vez", type: "none", value: 0, weight: 15, enabled: true, expiresDays: 30 },
+  { id: "3", label: "15% OFF", type: "discount", value: 15, weight: 8, enabled: true, expiresDays: 30 },
+  { id: "4", label: "Tente na próxima", type: "none", value: 0, weight: 15, enabled: true, expiresDays: 30 },
+  { id: "5", label: "20% OFF", type: "discount", value: 20, weight: 5, enabled: true, expiresDays: 30 },
+  { id: "6", label: "Quase!", type: "none", value: 0, weight: 12, enabled: true, expiresDays: 30 },
+  { id: "7", label: "30% OFF", type: "discount", value: 30, weight: 2, enabled: true, expiresDays: 30 },
+  { id: "8", label: "Não foi dessa vez", type: "none", value: 0, weight: 15, enabled: true, expiresDays: 30 },
+  { id: "9", label: "Que pena!", type: "none", value: 0, weight: 10, enabled: true, expiresDays: 30 },
+  { id: "10", label: "Tente na próxima", type: "none", value: 0, weight: 8, enabled: true, expiresDays: 30 },
 ];
 
 export const ITEM_COLORS = [
@@ -47,6 +50,7 @@ export const parseItems = (raw: string | null | undefined): RouletteItem[] => {
         value: Number(p.value) || 0,
         weight: Math.max(0, Number(p.weight) || 0),
         enabled: p.enabled !== false,
+        expiresDays: Math.max(1, Number(p.expiresDays) || DEFAULT_EXPIRES_DAYS),
       }));
     }
   } catch {}
@@ -63,7 +67,6 @@ export const computeChances = (items: RouletteItem[]) => {
 };
 
 export const pickWinnerIndex = (items: RouletteItem[]): number => {
-  // returns index within the original items array
   const totals: { idx: number; weight: number }[] = [];
   items.forEach((it, idx) => {
     if (it.enabled && it.weight > 0) totals.push({ idx, weight: it.weight });
