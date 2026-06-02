@@ -136,6 +136,10 @@ const AdminWelcomeRoulette = () => {
   };
 
   const addItemFromPicker = (item: Omit<RouletteItem, "id">) => {
+    if (items.length >= 10) {
+      toast.error("Limite de 10 itens atingido. Delete um item para adicionar outro.");
+      return;
+    }
     const newId = String(Date.now());
     setItems((prev) => [...prev, { id: newId, ...item }]);
     setShowAddModal(false);
