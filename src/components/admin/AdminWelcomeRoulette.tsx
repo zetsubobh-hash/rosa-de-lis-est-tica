@@ -135,12 +135,11 @@ const AdminWelcomeRoulette = () => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   };
 
-  const addItem = () => {
+  const addItemFromPicker = (item: Omit<RouletteItem, "id">) => {
     const newId = String(Date.now());
-    setItems((prev) => [
-      ...prev,
-      { id: newId, label: "Novo item", type: "none", value: 0, weight: 5, enabled: true, expiresDays: 30 },
-    ]);
+    setItems((prev) => [...prev, { id: newId, ...item }]);
+    setShowAddModal(false);
+    toast.success("Item adicionado! Não esqueça de salvar.");
   };
 
   const removeItem = (id: string) => {
