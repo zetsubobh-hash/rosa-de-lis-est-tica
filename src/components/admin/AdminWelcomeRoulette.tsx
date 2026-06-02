@@ -35,14 +35,17 @@ const AdminWelcomeRoulette = () => {
   const loadData = async () => {
     setLoading(true);
 
-    const [settingsRes, couponsRes] = await Promise.all([
+    const [settingsRes, itemsRes, couponsRes] = await Promise.all([
       supabase.from("payment_settings").select("key, value").eq("key", "welcome_roulette_enabled").maybeSingle(),
+      supabase.from("payment_settings").select("value").eq("key", "welcome_roulette_items").maybeSingle(),
       supabase.from("coupons").select("*").like("code", "BV-%").order("created_at", { ascending: false }).limit(100),
     ]);
 
     if (settingsRes.data) {
       setEnabled(settingsRes.data.value === "true");
     }
+
+    setItems(parseItems((itemsRes.data as any)?.value));
 
     if (couponsRes.data) {
       // Fetch user names
