@@ -536,7 +536,7 @@ const AdminWelcomeRoulette = () => {
 
       {/* Preview modal */}
       {showPreview && (
-        <WelcomeRoulettePreview onClose={() => setShowPreview(false)} />
+        <WelcomeRoulettePreview items={items} onClose={() => setShowPreview(false)} />
       )}
 
       {/* Add item modal */}
