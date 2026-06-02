@@ -115,7 +115,7 @@ const AdminWelcomeRoulette = () => {
     const newId = String(Date.now());
     setItems((prev) => [
       ...prev,
-      { id: newId, label: "Novo item", type: "none", value: 0, weight: 5, enabled: true },
+      { id: newId, label: "Novo item", type: "none", value: 0, weight: 5, enabled: true, expiresDays: 30 },
     ]);
   };
 
