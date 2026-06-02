@@ -25,6 +25,8 @@ const AdminWelcomeRoulette = () => {
   const [loading, setLoading] = useState(true);
   const [coupons, setCoupons] = useState<WelcomeCoupon[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [items, setItems] = useState<RouletteItem[]>(DEFAULT_ITEMS);
+  const [savingItems, setSavingItems] = useState(false);
 
   useEffect(() => {
     loadData();
