@@ -75,13 +75,21 @@ serve(async (req) => {
       );
     }
 
+    // Normalize sex value to satisfy DB CHECK constraint ('masculino' | 'feminino')
+    const sexNormalized =
+      sex === "M" || sex === "m" || sex?.toLowerCase?.() === "masculino"
+        ? "masculino"
+        : sex === "F" || sex === "f" || sex?.toLowerCase?.() === "feminino"
+        ? "feminino"
+        : "feminino";
+
     // Create profile (with optional birth_date)
     const profileData: Record<string, unknown> = {
       user_id: userData.user.id,
       full_name: full_name.trim(),
       username: sanitizedUsername,
       email: email?.trim() || null,
-      sex,
+      sex: sexNormalized,
       phone: phone.trim(),
       address: address.trim(),
     };
@@ -94,6 +102,12 @@ serve(async (req) => {
 
     if (profileError) {
       console.error("Profile error:", profileError);
+      // Rollback the auth user so the caller can retry cleanly
+      await supabaseAdmin.auth.admin.deleteUser(userData.user.id);
+      return new Response(
+        JSON.stringify({ error: "Erro ao criar perfil: " + profileError.message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(
