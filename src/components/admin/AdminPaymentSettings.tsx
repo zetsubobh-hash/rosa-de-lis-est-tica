@@ -167,7 +167,10 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setQrKey(Date.now())}
+                  onClick={() => {
+                    setQrKey(Date.now());
+                    toast({ title: "QR Code regerado ✨" });
+                  }}
                   className="gap-2 mx-auto"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
