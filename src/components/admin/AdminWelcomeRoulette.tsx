@@ -453,11 +453,20 @@ const AdminWelcomeRoulette = () => {
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-mono text-xs text-muted-foreground">{coupon.code}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-mono text-xs text-muted-foreground truncate">{coupon.code}</p>
                         <p className="font-body text-xs text-muted-foreground">
-                          {coupon.discount_value}% OFF • Até {new Date(coupon.expires_at).toLocaleDateString("pt-BR")}
+                          {coupon.discount_value}% OFF
                         </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <label className="font-body text-[10px] text-muted-foreground">Validade:</label>
+                          <input
+                            type="date"
+                            value={coupon.expires_at.slice(0, 10)}
+                            onChange={(e) => updateExpiry(coupon.id, e.target.value)}
+                            className="h-7 px-2 rounded-md border border-input bg-background text-xs text-foreground"
+                          />
+                        </div>
                       </div>
                       <div className="flex items-center gap-1">
                         {!coupon.is_used && !expired && (
