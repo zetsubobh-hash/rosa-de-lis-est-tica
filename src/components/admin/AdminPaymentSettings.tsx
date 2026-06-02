@@ -49,10 +49,11 @@ const AdminPaymentSettings = ({ initialSettings }: Props) => {
     if (!pixKey) return "";
     return generatePixPayload({
       pixKey,
+      pixKeyType: pixKeyType as any,
       beneficiaryName: pixBeneficiary || "LOJA",
       amount: pixAmountNumber > 0 ? pixAmountNumber : undefined,
     });
-  }, [pixKey, pixBeneficiary, pixAmountNumber, qrKey]);
+  }, [pixKey, pixKeyType, pixBeneficiary, pixAmountNumber, qrKey]);
 
   const handleSave = async () => {
     setSaving(true);
