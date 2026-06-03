@@ -224,7 +224,61 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     );
     setCoupons((couponsRes.data || []) as any);
     setPayments((paymentsRes.data || []) as any);
+    setServicePrices((pricesRes.data || []) as any);
     setLoading(false);
+  };
+
+  // Helper: compute price for an appointment (notes.price_cents > Essencial > any plan)
+  const aptPriceCents = (apt: AppointmentData): number => {
+    if (apt.notes) {
+      try {
+        const d = JSON.parse(apt.notes);
+        if (typeof d.price_cents === "number") return d.price_cents;
+      } catch { /* ignore */ }
+    }
+    const slug = (apt as any).service_slug;
+    const ess = servicePrices.find(p => p.service_slug === slug && p.plan_name === "Essencial");
+    if (ess) return ess.price_per_session_cents;
+    const any = servicePrices.find(p => p.service_slug === slug);
+    return any?.price_per_session_cents || 0;
+  };
+
+  // Virtual pending entries: appointments without any matching payment row
+  const virtualPending = (() => {
+    const linked = new Set(payments.map(p => p.appointment_id).filter(Boolean) as string[]);
+    return appointments
+      .filter(a => a.status !== "cancelled" && !linked.has(a.id))
+      .map(a => ({
+        id: `virt-${a.id}`,
+        appointmentId: a.id,
+        service_title: a.service_title,
+        appointment_date: a.appointment_date,
+        appointment_time: a.appointment_time,
+        amount_cents: aptPriceCents(a),
+      }))
+      .filter(v => v.amount_cents > 0);
+  })();
+
+  const handleRegisterPayment = async (appointmentId: string, amountCents: number) => {
+    if (!user?.id) return;
+    setSavingPayment(true);
+    const { error } = await supabase.from("payments").insert({
+      user_id: userId,
+      appointment_id: appointmentId,
+      method: registerMethod,
+      amount_cents: amountCents,
+      status: "paid",
+      metadata: { source: "manual_register", registered_by: user.id },
+    });
+    setSavingPayment(false);
+    if (error) {
+      toast.error("Erro ao registrar pagamento");
+      return;
+    }
+    toast.success("Pagamento registrado");
+    setRegisteringAptId(null);
+    setRegisterMethod("pix");
+    loadData();
   };
 
   useEffect(() => {
