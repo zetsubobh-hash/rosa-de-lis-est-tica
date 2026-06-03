@@ -991,7 +991,117 @@ const AdminCashRegister = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Expense Modal */}
+      <AnimatePresence>
+        {expenseOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) resetExpense(); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
+                  <TrendingDown className="w-4 h-4 text-red-600" /> Nova despesa do expediente
+                </h3>
+                <button onClick={resetExpense} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
+              </div>
+              <div className="p-5 space-y-3">
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Descrição *</label>
+                  <input
+                    value={expDescription}
+                    onChange={(e) => setExpDescription(e.target.value.slice(0, 200))}
+                    placeholder="Ex.: Algodão, álcool, sacolinhas..."
+                    maxLength={200}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Valor (R$) *</label>
+                    <input
+                      value={expAmount}
+                      onChange={(e) => setExpAmount(e.target.value)}
+                      placeholder="0,00"
+                      inputMode="decimal"
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Data</label>
+                    <input
+                      type="date"
+                      value={expDate}
+                      onChange={(e) => setExpDate(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Categoria</label>
+                    <select
+                      value={expCategory}
+                      onChange={(e) => setExpCategory(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      {EXPENSE_CATEGORIES.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Forma de pagamento</label>
+                    <select
+                      value={expMethod}
+                      onChange={(e) => setExpMethod(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="pix">PIX</option>
+                      <option value="credito">Crédito</option>
+                      <option value="debito">Débito</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Observações (opcional)</label>
+                  <input
+                    value={expNotes}
+                    onChange={(e) => setExpNotes(e.target.value.slice(0, 500))}
+                    placeholder="Nota fiscal, fornecedor, etc."
+                    maxLength={500}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+              </div>
+              <div className="px-5 py-3 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
+                <button onClick={resetExpense} className="h-9 px-4 rounded-md border border-border text-xs font-bold hover:bg-muted">Cancelar</button>
+                <button
+                  onClick={handleSaveExpense}
+                  disabled={!expDescription.trim() || parseAmount(expAmount) <= 0 || savingExpense}
+                  className="h-9 px-4 rounded-md bg-red-600 text-white text-xs font-bold hover:bg-red-700 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {savingExpense ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                  Salvar despesa
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+
   );
 };
 
