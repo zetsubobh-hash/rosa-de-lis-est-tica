@@ -244,6 +244,16 @@ const AdminCashRegister = () => {
     setEntryDescription("");
   };
 
+  const openQuickEntry = (clientId: string, amountCents: number, description?: string) => {
+    setEntryClientId(clientId);
+    setEntryAmount(amountCents > 0 ? (amountCents / 100).toFixed(2).replace(".", ",") : "");
+    setEntryMethod("pix");
+    setEntryStatus("paid");
+    setEntryDescription(description?.slice(0, 200) || "");
+    setEntryOpen(true);
+  };
+
+
   const handleSaveEntry = async () => {
     if (!entryClientId) { return; }
     const amount = parseAmount(entryAmount);
@@ -558,18 +568,46 @@ const AdminCashRegister = () => {
                           className="overflow-hidden bg-muted/20"
                         >
                           <div className="px-4 md:px-6 py-3 space-y-3">
+                            {/* Quick action: receive payment for this client */}
+                            <div className="flex items-center justify-end">
+                              <button
+                                onClick={() => openQuickEntry(c.userId, Math.max(0, balance), `Pagamento — ${c.name}`)}
+                                className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90 flex items-center gap-1.5 shadow-sm"
+                              >
+                                <Wallet className="w-3 h-3" />
+                                {balance > 0 ? `Receber pagamento (${formatCents(balance)})` : "Receber pagamento"}
+                              </button>
+                            </div>
                             {c.appointments.length > 0 && (
                               <div>
                                 <p className="font-body text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1.5">Serviços ({c.appointments.length})</p>
                                 <div className="space-y-1">
                                   {c.appointments.map(a => {
                                     const st = APT_STATUS_LABEL[a.status] || { label: a.status, cls: "bg-muted text-muted-foreground" };
+                                    // Calculate already-paid against this appointment
+                                    const aptPaid = c.payments
+                                      .filter(p => p.appointment_id === a.id && (p.status === "paid" || p.status === "pending"))
+                                      .reduce((s, p) => s + (p.amount_cents || 0), 0);
+                                    const remaining = Math.max(0, a.price_cents - aptPaid);
                                     return (
                                       <div key={a.id} className="flex items-center gap-2 text-xs font-body p-1.5 rounded-md bg-background/60">
                                         <span className="font-mono text-[10px] text-muted-foreground w-20 shrink-0">{a.appointment_date.split("-").reverse().join("/")} {a.appointment_time}</span>
                                         <span className="flex-1 truncate text-foreground">{a.service_title}</span>
                                         <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${st.cls}`}>{st.label}</span>
                                         <span className="font-semibold text-foreground w-20 text-right">{formatCents(a.price_cents)}</span>
+                                        {remaining > 0 ? (
+                                          <button
+                                            onClick={() => openQuickEntry(c.userId, remaining, a.service_title)}
+                                            title={`Lançar pagamento (${formatCents(remaining)} em aberto)`}
+                                            className="h-6 px-2 rounded-md bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 flex items-center gap-1 shrink-0"
+                                          >
+                                            <Wallet className="w-2.5 h-2.5" /> Lançar
+                                          </button>
+                                        ) : (
+                                          <span className="h-6 px-2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold flex items-center gap-1 shrink-0">
+                                            <CheckCircle2 className="w-2.5 h-2.5" /> Pago
+                                          </span>
+                                        )}
                                       </div>
                                     );
                                   })}
@@ -602,6 +640,7 @@ const AdminCashRegister = () => {
                               <span className="text-muted-foreground">Em aberto: <span className={`font-bold ${balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>{formatCents(Math.max(0, balance))}</span></span>
                             </div>
                           </div>
+
                         </motion.div>
                       )}
                     </AnimatePresence>
