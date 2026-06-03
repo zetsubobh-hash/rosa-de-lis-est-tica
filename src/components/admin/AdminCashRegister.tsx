@@ -236,7 +236,7 @@ const AdminCashRegister = () => {
   }, []);
 
 
-  const { start, end, label } = useMemo(() => getRange(range), [range]);
+  const { start, end, label } = useMemo(() => getRange(range, customStart, customEnd), [range, customStart, customEnd]);
 
   const loadData = async () => {
     setLoading(true);
