@@ -489,7 +489,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
               </div>
             ) : (
               <Tabs defaultValue="dados" className="flex-1 flex flex-col min-h-0">
-                <TabsList className="mx-5 mt-4 mb-0 shrink-0">
+                <TabsList className="mx-5 mt-4 mb-0 shrink-0 flex-wrap h-auto">
                   <TabsTrigger value="dados" className="text-xs gap-1.5">
                     <User className="w-3.5 h-3.5" /> Dados
                   </TabsTrigger>
@@ -498,6 +498,9 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                   </TabsTrigger>
                   <TabsTrigger value="historico" className="text-xs gap-1.5">
                     <History className="w-3.5 h-3.5" /> Histórico ({appointments.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="pagamentos" className="text-xs gap-1.5">
+                    <Wallet className="w-3.5 h-3.5" /> Pagamentos ({payments.length})
                   </TabsTrigger>
                   {coupons.length > 0 && (
                     <TabsTrigger value="cupons" className="text-xs gap-1.5">
