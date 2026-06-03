@@ -877,7 +877,9 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                           {/* Totals */}
                           {(() => {
                             const paidSum = payments.filter(p => p.status === "paid").reduce((s, p) => s + (p.amount_cents || 0), 0);
-                            const pendingSum = payments.filter(p => p.status === "pending").reduce((s, p) => s + (p.amount_cents || 0), 0);
+                            const realPending = payments.filter(p => p.status === "pending").reduce((s, p) => s + (p.amount_cents || 0), 0);
+                            const virtualSum = virtualPending.reduce((s, v) => s + v.amount_cents, 0);
+                            const pendingSum = realPending + virtualSum;
                             return (
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 p-3">
