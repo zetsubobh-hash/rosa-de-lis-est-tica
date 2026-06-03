@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, TrendingUp, TrendingDown, Clock, CreditCard, Banknote, QrCode, Receipt, ArrowUpRight, ArrowDownRight, Calendar as CalendarIcon, Users, BadgePercent, ChevronDown, CheckCircle2, CalendarClock, Search, Trash2, Zap } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Clock, CreditCard, Banknote, QrCode, Receipt, ArrowUpRight, ArrowDownRight, Calendar as CalendarIcon, Users, BadgePercent, ChevronDown, CheckCircle2, CalendarClock, Search, Trash2, Zap, AlertTriangle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatCents } from "@/hooks/useServicePrices";
@@ -198,6 +198,17 @@ const AdminCashRegister = () => {
   const [expNotes, setExpNotes] = useState<string>("");
   const [savingExpense, setSavingExpense] = useState(false);
   const [deletingExpense, setDeletingExpense] = useState<string | null>(null);
+  // Master-only wipe
+  const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [wipeOpen, setWipeOpen] = useState(false);
+  const [wipeText, setWipeText] = useState("");
+  const [wiping, setWiping] = useState(false);
+  const [wipeMsg, setWipeMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data?.user?.id ?? null));
+  }, []);
 
 
   const { start, end, label } = useMemo(() => getRange(range), [range]);
@@ -355,6 +366,28 @@ const AdminCashRegister = () => {
     setDeletingExpense(null);
     if (!error) loadData();
   };
+
+  const handleWipeAll = async () => {
+    if (wipeText.trim().toUpperCase() !== "LIMPAR") return;
+    setWiping(true);
+    setWipeMsg(null);
+    const results = await Promise.all([
+      supabase.from("payments").delete().not("id", "is", null),
+      supabase.from("partner_payments").delete().not("id", "is", null),
+      (supabase as any).from("cash_expenses").delete().not("id", "is", null),
+    ]);
+    const errs = results.map(r => r.error).filter(Boolean);
+    setWiping(false);
+    if (errs.length) {
+      setWipeMsg(`Falha ao limpar: ${errs.map(e => e!.message).join(" | ")}`);
+      return;
+    }
+    setWipeOpen(false);
+    setWipeText("");
+    setWipeMsg(null);
+    loadData();
+  };
+
 
   // KPIs — payment-centric (real cash)
   const totals = useMemo(() => {
@@ -515,6 +548,15 @@ const AdminCashRegister = () => {
           >
             <Wallet className="w-3.5 h-3.5" /> Nova entrada
           </button>
+          {currentUserId === MASTER_ADMIN_ID && (
+            <button
+              onClick={() => { setWipeText(""); setWipeMsg(null); setWipeOpen(true); }}
+              className="col-span-2 sm:col-span-1 h-9 px-3 sm:px-4 rounded-xl bg-destructive text-destructive-foreground font-body text-[11px] sm:text-xs font-bold hover:bg-destructive/90 transition-colors flex items-center justify-center gap-1.5 shadow-sm border border-destructive/30"
+              title="Limpar todos os dados do caixa (somente Master Admin)"
+            >
+              <AlertTriangle className="w-3.5 h-3.5" /> Limpar caixa
+            </button>
+          )}
         </div>
       </div>
 
@@ -1096,6 +1138,74 @@ const AdminCashRegister = () => {
                 >
                   {savingExpense ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                   Salvar despesa
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Wipe Cash Modal — Master Admin only */}
+      <AnimatePresence>
+        {wipeOpen && currentUserId === MASTER_ADMIN_ID && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget && !wiping) { setWipeOpen(false); setWipeText(""); setWipeMsg(null); } }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card border border-destructive/40 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="px-5 py-4 border-b border-border flex items-center gap-2 bg-destructive/10">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+                <h3 className="font-heading text-base font-bold text-foreground">Limpar todos os dados do caixa</h3>
+              </div>
+              <div className="p-5 space-y-3">
+                <p className="font-body text-sm text-foreground">
+                  Esta ação <strong>apaga permanentemente</strong> todos os registros de:
+                </p>
+                <ul className="font-body text-xs text-muted-foreground list-disc pl-5 space-y-0.5">
+                  <li>Pagamentos de clientes ({payments.length} no período visível)</li>
+                  <li>Repasses a parceiros ({partnerPayments.length} no período visível)</li>
+                  <li>Despesas do expediente ({cashExpenses.length} no período visível)</li>
+                </ul>
+                <p className="font-body text-xs text-destructive font-semibold">
+                  ⚠️ Os dados serão removidos do banco e não poderão ser recuperados.
+                </p>
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">
+                    Digite <span className="text-destructive font-bold">LIMPAR</span> para confirmar
+                  </label>
+                  <input
+                    value={wipeText}
+                    onChange={(e) => setWipeText(e.target.value)}
+                    placeholder="LIMPAR"
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive"
+                    autoFocus
+                  />
+                </div>
+                {wipeMsg && <p className="font-body text-xs text-destructive">{wipeMsg}</p>}
+              </div>
+              <div className="px-5 py-3 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
+                <button
+                  onClick={() => { setWipeOpen(false); setWipeText(""); setWipeMsg(null); }}
+                  disabled={wiping}
+                  className="h-9 px-4 rounded-md border border-border text-xs font-bold hover:bg-muted disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleWipeAll}
+                  disabled={wipeText.trim().toUpperCase() !== "LIMPAR" || wiping}
+                  className="h-9 px-4 rounded-md bg-destructive text-destructive-foreground text-xs font-bold hover:bg-destructive/90 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {wiping ? <div className="w-3 h-3 border-2 border-destructive-foreground border-t-transparent rounded-full animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Limpar tudo
                 </button>
               </div>
             </motion.div>
