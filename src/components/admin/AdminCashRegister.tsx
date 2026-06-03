@@ -113,11 +113,22 @@ const APT_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   cancelled: { label: "Cancelado", cls: "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300" },
 };
 
-const getRange = (key: RangeKey): { start: Date; end: Date; label: string } => {
+const getRange = (key: RangeKey, customStart?: Date, customEnd?: Date): { start: Date; end: Date; label: string } => {
   const now = new Date();
   const end = new Date(now);
   end.setHours(23, 59, 59, 999);
   const start = new Date(now);
+  if (key === "custom" && customStart) {
+    const s = new Date(customStart);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(customEnd || customStart);
+    e.setHours(23, 59, 59, 999);
+    const sameDay = s.toDateString() === e.toDateString();
+    const label = sameDay
+      ? format(s, "dd/MM/yyyy", { locale: ptBR })
+      : `${format(s, "dd/MM/yyyy", { locale: ptBR })} — ${format(e, "dd/MM/yyyy", { locale: ptBR })}`;
+    return { start: s, end: e, label };
+  }
   if (key === "day") {
     start.setHours(0, 0, 0, 0);
     return { start, end, label: format(now, "dd/MM/yyyy", { locale: ptBR }) };
