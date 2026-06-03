@@ -1121,7 +1121,7 @@ export type Database = {
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_stale_pending_appointments: { Args: never; Returns: undefined }
       get_booked_slots: {
-        Args: { p_date: string; p_partner_id: string }
+        Args: { p_date: string; p_partner_id?: string }
         Returns: {
           appointment_time: string
         }[]

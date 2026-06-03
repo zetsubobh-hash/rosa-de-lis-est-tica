@@ -62,25 +62,11 @@ const SessionScheduleModal = ({
     const fetchBooked = async () => {
       await supabase.rpc("cleanup_stale_pending_appointments");
       const dateStr = format(selectedDate, "yyyy-MM-dd");
-
-      if (partnerId) {
-        // Only show slots booked by THIS partner
-        const { data } = await supabase
-          .from("appointments")
-          .select("appointment_time")
-          .eq("appointment_date", dateStr)
-          .eq("partner_id", partnerId)
-          .in("status", ["confirmed", "pending"]);
-        setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
-      } else {
-        // No partner context — show all booked slots globally
-        const { data } = await supabase
-          .from("appointments")
-          .select("appointment_time")
-          .eq("appointment_date", dateStr)
-          .in("status", ["confirmed", "pending"]);
-        setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
-      }
+      const { data } = await supabase.rpc("get_booked_slots", {
+        p_date: dateStr,
+        p_partner_id: partnerId || null,
+      });
+      setBookedSlots((data as { appointment_time: string }[] | null)?.map((d) => d.appointment_time) || []);
     };
     fetchBooked();
   }, [selectedDate, open, partnerId]);
