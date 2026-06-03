@@ -296,7 +296,7 @@ const AdminCashRegister = () => {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range]);
+  }, [range, customStart, customEnd]);
 
   // Annotate each appointment with computed price
   const aptWithPrice = useMemo(() => {
