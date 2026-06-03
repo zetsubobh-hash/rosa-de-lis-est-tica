@@ -244,21 +244,34 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     return any?.price_per_session_cents || 0;
   };
 
-  // Virtual pending entries: appointments without any matching payment row
+  // Virtual pending entries: appointments with outstanding balance (no payments OR partial payments)
   const virtualPending = (() => {
-    const linked = new Set(payments.map(p => p.appointment_id).filter(Boolean) as string[]);
+    const paidByApt = new Map<string, number>();
+    payments.forEach(p => {
+      if (!p.appointment_id) return;
+      if (p.status !== "paid" && p.status !== "pending") return;
+      paidByApt.set(p.appointment_id, (paidByApt.get(p.appointment_id) || 0) + (p.amount_cents || 0));
+    });
     return appointments
-      .filter(a => a.status !== "cancelled" && !linked.has(a.id))
-      .map(a => ({
-        id: `virt-${a.id}`,
-        appointmentId: a.id,
-        service_title: a.service_title,
-        appointment_date: a.appointment_date,
-        appointment_time: a.appointment_time,
-        amount_cents: aptPriceCents(a),
-      }))
+      .filter(a => a.status !== "cancelled")
+      .map(a => {
+        const total = aptPriceCents(a);
+        const alreadyAccounted = paidByApt.get(a.id) || 0;
+        const remaining = Math.max(0, total - alreadyAccounted);
+        return {
+          id: `virt-${a.id}`,
+          appointmentId: a.id,
+          service_title: a.service_title,
+          appointment_date: a.appointment_date,
+          appointment_time: a.appointment_time,
+          total_cents: total,
+          paid_cents: alreadyAccounted,
+          amount_cents: remaining,
+        };
+      })
       .filter(v => v.amount_cents > 0);
   })();
+
 
   const handleRegisterPayment = async (appointmentId: string, amountCents: number) => {
     if (!user?.id) return;
