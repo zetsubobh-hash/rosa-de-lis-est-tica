@@ -7,7 +7,7 @@ import { formatCents } from "@/hooks/useServicePrices";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-type RangeKey = "day" | "15d" | "month" | "30d";
+type RangeKey = "day" | "15d" | "month" | "30d" | "custom";
 
 interface PaymentRow {
   id: string;
