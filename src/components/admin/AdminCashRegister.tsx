@@ -480,19 +480,19 @@ const AdminCashRegister = () => {
   return (
     <div className="space-y-6">
       {/* Range Filter */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="w-4 h-4 text-primary" />
-          <p className="font-body text-sm text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <CalendarIcon className="w-4 h-4 text-primary shrink-0" />
+          <p className="font-body text-xs sm:text-sm text-muted-foreground truncate">
             Período: <span className="font-semibold text-foreground capitalize">{label}</span>
           </p>
         </div>
-        <div className="flex gap-1.5 p-1 rounded-xl bg-muted">
+        <div className="flex gap-1 p-1 rounded-xl bg-muted overflow-x-auto">
           {ranges.map(r => (
             <button
               key={r.key}
               onClick={() => setRange(r.key)}
-              className={`px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-body text-[11px] sm:text-xs font-semibold transition-all whitespace-nowrap ${
                 range === r.key
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -502,21 +502,20 @@ const AdminCashRegister = () => {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
           <button
             onClick={() => setExpenseOpen(true)}
-            className="h-9 px-4 rounded-xl bg-red-600 text-white font-body text-xs font-bold hover:bg-red-700 transition-colors flex items-center gap-1.5 shadow-sm"
+            className="h-9 px-3 sm:px-4 rounded-xl bg-red-600 text-white font-body text-[11px] sm:text-xs font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
           >
             <TrendingDown className="w-3.5 h-3.5" /> Nova despesa
           </button>
           <button
             onClick={() => setEntryOpen(true)}
-            className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-sm"
+            className="h-9 px-3 sm:px-4 rounded-xl bg-primary text-primary-foreground font-body text-[11px] sm:text-xs font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
           >
             <Wallet className="w-3.5 h-3.5" /> Nova entrada
           </button>
         </div>
-
       </div>
 
       {loading ? (
@@ -538,7 +537,7 @@ const AdminCashRegister = () => {
             <KPICard icon={Wallet} label="Saldo Líquido" value={formatCents(totals.net)} trend={`Ticket médio ${formatCents(totals.avgTicket)}`} color={totals.net >= 0 ? "primary" : "red"} />
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <KPICard icon={CalendarClock} label="Pendente em pagamentos" value={formatCents(totals.pendingRecorded)} trend="Lançados como pendentes" color="amber" />
             <KPICard icon={CheckCircle2} label="Serviços sem lançamento" value={formatCents(totals.virtualSum)} trend={`${virtualReceivables.length} agendamentos`} color="sky" />
             <KPICard icon={Zap} label="Despesas expediente" value={formatCents(totals.operationalExpenses)} trend={`${cashExpenses.length} lançamentos`} color="red" />
@@ -622,13 +621,13 @@ const AdminCashRegister = () => {
                 <Users className="w-4 h-4 text-primary" />
                 <h3 className="font-heading text-sm font-bold text-foreground">Detalhamento por cliente ({byClient.length})</h3>
               </div>
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   value={clientSearch}
                   onChange={e => setClientSearch(e.target.value)}
                   placeholder="Buscar cliente..."
-                  className="pl-8 pr-3 py-1.5 rounded-lg border border-border bg-background font-body text-xs w-48 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="pl-8 pr-3 py-1.5 rounded-lg border border-border bg-background font-body text-xs w-full sm:w-48 focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
@@ -649,14 +648,17 @@ const AdminCashRegister = () => {
                         {c.name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-body text-sm font-semibold text-foreground truncate">{c.name}</p>
-                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-body flex-wrap">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-body text-sm font-semibold text-foreground truncate">{c.name}</p>
+                          <span className="font-heading text-sm font-bold text-foreground shrink-0 sm:hidden">{formatCents(c.realized + c.scheduled)}</span>
+                        </div>
+                        <div className="flex items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground font-body flex-wrap">
                           <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatCents(c.realized)} realizado</span>
-                          {c.scheduled > 0 && <><span>•</span><span className="text-sky-600 dark:text-sky-400">{formatCents(c.scheduled)} agendado</span></>}
-                          {balance > 0 && <><span>•</span><span className="text-amber-600 dark:text-amber-400 font-semibold">{formatCents(balance)} em aberto</span></>}
+                          {c.scheduled > 0 && <><span className="hidden sm:inline">•</span><span className="text-sky-600 dark:text-sky-400">{formatCents(c.scheduled)} agendado</span></>}
+                          {balance > 0 && <><span className="hidden sm:inline">•</span><span className="text-amber-600 dark:text-amber-400 font-semibold">{formatCents(balance)} em aberto</span></>}
                         </div>
                       </div>
-                      <span className="font-heading text-sm font-bold text-foreground shrink-0">{formatCents(c.realized + c.scheduled)}</span>
+                      <span className="font-heading text-sm font-bold text-foreground shrink-0 hidden sm:inline">{formatCents(c.realized + c.scheduled)}</span>
                       <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                     </button>
                     <AnimatePresence initial={false}>
@@ -691,11 +693,11 @@ const AdminCashRegister = () => {
                                       .reduce((s, p) => s + (p.amount_cents || 0), 0);
                                     const remaining = Math.max(0, a.price_cents - aptPaid);
                                     return (
-                                      <div key={a.id} className="flex items-center gap-2 text-xs font-body p-1.5 rounded-md bg-background/60">
-                                        <span className="font-mono text-[10px] text-muted-foreground w-20 shrink-0">{a.appointment_date.split("-").reverse().join("/")} {a.appointment_time}</span>
-                                        <span className="flex-1 truncate text-foreground">{a.service_title}</span>
+                                      <div key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-body p-2 rounded-md bg-background/60">
+                                        <span className="font-mono text-[10px] text-muted-foreground shrink-0">{a.appointment_date.split("-").reverse().join("/")} {a.appointment_time}</span>
+                                        <span className="flex-1 min-w-[120px] truncate text-foreground">{a.service_title}</span>
                                         <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${st.cls}`}>{st.label}</span>
-                                        <span className="font-semibold text-foreground w-20 text-right">{formatCents(a.price_cents)}</span>
+                                        <span className="font-semibold text-foreground text-right ml-auto sm:ml-0 sm:w-20">{formatCents(a.price_cents)}</span>
                                         {remaining > 0 ? (
                                           <button
                                             onClick={() => openQuickEntry(c.userId, remaining, a.service_title)}
@@ -723,19 +725,19 @@ const AdminCashRegister = () => {
                                     const st = STATUS_LABEL[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
                                     const Icon = METHOD_ICON[p.method] || Receipt;
                                     return (
-                                      <div key={p.id} className="flex items-center gap-2 text-xs font-body p-1.5 rounded-md bg-background/60">
-                                        <span className="font-mono text-[10px] text-muted-foreground w-20 shrink-0">{format(new Date(p.created_at), "dd/MM HH:mm")}</span>
+                                      <div key={p.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-body p-2 rounded-md bg-background/60">
+                                        <span className="font-mono text-[10px] text-muted-foreground shrink-0">{format(new Date(p.created_at), "dd/MM HH:mm")}</span>
                                         <Icon className="w-3 h-3 text-primary shrink-0" />
-                                        <span className="flex-1 truncate text-foreground">{METHOD_LABEL[p.method] || p.method}</span>
+                                        <span className="flex-1 min-w-[80px] truncate text-foreground">{METHOD_LABEL[p.method] || p.method}</span>
                                         <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${st.cls}`}>{st.label}</span>
-                                        <span className="font-semibold text-foreground w-20 text-right">{formatCents(p.amount_cents || 0)}</span>
+                                        <span className="font-semibold text-foreground text-right ml-auto sm:ml-0 sm:w-20">{formatCents(p.amount_cents || 0)}</span>
                                       </div>
                                     );
                                   })}
                                 </div>
                               </div>
                             )}
-                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-border text-xs font-body">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 justify-between pt-2 border-t border-border text-xs font-body">
                               <span className="text-muted-foreground">Total realizado: <span className="text-foreground font-bold">{formatCents(c.realized)}</span></span>
                               <span className="text-muted-foreground">Recebido: <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCents(c.paid)}</span></span>
                               <span className="text-muted-foreground">Em aberto: <span className={`font-bold ${balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>{formatCents(Math.max(0, balance))}</span></span>
@@ -774,23 +776,23 @@ const AdminCashRegister = () => {
                   const cat = EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || e.category;
                   const Icon = METHOD_ICON[e.payment_method] || Receipt;
                   return (
-                    <div key={e.id} className="px-4 md:px-6 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors">
+                    <div key={e.id} className="px-3 sm:px-4 md:px-6 py-3 flex items-center gap-2 sm:gap-3 hover:bg-muted/30 transition-colors">
                       <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
                         <ArrowDownRight className="w-4 h-4 text-red-600" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-body text-sm font-semibold text-foreground truncate">{e.description}</span>
+                          <span className="font-body text-sm font-semibold text-foreground truncate max-w-full">{e.description}</span>
                           <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 capitalize">
                             {cat}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-body">
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-body flex-wrap">
                           <Icon className="w-3 h-3" />
                           <span>{METHOD_LABEL[e.payment_method] || e.payment_method}</span>
                           <span>•</span>
                           <span>{e.expense_date.split("-").reverse().join("/")}</span>
-                          {e.notes && <><span>•</span><span className="truncate">{e.notes}</span></>}
+                          {e.notes && <><span>•</span><span className="truncate max-w-[140px]">{e.notes}</span></>}
                         </div>
                       </div>
                       <span className="font-heading text-sm font-bold text-red-600 shrink-0">-{formatCents(e.amount_cents)}</span>
