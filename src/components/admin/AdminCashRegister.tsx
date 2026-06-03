@@ -153,6 +153,14 @@ const AdminCashRegister = () => {
   const [partners, setPartners] = useState<Map<string, string>>(new Map());
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [clientSearch, setClientSearch] = useState("");
+  // Quick entry modal
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [entryClientId, setEntryClientId] = useState<string>("");
+  const [entryAmount, setEntryAmount] = useState<string>("");
+  const [entryMethod, setEntryMethod] = useState<string>("pix");
+  const [entryStatus, setEntryStatus] = useState<"paid" | "pending">("paid");
+  const [entryDescription, setEntryDescription] = useState<string>("");
+  const [savingEntry, setSavingEntry] = useState(false);
 
   const { start, end, label } = useMemo(() => getRange(range), [range]);
 
