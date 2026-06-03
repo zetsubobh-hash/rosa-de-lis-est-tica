@@ -29,9 +29,10 @@ import AdminDebugMonitor from "@/components/admin/AdminDebugMonitor";
 import AdminWelcomeRoulette from "@/components/admin/AdminWelcomeRoulette";
 import AdminPromoBroadcast from "@/components/admin/AdminPromoBroadcast";
 import AdminClients from "@/components/admin/AdminClients";
+import AdminCashRegister from "@/components/admin/AdminCashRegister";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast";
+type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
