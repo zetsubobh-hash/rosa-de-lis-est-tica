@@ -404,6 +404,12 @@ const AdminCashRegister = () => {
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setEntryOpen(true)}
+          className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-sm"
+        >
+          <Wallet className="w-3.5 h-3.5" /> Nova entrada
+        </button>
       </div>
 
       {loading ? (
