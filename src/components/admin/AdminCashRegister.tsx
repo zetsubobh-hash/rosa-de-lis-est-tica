@@ -380,7 +380,7 @@ const AdminCashRegister = () => {
       paidCount: paidPayments.length, pendingCount: pendingPayments.length + virtualReceivables.length,
 
     };
-  }, [payments, partnerPayments, virtualReceivables]);
+  }, [payments, partnerPayments, virtualReceivables, cashExpenses]);
 
   // By method
   const byMethod = useMemo(() => {
