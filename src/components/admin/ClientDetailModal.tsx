@@ -157,6 +157,10 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
   const [coupons, setCoupons] = useState<{ id: string; code: string; discount_type: string; discount_value: number; expires_at: string; is_used: boolean; created_at: string }[]>([]);
   const [payments, setPayments] = useState<PaymentData[]>([]);
+  const [servicePrices, setServicePrices] = useState<{ service_slug: string; plan_name: string; price_per_session_cents: number }[]>([]);
+  const [registeringAptId, setRegisteringAptId] = useState<string | null>(null);
+  const [registerMethod, setRegisterMethod] = useState<string>("pix");
+  const [savingPayment, setSavingPayment] = useState(false);
   const [loading, setLoading] = useState(true);
   const [markingUsed, setMarkingUsed] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -185,13 +189,14 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
 
   const loadData = async () => {
     setLoading(true);
-    const [profileRes, anamnesisRes, appointmentsRes, partnersRes, couponsRes, paymentsRes] = await Promise.all([
+    const [profileRes, anamnesisRes, appointmentsRes, partnersRes, couponsRes, paymentsRes, pricesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).single(),
       supabase.from("anamnesis").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(1),
       supabase.from("appointments").select("*").eq("user_id", userId).order("appointment_date", { ascending: false }),
       supabase.from("partners").select("id, full_name"),
       supabase.from("coupons").select("id, code, discount_type, discount_value, expires_at, is_used, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
       supabase.from("payments").select("id, method, amount_cents, status, created_at, metadata, appointment_id, external_id").eq("user_id", userId).order("created_at", { ascending: false }),
+      supabase.from("service_prices").select("service_slug, plan_name, price_per_session_cents"),
     ]);
 
     if (profileRes.data) {
@@ -219,7 +224,61 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     );
     setCoupons((couponsRes.data || []) as any);
     setPayments((paymentsRes.data || []) as any);
+    setServicePrices((pricesRes.data || []) as any);
     setLoading(false);
+  };
+
+  // Helper: compute price for an appointment (notes.price_cents > Essencial > any plan)
+  const aptPriceCents = (apt: AppointmentData): number => {
+    if (apt.notes) {
+      try {
+        const d = JSON.parse(apt.notes);
+        if (typeof d.price_cents === "number") return d.price_cents;
+      } catch { /* ignore */ }
+    }
+    const slug = (apt as any).service_slug;
+    const ess = servicePrices.find(p => p.service_slug === slug && p.plan_name === "Essencial");
+    if (ess) return ess.price_per_session_cents;
+    const any = servicePrices.find(p => p.service_slug === slug);
+    return any?.price_per_session_cents || 0;
+  };
+
+  // Virtual pending entries: appointments without any matching payment row
+  const virtualPending = (() => {
+    const linked = new Set(payments.map(p => p.appointment_id).filter(Boolean) as string[]);
+    return appointments
+      .filter(a => a.status !== "cancelled" && !linked.has(a.id))
+      .map(a => ({
+        id: `virt-${a.id}`,
+        appointmentId: a.id,
+        service_title: a.service_title,
+        appointment_date: a.appointment_date,
+        appointment_time: a.appointment_time,
+        amount_cents: aptPriceCents(a),
+      }))
+      .filter(v => v.amount_cents > 0);
+  })();
+
+  const handleRegisterPayment = async (appointmentId: string, amountCents: number) => {
+    if (!user?.id) return;
+    setSavingPayment(true);
+    const { error } = await supabase.from("payments").insert({
+      user_id: userId,
+      appointment_id: appointmentId,
+      method: registerMethod,
+      amount_cents: amountCents,
+      status: "paid",
+      metadata: { source: "manual_register", registered_by: user.id },
+    });
+    setSavingPayment(false);
+    if (error) {
+      toast.error("Erro ao registrar pagamento");
+      return;
+    }
+    toast.success("Pagamento registrado");
+    setRegisteringAptId(null);
+    setRegisterMethod("pix");
+    loadData();
   };
 
   useEffect(() => {
@@ -818,7 +877,9 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                           {/* Totals */}
                           {(() => {
                             const paidSum = payments.filter(p => p.status === "paid").reduce((s, p) => s + (p.amount_cents || 0), 0);
-                            const pendingSum = payments.filter(p => p.status === "pending").reduce((s, p) => s + (p.amount_cents || 0), 0);
+                            const realPending = payments.filter(p => p.status === "pending").reduce((s, p) => s + (p.amount_cents || 0), 0);
+                            const virtualSum = virtualPending.reduce((s, v) => s + v.amount_cents, 0);
+                            const pendingSum = realPending + virtualSum;
                             return (
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 p-3">
@@ -878,13 +939,74 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                             </div>
                           )}
 
+                          {/* Pendências de serviços (sem pagamento ainda lançado) */}
+                          {virtualPending.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="font-body text-[10px] uppercase tracking-wider font-bold text-amber-700 dark:text-amber-400">
+                                Serviços sem pagamento lançado ({virtualPending.length})
+                              </p>
+                              {virtualPending.map(v => (
+                                <div key={v.id} className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-900/10 p-3 space-y-2">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="font-heading text-sm font-semibold text-foreground truncate">{v.service_title}</p>
+                                      <p className="text-[11px] text-muted-foreground font-body">
+                                        {v.appointment_date.split("-").reverse().join("/")} • {v.appointment_time}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Pendente</span>
+                                      <span className="font-heading text-sm font-bold text-primary">{formatCents(v.amount_cents)}</span>
+                                    </div>
+                                  </div>
+                                  {registeringAptId === v.appointmentId ? (
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <select
+                                        value={registerMethod}
+                                        onChange={(e) => setRegisterMethod(e.target.value)}
+                                        className="h-8 rounded-md border border-input bg-background px-2 text-xs flex-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                      >
+                                        <option value="pix">PIX</option>
+                                        <option value="dinheiro">Dinheiro</option>
+                                        <option value="credito">Crédito</option>
+                                        <option value="debito">Débito</option>
+                                        <option value="outro">Outro</option>
+                                      </select>
+                                      <button
+                                        onClick={() => handleRegisterPayment(v.appointmentId, v.amount_cents)}
+                                        disabled={savingPayment}
+                                        className="h-8 px-3 rounded-md bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1"
+                                      >
+                                        {savingPayment ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                        Confirmar pago
+                                      </button>
+                                      <button
+                                        onClick={() => setRegisteringAptId(null)}
+                                        className="h-8 px-2 rounded-md border border-border text-xs hover:bg-muted"
+                                      >
+                                        Cancelar
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => { setRegisteringAptId(v.appointmentId); setRegisterMethod("pix"); }}
+                                      className="w-full h-8 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 flex items-center justify-center gap-1.5"
+                                    >
+                                      <Wallet className="w-3 h-3" /> Registrar pagamento
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           {/* List */}
-                          {payments.length === 0 ? (
+                          {payments.length === 0 && virtualPending.length === 0 ? (
                             <div className="text-center py-10">
                               <CreditCard className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
                               <p className="font-body text-sm text-muted-foreground">Nenhum pagamento registrado.</p>
                             </div>
-                          ) : (
+                          ) : payments.length > 0 ? (
                             <div className="space-y-2">
                               {payments.map((p) => {
                                 const st = STATUS_MAP[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
@@ -930,7 +1052,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                                 );
                               })}
                             </div>
-                          )}
+                          ) : null}
                         </div>
                       )}
                     </TabsContent>
