@@ -129,6 +129,8 @@ const AdminAgenda = () => {
   const [qbServiceSlug, setQbServiceSlug] = useState("");
   const [qbSaving, setQbSaving] = useState(false);
   const [qbShowNewClient, setQbShowNewClient] = useState(false);
+  // Client detail modal
+  const [clientDetail, setClientDetail] = useState<{ userId: string; userName: string; avatarUrl: string | null } | null>(null);
   const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
   const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
 
