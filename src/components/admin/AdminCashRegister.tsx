@@ -857,6 +857,49 @@ const AdminCashRegister = () => {
             </div>
           </div>
 
+          {/* Pagamento de funcionários (Repasses a parceiros) */}
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div className="px-4 md:px-6 py-4 border-b border-border flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-red-600" />
+                <h3 className="font-heading text-sm font-bold text-foreground">Pagamento de funcionários ({partnerPayments.length})</h3>
+                <span className="text-[11px] font-body text-muted-foreground">— Total: <span className="font-bold text-red-600">{formatCents(totals.partnerExpenses)}</span></span>
+              </div>
+            </div>
+            <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+              {partnerPayments.length === 0 ? (
+                <p className="text-center py-8 font-body text-sm text-muted-foreground">Nenhum pagamento a funcionário no período.</p>
+              ) : (
+                partnerPayments.map(p => {
+                  const name = partners.get(p.partner_id) || "Parceiro";
+                  const typeLabel = p.type === "salary" ? "Salário" : p.type === "commission" ? "Comissão" : p.type === "bonus" ? "Bônus" : p.type === "advance" ? "Adiantamento" : p.type;
+                  return (
+                    <div key={p.id} className="px-3 sm:px-4 md:px-6 py-3 flex items-center gap-2 sm:gap-3 hover:bg-muted/30 transition-colors">
+                      <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                        <ArrowDownRight className="w-4 h-4 text-red-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-body text-sm font-semibold text-foreground truncate max-w-full">{name}</span>
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 capitalize">
+                            {typeLabel}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-body flex-wrap">
+                          <CalendarIcon className="w-3 h-3" />
+                          <span>{format(new Date(p.paid_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                          {p.description && <><span>•</span><span className="truncate max-w-[180px]">{p.description}</span></>}
+                        </div>
+                      </div>
+                      <span className="font-heading text-sm font-bold text-red-600 shrink-0">-{formatCents(p.amount_cents)}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+
           {/* Transactions list (raw inflows + outflows) */}
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="px-4 md:px-6 py-4 border-b border-border flex items-center gap-2">
