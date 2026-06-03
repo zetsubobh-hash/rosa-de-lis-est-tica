@@ -212,24 +212,35 @@ const AdminCashRegister = () => {
     return appointments.map(a => ({ ...a, price_cents: getAptPriceCents(a, servicePrices) }));
   }, [appointments, servicePrices]);
 
-  // KPIs — revenue derived from real services (appointments)
-  const totals = useMemo(() => {
-    const completed = aptWithPrice.filter(a => a.status === "completed");
-    const confirmed = aptWithPrice.filter(a => a.status === "confirmed" || a.status === "pending");
-    const realized = completed.reduce((s, a) => s + a.price_cents, 0);
-    const scheduled = confirmed.reduce((s, a) => s + a.price_cents, 0);
+  // Virtual receivables: appointments without any payment row linked
+  const virtualReceivables = useMemo(() => {
+    const linked = new Set(payments.map(p => p.appointment_id).filter(Boolean) as string[]);
+    return aptWithPrice
+      .filter(a => a.status !== "cancelled" && !linked.has(a.id) && a.price_cents > 0)
+      .map(a => ({ id: `virt-${a.id}`, user_id: a.user_id, amount_cents: a.price_cents, service_title: a.service_title, appointment_date: a.appointment_date, appointment_time: a.appointment_time }));
+  }, [aptWithPrice, payments]);
 
-    // Confirmed payments via payments table (cash inflow records)
+  // KPIs — payment-centric (real cash)
+  const totals = useMemo(() => {
     const paidPayments = payments.filter(p => p.status === "paid");
-    const paymentsSum = paidPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const pendingPayments = payments.filter(p => p.status === "pending");
     const refundedSum = payments.filter(p => p.status === "refunded").reduce((s, p) => s + (p.amount_cents || 0), 0);
 
+    const cashIn = paidPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const pendingRecorded = pendingPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const virtualSum = virtualReceivables.reduce((s, v) => s + v.amount_cents, 0);
+    const receivables = pendingRecorded + virtualSum;
+
     const expenses = partnerPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
-    const net = realized - expenses - refundedSum;
-    const transactions = completed.length;
-    const avgTicket = transactions > 0 ? Math.round(realized / transactions) : 0;
-    return { realized, scheduled, paymentsSum, refundedSum, expenses, net, transactions, avgTicket, completedCount: completed.length, confirmedCount: confirmed.length };
-  }, [aptWithPrice, payments, partnerPayments]);
+    const net = cashIn - expenses - refundedSum;
+    const transactions = paidPayments.length;
+    const avgTicket = transactions > 0 ? Math.round(cashIn / transactions) : 0;
+    return {
+      cashIn, pendingRecorded, virtualSum, receivables, refundedSum, expenses, net,
+      transactions, avgTicket,
+      paidCount: paidPayments.length, pendingCount: pendingPayments.length + virtualReceivables.length,
+    };
+  }, [payments, partnerPayments, virtualReceivables]);
 
   // By method
   const byMethod = useMemo(() => {
