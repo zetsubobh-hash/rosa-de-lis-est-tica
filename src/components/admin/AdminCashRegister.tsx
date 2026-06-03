@@ -680,6 +680,114 @@ const AdminCashRegister = () => {
           </div>
         </>
       )}
+
+      {/* Quick Entry Modal */}
+      <AnimatePresence>
+        {entryOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) resetEntry(); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-primary" /> Nova entrada no caixa
+                </h3>
+                <button onClick={resetEntry} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
+              </div>
+              <div className="p-5 space-y-3">
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Cliente</label>
+                  <select
+                    value={entryClientId}
+                    onChange={(e) => setEntryClientId(e.target.value)}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Selecione o cliente…</option>
+                    {Array.from(profiles.entries()).sort((a, b) => a[1].localeCompare(b[1])).map(([uid, name]) => (
+                      <option key={uid} value={uid}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Valor (R$)</label>
+                    <input
+                      value={entryAmount}
+                      onChange={(e) => setEntryAmount(e.target.value)}
+                      placeholder="130,00"
+                      inputMode="decimal"
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Método</label>
+                    <select
+                      value={entryMethod}
+                      onChange={(e) => setEntryMethod(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="pix">PIX</option>
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="credito">Crédito</option>
+                      <option value="debito">Débito</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Situação</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEntryStatus("paid")}
+                      className={`flex-1 h-9 rounded-md text-xs font-bold transition-colors ${entryStatus === "paid" ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Pago (entra no caixa)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEntryStatus("pending")}
+                      className={`flex-1 h-9 rounded-md text-xs font-bold transition-colors ${entryStatus === "pending" ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                    >
+                      A receber
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Descrição (opcional)</label>
+                  <input
+                    value={entryDescription}
+                    onChange={(e) => setEntryDescription(e.target.value.slice(0, 200))}
+                    placeholder="Ex.: Massagem redutora"
+                    maxLength={200}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+              </div>
+              <div className="px-5 py-3 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
+                <button onClick={resetEntry} className="h-9 px-4 rounded-md border border-border text-xs font-bold hover:bg-muted">Cancelar</button>
+                <button
+                  onClick={handleSaveEntry}
+                  disabled={!entryClientId || parseAmount(entryAmount) <= 0 || savingEntry}
+                  className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {savingEntry ? <div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                  Salvar entrada
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
