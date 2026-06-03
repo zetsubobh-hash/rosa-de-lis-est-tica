@@ -112,14 +112,12 @@ const Agendar = () => {
     const fetchBooked = async () => {
       await supabase.rpc("cleanup_stale_pending_appointments");
       const dateStr = format(selectedDate, "yyyy-MM-dd");
-      // Fetch slots booked by this specific partner
-      const { data } = await supabase
-        .from("appointments")
-        .select("appointment_time")
-        .eq("appointment_date", dateStr)
-        .eq("partner_id", selectedPartner.id)
-        .in("status", ["confirmed", "pending"]);
-      setBookedSlots(data?.map((d: any) => d.appointment_time) || []);
+      // Use SECURITY DEFINER function to fetch only booked time strings (no PII)
+      const { data } = await supabase.rpc("get_booked_slots", {
+        p_date: dateStr,
+        p_partner_id: selectedPartner.id,
+      });
+      setBookedSlots((data as { appointment_time: string }[] | null)?.map((d) => d.appointment_time) || []);
     };
     fetchBooked();
   }, [selectedDate, selectedPartner]);
@@ -182,13 +180,11 @@ const Agendar = () => {
           });
           if (selectedDate && selectedPartner) {
             const dateStr = format(selectedDate, "yyyy-MM-dd");
-            const { data: fresh } = await supabase
-              .from("appointments")
-              .select("appointment_time")
-              .eq("appointment_date", dateStr)
-              .eq("partner_id", selectedPartner.id)
-              .in("status", ["confirmed", "pending"]);
-            setBookedSlots(fresh?.map((d: any) => d.appointment_time) || []);
+            const { data: fresh } = await supabase.rpc("get_booked_slots", {
+              p_date: dateStr,
+              p_partner_id: selectedPartner.id,
+            });
+            setBookedSlots((fresh as { appointment_time: string }[] | null)?.map((d) => d.appointment_time) || []);
           }
           setStep("time");
           setLoading(false);

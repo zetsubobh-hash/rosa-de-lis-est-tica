@@ -1120,6 +1120,19 @@ export type Database = {
     Functions: {
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_stale_pending_appointments: { Args: never; Returns: undefined }
+      get_booked_slots: {
+        Args: { p_date: string; p_partner_id: string }
+        Returns: {
+          appointment_time: string
+        }[]
+      }
+      get_public_payment_settings: {
+        Args: never
+        Returns: {
+          key: string
+          value: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1137,6 +1150,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      redeem_coupon: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "partner"
