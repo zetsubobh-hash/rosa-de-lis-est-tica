@@ -367,6 +367,28 @@ const AdminCashRegister = () => {
     if (!error) loadData();
   };
 
+  const handleWipeAll = async () => {
+    if (wipeText.trim().toUpperCase() !== "LIMPAR") return;
+    setWiping(true);
+    setWipeMsg(null);
+    const results = await Promise.all([
+      supabase.from("payments").delete().not("id", "is", null),
+      supabase.from("partner_payments").delete().not("id", "is", null),
+      (supabase as any).from("cash_expenses").delete().not("id", "is", null),
+    ]);
+    const errs = results.map(r => r.error).filter(Boolean);
+    setWiping(false);
+    if (errs.length) {
+      setWipeMsg(`Falha ao limpar: ${errs.map(e => e!.message).join(" | ")}`);
+      return;
+    }
+    setWipeOpen(false);
+    setWipeText("");
+    setWipeMsg(null);
+    loadData();
+  };
+
+
   // KPIs — payment-centric (real cash)
   const totals = useMemo(() => {
     const paidPayments = payments.filter(p => p.status === "paid");
