@@ -987,47 +987,80 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                                       <p className="text-[11px] text-muted-foreground font-body">
                                         {v.appointment_date.split("-").reverse().join("/")} • {v.appointment_time}
                                       </p>
+                                      {v.paid_cents > 0 && (
+                                        <p className="text-[11px] font-body text-emerald-700 dark:text-emerald-400 mt-0.5">
+                                          Entrada: {formatCents(v.paid_cents)} de {formatCents(v.total_cents)}
+                                        </p>
+                                      )}
                                     </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Pendente</span>
+                                    <div className="flex flex-col items-end gap-1 shrink-0">
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                        {v.paid_cents > 0 ? "Saldo" : "Pendente"}
+                                      </span>
                                       <span className="font-heading text-sm font-bold text-primary">{formatCents(v.amount_cents)}</span>
                                     </div>
                                   </div>
                                   {registeringAptId === v.appointmentId ? (
-                                    <div className="flex items-center gap-2 pt-1">
-                                      <select
-                                        value={registerMethod}
-                                        onChange={(e) => setRegisterMethod(e.target.value)}
-                                        className="h-8 rounded-md border border-input bg-background px-2 text-xs flex-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                      >
-                                        <option value="pix">PIX</option>
-                                        <option value="dinheiro">Dinheiro</option>
-                                        <option value="credito">Crédito</option>
-                                        <option value="debito">Débito</option>
-                                        <option value="outro">Outro</option>
-                                      </select>
-                                      <button
-                                        onClick={() => handleRegisterPayment(v.appointmentId, v.amount_cents)}
-                                        disabled={savingPayment}
-                                        className="h-8 px-3 rounded-md bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1"
-                                      >
-                                        {savingPayment ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                                        Confirmar pago
-                                      </button>
-                                      <button
-                                        onClick={() => setRegisteringAptId(null)}
-                                        className="h-8 px-2 rounded-md border border-border text-xs hover:bg-muted"
-                                      >
-                                        Cancelar
-                                      </button>
+                                    <div className="space-y-2 pt-1">
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex-1">
+                                          <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Valor (R$)</p>
+                                          <Input
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={registerAmount}
+                                            onChange={(e) => setRegisterAmount(e.target.value)}
+                                            placeholder={`Total: ${formatCents(v.amount_cents)}`}
+                                            className="h-8 text-xs"
+                                          />
+                                        </div>
+                                        <div className="flex-1">
+                                          <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-0.5">Forma</p>
+                                          <select
+                                            value={registerMethod}
+                                            onChange={(e) => setRegisterMethod(e.target.value)}
+                                            className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                          >
+                                            <option value="pix">PIX</option>
+                                            <option value="dinheiro">Dinheiro</option>
+                                            <option value="credito">Crédito</option>
+                                            <option value="debito">Débito</option>
+                                            <option value="outro">Outro</option>
+                                          </select>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => { setRegisterAmount(""); handleRegisterPayment(v.appointmentId, v.amount_cents); }}
+                                          disabled={savingPayment}
+                                          className="flex-1 h-8 px-3 rounded-md bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1"
+                                        >
+                                          {savingPayment ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                          Quitar total
+                                        </button>
+                                        <button
+                                          onClick={() => handleRegisterPayment(v.appointmentId, v.amount_cents)}
+                                          disabled={savingPayment || !registerAmount.trim()}
+                                          className="flex-1 h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-1"
+                                        >
+                                          <Wallet className="w-3 h-3" /> Lançar entrada
+                                        </button>
+                                        <button
+                                          onClick={() => { setRegisteringAptId(null); setRegisterAmount(""); }}
+                                          className="h-8 px-2 rounded-md border border-border text-xs hover:bg-muted"
+                                        >
+                                          Cancelar
+                                        </button>
+                                      </div>
                                     </div>
                                   ) : (
                                     <button
-                                      onClick={() => { setRegisteringAptId(v.appointmentId); setRegisterMethod("pix"); }}
+                                      onClick={() => { setRegisteringAptId(v.appointmentId); setRegisterMethod("pix"); setRegisterAmount(""); }}
                                       className="w-full h-8 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 flex items-center justify-center gap-1.5"
                                     >
-                                      <Wallet className="w-3 h-3" /> Registrar pagamento
+                                      <Wallet className="w-3 h-3" /> Registrar pagamento / entrada
                                     </button>
+
                                   )}
                                 </div>
                               ))}
