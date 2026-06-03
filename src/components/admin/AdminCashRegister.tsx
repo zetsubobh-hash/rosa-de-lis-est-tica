@@ -429,7 +429,7 @@ const AdminCashRegister = () => {
               <div className="space-y-2">
                 {byMethod.map(([method, v]) => {
                   const Icon = METHOD_ICON[method] || Receipt;
-                  const pct = totals.paymentsSum > 0 ? (v.total / totals.paymentsSum) * 100 : 0;
+                  const pct = totals.cashIn > 0 ? (v.total / totals.cashIn) * 100 : 0;
                   return (
                     <div key={method} className="space-y-1">
                       <div className="flex items-center justify-between gap-2">
