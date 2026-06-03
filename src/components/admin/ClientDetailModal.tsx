@@ -218,13 +218,119 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       }))
     );
     setCoupons((couponsRes.data || []) as any);
+    setPayments((paymentsRes.data || []) as any);
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!open) { setEditing(false); return; }
+    if (!open) {
+      setEditing(false);
+      setPaymentsUnlocked(false);
+      setPaymentsPassword("");
+      setCouponInput("");
+      setSelectedPaymentId(null);
+      return;
+    }
     loadData();
   }, [open, userId]);
+
+  const handleUnlockPayments = async () => {
+    if (!paymentsPassword.trim() || !user?.email) return;
+    setVerifyingPayments(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: paymentsPassword,
+    });
+    setVerifyingPayments(false);
+    if (error) {
+      toast.error("Senha incorreta");
+      setPaymentsPassword("");
+      return;
+    }
+    setPaymentsUnlocked(true);
+    setPaymentsPassword("");
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) { toast.error("Digite o código do cupom"); return; }
+    if (!selectedPaymentId) { toast.error("Selecione um pagamento pendente"); return; }
+    const payment = payments.find((p) => p.id === selectedPaymentId);
+    if (!payment || !payment.amount_cents) { toast.error("Pagamento inválido"); return; }
+    if (payment.status !== "pending") { toast.error("Cupons só podem ser aplicados a pagamentos pendentes"); return; }
+
+    setApplyingCoupon(true);
+    try {
+      const { data: couponData, error: couponErr } = await supabase
+        .from("coupons")
+        .select("id, code, discount_type, discount_value, expires_at, is_used, user_id")
+        .eq("user_id", userId)
+        .eq("code", code)
+        .maybeSingle();
+
+      if (couponErr || !couponData) {
+        toast.error("Cupom não encontrado para este cliente");
+        setApplyingCoupon(false);
+        return;
+      }
+      if (couponData.is_used) {
+        toast.error("Cupom já foi utilizado");
+        setApplyingCoupon(false);
+        return;
+      }
+      if (new Date(couponData.expires_at) < new Date()) {
+        toast.error("Cupom expirado");
+        setApplyingCoupon(false);
+        return;
+      }
+
+      const original = payment.amount_cents;
+      let discount = 0;
+      if (couponData.discount_type === "percent") {
+        discount = Math.round((original * Number(couponData.discount_value)) / 100);
+      } else {
+        // fixed in cents or in BRL? Treat values >= 1000 as already-cents, otherwise multiply by 100
+        const v = Number(couponData.discount_value);
+        discount = v >= 1000 ? Math.round(v) : Math.round(v * 100);
+      }
+      if (discount > original) discount = original;
+      const newAmount = Math.max(0, original - discount);
+
+      const newMetadata = {
+        ...(payment.metadata || {}),
+        applied_coupon: {
+          coupon_id: couponData.id,
+          code: couponData.code,
+          discount_type: couponData.discount_type,
+          discount_value: Number(couponData.discount_value),
+          discount_cents: discount,
+          original_amount_cents: original,
+          applied_at: new Date().toISOString(),
+        },
+      };
+
+      const { error: payErr } = await supabase
+        .from("payments")
+        .update({ amount_cents: newAmount, metadata: newMetadata })
+        .eq("id", payment.id);
+      if (payErr) throw payErr;
+
+      const { error: couponUpdErr } = await supabase
+        .from("coupons")
+        .update({ is_used: true, used_at: new Date().toISOString(), used_appointment_id: payment.appointment_id })
+        .eq("id", couponData.id);
+      if (couponUpdErr) throw couponUpdErr;
+
+      toast.success(`Cupom aplicado! Desconto de ${formatCents(discount)}`);
+      setCouponInput("");
+      setSelectedPaymentId(null);
+      await loadData();
+    } catch (err: any) {
+      toast.error("Erro ao aplicar cupom: " + (err.message || ""));
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!editData.full_name.trim()) {
