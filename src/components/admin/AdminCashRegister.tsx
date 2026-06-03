@@ -6,8 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCents } from "@/hooks/useServicePrices";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
-type RangeKey = "day" | "15d" | "month" | "30d";
+type RangeKey = "day" | "15d" | "month" | "30d" | "custom";
 
 interface PaymentRow {
   id: string;
@@ -113,11 +115,22 @@ const APT_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   cancelled: { label: "Cancelado", cls: "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300" },
 };
 
-const getRange = (key: RangeKey): { start: Date; end: Date; label: string } => {
+const getRange = (key: RangeKey, customStart?: Date, customEnd?: Date): { start: Date; end: Date; label: string } => {
   const now = new Date();
   const end = new Date(now);
   end.setHours(23, 59, 59, 999);
   const start = new Date(now);
+  if (key === "custom" && customStart) {
+    const s = new Date(customStart);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(customEnd || customStart);
+    e.setHours(23, 59, 59, 999);
+    const sameDay = s.toDateString() === e.toDateString();
+    const label = sameDay
+      ? format(s, "dd/MM/yyyy", { locale: ptBR })
+      : `${format(s, "dd/MM/yyyy", { locale: ptBR })} — ${format(e, "dd/MM/yyyy", { locale: ptBR })}`;
+    return { start: s, end: e, label };
+  }
   if (key === "day") {
     start.setHours(0, 0, 0, 0);
     return { start, end, label: format(now, "dd/MM/yyyy", { locale: ptBR }) };
@@ -179,6 +192,9 @@ const KPICard = ({ icon: Icon, label, value, trend, color = "primary" }: { icon:
 
 const AdminCashRegister = () => {
   const [range, setRange] = useState<RangeKey>("day");
+  const [customStart, setCustomStart] = useState<Date | undefined>(undefined);
+  const [customEnd, setCustomEnd] = useState<Date | undefined>(undefined);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [partnerPayments, setPartnerPayments] = useState<PartnerPaymentRow[]>([]);
@@ -222,7 +238,7 @@ const AdminCashRegister = () => {
   }, []);
 
 
-  const { start, end, label } = useMemo(() => getRange(range), [range]);
+  const { start, end, label } = useMemo(() => getRange(range, customStart, customEnd), [range, customStart, customEnd]);
 
   const loadData = async () => {
     setLoading(true);
@@ -282,7 +298,7 @@ const AdminCashRegister = () => {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range]);
+  }, [range, customStart, customEnd]);
 
   // Annotate each appointment with computed price
   const aptWithPrice = useMemo(() => {
@@ -565,7 +581,7 @@ const AdminCashRegister = () => {
             Período: <span className="font-semibold text-foreground capitalize">{label}</span>
           </p>
         </div>
-        <div className="flex gap-1 p-1 rounded-xl bg-muted overflow-x-auto">
+        <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-muted overflow-x-auto items-center">
           {ranges.map(r => (
             <button
               key={r.key}
@@ -579,6 +595,39 @@ const AdminCashRegister = () => {
               {r.label}
             </button>
           ))}
+          <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-body text-[11px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  range === "custom"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <CalendarIcon className="w-3 h-3" />
+                {range === "custom" && customStart
+                  ? (customEnd && customEnd.toDateString() !== customStart.toDateString()
+                      ? `${format(customStart, "dd/MM")} – ${format(customEnd, "dd/MM")}`
+                      : format(customStart, "dd/MM/yyyy"))
+                  : "Escolher data"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="end">
+              <Calendar
+                mode="range"
+                selected={{ from: customStart, to: customEnd }}
+                onSelect={(rng) => {
+                  setCustomStart(rng?.from);
+                  setCustomEnd(rng?.to);
+                  if (rng?.from) setRange("custom");
+                  if (rng?.from && rng?.to) setDatePopoverOpen(false);
+                }}
+                numberOfMonths={1}
+                locale={ptBR}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
           <button
