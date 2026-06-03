@@ -342,7 +342,7 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
               ref={canvasRef}
               width={280}
               height={280}
-              className="w-[280px] h-[280px]"
+              className="w-[min(280px,75vw)] h-[min(280px,75vw)] max-w-[280px] max-h-[280px]"
             />
           </div>
 
