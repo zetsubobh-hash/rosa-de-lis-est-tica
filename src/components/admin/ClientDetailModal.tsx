@@ -160,6 +160,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [servicePrices, setServicePrices] = useState<{ service_slug: string; plan_name: string; price_per_session_cents: number }[]>([]);
   const [registeringAptId, setRegisteringAptId] = useState<string | null>(null);
   const [registerMethod, setRegisterMethod] = useState<string>("pix");
+  const [registerAmount, setRegisterAmount] = useState<string>("");
   const [savingPayment, setSavingPayment] = useState(false);
   const [loading, setLoading] = useState(true);
   const [markingUsed, setMarkingUsed] = useState<string | null>(null);
