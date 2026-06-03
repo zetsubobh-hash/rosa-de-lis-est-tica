@@ -548,6 +548,15 @@ const AdminCashRegister = () => {
           >
             <Wallet className="w-3.5 h-3.5" /> Nova entrada
           </button>
+          {currentUserId === MASTER_ADMIN_ID && (
+            <button
+              onClick={() => { setWipeText(""); setWipeMsg(null); setWipeOpen(true); }}
+              className="col-span-2 sm:col-span-1 h-9 px-3 sm:px-4 rounded-xl bg-destructive text-destructive-foreground font-body text-[11px] sm:text-xs font-bold hover:bg-destructive/90 transition-colors flex items-center justify-center gap-1.5 shadow-sm border border-destructive/30"
+              title="Limpar todos os dados do caixa (somente Master Admin)"
+            >
+              <AlertTriangle className="w-3.5 h-3.5" /> Limpar caixa
+            </button>
+          )}
         </div>
       </div>
 
