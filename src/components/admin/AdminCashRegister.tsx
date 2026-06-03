@@ -725,12 +725,12 @@ const AdminCashRegister = () => {
                                     const st = STATUS_LABEL[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
                                     const Icon = METHOD_ICON[p.method] || Receipt;
                                     return (
-                                      <div key={p.id} className="flex items-center gap-2 text-xs font-body p-1.5 rounded-md bg-background/60">
-                                        <span className="font-mono text-[10px] text-muted-foreground w-20 shrink-0">{format(new Date(p.created_at), "dd/MM HH:mm")}</span>
+                                      <div key={p.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-body p-2 rounded-md bg-background/60">
+                                        <span className="font-mono text-[10px] text-muted-foreground shrink-0">{format(new Date(p.created_at), "dd/MM HH:mm")}</span>
                                         <Icon className="w-3 h-3 text-primary shrink-0" />
-                                        <span className="flex-1 truncate text-foreground">{METHOD_LABEL[p.method] || p.method}</span>
+                                        <span className="flex-1 min-w-[80px] truncate text-foreground">{METHOD_LABEL[p.method] || p.method}</span>
                                         <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${st.cls}`}>{st.label}</span>
-                                        <span className="font-semibold text-foreground w-20 text-right">{formatCents(p.amount_cents || 0)}</span>
+                                        <span className="font-semibold text-foreground text-right ml-auto sm:ml-0 sm:w-20">{formatCents(p.amount_cents || 0)}</span>
                                       </div>
                                     );
                                   })}
