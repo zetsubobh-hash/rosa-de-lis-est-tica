@@ -298,10 +298,17 @@ const AdminCashRegister = () => {
   }, [aptWithPrice, payments]);
 
   const parseAmount = (raw: string): number => {
-    const cleaned = raw.replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
-    const n = parseFloat(cleaned);
-    if (Number.isFinite(n) && n > 0) return Math.round(n * 100);
-    return 0;
+    const digits = (raw || "").replace(/\D/g, "");
+    if (!digits) return 0;
+    const n = parseInt(digits, 10);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+
+  const maskBRL = (raw: string): string => {
+    const digits = (raw || "").replace(/\D/g, "");
+    if (!digits) return "";
+    const n = parseInt(digits, 10);
+    return (n / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const resetEntry = () => {
@@ -1068,7 +1075,7 @@ const AdminCashRegister = () => {
                     <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Valor (R$)</label>
                     <input
                       value={entryAmount}
-                      onChange={(e) => setEntryAmount(e.target.value)}
+                      onChange={(e) => setEntryAmount(maskBRL(e.target.value))}
                       placeholder="130,00"
                       inputMode="decimal"
                       className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -1219,7 +1226,7 @@ const AdminCashRegister = () => {
                     <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Valor (R$) *</label>
                     <input
                       value={expAmount}
-                      onChange={(e) => setExpAmount(e.target.value)}
+                      onChange={(e) => setExpAmount(maskBRL(e.target.value))}
                       placeholder="0,00"
                       inputMode="decimal"
                       className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
