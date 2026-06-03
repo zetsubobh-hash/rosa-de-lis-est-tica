@@ -128,6 +128,7 @@ const Admin = () => {
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: "dashboard", label: "Dashboard", icon: BarChart3 },
     { key: "agenda", label: "Agenda", icon: CalendarCheck },
+    { key: "cash", label: "Caixa", icon: Wallet },
     { key: "clients", label: "Clientes", icon: UserCheck },
     { key: "counter-sales", label: "Venda Balcão", icon: ShoppingBag },
     { key: "services", label: "Serviços", icon: Briefcase },
