@@ -939,13 +939,74 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                             </div>
                           )}
 
+                          {/* Pendências de serviços (sem pagamento ainda lançado) */}
+                          {virtualPending.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="font-body text-[10px] uppercase tracking-wider font-bold text-amber-700 dark:text-amber-400">
+                                Serviços sem pagamento lançado ({virtualPending.length})
+                              </p>
+                              {virtualPending.map(v => (
+                                <div key={v.id} className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-900/10 p-3 space-y-2">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="font-heading text-sm font-semibold text-foreground truncate">{v.service_title}</p>
+                                      <p className="text-[11px] text-muted-foreground font-body">
+                                        {v.appointment_date.split("-").reverse().join("/")} • {v.appointment_time}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">Pendente</span>
+                                      <span className="font-heading text-sm font-bold text-primary">{formatCents(v.amount_cents)}</span>
+                                    </div>
+                                  </div>
+                                  {registeringAptId === v.appointmentId ? (
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <select
+                                        value={registerMethod}
+                                        onChange={(e) => setRegisterMethod(e.target.value)}
+                                        className="h-8 rounded-md border border-input bg-background px-2 text-xs flex-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                      >
+                                        <option value="pix">PIX</option>
+                                        <option value="dinheiro">Dinheiro</option>
+                                        <option value="credito">Crédito</option>
+                                        <option value="debito">Débito</option>
+                                        <option value="outro">Outro</option>
+                                      </select>
+                                      <button
+                                        onClick={() => handleRegisterPayment(v.appointmentId, v.amount_cents)}
+                                        disabled={savingPayment}
+                                        className="h-8 px-3 rounded-md bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1"
+                                      >
+                                        {savingPayment ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                        Confirmar pago
+                                      </button>
+                                      <button
+                                        onClick={() => setRegisteringAptId(null)}
+                                        className="h-8 px-2 rounded-md border border-border text-xs hover:bg-muted"
+                                      >
+                                        Cancelar
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => { setRegisteringAptId(v.appointmentId); setRegisterMethod("pix"); }}
+                                      className="w-full h-8 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 flex items-center justify-center gap-1.5"
+                                    >
+                                      <Wallet className="w-3 h-3" /> Registrar pagamento
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           {/* List */}
-                          {payments.length === 0 ? (
+                          {payments.length === 0 && virtualPending.length === 0 ? (
                             <div className="text-center py-10">
                               <CreditCard className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
                               <p className="font-body text-sm text-muted-foreground">Nenhum pagamento registrado.</p>
                             </div>
-                          ) : (
+                          ) : payments.length > 0 ? (
                             <div className="space-y-2">
                               {payments.map((p) => {
                                 const st = STATUS_MAP[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
