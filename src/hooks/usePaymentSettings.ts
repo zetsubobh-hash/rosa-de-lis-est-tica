@@ -26,10 +26,10 @@ export const usePaymentSettings = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchSettings = async () => {
-    const { data } = await supabase.from("payment_settings").select("key, value");
+    const { data } = await supabase.rpc("get_public_payment_settings");
     if (data) {
       const map: Record<string, string> = {};
-      data.forEach((row: any) => { map[row.key] = row.value; });
+      (data as { key: string; value: string }[]).forEach((row) => { map[row.key] = row.value; });
       setSettings({
         pix_enabled: map.pix_enabled === "true",
         pix_key: map.pix_key || "",
@@ -37,7 +37,7 @@ export const usePaymentSettings = () => {
         pix_beneficiary: map.pix_beneficiary || "",
         mercadopago_enabled: map.mercadopago_enabled === "true",
         mercadopago_public_key: map.mercadopago_public_key || "",
-        mercadopago_access_token: map.mercadopago_access_token || "",
+        mercadopago_access_token: "",
       });
     }
     setLoading(false);
