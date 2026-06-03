@@ -778,6 +778,163 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                       </AnimatePresence>
                     </TabsContent>
 
+                    {/* Pagamentos (admin password required) */}
+                    <TabsContent value="pagamentos" className="mt-0">
+                      {!paymentsUnlocked ? (
+                        <div className="flex flex-col items-center justify-center py-10 px-4">
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                            <Lock className="w-6 h-6 text-primary" />
+                          </div>
+                          <h3 className="font-heading text-sm font-bold text-foreground mb-1">Acesso restrito</h3>
+                          <p className="font-body text-xs text-muted-foreground text-center mb-4 max-w-xs">
+                            O histórico financeiro do cliente é visível apenas para o administrador. Digite sua senha para continuar.
+                          </p>
+                          <div className="w-full max-w-xs space-y-2">
+                            <Input
+                              type="password"
+                              value={paymentsPassword}
+                              onChange={(e) => setPaymentsPassword(e.target.value)}
+                              placeholder="Sua senha de administrador"
+                              className="h-9 text-sm"
+                              onKeyDown={(e) => { if (e.key === "Enter") handleUnlockPayments(); }}
+                              autoFocus
+                            />
+                            <button
+                              onClick={handleUnlockPayments}
+                              disabled={!paymentsPassword.trim() || verifyingPayments}
+                              className="w-full h-9 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                              {verifyingPayments ? (
+                                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Lock className="w-4 h-4" />
+                              )}
+                              Desbloquear
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* Totals */}
+                          {(() => {
+                            const paidSum = payments.filter(p => p.status === "paid").reduce((s, p) => s + (p.amount_cents || 0), 0);
+                            const pendingSum = payments.filter(p => p.status === "pending").reduce((s, p) => s + (p.amount_cents || 0), 0);
+                            return (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 p-3">
+                                  <p className="font-body text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">Total Pago</p>
+                                  <p className="font-heading text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{formatCents(paidSum)}</p>
+                                </div>
+                                <div className="rounded-xl border border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 p-3">
+                                  <p className="font-body text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">Pendente</p>
+                                  <p className="font-heading text-lg font-bold text-amber-700 dark:text-amber-400 mt-0.5">{formatCents(pendingSum)}</p>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Apply Coupon */}
+                          {payments.some(p => p.status === "pending") && coupons.some(c => !c.is_used && new Date(c.expires_at) > new Date()) && (
+                            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <BadgePercent className="w-4 h-4 text-primary" />
+                                <p className="font-heading text-xs font-bold text-foreground uppercase tracking-wider">Aplicar cupom de desconto</p>
+                              </div>
+                              <select
+                                value={selectedPaymentId || ""}
+                                onChange={(e) => setSelectedPaymentId(e.target.value || null)}
+                                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                <option value="">Selecione o pagamento pendente…</option>
+                                {payments.filter(p => p.status === "pending").map(p => (
+                                  <option key={p.id} value={p.id}>
+                                    {METHOD_LABEL[p.method] || p.method} • {formatCents(p.amount_cents || 0)} • {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="flex gap-2">
+                                <Input
+                                  value={couponInput}
+                                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                  placeholder="CÓDIGO DO CUPOM"
+                                  className="h-9 text-sm font-mono"
+                                />
+                                <button
+                                  onClick={handleApplyCoupon}
+                                  disabled={!couponInput.trim() || !selectedPaymentId || applyingCoupon}
+                                  className="h-9 px-4 rounded-md bg-primary text-primary-foreground font-body text-xs font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+                                >
+                                  {applyingCoupon ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
+                                  Aplicar
+                                </button>
+                              </div>
+                              <p className="font-body text-[10px] text-muted-foreground">
+                                Cupons ativos: {coupons.filter(c => !c.is_used && new Date(c.expires_at) > new Date()).map(c => c.code).join(", ")}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* List */}
+                          {payments.length === 0 ? (
+                            <div className="text-center py-10">
+                              <CreditCard className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                              <p className="font-body text-sm text-muted-foreground">Nenhum pagamento registrado.</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {payments.map((p) => {
+                                const st = STATUS_MAP[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
+                                const items = p.metadata?.items as any[] | undefined;
+                                const applied = p.metadata?.applied_coupon;
+                                return (
+                                  <div key={p.id} className="rounded-xl border border-border p-3 space-y-1.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="font-heading text-sm font-semibold text-foreground">
+                                        {METHOD_LABEL[p.method] || p.method}
+                                      </p>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${st.cls}`}>{st.label}</span>
+                                        <span className="font-heading text-sm font-bold text-primary">{p.amount_cents != null ? formatCents(p.amount_cents) : "—"}</span>
+                                      </div>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground font-body">
+                                      {new Date(p.created_at).toLocaleString("pt-BR")}
+                                      {p.metadata?.source === "counter_sale" && (
+                                        <span className="ml-2 px-1.5 py-0.5 rounded bg-muted text-[10px] font-medium">Balcão</span>
+                                      )}
+                                    </div>
+                                    {items && items.length > 0 && (
+                                      <div className="pt-1 border-t border-border/50 space-y-0.5">
+                                        {items.map((it: any, idx: number) => (
+                                          <div key={idx} className="flex justify-between text-[11px] font-body text-muted-foreground">
+                                            <span className="truncate">{it.serviceTitle}{it.planName ? ` (${it.planName})` : ""}</span>
+                                            <span className="font-medium shrink-0 ml-2">{formatCents(it.priceCents || 0)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {applied && (
+                                      <div className="flex items-center gap-1.5 pt-1 border-t border-border/50 text-[11px] text-emerald-600 dark:text-emerald-400">
+                                        <BadgePercent className="w-3 h-3" />
+                                        <span className="font-medium">Cupom {applied.code}</span>
+                                        <span className="text-muted-foreground">
+                                          • desconto {formatCents(applied.discount_cents || 0)} (de {formatCents(applied.original_amount_cents || 0)})
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </TabsContent>
+
                     {/* Cupons */}
                     <TabsContent value="cupons" className="mt-0">
                       <div className="space-y-2">
