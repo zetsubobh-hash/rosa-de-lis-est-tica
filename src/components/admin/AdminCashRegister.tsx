@@ -301,22 +301,41 @@ const AdminCashRegister = () => {
   };
 
 
-  const handleSaveEntry = async () => {
-    if (!entryClientId) { return; }
-    const amount = parseAmount(entryAmount);
-    if (amount <= 0) { return; }
-    setSavingEntry(true);
-    const { error } = await supabase.from("payments").insert({
-      user_id: entryClientId,
-      method: entryMethod,
+  const resetExpense = () => {
+    setExpenseOpen(false);
+    setExpCategory("expediente");
+    setExpDescription("");
+    setExpAmount("");
+    setExpMethod("dinheiro");
+    setExpDate(format(new Date(), "yyyy-MM-dd"));
+    setExpNotes("");
+  };
+
+  const handleSaveExpense = async () => {
+    const amount = parseAmount(expAmount);
+    if (amount <= 0 || !expDescription.trim()) { return; }
+    setSavingExpense(true);
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await (supabase as any).from("cash_expenses").insert({
+      category: expCategory,
+      description: expDescription.trim().slice(0, 200),
       amount_cents: amount,
-      status: entryStatus,
-      metadata: { source: "cash_register_entry", description: entryDescription.trim().slice(0, 200) || null },
+      payment_method: expMethod,
+      expense_date: expDate,
+      notes: expNotes.trim().slice(0, 500) || null,
+      created_by: u?.user?.id || null,
     });
-    setSavingEntry(false);
+    setSavingExpense(false);
     if (error) return;
-    resetEntry();
+    resetExpense();
     loadData();
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    setDeletingExpense(id);
+    const { error } = await (supabase as any).from("cash_expenses").delete().eq("id", id);
+    setDeletingExpense(null);
+    if (!error) loadData();
   };
 
   // KPIs — payment-centric (real cash)
@@ -330,14 +349,18 @@ const AdminCashRegister = () => {
     const virtualSum = virtualReceivables.reduce((s, v) => s + v.amount_cents, 0);
     const receivables = pendingRecorded + virtualSum;
 
-    const expenses = partnerPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const partnerExpenses = partnerPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const operationalExpenses = cashExpenses.reduce((s, e) => s + (e.amount_cents || 0), 0);
+    const expenses = partnerExpenses + operationalExpenses;
     const net = cashIn - expenses - refundedSum;
     const transactions = paidPayments.length;
     const avgTicket = transactions > 0 ? Math.round(cashIn / transactions) : 0;
     return {
-      cashIn, pendingRecorded, virtualSum, receivables, refundedSum, expenses, net,
+      cashIn, pendingRecorded, virtualSum, receivables, refundedSum,
+      expenses, partnerExpenses, operationalExpenses, net,
       transactions, avgTicket,
       paidCount: paidPayments.length, pendingCount: pendingPayments.length + virtualReceivables.length,
+
     };
   }, [payments, partnerPayments, virtualReceivables]);
 
