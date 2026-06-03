@@ -579,7 +579,7 @@ const AdminCashRegister = () => {
             Período: <span className="font-semibold text-foreground capitalize">{label}</span>
           </p>
         </div>
-        <div className="flex gap-1 p-1 rounded-xl bg-muted overflow-x-auto">
+        <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-muted overflow-x-auto items-center">
           {ranges.map(r => (
             <button
               key={r.key}
@@ -593,6 +593,39 @@ const AdminCashRegister = () => {
               {r.label}
             </button>
           ))}
+          <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-body text-[11px] sm:text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  range === "custom"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <CalendarIcon className="w-3 h-3" />
+                {range === "custom" && customStart
+                  ? (customEnd && customEnd.toDateString() !== customStart.toDateString()
+                      ? `${format(customStart, "dd/MM")} – ${format(customEnd, "dd/MM")}`
+                      : format(customStart, "dd/MM/yyyy"))
+                  : "Escolher data"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="end">
+              <Calendar
+                mode="range"
+                selected={{ from: customStart, to: customEnd }}
+                onSelect={(rng) => {
+                  setCustomStart(rng?.from);
+                  setCustomEnd(rng?.to);
+                  if (rng?.from) setRange("custom");
+                  if (rng?.from && rng?.to) setDatePopoverOpen(false);
+                }}
+                numberOfMonths={1}
+                locale={ptBR}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
           <button
