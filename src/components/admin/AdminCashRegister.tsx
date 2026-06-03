@@ -190,6 +190,9 @@ const KPICard = ({ icon: Icon, label, value, trend, color = "primary" }: { icon:
 
 const AdminCashRegister = () => {
   const [range, setRange] = useState<RangeKey>("day");
+  const [customStart, setCustomStart] = useState<Date | undefined>(undefined);
+  const [customEnd, setCustomEnd] = useState<Date | undefined>(undefined);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [partnerPayments, setPartnerPayments] = useState<PartnerPaymentRow[]>([]);
