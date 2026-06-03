@@ -625,7 +625,21 @@ const AdminAgenda = () => {
         }}
         onDragReschedule={handleDragReschedule}
         onScheduleSession={(params) => setScheduleModal(params)}
+        onHistory={(userId, userName) => {
+          const apt = filtered.find((a) => a.user_id === userId);
+          setClientDetail({ userId, userName, avatarUrl: apt?.profile?.avatar_url || null });
+        }}
       />
+
+      {clientDetail && (
+        <ClientDetailModal
+          open={!!clientDetail}
+          onClose={() => setClientDetail(null)}
+          userId={clientDetail.userId}
+          userName={clientDetail.userName}
+          avatarUrl={clientDetail.avatarUrl}
+        />
+      )}
 
       <AnimatePresence>
         {rescheduleId && (
