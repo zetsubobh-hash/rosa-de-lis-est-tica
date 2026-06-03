@@ -627,7 +627,7 @@ const AdminAgenda = () => {
         onScheduleSession={(params) => setScheduleModal(params)}
         onHistory={(userId, userName) => {
           const apt = filtered.find((a) => a.user_id === userId);
-          setClientDetail({ userId, userName, avatarUrl: apt?.profile?.avatar_url || null });
+          setClientDetail({ userId, userName, avatarUrl: (apt as any)?.profiles?.avatar_url || null });
         }}
       />
 
