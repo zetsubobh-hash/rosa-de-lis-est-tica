@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, TrendingUp, TrendingDown, Clock, CreditCard, Banknote, QrCode, Receipt, ArrowUpRight, ArrowDownRight, Calendar as CalendarIcon, Users, BadgePercent, ChevronDown, CheckCircle2, CalendarClock, Search } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Clock, CreditCard, Banknote, QrCode, Receipt, ArrowUpRight, ArrowDownRight, Calendar as CalendarIcon, Users, BadgePercent, ChevronDown, CheckCircle2, CalendarClock, Search, Trash2, Zap } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { formatCents } from "@/hooks/useServicePrices";
 import { format } from "date-fns";
@@ -39,6 +40,31 @@ interface AppointmentRow {
   notes: string | null;
   partner_id: string | null;
 }
+
+interface CashExpenseRow {
+  id: string;
+  category: string;
+  description: string;
+  amount_cents: number;
+  payment_method: string;
+  expense_date: string;
+  notes: string | null;
+  created_at: string;
+}
+
+const EXPENSE_CATEGORIES = [
+  { value: "expediente", label: "Expediente" },
+  { value: "materiais", label: "Materiais / Insumos" },
+  { value: "energia", label: "Energia" },
+  { value: "agua", label: "Água" },
+  { value: "internet", label: "Internet / Telefone" },
+  { value: "aluguel", label: "Aluguel" },
+  { value: "marketing", label: "Marketing" },
+  { value: "manutencao", label: "Manutenção" },
+  { value: "impostos", label: "Impostos / Taxas" },
+  { value: "outros", label: "Outros" },
+];
+
 
 interface ServicePriceRow {
   service_slug: string;
@@ -161,6 +187,18 @@ const AdminCashRegister = () => {
   const [entryStatus, setEntryStatus] = useState<"paid" | "pending">("paid");
   const [entryDescription, setEntryDescription] = useState<string>("");
   const [savingEntry, setSavingEntry] = useState(false);
+  // Expenses
+  const [cashExpenses, setCashExpenses] = useState<CashExpenseRow[]>([]);
+  const [expenseOpen, setExpenseOpen] = useState(false);
+  const [expCategory, setExpCategory] = useState<string>("expediente");
+  const [expDescription, setExpDescription] = useState<string>("");
+  const [expAmount, setExpAmount] = useState<string>("");
+  const [expMethod, setExpMethod] = useState<string>("dinheiro");
+  const [expDate, setExpDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [expNotes, setExpNotes] = useState<string>("");
+  const [savingExpense, setSavingExpense] = useState(false);
+  const [deletingExpense, setDeletingExpense] = useState<string | null>(null);
+
 
   const { start, end, label } = useMemo(() => getRange(range), [range]);
 
@@ -170,7 +208,7 @@ const AdminCashRegister = () => {
     const endIso = end.toISOString();
     const startYmd = toYmd(start);
     const endYmd = toYmd(end);
-    const [payRes, ppRes, aptRes, spRes, profRes, partRes] = await Promise.all([
+    const [payRes, ppRes, aptRes, spRes, profRes, partRes, expRes] = await Promise.all([
       supabase
         .from("payments")
         .select("id, user_id, appointment_id, method, amount_cents, status, created_at, metadata")
@@ -196,11 +234,19 @@ const AdminCashRegister = () => {
       supabase.from("service_prices").select("service_slug, plan_name, price_per_session_cents"),
       supabase.from("profiles").select("user_id, full_name"),
       supabase.from("partners").select("id, full_name"),
+      (supabase as any)
+        .from("cash_expenses")
+        .select("id, category, description, amount_cents, payment_method, expense_date, notes, created_at")
+        .gte("expense_date", startYmd)
+        .lte("expense_date", endYmd)
+        .order("expense_date", { ascending: false })
+        .limit(1000),
     ]);
     setPayments((payRes.data || []) as PaymentRow[]);
     setPartnerPayments((ppRes.data || []) as PartnerPaymentRow[]);
     setAppointments((aptRes.data || []) as AppointmentRow[]);
     setServicePrices((spRes.data || []) as ServicePriceRow[]);
+    setCashExpenses((expRes.data || []) as CashExpenseRow[]);
     const pm = new Map<string, string>();
     (profRes.data || []).forEach((p: any) => pm.set(p.user_id, p.full_name));
     setProfiles(pm);
@@ -209,6 +255,7 @@ const AdminCashRegister = () => {
     setPartners(ptm);
     setLoading(false);
   };
+
 
   useEffect(() => {
     loadData();
@@ -253,7 +300,6 @@ const AdminCashRegister = () => {
     setEntryOpen(true);
   };
 
-
   const handleSaveEntry = async () => {
     if (!entryClientId) { return; }
     const amount = parseAmount(entryAmount);
@@ -272,6 +318,44 @@ const AdminCashRegister = () => {
     loadData();
   };
 
+
+  const resetExpense = () => {
+    setExpenseOpen(false);
+    setExpCategory("expediente");
+    setExpDescription("");
+    setExpAmount("");
+    setExpMethod("dinheiro");
+    setExpDate(format(new Date(), "yyyy-MM-dd"));
+    setExpNotes("");
+  };
+
+  const handleSaveExpense = async () => {
+    const amount = parseAmount(expAmount);
+    if (amount <= 0 || !expDescription.trim()) { return; }
+    setSavingExpense(true);
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await (supabase as any).from("cash_expenses").insert({
+      category: expCategory,
+      description: expDescription.trim().slice(0, 200),
+      amount_cents: amount,
+      payment_method: expMethod,
+      expense_date: expDate,
+      notes: expNotes.trim().slice(0, 500) || null,
+      created_by: u?.user?.id || null,
+    });
+    setSavingExpense(false);
+    if (error) return;
+    resetExpense();
+    loadData();
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    setDeletingExpense(id);
+    const { error } = await (supabase as any).from("cash_expenses").delete().eq("id", id);
+    setDeletingExpense(null);
+    if (!error) loadData();
+  };
+
   // KPIs — payment-centric (real cash)
   const totals = useMemo(() => {
     const paidPayments = payments.filter(p => p.status === "paid");
@@ -283,16 +367,20 @@ const AdminCashRegister = () => {
     const virtualSum = virtualReceivables.reduce((s, v) => s + v.amount_cents, 0);
     const receivables = pendingRecorded + virtualSum;
 
-    const expenses = partnerPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const partnerExpenses = partnerPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const operationalExpenses = cashExpenses.reduce((s, e) => s + (e.amount_cents || 0), 0);
+    const expenses = partnerExpenses + operationalExpenses;
     const net = cashIn - expenses - refundedSum;
     const transactions = paidPayments.length;
     const avgTicket = transactions > 0 ? Math.round(cashIn / transactions) : 0;
     return {
-      cashIn, pendingRecorded, virtualSum, receivables, refundedSum, expenses, net,
+      cashIn, pendingRecorded, virtualSum, receivables, refundedSum,
+      expenses, partnerExpenses, operationalExpenses, net,
       transactions, avgTicket,
       paidCount: paidPayments.length, pendingCount: pendingPayments.length + virtualReceivables.length,
+
     };
-  }, [payments, partnerPayments, virtualReceivables]);
+  }, [payments, partnerPayments, virtualReceivables, cashExpenses]);
 
   // By method
   const byMethod = useMemo(() => {
@@ -414,12 +502,21 @@ const AdminCashRegister = () => {
             </button>
           ))}
         </div>
-        <button
-          onClick={() => setEntryOpen(true)}
-          className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-sm"
-        >
-          <Wallet className="w-3.5 h-3.5" /> Nova entrada
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setExpenseOpen(true)}
+            className="h-9 px-4 rounded-xl bg-red-600 text-white font-body text-xs font-bold hover:bg-red-700 transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <TrendingDown className="w-3.5 h-3.5" /> Nova despesa
+          </button>
+          <button
+            onClick={() => setEntryOpen(true)}
+            className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <Wallet className="w-3.5 h-3.5" /> Nova entrada
+          </button>
+        </div>
+
       </div>
 
       {loading ? (
@@ -437,15 +534,19 @@ const AdminCashRegister = () => {
           >
             <KPICard icon={TrendingUp} label="Receita (Caixa)" value={formatCents(totals.cashIn)} trend={`${totals.paidCount} pagamentos recebidos`} color="emerald" />
             <KPICard icon={Clock} label="A Receber" value={formatCents(totals.receivables)} trend={`${totals.pendingCount} pendências`} color="amber" />
-            <KPICard icon={TrendingDown} label="Despesas" value={formatCents(totals.expenses)} trend={`${partnerPayments.length} pagamentos`} color="red" />
+            <KPICard icon={TrendingDown} label="Despesas" value={formatCents(totals.expenses)} trend={`${cashExpenses.length} expediente + ${partnerPayments.length} parceiros`} color="red" />
             <KPICard icon={Wallet} label="Saldo Líquido" value={formatCents(totals.net)} trend={`Ticket médio ${formatCents(totals.avgTicket)}`} color={totals.net >= 0 ? "primary" : "red"} />
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <KPICard icon={CalendarClock} label="Pendente em pagamentos" value={formatCents(totals.pendingRecorded)} trend="Lançados como pendentes" color="amber" />
             <KPICard icon={CheckCircle2} label="Serviços sem lançamento" value={formatCents(totals.virtualSum)} trend={`${virtualReceivables.length} agendamentos`} color="sky" />
+            <KPICard icon={Zap} label="Despesas expediente" value={formatCents(totals.operationalExpenses)} trend={`${cashExpenses.length} lançamentos`} color="red" />
+            <KPICard icon={Users} label="Pagto parceiros" value={formatCents(totals.partnerExpenses)} trend={`${partnerPayments.length} repasses`} color="slate" />
             <KPICard icon={BadgePercent} label="Estornos" value={formatCents(totals.refundedSum)} color="slate" />
           </div>
+
+
 
           {/* Daily Chart */}
           <div className="rounded-2xl border border-border bg-card p-4 md:p-6">
@@ -650,16 +751,79 @@ const AdminCashRegister = () => {
             </div>
           </div>
 
+          {/* Despesas do Expediente */}
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div className="px-4 md:px-6 py-4 border-b border-border flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-red-600" />
+                <h3 className="font-heading text-sm font-bold text-foreground">Despesas do expediente ({cashExpenses.length})</h3>
+                <span className="text-[11px] font-body text-muted-foreground">— Total: <span className="font-bold text-red-600">{formatCents(totals.operationalExpenses)}</span></span>
+              </div>
+              <button
+                onClick={() => setExpenseOpen(true)}
+                className="h-8 px-3 rounded-lg bg-red-600 text-white text-[11px] font-bold hover:bg-red-700 flex items-center gap-1.5"
+              >
+                <TrendingDown className="w-3 h-3" /> Adicionar despesa
+              </button>
+            </div>
+            <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+              {cashExpenses.length === 0 ? (
+                <p className="text-center py-8 font-body text-sm text-muted-foreground">Nenhuma despesa registrada no período.</p>
+              ) : (
+                cashExpenses.map(e => {
+                  const cat = EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || e.category;
+                  const Icon = METHOD_ICON[e.payment_method] || Receipt;
+                  return (
+                    <div key={e.id} className="px-4 md:px-6 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors">
+                      <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                        <ArrowDownRight className="w-4 h-4 text-red-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-body text-sm font-semibold text-foreground truncate">{e.description}</span>
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 capitalize">
+                            {cat}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-body">
+                          <Icon className="w-3 h-3" />
+                          <span>{METHOD_LABEL[e.payment_method] || e.payment_method}</span>
+                          <span>•</span>
+                          <span>{e.expense_date.split("-").reverse().join("/")}</span>
+                          {e.notes && <><span>•</span><span className="truncate">{e.notes}</span></>}
+                        </div>
+                      </div>
+                      <span className="font-heading text-sm font-bold text-red-600 shrink-0">-{formatCents(e.amount_cents)}</span>
+                      <button
+                        onClick={() => handleDeleteExpense(e.id)}
+                        disabled={deletingExpense === e.id}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-600 hover:bg-red-500/10 transition-colors shrink-0"
+                        title="Excluir despesa"
+                      >
+                        {deletingExpense === e.id ? (
+                          <div className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
           {/* Transactions list (raw inflows + outflows) */}
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="px-4 md:px-6 py-4 border-b border-border flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" />
-              <h3 className="font-heading text-sm font-bold text-foreground">Movimentações de caixa ({payments.length + partnerPayments.length})</h3>
+              <h3 className="font-heading text-sm font-bold text-foreground">Movimentações de caixa ({payments.length + partnerPayments.length + cashExpenses.length})</h3>
             </div>
             <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-              {payments.length === 0 && partnerPayments.length === 0 && (
+              {payments.length === 0 && partnerPayments.length === 0 && cashExpenses.length === 0 && (
                 <p className="text-center py-10 font-body text-sm text-muted-foreground">Nenhuma movimentação no período.</p>
               )}
+
               {payments.map(p => {
                 const st = STATUS_LABEL[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
                 const Icon = METHOD_ICON[p.method] || Receipt;
@@ -827,7 +991,117 @@ const AdminCashRegister = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Expense Modal */}
+      <AnimatePresence>
+        {expenseOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) resetExpense(); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
+                  <TrendingDown className="w-4 h-4 text-red-600" /> Nova despesa do expediente
+                </h3>
+                <button onClick={resetExpense} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
+              </div>
+              <div className="p-5 space-y-3">
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Descrição *</label>
+                  <input
+                    value={expDescription}
+                    onChange={(e) => setExpDescription(e.target.value.slice(0, 200))}
+                    placeholder="Ex.: Algodão, álcool, sacolinhas..."
+                    maxLength={200}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Valor (R$) *</label>
+                    <input
+                      value={expAmount}
+                      onChange={(e) => setExpAmount(e.target.value)}
+                      placeholder="0,00"
+                      inputMode="decimal"
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Data</label>
+                    <input
+                      type="date"
+                      value={expDate}
+                      onChange={(e) => setExpDate(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Categoria</label>
+                    <select
+                      value={expCategory}
+                      onChange={(e) => setExpCategory(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      {EXPENSE_CATEGORIES.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Forma de pagamento</label>
+                    <select
+                      value={expMethod}
+                      onChange={(e) => setExpMethod(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="pix">PIX</option>
+                      <option value="credito">Crédito</option>
+                      <option value="debito">Débito</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Observações (opcional)</label>
+                  <input
+                    value={expNotes}
+                    onChange={(e) => setExpNotes(e.target.value.slice(0, 500))}
+                    placeholder="Nota fiscal, fornecedor, etc."
+                    maxLength={500}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+              </div>
+              <div className="px-5 py-3 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
+                <button onClick={resetExpense} className="h-9 px-4 rounded-md border border-border text-xs font-bold hover:bg-muted">Cancelar</button>
+                <button
+                  onClick={handleSaveExpense}
+                  disabled={!expDescription.trim() || parseAmount(expAmount) <= 0 || savingExpense}
+                  className="h-9 px-4 rounded-md bg-red-600 text-white text-xs font-bold hover:bg-red-700 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {savingExpense ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                  Salvar despesa
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+
   );
 };
 

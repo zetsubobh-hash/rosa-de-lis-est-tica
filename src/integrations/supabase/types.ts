@@ -247,6 +247,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_expenses: {
+        Row: {
+          amount_cents: number
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          expense_date: string
+          id: string
+          notes: string | null
+          payment_method: string
+          receipt_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_cents?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_plans: {
         Row: {
           appointment_id: string | null
