@@ -101,12 +101,11 @@ const SessionScheduleModal = ({
             variant: "destructive",
           });
           // Refresh booked slots
-          const { data: fresh } = await supabase
-            .from("appointments")
-            .select("appointment_time")
-            .eq("appointment_date", dateStr)
-            .in("status", ["confirmed", "pending"]);
-          setBookedSlots(fresh?.map((d: any) => d.appointment_time) || []);
+          const { data: fresh } = await supabase.rpc("get_booked_slots", {
+            p_date: dateStr,
+            p_partner_id: partnerId || null,
+          });
+          setBookedSlots((fresh as { appointment_time: string }[] | null)?.map((d) => d.appointment_time) || []);
           setSelectedTime(undefined);
           setStep("time");
           setLoading(false);
