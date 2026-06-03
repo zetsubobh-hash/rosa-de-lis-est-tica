@@ -58,11 +58,12 @@ const Admin = () => {
   const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
   const [partnersUnlocked, setPartnersUnlocked] = useState(false);
   const [usersUnlocked, setUsersUnlocked] = useState(false);
+  const [cashUnlocked, setCashUnlocked] = useState(false);
 
   // Sync tab from URL params (e.g. when navigating from Header "Parceiro" button)
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && tabParam !== activeTab && ["dashboard","agenda","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"].includes(tabParam)) {
+    if (tabParam && tabParam !== activeTab && validTabs.includes(tabParam)) {
       setActiveTab(tabParam as Tab);
       searchParams.delete("tab");
       setSearchParams(searchParams, { replace: true });
@@ -73,6 +74,7 @@ const Admin = () => {
     if (tab !== activeTab) {
       setPartnersUnlocked(false);
       setUsersUnlocked(false);
+      setCashUnlocked(false);
       // Audit log navigation
       import("@/lib/auditLog").then(({ logAudit }) => {
         logAudit({ action: "navigate_tab", details: { tab } });
