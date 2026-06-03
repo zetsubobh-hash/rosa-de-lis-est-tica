@@ -205,6 +205,8 @@ const AdminCashRegister = () => {
   const [expMethod, setExpMethod] = useState<string>("dinheiro");
   const [expDate, setExpDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [expNotes, setExpNotes] = useState<string>("");
+  const [expPartnerId, setExpPartnerId] = useState<string>("");
+  const [expPartnerType, setExpPartnerType] = useState<string>("salary");
   const [savingExpense, setSavingExpense] = useState(false);
   const [deletingExpense, setDeletingExpense] = useState<string | null>(null);
   // Master-only wipe
