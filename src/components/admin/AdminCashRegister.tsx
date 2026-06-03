@@ -371,15 +371,15 @@ const AdminCashRegister = () => {
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-2 md:grid-cols-4 gap-3"
           >
-            <KPICard icon={CheckCircle2} label="Receita Realizada" value={formatCents(totals.realized)} trend={`${totals.completedCount} serviços feitos`} color="emerald" />
-            <KPICard icon={CalendarClock} label="Agendado / A Receber" value={formatCents(totals.scheduled)} trend={`${totals.confirmedCount} confirmados`} color="sky" />
+            <KPICard icon={TrendingUp} label="Receita (Caixa)" value={formatCents(totals.cashIn)} trend={`${totals.paidCount} pagamentos recebidos`} color="emerald" />
+            <KPICard icon={Clock} label="A Receber" value={formatCents(totals.receivables)} trend={`${totals.pendingCount} pendências`} color="amber" />
             <KPICard icon={TrendingDown} label="Despesas" value={formatCents(totals.expenses)} trend={`${partnerPayments.length} pagamentos`} color="red" />
             <KPICard icon={Wallet} label="Saldo Líquido" value={formatCents(totals.net)} trend={`Ticket médio ${formatCents(totals.avgTicket)}`} color={totals.net >= 0 ? "primary" : "red"} />
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <KPICard icon={TrendingUp} label="Caixa Recebido" value={formatCents(totals.paymentsSum)} trend="Pagamentos confirmados" color="emerald" />
-            <KPICard icon={Clock} label="Saldo a Receber" value={formatCents(Math.max(0, totals.realized - totals.paymentsSum))} trend="Realizado − Caixa" color="amber" />
+            <KPICard icon={CalendarClock} label="Pendente em pagamentos" value={formatCents(totals.pendingRecorded)} trend="Lançados como pendentes" color="amber" />
+            <KPICard icon={CheckCircle2} label="Serviços sem lançamento" value={formatCents(totals.virtualSum)} trend={`${virtualReceivables.length} agendamentos`} color="sky" />
             <KPICard icon={BadgePercent} label="Estornos" value={formatCents(totals.refundedSum)} color="slate" />
           </div>
 
