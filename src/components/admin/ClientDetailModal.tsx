@@ -1052,7 +1052,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                                 );
                               })}
                             </div>
-                          )}
+                          ) : null}
                         </div>
                       )}
                     </TabsContent>
