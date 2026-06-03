@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift, Megaphone, UserCheck } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift, Megaphone, UserCheck, Wallet } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,9 +29,10 @@ import AdminDebugMonitor from "@/components/admin/AdminDebugMonitor";
 import AdminWelcomeRoulette from "@/components/admin/AdminWelcomeRoulette";
 import AdminPromoBroadcast from "@/components/admin/AdminPromoBroadcast";
 import AdminClients from "@/components/admin/AdminClients";
+import AdminCashRegister from "@/components/admin/AdminCashRegister";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast";
+type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -42,9 +43,10 @@ const Admin = () => {
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"];
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && ["dashboard","agenda","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"].includes(tabParam)) {
+    if (tabParam && validTabs.includes(tabParam)) {
       return tabParam as Tab;
     }
     return "dashboard";
@@ -56,11 +58,12 @@ const Admin = () => {
   const [adminAvatar, setAdminAvatar] = useState<string | null>(null);
   const [partnersUnlocked, setPartnersUnlocked] = useState(false);
   const [usersUnlocked, setUsersUnlocked] = useState(false);
+  const [cashUnlocked, setCashUnlocked] = useState(false);
 
   // Sync tab from URL params (e.g. when navigating from Header "Parceiro" button)
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam && tabParam !== activeTab && ["dashboard","agenda","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"].includes(tabParam)) {
+    if (tabParam && tabParam !== activeTab && validTabs.includes(tabParam)) {
       setActiveTab(tabParam as Tab);
       searchParams.delete("tab");
       setSearchParams(searchParams, { replace: true });
@@ -71,6 +74,7 @@ const Admin = () => {
     if (tab !== activeTab) {
       setPartnersUnlocked(false);
       setUsersUnlocked(false);
+      setCashUnlocked(false);
       // Audit log navigation
       import("@/lib/auditLog").then(({ logAudit }) => {
         logAudit({ action: "navigate_tab", details: { tab } });
@@ -124,6 +128,7 @@ const Admin = () => {
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: "dashboard", label: "Dashboard", icon: BarChart3 },
     { key: "agenda", label: "Agenda", icon: CalendarCheck },
+    { key: "cash", label: "Caixa", icon: Wallet },
     { key: "clients", label: "Clientes", icon: UserCheck },
     { key: "counter-sales", label: "Venda Balcão", icon: ShoppingBag },
     { key: "services", label: "Serviços", icon: Briefcase },
@@ -291,6 +296,11 @@ const Admin = () => {
         <div className="p-4 md:p-8">
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "agenda" && <AdminAgenda />}
+          {activeTab === "cash" && (
+            <PasswordGate unlocked={cashUnlocked} onUnlock={() => setCashUnlocked(true)} description="Digite sua senha de administrador para acessar o caixa e relatórios financeiros.">
+              <AdminCashRegister />
+            </PasswordGate>
+          )}
           {activeTab === "clients" && <AdminClients />}
           {activeTab === "counter-sales" && <AdminCounterSales />}
           {activeTab === "services" && <AdminServices />}
