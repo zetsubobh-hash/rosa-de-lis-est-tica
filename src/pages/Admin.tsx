@@ -296,6 +296,11 @@ const Admin = () => {
         <div className="p-4 md:p-8">
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "agenda" && <AdminAgenda />}
+          {activeTab === "cash" && (
+            <PasswordGate unlocked={cashUnlocked} onUnlock={() => setCashUnlocked(true)} description="Digite sua senha de administrador para acessar o caixa e relatórios financeiros.">
+              <AdminCashRegister />
+            </PasswordGate>
+          )}
           {activeTab === "clients" && <AdminClients />}
           {activeTab === "counter-sales" && <AdminCounterSales />}
           {activeTab === "services" && <AdminServices />}
