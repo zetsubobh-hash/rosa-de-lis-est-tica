@@ -273,8 +273,22 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   })();
 
 
-  const handleRegisterPayment = async (appointmentId: string, amountCents: number) => {
+  const handleRegisterPayment = async (appointmentId: string, maxRemainingCents: number) => {
     if (!user?.id) return;
+    // Parse amount input (BRL with comma/dot). If empty, use full remaining.
+    const raw = registerAmount.trim();
+    let amountCents = maxRemainingCents;
+    if (raw) {
+      const normalized = raw.replace(/\./g, "").replace(",", ".");
+      const num = parseFloat(normalized);
+      if (isNaN(num) || num <= 0) { toast.error("Valor inválido"); return; }
+      amountCents = Math.round(num * 100);
+    }
+    if (amountCents > maxRemainingCents) {
+      toast.error(`Valor maior que o saldo restante (${formatCents(maxRemainingCents)})`);
+      return;
+    }
+    const isPartial = amountCents < maxRemainingCents;
     setSavingPayment(true);
     const { error } = await supabase.from("payments").insert({
       user_id: userId,
@@ -282,18 +296,24 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       method: registerMethod,
       amount_cents: amountCents,
       status: "paid",
-      metadata: { source: "manual_register", registered_by: user.id },
+      metadata: {
+        source: "manual_register",
+        registered_by: user.id,
+        kind: isPartial ? "entrada" : "full",
+      },
     });
     setSavingPayment(false);
     if (error) {
       toast.error("Erro ao registrar pagamento");
       return;
     }
-    toast.success("Pagamento registrado");
+    toast.success(isPartial ? "Entrada registrada" : "Pagamento registrado");
     setRegisteringAptId(null);
     setRegisterMethod("pix");
+    setRegisterAmount("");
     loadData();
   };
+
 
   useEffect(() => {
     if (!open) {
