@@ -534,15 +534,19 @@ const AdminCashRegister = () => {
           >
             <KPICard icon={TrendingUp} label="Receita (Caixa)" value={formatCents(totals.cashIn)} trend={`${totals.paidCount} pagamentos recebidos`} color="emerald" />
             <KPICard icon={Clock} label="A Receber" value={formatCents(totals.receivables)} trend={`${totals.pendingCount} pendências`} color="amber" />
-            <KPICard icon={TrendingDown} label="Despesas" value={formatCents(totals.expenses)} trend={`${partnerPayments.length} pagamentos`} color="red" />
+            <KPICard icon={TrendingDown} label="Despesas" value={formatCents(totals.expenses)} trend={`${cashExpenses.length} expediente + ${partnerPayments.length} parceiros`} color="red" />
             <KPICard icon={Wallet} label="Saldo Líquido" value={formatCents(totals.net)} trend={`Ticket médio ${formatCents(totals.avgTicket)}`} color={totals.net >= 0 ? "primary" : "red"} />
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <KPICard icon={CalendarClock} label="Pendente em pagamentos" value={formatCents(totals.pendingRecorded)} trend="Lançados como pendentes" color="amber" />
             <KPICard icon={CheckCircle2} label="Serviços sem lançamento" value={formatCents(totals.virtualSum)} trend={`${virtualReceivables.length} agendamentos`} color="sky" />
+            <KPICard icon={Zap} label="Despesas expediente" value={formatCents(totals.operationalExpenses)} trend={`${cashExpenses.length} lançamentos`} color="red" />
+            <KPICard icon={Users} label="Pagto parceiros" value={formatCents(totals.partnerExpenses)} trend={`${partnerPayments.length} repasses`} color="slate" />
             <KPICard icon={BadgePercent} label="Estornos" value={formatCents(totals.refundedSum)} color="slate" />
           </div>
+
+
 
           {/* Daily Chart */}
           <div className="rounded-2xl border border-border bg-card p-4 md:p-6">
