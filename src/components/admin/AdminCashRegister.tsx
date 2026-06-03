@@ -648,14 +648,17 @@ const AdminCashRegister = () => {
                         {c.name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-body text-sm font-semibold text-foreground truncate">{c.name}</p>
-                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-body flex-wrap">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-body text-sm font-semibold text-foreground truncate">{c.name}</p>
+                          <span className="font-heading text-sm font-bold text-foreground shrink-0 sm:hidden">{formatCents(c.realized + c.scheduled)}</span>
+                        </div>
+                        <div className="flex items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground font-body flex-wrap">
                           <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatCents(c.realized)} realizado</span>
-                          {c.scheduled > 0 && <><span>•</span><span className="text-sky-600 dark:text-sky-400">{formatCents(c.scheduled)} agendado</span></>}
-                          {balance > 0 && <><span>•</span><span className="text-amber-600 dark:text-amber-400 font-semibold">{formatCents(balance)} em aberto</span></>}
+                          {c.scheduled > 0 && <><span className="hidden sm:inline">•</span><span className="text-sky-600 dark:text-sky-400">{formatCents(c.scheduled)} agendado</span></>}
+                          {balance > 0 && <><span className="hidden sm:inline">•</span><span className="text-amber-600 dark:text-amber-400 font-semibold">{formatCents(balance)} em aberto</span></>}
                         </div>
                       </div>
-                      <span className="font-heading text-sm font-bold text-foreground shrink-0">{formatCents(c.realized + c.scheduled)}</span>
+                      <span className="font-heading text-sm font-bold text-foreground shrink-0 hidden sm:inline">{formatCents(c.realized + c.scheduled)}</span>
                       <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                     </button>
                     <AnimatePresence initial={false}>
