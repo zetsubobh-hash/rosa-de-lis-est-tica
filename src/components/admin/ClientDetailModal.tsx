@@ -185,12 +185,13 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
 
   const loadData = async () => {
     setLoading(true);
-    const [profileRes, anamnesisRes, appointmentsRes, partnersRes, couponsRes] = await Promise.all([
+    const [profileRes, anamnesisRes, appointmentsRes, partnersRes, couponsRes, paymentsRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).single(),
       supabase.from("anamnesis").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(1),
       supabase.from("appointments").select("*").eq("user_id", userId).order("appointment_date", { ascending: false }),
       supabase.from("partners").select("id, full_name"),
       supabase.from("coupons").select("id, code, discount_type, discount_value, expires_at, is_used, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
+      supabase.from("payments").select("id, method, amount_cents, status, created_at, metadata, appointment_id, external_id").eq("user_id", userId).order("created_at", { ascending: false }),
     ]);
 
     if (profileRes.data) {
