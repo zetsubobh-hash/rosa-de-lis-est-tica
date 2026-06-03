@@ -693,11 +693,11 @@ const AdminCashRegister = () => {
                                       .reduce((s, p) => s + (p.amount_cents || 0), 0);
                                     const remaining = Math.max(0, a.price_cents - aptPaid);
                                     return (
-                                      <div key={a.id} className="flex items-center gap-2 text-xs font-body p-1.5 rounded-md bg-background/60">
-                                        <span className="font-mono text-[10px] text-muted-foreground w-20 shrink-0">{a.appointment_date.split("-").reverse().join("/")} {a.appointment_time}</span>
-                                        <span className="flex-1 truncate text-foreground">{a.service_title}</span>
+                                      <div key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-body p-2 rounded-md bg-background/60">
+                                        <span className="font-mono text-[10px] text-muted-foreground shrink-0">{a.appointment_date.split("-").reverse().join("/")} {a.appointment_time}</span>
+                                        <span className="flex-1 min-w-[120px] truncate text-foreground">{a.service_title}</span>
                                         <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${st.cls}`}>{st.label}</span>
-                                        <span className="font-semibold text-foreground w-20 text-right">{formatCents(a.price_cents)}</span>
+                                        <span className="font-semibold text-foreground text-right ml-auto sm:ml-0 sm:w-20">{formatCents(a.price_cents)}</span>
                                         {remaining > 0 ? (
                                           <button
                                             onClick={() => openQuickEntry(c.userId, remaining, a.service_title)}
