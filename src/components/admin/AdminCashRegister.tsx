@@ -737,7 +737,7 @@ const AdminCashRegister = () => {
                                 </div>
                               </div>
                             )}
-                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-border text-xs font-body">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 justify-between pt-2 border-t border-border text-xs font-body">
                               <span className="text-muted-foreground">Total realizado: <span className="text-foreground font-bold">{formatCents(c.realized)}</span></span>
                               <span className="text-muted-foreground">Recebido: <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatCents(c.paid)}</span></span>
                               <span className="text-muted-foreground">Em aberto: <span className={`font-bold ${balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>{formatCents(Math.max(0, balance))}</span></span>
