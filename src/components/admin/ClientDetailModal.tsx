@@ -156,6 +156,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
   const [coupons, setCoupons] = useState<{ id: string; code: string; discount_type: string; discount_value: number; expires_at: string; is_used: boolean; created_at: string }[]>([]);
+  const [payments, setPayments] = useState<PaymentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingUsed, setMarkingUsed] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -163,6 +164,14 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [deleteTarget, setDeleteTarget] = useState<"all" | string | null>(null);
   const [deletePassword, setDeletePassword] = useState("");
   const [deletingHistory, setDeletingHistory] = useState(false);
+  // Payments tab gate (admin password)
+  const [paymentsUnlocked, setPaymentsUnlocked] = useState(false);
+  const [paymentsPassword, setPaymentsPassword] = useState("");
+  const [verifyingPayments, setVerifyingPayments] = useState(false);
+  // Coupon application
+  const [couponInput, setCouponInput] = useState("");
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
   const { user } = useAuth();
   const [editData, setEditData] = useState({
     full_name: "",
