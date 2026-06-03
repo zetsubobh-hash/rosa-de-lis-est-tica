@@ -187,6 +187,18 @@ const AdminCashRegister = () => {
   const [entryStatus, setEntryStatus] = useState<"paid" | "pending">("paid");
   const [entryDescription, setEntryDescription] = useState<string>("");
   const [savingEntry, setSavingEntry] = useState(false);
+  // Expenses
+  const [cashExpenses, setCashExpenses] = useState<CashExpenseRow[]>([]);
+  const [expenseOpen, setExpenseOpen] = useState(false);
+  const [expCategory, setExpCategory] = useState<string>("expediente");
+  const [expDescription, setExpDescription] = useState<string>("");
+  const [expAmount, setExpAmount] = useState<string>("");
+  const [expMethod, setExpMethod] = useState<string>("dinheiro");
+  const [expDate, setExpDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [expNotes, setExpNotes] = useState<string>("");
+  const [savingExpense, setSavingExpense] = useState(false);
+  const [deletingExpense, setDeletingExpense] = useState<string | null>(null);
+
 
   const { start, end, label } = useMemo(() => getRange(range), [range]);
 
