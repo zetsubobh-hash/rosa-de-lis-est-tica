@@ -31,12 +31,21 @@ serve(async (req) => {
     const placeId = settingsMap["google_place_id"] || "";
     const apiKey = settingsMap["google_api_key"] || Deno.env.get("GOOGLE_PLACES_API_KEY") || "";
 
-    if (!apiKey) {
-      throw new Error("Google Places API Key não configurada. Vá em Admin → Configurações.");
-    }
-    if (!placeId) {
-      throw new Error("Google Place ID não configurado. Vá em Admin → Configurações.");
-    }
+    const emptyResult = (reason: string) => ({
+      rating: 0,
+      totalReviews: 0,
+      reviews: [],
+      fallback: true,
+      reason,
+    });
+
+    const jsonOk = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    if (!apiKey) return jsonOk(emptyResult("missing_api_key"));
+    if (!placeId) return jsonOk(emptyResult("missing_place_id"));
 
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=reviews,rating,user_ratings_total&language=pt-BR&key=${apiKey}`;
 
@@ -45,11 +54,11 @@ serve(async (req) => {
 
     if (data.status !== "OK") {
       console.error("Google Places API error:", data.status, data.error_message);
-      throw new Error(`Google Places API error: ${data.status}`);
+      return jsonOk(emptyResult(`api_${data.status}`));
     }
 
-    const result = {
-      rating: data.result?.rating ?? 5,
+    return jsonOk({
+      rating: data.result?.rating ?? 0,
       totalReviews: data.result?.user_ratings_total ?? 0,
       reviews: (data.result?.reviews ?? []).map((r: any) => ({
         author: r.author_name,
@@ -58,17 +67,13 @@ serve(async (req) => {
         timeAgo: r.relative_time_description,
         profilePhoto: r.profile_photo_url,
       })),
-    };
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("Error fetching reviews:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ rating: 0, totalReviews: 0, reviews: [], fallback: true, reason: message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });
