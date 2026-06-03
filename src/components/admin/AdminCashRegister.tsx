@@ -208,7 +208,7 @@ const AdminCashRegister = () => {
     const endIso = end.toISOString();
     const startYmd = toYmd(start);
     const endYmd = toYmd(end);
-    const [payRes, ppRes, aptRes, spRes, profRes, partRes] = await Promise.all([
+    const [payRes, ppRes, aptRes, spRes, profRes, partRes, expRes] = await Promise.all([
       supabase
         .from("payments")
         .select("id, user_id, appointment_id, method, amount_cents, status, created_at, metadata")
@@ -234,11 +234,19 @@ const AdminCashRegister = () => {
       supabase.from("service_prices").select("service_slug, plan_name, price_per_session_cents"),
       supabase.from("profiles").select("user_id, full_name"),
       supabase.from("partners").select("id, full_name"),
+      (supabase as any)
+        .from("cash_expenses")
+        .select("id, category, description, amount_cents, payment_method, expense_date, notes, created_at")
+        .gte("expense_date", startYmd)
+        .lte("expense_date", endYmd)
+        .order("expense_date", { ascending: false })
+        .limit(1000),
     ]);
     setPayments((payRes.data || []) as PaymentRow[]);
     setPartnerPayments((ppRes.data || []) as PartnerPaymentRow[]);
     setAppointments((aptRes.data || []) as AppointmentRow[]);
     setServicePrices((spRes.data || []) as ServicePriceRow[]);
+    setCashExpenses((expRes.data || []) as CashExpenseRow[]);
     const pm = new Map<string, string>();
     (profRes.data || []).forEach((p: any) => pm.set(p.user_id, p.full_name));
     setProfiles(pm);
@@ -247,6 +255,7 @@ const AdminCashRegister = () => {
     setPartners(ptm);
     setLoading(false);
   };
+
 
   useEffect(() => {
     loadData();
