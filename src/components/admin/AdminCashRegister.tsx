@@ -198,6 +198,17 @@ const AdminCashRegister = () => {
   const [expNotes, setExpNotes] = useState<string>("");
   const [savingExpense, setSavingExpense] = useState(false);
   const [deletingExpense, setDeletingExpense] = useState<string | null>(null);
+  // Master-only wipe
+  const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [wipeOpen, setWipeOpen] = useState(false);
+  const [wipeText, setWipeText] = useState("");
+  const [wiping, setWiping] = useState(false);
+  const [wipeMsg, setWipeMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data?.user?.id ?? null));
+  }, []);
 
 
   const { start, end, label } = useMemo(() => getRange(range), [range]);
