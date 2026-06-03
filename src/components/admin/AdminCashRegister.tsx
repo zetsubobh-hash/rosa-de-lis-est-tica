@@ -228,6 +228,40 @@ const AdminCashRegister = () => {
       .map(a => ({ id: `virt-${a.id}`, user_id: a.user_id, amount_cents: a.price_cents, service_title: a.service_title, appointment_date: a.appointment_date, appointment_time: a.appointment_time }));
   }, [aptWithPrice, payments]);
 
+  const parseAmount = (raw: string): number => {
+    const cleaned = raw.replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
+    const n = parseFloat(cleaned);
+    if (Number.isFinite(n) && n > 0) return Math.round(n * 100);
+    return 0;
+  };
+
+  const resetEntry = () => {
+    setEntryOpen(false);
+    setEntryClientId("");
+    setEntryAmount("");
+    setEntryMethod("pix");
+    setEntryStatus("paid");
+    setEntryDescription("");
+  };
+
+  const handleSaveEntry = async () => {
+    if (!entryClientId) { return; }
+    const amount = parseAmount(entryAmount);
+    if (amount <= 0) { return; }
+    setSavingEntry(true);
+    const { error } = await supabase.from("payments").insert({
+      user_id: entryClientId,
+      method: entryMethod,
+      amount_cents: amount,
+      status: entryStatus,
+      metadata: { source: "cash_register_entry", description: entryDescription.trim().slice(0, 200) || null },
+    });
+    setSavingEntry(false);
+    if (error) return;
+    resetEntry();
+    loadData();
+  };
+
   // KPIs — payment-centric (real cash)
   const totals = useMemo(() => {
     const paidPayments = payments.filter(p => p.status === "paid");
