@@ -53,6 +53,7 @@ interface CashExpenseRow {
 }
 
 const EXPENSE_CATEGORIES = [
+  { value: "parceiro", label: "Pagamento de parceiro" },
   { value: "expediente", label: "Expediente" },
   { value: "materiais", label: "Materiais / Insumos" },
   { value: "energia", label: "Energia" },
@@ -63,6 +64,14 @@ const EXPENSE_CATEGORIES = [
   { value: "manutencao", label: "Manutenção" },
   { value: "impostos", label: "Impostos / Taxas" },
   { value: "outros", label: "Outros" },
+];
+
+const PARTNER_PAYMENT_TYPES = [
+  { value: "salary", label: "Salário" },
+  { value: "commission", label: "Comissão" },
+  { value: "bonus", label: "Bônus" },
+  { value: "advance", label: "Adiantamento" },
+  { value: "other", label: "Outro" },
 ];
 
 
