@@ -751,16 +751,79 @@ const AdminCashRegister = () => {
             </div>
           </div>
 
+          {/* Despesas do Expediente */}
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div className="px-4 md:px-6 py-4 border-b border-border flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-red-600" />
+                <h3 className="font-heading text-sm font-bold text-foreground">Despesas do expediente ({cashExpenses.length})</h3>
+                <span className="text-[11px] font-body text-muted-foreground">— Total: <span className="font-bold text-red-600">{formatCents(totals.operationalExpenses)}</span></span>
+              </div>
+              <button
+                onClick={() => setExpenseOpen(true)}
+                className="h-8 px-3 rounded-lg bg-red-600 text-white text-[11px] font-bold hover:bg-red-700 flex items-center gap-1.5"
+              >
+                <TrendingDown className="w-3 h-3" /> Adicionar despesa
+              </button>
+            </div>
+            <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+              {cashExpenses.length === 0 ? (
+                <p className="text-center py-8 font-body text-sm text-muted-foreground">Nenhuma despesa registrada no período.</p>
+              ) : (
+                cashExpenses.map(e => {
+                  const cat = EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || e.category;
+                  const Icon = METHOD_ICON[e.payment_method] || Receipt;
+                  return (
+                    <div key={e.id} className="px-4 md:px-6 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors">
+                      <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                        <ArrowDownRight className="w-4 h-4 text-red-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-body text-sm font-semibold text-foreground truncate">{e.description}</span>
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 capitalize">
+                            {cat}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-body">
+                          <Icon className="w-3 h-3" />
+                          <span>{METHOD_LABEL[e.payment_method] || e.payment_method}</span>
+                          <span>•</span>
+                          <span>{e.expense_date.split("-").reverse().join("/")}</span>
+                          {e.notes && <><span>•</span><span className="truncate">{e.notes}</span></>}
+                        </div>
+                      </div>
+                      <span className="font-heading text-sm font-bold text-red-600 shrink-0">-{formatCents(e.amount_cents)}</span>
+                      <button
+                        onClick={() => handleDeleteExpense(e.id)}
+                        disabled={deletingExpense === e.id}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-600 hover:bg-red-500/10 transition-colors shrink-0"
+                        title="Excluir despesa"
+                      >
+                        {deletingExpense === e.id ? (
+                          <div className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
           {/* Transactions list (raw inflows + outflows) */}
           <div className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="px-4 md:px-6 py-4 border-b border-border flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" />
-              <h3 className="font-heading text-sm font-bold text-foreground">Movimentações de caixa ({payments.length + partnerPayments.length})</h3>
+              <h3 className="font-heading text-sm font-bold text-foreground">Movimentações de caixa ({payments.length + partnerPayments.length + cashExpenses.length})</h3>
             </div>
             <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-              {payments.length === 0 && partnerPayments.length === 0 && (
+              {payments.length === 0 && partnerPayments.length === 0 && cashExpenses.length === 0 && (
                 <p className="text-center py-10 font-body text-sm text-muted-foreground">Nenhuma movimentação no período.</p>
               )}
+
               {payments.map(p => {
                 const st = STATUS_LABEL[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
                 const Icon = METHOD_ICON[p.method] || Receipt;
