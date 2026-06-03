@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
+import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -128,6 +129,8 @@ const AdminAgenda = () => {
   const [qbServiceSlug, setQbServiceSlug] = useState("");
   const [qbSaving, setQbSaving] = useState(false);
   const [qbShowNewClient, setQbShowNewClient] = useState(false);
+  // Client detail modal
+  const [clientDetail, setClientDetail] = useState<{ userId: string; userName: string; avatarUrl: string | null } | null>(null);
   const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
   const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
 
@@ -622,7 +625,21 @@ const AdminAgenda = () => {
         }}
         onDragReschedule={handleDragReschedule}
         onScheduleSession={(params) => setScheduleModal(params)}
+        onHistory={(userId, userName) => {
+          const apt = filtered.find((a) => a.user_id === userId);
+          setClientDetail({ userId, userName, avatarUrl: (apt as any)?.profiles?.avatar_url || null });
+        }}
       />
+
+      {clientDetail && (
+        <ClientDetailModal
+          open={!!clientDetail}
+          onClose={() => setClientDetail(null)}
+          userId={clientDetail.userId}
+          userName={clientDetail.userName}
+          avatarUrl={clientDetail.avatarUrl}
+        />
+      )}
 
       <AnimatePresence>
         {rescheduleId && (

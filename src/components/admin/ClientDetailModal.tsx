@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake, Ticket, CheckCircle2, Pencil, Save, Trash2, Lock } from "lucide-react";
+import { X, User, MapPin, Phone, Mail, Calendar, Heart, FileText, History, Clock, Stethoscope, Cake, Ticket, CheckCircle2, Pencil, Save, Trash2, Lock, CreditCard, Wallet, BadgePercent } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatCents } from "@/hooks/useServicePrices";
 import { toast } from "sonner";
 
 interface Props {
@@ -68,12 +69,34 @@ interface AppointmentData {
   notes: string | null;
 }
 
+interface PaymentData {
+  id: string;
+  method: string;
+  amount_cents: number | null;
+  status: string;
+  created_at: string;
+  metadata: any;
+  appointment_id: string | null;
+  external_id: string | null;
+}
+
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   confirmed: { label: "Confirmado", cls: "bg-blue-100 text-blue-700" },
   completed: { label: "Concluído", cls: "bg-emerald-100 text-emerald-700" },
   cancelled: { label: "Cancelado", cls: "bg-red-100 text-red-700" },
   pending: { label: "Pendente", cls: "bg-amber-100 text-amber-700" },
   paid: { label: "Pago", cls: "bg-emerald-100 text-emerald-700" },
+  failed: { label: "Falhou", cls: "bg-red-100 text-red-700" },
+  refunded: { label: "Estornado", cls: "bg-slate-100 text-slate-700" },
+};
+
+const METHOD_LABEL: Record<string, string> = {
+  pix: "PIX",
+  dinheiro: "Dinheiro",
+  credito: "Cartão de Crédito",
+  debito: "Cartão de Débito",
+  outro: "Outro",
+  mercadopago: "Mercado Pago",
 };
 
 const getInitials = (name: string) =>
@@ -133,6 +156,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [anamnesis, setAnamnesis] = useState<AnamnesisData | null>(null);
   const [appointments, setAppointments] = useState<AppointmentData[]>([]);
   const [coupons, setCoupons] = useState<{ id: string; code: string; discount_type: string; discount_value: number; expires_at: string; is_used: boolean; created_at: string }[]>([]);
+  const [payments, setPayments] = useState<PaymentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingUsed, setMarkingUsed] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -140,6 +164,14 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [deleteTarget, setDeleteTarget] = useState<"all" | string | null>(null);
   const [deletePassword, setDeletePassword] = useState("");
   const [deletingHistory, setDeletingHistory] = useState(false);
+  // Payments tab gate (admin password)
+  const [paymentsUnlocked, setPaymentsUnlocked] = useState(false);
+  const [paymentsPassword, setPaymentsPassword] = useState("");
+  const [verifyingPayments, setVerifyingPayments] = useState(false);
+  // Coupon application
+  const [couponInput, setCouponInput] = useState("");
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
   const { user } = useAuth();
   const [editData, setEditData] = useState({
     full_name: "",
@@ -153,12 +185,13 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
 
   const loadData = async () => {
     setLoading(true);
-    const [profileRes, anamnesisRes, appointmentsRes, partnersRes, couponsRes] = await Promise.all([
+    const [profileRes, anamnesisRes, appointmentsRes, partnersRes, couponsRes, paymentsRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).single(),
       supabase.from("anamnesis").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(1),
       supabase.from("appointments").select("*").eq("user_id", userId).order("appointment_date", { ascending: false }),
       supabase.from("partners").select("id, full_name"),
       supabase.from("coupons").select("id, code, discount_type, discount_value, expires_at, is_used, created_at").eq("user_id", userId).order("created_at", { ascending: false }),
+      supabase.from("payments").select("id, method, amount_cents, status, created_at, metadata, appointment_id, external_id").eq("user_id", userId).order("created_at", { ascending: false }),
     ]);
 
     if (profileRes.data) {
@@ -185,13 +218,119 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       }))
     );
     setCoupons((couponsRes.data || []) as any);
+    setPayments((paymentsRes.data || []) as any);
     setLoading(false);
   };
 
   useEffect(() => {
-    if (!open) { setEditing(false); return; }
+    if (!open) {
+      setEditing(false);
+      setPaymentsUnlocked(false);
+      setPaymentsPassword("");
+      setCouponInput("");
+      setSelectedPaymentId(null);
+      return;
+    }
     loadData();
   }, [open, userId]);
+
+  const handleUnlockPayments = async () => {
+    if (!paymentsPassword.trim() || !user?.email) return;
+    setVerifyingPayments(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: paymentsPassword,
+    });
+    setVerifyingPayments(false);
+    if (error) {
+      toast.error("Senha incorreta");
+      setPaymentsPassword("");
+      return;
+    }
+    setPaymentsUnlocked(true);
+    setPaymentsPassword("");
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) { toast.error("Digite o código do cupom"); return; }
+    if (!selectedPaymentId) { toast.error("Selecione um pagamento pendente"); return; }
+    const payment = payments.find((p) => p.id === selectedPaymentId);
+    if (!payment || !payment.amount_cents) { toast.error("Pagamento inválido"); return; }
+    if (payment.status !== "pending") { toast.error("Cupons só podem ser aplicados a pagamentos pendentes"); return; }
+
+    setApplyingCoupon(true);
+    try {
+      const { data: couponData, error: couponErr } = await supabase
+        .from("coupons")
+        .select("id, code, discount_type, discount_value, expires_at, is_used, user_id")
+        .eq("user_id", userId)
+        .eq("code", code)
+        .maybeSingle();
+
+      if (couponErr || !couponData) {
+        toast.error("Cupom não encontrado para este cliente");
+        setApplyingCoupon(false);
+        return;
+      }
+      if (couponData.is_used) {
+        toast.error("Cupom já foi utilizado");
+        setApplyingCoupon(false);
+        return;
+      }
+      if (new Date(couponData.expires_at) < new Date()) {
+        toast.error("Cupom expirado");
+        setApplyingCoupon(false);
+        return;
+      }
+
+      const original = payment.amount_cents;
+      let discount = 0;
+      if (couponData.discount_type === "percent") {
+        discount = Math.round((original * Number(couponData.discount_value)) / 100);
+      } else {
+        // fixed in cents or in BRL? Treat values >= 1000 as already-cents, otherwise multiply by 100
+        const v = Number(couponData.discount_value);
+        discount = v >= 1000 ? Math.round(v) : Math.round(v * 100);
+      }
+      if (discount > original) discount = original;
+      const newAmount = Math.max(0, original - discount);
+
+      const newMetadata = {
+        ...(payment.metadata || {}),
+        applied_coupon: {
+          coupon_id: couponData.id,
+          code: couponData.code,
+          discount_type: couponData.discount_type,
+          discount_value: Number(couponData.discount_value),
+          discount_cents: discount,
+          original_amount_cents: original,
+          applied_at: new Date().toISOString(),
+        },
+      };
+
+      const { error: payErr } = await supabase
+        .from("payments")
+        .update({ amount_cents: newAmount, metadata: newMetadata })
+        .eq("id", payment.id);
+      if (payErr) throw payErr;
+
+      const { error: couponUpdErr } = await supabase
+        .from("coupons")
+        .update({ is_used: true, used_at: new Date().toISOString(), used_appointment_id: payment.appointment_id })
+        .eq("id", couponData.id);
+      if (couponUpdErr) throw couponUpdErr;
+
+      toast.success(`Cupom aplicado! Desconto de ${formatCents(discount)}`);
+      setCouponInput("");
+      setSelectedPaymentId(null);
+      await loadData();
+    } catch (err: any) {
+      toast.error("Erro ao aplicar cupom: " + (err.message || ""));
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!editData.full_name.trim()) {
@@ -350,7 +489,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
               </div>
             ) : (
               <Tabs defaultValue="dados" className="flex-1 flex flex-col min-h-0">
-                <TabsList className="mx-5 mt-4 mb-0 shrink-0">
+                <TabsList className="mx-5 mt-4 mb-0 shrink-0 flex-wrap h-auto">
                   <TabsTrigger value="dados" className="text-xs gap-1.5">
                     <User className="w-3.5 h-3.5" /> Dados
                   </TabsTrigger>
@@ -359,6 +498,9 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                   </TabsTrigger>
                   <TabsTrigger value="historico" className="text-xs gap-1.5">
                     <History className="w-3.5 h-3.5" /> Histórico ({appointments.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="pagamentos" className="text-xs gap-1.5">
+                    <Wallet className="w-3.5 h-3.5" /> Pagamentos ({payments.length})
                   </TabsTrigger>
                   {coupons.length > 0 && (
                     <TabsTrigger value="cupons" className="text-xs gap-1.5">
@@ -634,6 +776,163 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                           </motion.div>
                         )}
                       </AnimatePresence>
+                    </TabsContent>
+
+                    {/* Pagamentos (admin password required) */}
+                    <TabsContent value="pagamentos" className="mt-0">
+                      {!paymentsUnlocked ? (
+                        <div className="flex flex-col items-center justify-center py-10 px-4">
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                            <Lock className="w-6 h-6 text-primary" />
+                          </div>
+                          <h3 className="font-heading text-sm font-bold text-foreground mb-1">Acesso restrito</h3>
+                          <p className="font-body text-xs text-muted-foreground text-center mb-4 max-w-xs">
+                            O histórico financeiro do cliente é visível apenas para o administrador. Digite sua senha para continuar.
+                          </p>
+                          <div className="w-full max-w-xs space-y-2">
+                            <Input
+                              type="password"
+                              value={paymentsPassword}
+                              onChange={(e) => setPaymentsPassword(e.target.value)}
+                              placeholder="Sua senha de administrador"
+                              className="h-9 text-sm"
+                              onKeyDown={(e) => { if (e.key === "Enter") handleUnlockPayments(); }}
+                              autoFocus
+                            />
+                            <button
+                              onClick={handleUnlockPayments}
+                              disabled={!paymentsPassword.trim() || verifyingPayments}
+                              className="w-full h-9 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                              {verifyingPayments ? (
+                                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Lock className="w-4 h-4" />
+                              )}
+                              Desbloquear
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {/* Totals */}
+                          {(() => {
+                            const paidSum = payments.filter(p => p.status === "paid").reduce((s, p) => s + (p.amount_cents || 0), 0);
+                            const pendingSum = payments.filter(p => p.status === "pending").reduce((s, p) => s + (p.amount_cents || 0), 0);
+                            return (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 p-3">
+                                  <p className="font-body text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">Total Pago</p>
+                                  <p className="font-heading text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{formatCents(paidSum)}</p>
+                                </div>
+                                <div className="rounded-xl border border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 p-3">
+                                  <p className="font-body text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">Pendente</p>
+                                  <p className="font-heading text-lg font-bold text-amber-700 dark:text-amber-400 mt-0.5">{formatCents(pendingSum)}</p>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Apply Coupon */}
+                          {payments.some(p => p.status === "pending") && coupons.some(c => !c.is_used && new Date(c.expires_at) > new Date()) && (
+                            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <BadgePercent className="w-4 h-4 text-primary" />
+                                <p className="font-heading text-xs font-bold text-foreground uppercase tracking-wider">Aplicar cupom de desconto</p>
+                              </div>
+                              <select
+                                value={selectedPaymentId || ""}
+                                onChange={(e) => setSelectedPaymentId(e.target.value || null)}
+                                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                <option value="">Selecione o pagamento pendente…</option>
+                                {payments.filter(p => p.status === "pending").map(p => (
+                                  <option key={p.id} value={p.id}>
+                                    {METHOD_LABEL[p.method] || p.method} • {formatCents(p.amount_cents || 0)} • {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="flex gap-2">
+                                <Input
+                                  value={couponInput}
+                                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                  placeholder="CÓDIGO DO CUPOM"
+                                  className="h-9 text-sm font-mono"
+                                />
+                                <button
+                                  onClick={handleApplyCoupon}
+                                  disabled={!couponInput.trim() || !selectedPaymentId || applyingCoupon}
+                                  className="h-9 px-4 rounded-md bg-primary text-primary-foreground font-body text-xs font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+                                >
+                                  {applyingCoupon ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
+                                  Aplicar
+                                </button>
+                              </div>
+                              <p className="font-body text-[10px] text-muted-foreground">
+                                Cupons ativos: {coupons.filter(c => !c.is_used && new Date(c.expires_at) > new Date()).map(c => c.code).join(", ")}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* List */}
+                          {payments.length === 0 ? (
+                            <div className="text-center py-10">
+                              <CreditCard className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                              <p className="font-body text-sm text-muted-foreground">Nenhum pagamento registrado.</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {payments.map((p) => {
+                                const st = STATUS_MAP[p.status] || { label: p.status, cls: "bg-muted text-muted-foreground" };
+                                const items = p.metadata?.items as any[] | undefined;
+                                const applied = p.metadata?.applied_coupon;
+                                return (
+                                  <div key={p.id} className="rounded-xl border border-border p-3 space-y-1.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="font-heading text-sm font-semibold text-foreground">
+                                        {METHOD_LABEL[p.method] || p.method}
+                                      </p>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${st.cls}`}>{st.label}</span>
+                                        <span className="font-heading text-sm font-bold text-primary">{p.amount_cents != null ? formatCents(p.amount_cents) : "—"}</span>
+                                      </div>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground font-body">
+                                      {new Date(p.created_at).toLocaleString("pt-BR")}
+                                      {p.metadata?.source === "counter_sale" && (
+                                        <span className="ml-2 px-1.5 py-0.5 rounded bg-muted text-[10px] font-medium">Balcão</span>
+                                      )}
+                                    </div>
+                                    {items && items.length > 0 && (
+                                      <div className="pt-1 border-t border-border/50 space-y-0.5">
+                                        {items.map((it: any, idx: number) => (
+                                          <div key={idx} className="flex justify-between text-[11px] font-body text-muted-foreground">
+                                            <span className="truncate">{it.serviceTitle}{it.planName ? ` (${it.planName})` : ""}</span>
+                                            <span className="font-medium shrink-0 ml-2">{formatCents(it.priceCents || 0)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {applied && (
+                                      <div className="flex items-center gap-1.5 pt-1 border-t border-border/50 text-[11px] text-emerald-600 dark:text-emerald-400">
+                                        <BadgePercent className="w-3 h-3" />
+                                        <span className="font-medium">Cupom {applied.code}</span>
+                                        <span className="text-muted-foreground">
+                                          • desconto {formatCents(applied.discount_cents || 0)} (de {formatCents(applied.original_amount_cents || 0)})
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </TabsContent>
 
                     {/* Cupons */}
