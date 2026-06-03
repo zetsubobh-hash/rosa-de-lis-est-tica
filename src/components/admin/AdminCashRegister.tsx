@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, TrendingUp, TrendingDown, Clock, CreditCard, Banknote, QrCode, Receipt, ArrowUpRight, ArrowDownRight, Calendar as CalendarIcon, Users, BadgePercent, ChevronDown, CheckCircle2, CalendarClock, Search } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Clock, CreditCard, Banknote, QrCode, Receipt, ArrowUpRight, ArrowDownRight, Calendar as CalendarIcon, Users, BadgePercent, ChevronDown, CheckCircle2, CalendarClock, Search, Trash2, Zap } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { formatCents } from "@/hooks/useServicePrices";
 import { format } from "date-fns";
