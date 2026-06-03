@@ -397,8 +397,8 @@ const AdminCashRegister = () => {
                 <h3 className="font-heading text-sm font-bold text-foreground">Fluxo Diário</h3>
               </div>
               <div className="flex items-center gap-3 text-[11px] font-body">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Realizado</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500" /> Agendado</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Recebido</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500" /> A receber</span>
               </div>
             </div>
             {byDay.length === 0 ? (
