@@ -300,13 +300,13 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto"
       >
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.8, opacity: 0 }}
-          className="bg-card rounded-3xl border border-border shadow-2xl max-w-sm w-full p-6 relative overflow-hidden"
+          className="bg-card rounded-2xl sm:rounded-3xl border border-border shadow-2xl w-full max-w-[95vw] sm:max-w-sm p-4 sm:p-6 relative overflow-hidden my-auto"
         >
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-accent/20 rounded-full blur-2xl" />
@@ -342,7 +342,7 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
               ref={canvasRef}
               width={280}
               height={280}
-              className="w-[280px] h-[280px]"
+              className="w-[min(280px,75vw)] h-[min(280px,75vw)] max-w-[280px] max-h-[280px]"
             />
           </div>
 
