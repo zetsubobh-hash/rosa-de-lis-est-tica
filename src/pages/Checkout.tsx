@@ -171,13 +171,9 @@ const Checkout = () => {
         if (error) throw error;
       }
 
-      // Mark coupon as used
+      // Mark coupon as used via SECURITY DEFINER function (restricts which fields users can change)
       if (appliedCoupon) {
-        await supabase
-          .from("coupons")
-          .update({ is_used: true, used_at: new Date().toISOString() })
-          .eq("code", appliedCoupon.code)
-          .eq("user_id", user!.id);
+        await supabase.rpc("redeem_coupon", { p_code: appliedCoupon.code });
       }
 
       // Fire WhatsApp notification
