@@ -69,12 +69,34 @@ interface AppointmentData {
   notes: string | null;
 }
 
+interface PaymentData {
+  id: string;
+  method: string;
+  amount_cents: number | null;
+  status: string;
+  created_at: string;
+  metadata: any;
+  appointment_id: string | null;
+  external_id: string | null;
+}
+
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   confirmed: { label: "Confirmado", cls: "bg-blue-100 text-blue-700" },
   completed: { label: "Concluído", cls: "bg-emerald-100 text-emerald-700" },
   cancelled: { label: "Cancelado", cls: "bg-red-100 text-red-700" },
   pending: { label: "Pendente", cls: "bg-amber-100 text-amber-700" },
   paid: { label: "Pago", cls: "bg-emerald-100 text-emerald-700" },
+  failed: { label: "Falhou", cls: "bg-red-100 text-red-700" },
+  refunded: { label: "Estornado", cls: "bg-slate-100 text-slate-700" },
+};
+
+const METHOD_LABEL: Record<string, string> = {
+  pix: "PIX",
+  dinheiro: "Dinheiro",
+  credito: "Cartão de Crédito",
+  debito: "Cartão de Débito",
+  outro: "Outro",
+  mercadopago: "Mercado Pago",
 };
 
 const getInitials = (name: string) =>
