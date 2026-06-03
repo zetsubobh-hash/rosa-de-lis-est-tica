@@ -300,6 +300,24 @@ const AdminCashRegister = () => {
     setEntryOpen(true);
   };
 
+  const handleSaveEntry = async () => {
+    if (!entryClientId) { return; }
+    const amount = parseAmount(entryAmount);
+    if (amount <= 0) { return; }
+    setSavingEntry(true);
+    const { error } = await supabase.from("payments").insert({
+      user_id: entryClientId,
+      method: entryMethod,
+      amount_cents: amount,
+      status: entryStatus,
+      metadata: { source: "cash_register_entry", description: entryDescription.trim().slice(0, 200) || null },
+    });
+    setSavingEntry(false);
+    if (error) return;
+    resetEntry();
+    loadData();
+  };
+
 
   const resetExpense = () => {
     setExpenseOpen(false);
