@@ -857,47 +857,65 @@ const AdminCashRegister = () => {
             </div>
           </div>
 
-          {/* Pagamento de funcionários (Repasses a parceiros) */}
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
-            <div className="px-4 md:px-6 py-4 border-b border-border flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-red-600" />
-                <h3 className="font-heading text-sm font-bold text-foreground">Pagamento de funcionários ({partnerPayments.length})</h3>
-                <span className="text-[11px] font-body text-muted-foreground">— Total: <span className="font-bold text-red-600">{formatCents(totals.partnerExpenses)}</span></span>
+          {/* Despesas com Parceiros — agrupado por parceiro */}
+          {(() => {
+            const grouped = new Map<string, { name: string; total: number; items: PartnerPaymentRow[] }>();
+            partnerPayments.forEach(p => {
+              const name = partners.get(p.partner_id) || "Parceiro";
+              const cur = grouped.get(p.partner_id) || { name, total: 0, items: [] };
+              cur.total += p.amount_cents || 0;
+              cur.items.push(p);
+              grouped.set(p.partner_id, cur);
+            });
+            const groups = Array.from(grouped.values()).sort((a, b) => b.total - a.total);
+            return (
+              <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                <div className="px-4 md:px-6 py-4 border-b border-border flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Users className="w-4 h-4 text-red-600" />
+                    <h3 className="font-heading text-sm font-bold text-foreground">Despesas com parceiros ({groups.length} parceiros • {partnerPayments.length} pagamentos)</h3>
+                    <span className="text-[11px] font-body text-muted-foreground">— Total: <span className="font-bold text-red-600">{formatCents(totals.partnerExpenses)}</span></span>
+                  </div>
+                </div>
+                <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
+                  {groups.length === 0 ? (
+                    <p className="text-center py-8 font-body text-sm text-muted-foreground">Nenhum pagamento a parceiros no período.</p>
+                  ) : (
+                    groups.map(g => (
+                      <div key={g.name} className="px-3 sm:px-4 md:px-6 py-3 space-y-2">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-9 h-9 rounded-full bg-red-500/10 flex items-center justify-center text-[11px] font-bold text-red-600 shrink-0">
+                            {g.name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-body text-sm font-bold text-foreground truncate">{g.name}</p>
+                            <p className="font-body text-[11px] text-muted-foreground">{g.items.length} pagamento{g.items.length > 1 ? "s" : ""} no período</p>
+                          </div>
+                          <span className="font-heading text-sm font-bold text-red-600 shrink-0">-{formatCents(g.total)}</span>
+                        </div>
+                        <div className="pl-0 sm:pl-12 space-y-1">
+                          {g.items
+                            .slice()
+                            .sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime())
+                            .map(p => {
+                              const typeLabel = p.type === "salary" ? "Salário" : p.type === "commission" ? "Comissão" : p.type === "bonus" ? "Bônus" : p.type === "advance" ? "Adiantamento" : p.type;
+                              return (
+                                <div key={p.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-body p-2 rounded-md bg-background/60">
+                                  <span className="font-mono text-[10px] text-muted-foreground shrink-0">{format(new Date(p.paid_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 capitalize">{typeLabel}</span>
+                                  <span className="flex-1 min-w-[120px] truncate text-foreground">{p.description || "—"}</span>
+                                  <span className="font-bold text-red-600 ml-auto">-{formatCents(p.amount_cents)}</span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
-              {partnerPayments.length === 0 ? (
-                <p className="text-center py-8 font-body text-sm text-muted-foreground">Nenhum pagamento a funcionário no período.</p>
-              ) : (
-                partnerPayments.map(p => {
-                  const name = partners.get(p.partner_id) || "Parceiro";
-                  const typeLabel = p.type === "salary" ? "Salário" : p.type === "commission" ? "Comissão" : p.type === "bonus" ? "Bônus" : p.type === "advance" ? "Adiantamento" : p.type;
-                  return (
-                    <div key={p.id} className="px-3 sm:px-4 md:px-6 py-3 flex items-center gap-2 sm:gap-3 hover:bg-muted/30 transition-colors">
-                      <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
-                        <ArrowDownRight className="w-4 h-4 text-red-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-body text-sm font-semibold text-foreground truncate max-w-full">{name}</span>
-                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 capitalize">
-                            {typeLabel}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-body flex-wrap">
-                          <CalendarIcon className="w-3 h-3" />
-                          <span>{format(new Date(p.paid_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
-                          {p.description && <><span>•</span><span className="truncate max-w-[180px]">{p.description}</span></>}
-                        </div>
-                      </div>
-                      <span className="font-heading text-sm font-bold text-red-600 shrink-0">-{formatCents(p.amount_cents)}</span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+            );
+          })()}
 
 
           {/* Transactions list (raw inflows + outflows) */}
