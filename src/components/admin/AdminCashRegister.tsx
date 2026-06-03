@@ -254,15 +254,21 @@ const AdminCashRegister = () => {
     return Array.from(map.entries()).sort((a, b) => b[1].total - a[1].total);
   }, [payments]);
 
-  // Daily series — based on appointments (realized + scheduled)
+  // Daily series — paid cash inflow vs receivables
   const byDay = useMemo(() => {
     const map = new Map<string, { realized: number; scheduled: number }>();
-    aptWithPrice.forEach(a => {
-      const [y, m, d] = a.appointment_date.split("-");
-      const key = `${d}/${m}`;
+    payments.forEach(p => {
+      const d = format(new Date(p.created_at), "dd/MM");
+      const cur = map.get(d) || { realized: 0, scheduled: 0 };
+      if (p.status === "paid") cur.realized += p.amount_cents || 0;
+      else if (p.status === "pending") cur.scheduled += p.amount_cents || 0;
+      map.set(d, cur);
+    });
+    virtualReceivables.forEach(v => {
+      const [, mo, day] = v.appointment_date.split("-");
+      const key = `${day}/${mo}`;
       const cur = map.get(key) || { realized: 0, scheduled: 0 };
-      if (a.status === "completed") cur.realized += a.price_cents;
-      else cur.scheduled += a.price_cents;
+      cur.scheduled += v.amount_cents;
       map.set(key, cur);
     });
     return Array.from(map.entries()).sort((a, b) => {
@@ -270,7 +276,7 @@ const AdminCashRegister = () => {
       const [db, mb] = b[0].split("/").map(Number);
       return ma === mb ? da - db : ma - mb;
     });
-  }, [aptWithPrice]);
+  }, [payments, virtualReceivables]);
 
   const maxDaily = useMemo(() => Math.max(1, ...byDay.map(([, v]) => v.realized + v.scheduled)), [byDay]);
 
