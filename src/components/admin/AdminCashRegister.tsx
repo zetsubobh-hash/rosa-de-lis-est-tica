@@ -537,7 +537,7 @@ const AdminCashRegister = () => {
             <KPICard icon={Wallet} label="Saldo Líquido" value={formatCents(totals.net)} trend={`Ticket médio ${formatCents(totals.avgTicket)}`} color={totals.net >= 0 ? "primary" : "red"} />
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <KPICard icon={CalendarClock} label="Pendente em pagamentos" value={formatCents(totals.pendingRecorded)} trend="Lançados como pendentes" color="amber" />
             <KPICard icon={CheckCircle2} label="Serviços sem lançamento" value={formatCents(totals.virtualSum)} trend={`${virtualReceivables.length} agendamentos`} color="sky" />
             <KPICard icon={Zap} label="Despesas expediente" value={formatCents(totals.operationalExpenses)} trend={`${cashExpenses.length} lançamentos`} color="red" />
