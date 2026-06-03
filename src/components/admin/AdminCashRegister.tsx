@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCents } from "@/hooks/useServicePrices";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 type RangeKey = "day" | "15d" | "month" | "30d" | "custom";
 
