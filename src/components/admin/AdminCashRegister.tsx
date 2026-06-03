@@ -621,13 +621,13 @@ const AdminCashRegister = () => {
                 <Users className="w-4 h-4 text-primary" />
                 <h3 className="font-heading text-sm font-bold text-foreground">Detalhamento por cliente ({byClient.length})</h3>
               </div>
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   value={clientSearch}
                   onChange={e => setClientSearch(e.target.value)}
                   placeholder="Buscar cliente..."
-                  className="pl-8 pr-3 py-1.5 rounded-lg border border-border bg-background font-body text-xs w-48 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="pl-8 pr-3 py-1.5 rounded-lg border border-border bg-background font-body text-xs w-full sm:w-48 focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
