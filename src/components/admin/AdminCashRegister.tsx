@@ -41,6 +41,31 @@ interface AppointmentRow {
   partner_id: string | null;
 }
 
+interface CashExpenseRow {
+  id: string;
+  category: string;
+  description: string;
+  amount_cents: number;
+  payment_method: string;
+  expense_date: string;
+  notes: string | null;
+  created_at: string;
+}
+
+const EXPENSE_CATEGORIES = [
+  { value: "expediente", label: "Expediente" },
+  { value: "materiais", label: "Materiais / Insumos" },
+  { value: "energia", label: "Energia" },
+  { value: "agua", label: "Água" },
+  { value: "internet", label: "Internet / Telefone" },
+  { value: "aluguel", label: "Aluguel" },
+  { value: "marketing", label: "Marketing" },
+  { value: "manutencao", label: "Manutenção" },
+  { value: "impostos", label: "Impostos / Taxas" },
+  { value: "outros", label: "Outros" },
+];
+
+
 interface ServicePriceRow {
   service_slug: string;
   plan_name: string;
