@@ -480,19 +480,19 @@ const AdminCashRegister = () => {
   return (
     <div className="space-y-6">
       {/* Range Filter */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="w-4 h-4 text-primary" />
-          <p className="font-body text-sm text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <CalendarIcon className="w-4 h-4 text-primary shrink-0" />
+          <p className="font-body text-xs sm:text-sm text-muted-foreground truncate">
             Período: <span className="font-semibold text-foreground capitalize">{label}</span>
           </p>
         </div>
-        <div className="flex gap-1.5 p-1 rounded-xl bg-muted">
+        <div className="flex gap-1 p-1 rounded-xl bg-muted overflow-x-auto">
           {ranges.map(r => (
             <button
               key={r.key}
               onClick={() => setRange(r.key)}
-              className={`px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg font-body text-[11px] sm:text-xs font-semibold transition-all whitespace-nowrap ${
                 range === r.key
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -502,21 +502,20 @@ const AdminCashRegister = () => {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
           <button
             onClick={() => setExpenseOpen(true)}
-            className="h-9 px-4 rounded-xl bg-red-600 text-white font-body text-xs font-bold hover:bg-red-700 transition-colors flex items-center gap-1.5 shadow-sm"
+            className="h-9 px-3 sm:px-4 rounded-xl bg-red-600 text-white font-body text-[11px] sm:text-xs font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
           >
             <TrendingDown className="w-3.5 h-3.5" /> Nova despesa
           </button>
           <button
             onClick={() => setEntryOpen(true)}
-            className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-sm"
+            className="h-9 px-3 sm:px-4 rounded-xl bg-primary text-primary-foreground font-body text-[11px] sm:text-xs font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
           >
             <Wallet className="w-3.5 h-3.5" /> Nova entrada
           </button>
         </div>
-
       </div>
 
       {loading ? (
