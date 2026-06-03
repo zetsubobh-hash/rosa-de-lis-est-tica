@@ -349,13 +349,40 @@ const AdminCashRegister = () => {
     setExpMethod("dinheiro");
     setExpDate(format(new Date(), "yyyy-MM-dd"));
     setExpNotes("");
+    setExpPartnerId("");
+    setExpPartnerType("salary");
   };
 
   const handleSaveExpense = async () => {
     const amount = parseAmount(expAmount);
-    if (amount <= 0 || !expDescription.trim()) { return; }
+    if (amount <= 0) { return; }
     setSavingExpense(true);
     const { data: u } = await supabase.auth.getUser();
+
+    if (expCategory === "parceiro") {
+      if (!expPartnerId) { setSavingExpense(false); return; }
+      const typeLabel = PARTNER_PAYMENT_TYPES.find(t => t.value === expPartnerType)?.label || expPartnerType;
+      const partnerName = partners.get(expPartnerId) || "Parceiro";
+      const desc = (expDescription.trim() || `${typeLabel} — ${partnerName}`).slice(0, 200);
+      const refMonth = expDate.slice(0, 7); // YYYY-MM
+      const paidAtIso = new Date(`${expDate}T${format(new Date(), "HH:mm:ss")}`).toISOString();
+      const { error } = await supabase.from("partner_payments").insert({
+        partner_id: expPartnerId,
+        amount_cents: amount,
+        type: expPartnerType,
+        description: desc,
+        reference_month: refMonth,
+        paid_at: paidAtIso,
+        created_by: u?.user?.id || null,
+      });
+      setSavingExpense(false);
+      if (error) return;
+      resetExpense();
+      loadData();
+      return;
+    }
+
+    if (!expDescription.trim()) { setSavingExpense(false); return; }
     const { error } = await (supabase as any).from("cash_expenses").insert({
       category: expCategory,
       description: expDescription.trim().slice(0, 200),
