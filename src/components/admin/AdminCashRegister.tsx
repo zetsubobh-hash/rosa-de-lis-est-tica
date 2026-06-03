@@ -776,23 +776,23 @@ const AdminCashRegister = () => {
                   const cat = EXPENSE_CATEGORIES.find(c => c.value === e.category)?.label || e.category;
                   const Icon = METHOD_ICON[e.payment_method] || Receipt;
                   return (
-                    <div key={e.id} className="px-4 md:px-6 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors">
+                    <div key={e.id} className="px-3 sm:px-4 md:px-6 py-3 flex items-center gap-2 sm:gap-3 hover:bg-muted/30 transition-colors">
                       <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
                         <ArrowDownRight className="w-4 h-4 text-red-600" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-body text-sm font-semibold text-foreground truncate">{e.description}</span>
+                          <span className="font-body text-sm font-semibold text-foreground truncate max-w-full">{e.description}</span>
                           <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 capitalize">
                             {cat}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-body">
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-body flex-wrap">
                           <Icon className="w-3 h-3" />
                           <span>{METHOD_LABEL[e.payment_method] || e.payment_method}</span>
                           <span>•</span>
                           <span>{e.expense_date.split("-").reverse().join("/")}</span>
-                          {e.notes && <><span>•</span><span className="truncate">{e.notes}</span></>}
+                          {e.notes && <><span>•</span><span className="truncate max-w-[140px]">{e.notes}</span></>}
                         </div>
                       </div>
                       <span className="font-heading text-sm font-bold text-red-600 shrink-0">-{formatCents(e.amount_cents)}</span>
