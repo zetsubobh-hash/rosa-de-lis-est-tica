@@ -71,7 +71,7 @@ const QRCodeCardModal = ({ open, onClose }: QRCodeCardModalProps) => {
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-card rounded-3xl border border-border shadow-2xl max-w-md w-full p-6 relative"
+        className="bg-card rounded-2xl sm:rounded-3xl border border-border shadow-2xl max-w-md w-full p-4 sm:p-6 relative"
       >
         <button
           onClick={onClose}
