@@ -153,6 +153,14 @@ const AdminCashRegister = () => {
   const [partners, setPartners] = useState<Map<string, string>>(new Map());
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [clientSearch, setClientSearch] = useState("");
+  // Quick entry modal
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [entryClientId, setEntryClientId] = useState<string>("");
+  const [entryAmount, setEntryAmount] = useState<string>("");
+  const [entryMethod, setEntryMethod] = useState<string>("pix");
+  const [entryStatus, setEntryStatus] = useState<"paid" | "pending">("paid");
+  const [entryDescription, setEntryDescription] = useState<string>("");
+  const [savingEntry, setSavingEntry] = useState(false);
 
   const { start, end, label } = useMemo(() => getRange(range), [range]);
 
@@ -212,24 +220,69 @@ const AdminCashRegister = () => {
     return appointments.map(a => ({ ...a, price_cents: getAptPriceCents(a, servicePrices) }));
   }, [appointments, servicePrices]);
 
-  // KPIs — revenue derived from real services (appointments)
-  const totals = useMemo(() => {
-    const completed = aptWithPrice.filter(a => a.status === "completed");
-    const confirmed = aptWithPrice.filter(a => a.status === "confirmed" || a.status === "pending");
-    const realized = completed.reduce((s, a) => s + a.price_cents, 0);
-    const scheduled = confirmed.reduce((s, a) => s + a.price_cents, 0);
+  // Virtual receivables: appointments without any payment row linked
+  const virtualReceivables = useMemo(() => {
+    const linked = new Set(payments.map(p => p.appointment_id).filter(Boolean) as string[]);
+    return aptWithPrice
+      .filter(a => a.status !== "cancelled" && !linked.has(a.id) && a.price_cents > 0)
+      .map(a => ({ id: `virt-${a.id}`, user_id: a.user_id, amount_cents: a.price_cents, service_title: a.service_title, appointment_date: a.appointment_date, appointment_time: a.appointment_time }));
+  }, [aptWithPrice, payments]);
 
-    // Confirmed payments via payments table (cash inflow records)
+  const parseAmount = (raw: string): number => {
+    const cleaned = raw.replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
+    const n = parseFloat(cleaned);
+    if (Number.isFinite(n) && n > 0) return Math.round(n * 100);
+    return 0;
+  };
+
+  const resetEntry = () => {
+    setEntryOpen(false);
+    setEntryClientId("");
+    setEntryAmount("");
+    setEntryMethod("pix");
+    setEntryStatus("paid");
+    setEntryDescription("");
+  };
+
+  const handleSaveEntry = async () => {
+    if (!entryClientId) { return; }
+    const amount = parseAmount(entryAmount);
+    if (amount <= 0) { return; }
+    setSavingEntry(true);
+    const { error } = await supabase.from("payments").insert({
+      user_id: entryClientId,
+      method: entryMethod,
+      amount_cents: amount,
+      status: entryStatus,
+      metadata: { source: "cash_register_entry", description: entryDescription.trim().slice(0, 200) || null },
+    });
+    setSavingEntry(false);
+    if (error) return;
+    resetEntry();
+    loadData();
+  };
+
+  // KPIs — payment-centric (real cash)
+  const totals = useMemo(() => {
     const paidPayments = payments.filter(p => p.status === "paid");
-    const paymentsSum = paidPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const pendingPayments = payments.filter(p => p.status === "pending");
     const refundedSum = payments.filter(p => p.status === "refunded").reduce((s, p) => s + (p.amount_cents || 0), 0);
 
+    const cashIn = paidPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const pendingRecorded = pendingPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
+    const virtualSum = virtualReceivables.reduce((s, v) => s + v.amount_cents, 0);
+    const receivables = pendingRecorded + virtualSum;
+
     const expenses = partnerPayments.reduce((s, p) => s + (p.amount_cents || 0), 0);
-    const net = realized - expenses - refundedSum;
-    const transactions = completed.length;
-    const avgTicket = transactions > 0 ? Math.round(realized / transactions) : 0;
-    return { realized, scheduled, paymentsSum, refundedSum, expenses, net, transactions, avgTicket, completedCount: completed.length, confirmedCount: confirmed.length };
-  }, [aptWithPrice, payments, partnerPayments]);
+    const net = cashIn - expenses - refundedSum;
+    const transactions = paidPayments.length;
+    const avgTicket = transactions > 0 ? Math.round(cashIn / transactions) : 0;
+    return {
+      cashIn, pendingRecorded, virtualSum, receivables, refundedSum, expenses, net,
+      transactions, avgTicket,
+      paidCount: paidPayments.length, pendingCount: pendingPayments.length + virtualReceivables.length,
+    };
+  }, [payments, partnerPayments, virtualReceivables]);
 
   // By method
   const byMethod = useMemo(() => {
@@ -243,15 +296,21 @@ const AdminCashRegister = () => {
     return Array.from(map.entries()).sort((a, b) => b[1].total - a[1].total);
   }, [payments]);
 
-  // Daily series — based on appointments (realized + scheduled)
+  // Daily series — paid cash inflow vs receivables
   const byDay = useMemo(() => {
     const map = new Map<string, { realized: number; scheduled: number }>();
-    aptWithPrice.forEach(a => {
-      const [y, m, d] = a.appointment_date.split("-");
-      const key = `${d}/${m}`;
+    payments.forEach(p => {
+      const d = format(new Date(p.created_at), "dd/MM");
+      const cur = map.get(d) || { realized: 0, scheduled: 0 };
+      if (p.status === "paid") cur.realized += p.amount_cents || 0;
+      else if (p.status === "pending") cur.scheduled += p.amount_cents || 0;
+      map.set(d, cur);
+    });
+    virtualReceivables.forEach(v => {
+      const [, mo, day] = v.appointment_date.split("-");
+      const key = `${day}/${mo}`;
       const cur = map.get(key) || { realized: 0, scheduled: 0 };
-      if (a.status === "completed") cur.realized += a.price_cents;
-      else cur.scheduled += a.price_cents;
+      cur.scheduled += v.amount_cents;
       map.set(key, cur);
     });
     return Array.from(map.entries()).sort((a, b) => {
@@ -259,7 +318,7 @@ const AdminCashRegister = () => {
       const [db, mb] = b[0].split("/").map(Number);
       return ma === mb ? da - db : ma - mb;
     });
-  }, [aptWithPrice]);
+  }, [payments, virtualReceivables]);
 
   const maxDaily = useMemo(() => Math.max(1, ...byDay.map(([, v]) => v.realized + v.scheduled)), [byDay]);
 
@@ -345,6 +404,12 @@ const AdminCashRegister = () => {
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setEntryOpen(true)}
+          className="h-9 px-4 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-sm"
+        >
+          <Wallet className="w-3.5 h-3.5" /> Nova entrada
+        </button>
       </div>
 
       {loading ? (
@@ -360,15 +425,15 @@ const AdminCashRegister = () => {
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-2 md:grid-cols-4 gap-3"
           >
-            <KPICard icon={CheckCircle2} label="Receita Realizada" value={formatCents(totals.realized)} trend={`${totals.completedCount} serviços feitos`} color="emerald" />
-            <KPICard icon={CalendarClock} label="Agendado / A Receber" value={formatCents(totals.scheduled)} trend={`${totals.confirmedCount} confirmados`} color="sky" />
+            <KPICard icon={TrendingUp} label="Receita (Caixa)" value={formatCents(totals.cashIn)} trend={`${totals.paidCount} pagamentos recebidos`} color="emerald" />
+            <KPICard icon={Clock} label="A Receber" value={formatCents(totals.receivables)} trend={`${totals.pendingCount} pendências`} color="amber" />
             <KPICard icon={TrendingDown} label="Despesas" value={formatCents(totals.expenses)} trend={`${partnerPayments.length} pagamentos`} color="red" />
             <KPICard icon={Wallet} label="Saldo Líquido" value={formatCents(totals.net)} trend={`Ticket médio ${formatCents(totals.avgTicket)}`} color={totals.net >= 0 ? "primary" : "red"} />
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <KPICard icon={TrendingUp} label="Caixa Recebido" value={formatCents(totals.paymentsSum)} trend="Pagamentos confirmados" color="emerald" />
-            <KPICard icon={Clock} label="Saldo a Receber" value={formatCents(Math.max(0, totals.realized - totals.paymentsSum))} trend="Realizado − Caixa" color="amber" />
+            <KPICard icon={CalendarClock} label="Pendente em pagamentos" value={formatCents(totals.pendingRecorded)} trend="Lançados como pendentes" color="amber" />
+            <KPICard icon={CheckCircle2} label="Serviços sem lançamento" value={formatCents(totals.virtualSum)} trend={`${virtualReceivables.length} agendamentos`} color="sky" />
             <KPICard icon={BadgePercent} label="Estornos" value={formatCents(totals.refundedSum)} color="slate" />
           </div>
 
@@ -380,8 +445,8 @@ const AdminCashRegister = () => {
                 <h3 className="font-heading text-sm font-bold text-foreground">Fluxo Diário</h3>
               </div>
               <div className="flex items-center gap-3 text-[11px] font-body">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Realizado</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500" /> Agendado</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Recebido</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500" /> A receber</span>
               </div>
             </div>
             {byDay.length === 0 ? (
@@ -418,7 +483,7 @@ const AdminCashRegister = () => {
               <div className="space-y-2">
                 {byMethod.map(([method, v]) => {
                   const Icon = METHOD_ICON[method] || Receipt;
-                  const pct = totals.paymentsSum > 0 ? (v.total / totals.paymentsSum) * 100 : 0;
+                  const pct = totals.cashIn > 0 ? (v.total / totals.cashIn) * 100 : 0;
                   return (
                     <div key={method} className="space-y-1">
                       <div className="flex items-center justify-between gap-2">
@@ -615,6 +680,114 @@ const AdminCashRegister = () => {
           </div>
         </>
       )}
+
+      {/* Quick Entry Modal */}
+      <AnimatePresence>
+        {entryOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onMouseDown={(e) => { if (e.target === e.currentTarget) resetEntry(); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-primary" /> Nova entrada no caixa
+                </h3>
+                <button onClick={resetEntry} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
+              </div>
+              <div className="p-5 space-y-3">
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Cliente</label>
+                  <select
+                    value={entryClientId}
+                    onChange={(e) => setEntryClientId(e.target.value)}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Selecione o cliente…</option>
+                    {Array.from(profiles.entries()).sort((a, b) => a[1].localeCompare(b[1])).map(([uid, name]) => (
+                      <option key={uid} value={uid}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Valor (R$)</label>
+                    <input
+                      value={entryAmount}
+                      onChange={(e) => setEntryAmount(e.target.value)}
+                      placeholder="130,00"
+                      inputMode="decimal"
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Método</label>
+                    <select
+                      value={entryMethod}
+                      onChange={(e) => setEntryMethod(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="pix">PIX</option>
+                      <option value="dinheiro">Dinheiro</option>
+                      <option value="credito">Crédito</option>
+                      <option value="debito">Débito</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Situação</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEntryStatus("paid")}
+                      className={`flex-1 h-9 rounded-md text-xs font-bold transition-colors ${entryStatus === "paid" ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Pago (entra no caixa)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEntryStatus("pending")}
+                      className={`flex-1 h-9 rounded-md text-xs font-bold transition-colors ${entryStatus === "pending" ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                    >
+                      A receber
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Descrição (opcional)</label>
+                  <input
+                    value={entryDescription}
+                    onChange={(e) => setEntryDescription(e.target.value.slice(0, 200))}
+                    placeholder="Ex.: Massagem redutora"
+                    maxLength={200}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+              </div>
+              <div className="px-5 py-3 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
+                <button onClick={resetEntry} className="h-9 px-4 rounded-md border border-border text-xs font-bold hover:bg-muted">Cancelar</button>
+                <button
+                  onClick={handleSaveEntry}
+                  disabled={!entryClientId || parseAmount(entryAmount) <= 0 || savingEntry}
+                  className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {savingEntry ? <div className="w-3 h-3 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                  Salvar entrada
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
