@@ -244,6 +244,16 @@ const AdminCashRegister = () => {
     setEntryDescription("");
   };
 
+  const openQuickEntry = (clientId: string, amountCents: number, description?: string) => {
+    setEntryClientId(clientId);
+    setEntryAmount(amountCents > 0 ? (amountCents / 100).toFixed(2).replace(".", ",") : "");
+    setEntryMethod("pix");
+    setEntryStatus("paid");
+    setEntryDescription(description?.slice(0, 200) || "");
+    setEntryOpen(true);
+  };
+
+
   const handleSaveEntry = async () => {
     if (!entryClientId) { return; }
     const amount = parseAmount(entryAmount);
