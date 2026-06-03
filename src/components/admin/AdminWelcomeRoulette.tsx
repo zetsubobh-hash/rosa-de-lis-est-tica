@@ -279,14 +279,21 @@ const AdminWelcomeRoulette = () => {
 
         <div className="divide-y divide-border">
           {itemsWithChance.map((it) => (
-            <div key={it.id} className="p-3 grid grid-cols-12 gap-2 items-center">
-              <div className="col-span-12 sm:col-span-1 flex justify-start sm:justify-center">
+            <div key={it.id} className="p-3 sm:grid sm:grid-cols-12 sm:gap-2 sm:items-center space-y-2 sm:space-y-0">
+              {/* Mobile card header */}
+              <div className="flex items-center justify-between sm:hidden">
+                <span className="font-body text-xs font-semibold text-muted-foreground truncate flex-1">{it.label || "Item sem nome"}</span>
+                <span className="text-[10px] font-semibold text-primary flex-shrink-0 ml-2">{it.chance.toFixed(1)}%</span>
+              </div>
+
+              <div className="sm:col-span-1 flex justify-start sm:justify-center">
                 <Switch
                   checked={it.enabled}
                   onCheckedChange={(v) => updateItem(it.id, { enabled: v })}
                 />
               </div>
-              <div className="col-span-12 sm:col-span-3">
+              <div className="sm:col-span-3">
+                <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Texto</label>
                 <Input
                   value={it.label}
                   onChange={(e) => updateItem(it.id, { label: e.target.value })}
@@ -294,86 +301,92 @@ const AdminWelcomeRoulette = () => {
                   className="h-9"
                 />
               </div>
-              <div className="col-span-6 sm:col-span-2">
-                <select
-                  value={it.type}
-                  onChange={(e) => {
-                    const newType = e.target.value as "discount" | "none" | "service";
-                    updateItem(it.id, { type: newType });
-                  }}
-                  className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
-                >
-                  <option value="discount">Desconto %</option>
-                  <option value="service">Serviço grátis</option>
-                  <option value="none">Sem prêmio</option>
-                </select>
-              </div>
-              <div className="col-span-6 sm:col-span-2">
-                {it.type === "service" ? (
+              <div className="grid grid-cols-2 sm:contents gap-2">
+                <div className="sm:col-span-2">
+                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Tipo</label>
                   <select
-                    value={it.serviceSlug || ""}
+                    value={it.type}
                     onChange={(e) => {
-                      const slug = e.target.value;
-                      const svc = services.find((s) => s.slug === slug);
-                      updateItem(it.id, {
-                        serviceSlug: slug || undefined,
-                        serviceTitle: svc?.title,
-                      });
+                      const newType = e.target.value as "discount" | "none" | "service";
+                      updateItem(it.id, { type: newType });
                     }}
                     className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
                   >
-                    <option value="">Selecione…</option>
-                    {services.map((s) => (
-                      <option key={s.slug} value={s.slug}>{s.title}</option>
-                    ))}
+                    <option value="discount">Desconto %</option>
+                    <option value="service">Serviço grátis</option>
+                    <option value="none">Sem prêmio</option>
                   </select>
-                ) : (
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Valor</label>
+                  {it.type === "service" ? (
+                    <select
+                      value={it.serviceSlug || ""}
+                      onChange={(e) => {
+                        const slug = e.target.value;
+                        const svc = services.find((s) => s.slug === slug);
+                        updateItem(it.id, {
+                          serviceSlug: slug || undefined,
+                          serviceTitle: svc?.title,
+                        });
+                      }}
+                      className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      <option value="">Selecione…</option>
+                      {services.map((s) => (
+                        <option key={s.slug} value={s.slug}>{s.title}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={it.value}
+                        disabled={it.type === "none"}
+                        onChange={(e) => updateItem(it.id, { value: Number(e.target.value) || 0 })}
+                        placeholder="% OFF"
+                        className="h-9 pr-7"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                    </div>
+                  )}
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Peso</label>
                   <div className="relative">
                     <Input
                       type="number"
                       min={0}
-                      max={100}
-                      value={it.value}
-                      disabled={it.type === "none"}
-                      onChange={(e) => updateItem(it.id, { value: Number(e.target.value) || 0 })}
-                      placeholder="% OFF"
-                      className="h-9 pr-7"
+                      value={it.weight}
+                      onChange={(e) => updateItem(it.id, { weight: Math.max(0, Number(e.target.value) || 0) })}
+                      placeholder="Peso"
+                      className="h-9"
                     />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-primary hidden sm:inline">
+                      {it.chance.toFixed(1)}%
+                    </span>
                   </div>
-                )}
-              </div>
-              <div className="col-span-6 sm:col-span-2">
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min={0}
-                    value={it.weight}
-                    onChange={(e) => updateItem(it.id, { weight: Math.max(0, Number(e.target.value) || 0) })}
-                    placeholder="Peso"
-                    className="h-9 pr-14"
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-primary">
-                    {it.chance.toFixed(1)}%
-                  </span>
+                </div>
+                <div className="sm:col-span-1">
+                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Validade</label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={it.expiresDays}
+                      disabled={it.type === "none"}
+                      onChange={(e) => updateItem(it.id, { expiresDays: Math.max(1, Number(e.target.value) || 1) })}
+                      placeholder="dias"
+                      title="Validade do cupom em dias"
+                      className="h-9 pr-6"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">d</span>
+                  </div>
                 </div>
               </div>
-              <div className="col-span-4 sm:col-span-1">
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min={1}
-                    value={it.expiresDays}
-                    disabled={it.type === "none"}
-                    onChange={(e) => updateItem(it.id, { expiresDays: Math.max(1, Number(e.target.value) || 1) })}
-                    placeholder="dias"
-                    title="Validade do cupom em dias"
-                    className="h-9 pr-8"
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">dias</span>
-                </div>
-              </div>
-              <div className="col-span-2 sm:col-span-1 flex justify-end">
+              <div className="sm:col-span-1 flex justify-end">
                 <button
                   onClick={() => removeItem(it.id)}
                   className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
