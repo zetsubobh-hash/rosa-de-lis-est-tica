@@ -1075,7 +1075,7 @@ const AdminCashRegister = () => {
                     <label className="font-body text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Valor (R$)</label>
                     <input
                       value={entryAmount}
-                      onChange={(e) => setEntryAmount(e.target.value)}
+                      onChange={(e) => setEntryAmount(maskBRL(e.target.value))}
                       placeholder="130,00"
                       inputMode="decimal"
                       className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
