@@ -8,7 +8,7 @@ import AuthModal from "@/components/AuthModal";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
-type Status = "loading" | "must-auth" | "enabled-spin" | "already-spun" | "disabled";
+type Status = "loading" | "must-auth" | "enabled-spin" | "already-spun" | "disabled" | "no-items";
 
 const RoletaPremio = () => {
   const { user, loading: authLoading } = useAuth();
