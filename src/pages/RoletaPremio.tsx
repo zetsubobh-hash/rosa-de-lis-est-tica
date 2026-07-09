@@ -8,7 +8,7 @@ import AuthModal from "@/components/AuthModal";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
-type Status = "loading" | "must-auth" | "enabled-spin" | "already-spun" | "disabled";
+type Status = "loading" | "must-auth" | "enabled-spin" | "already-spun" | "disabled" | "no-items";
 
 const RoletaPremio = () => {
   const { user, loading: authLoading } = useAuth();
@@ -25,10 +25,29 @@ const RoletaPremio = () => {
     const check = async () => {
       // Check if welcome roulette feature is enabled (via public RPC — works for anon)
       const { data: cfg } = await supabase.rpc("get_public_payment_settings");
-      const enabled = (cfg as any[] | null)?.find((r) => r.key === "welcome_roulette_enabled")?.value;
+      const rows = (cfg as any[] | null) ?? [];
+      const enabled = rows.find((r) => r.key === "welcome_roulette_enabled")?.value;
+      const itemsRaw = rows.find((r) => r.key === "welcome_roulette_items")?.value;
 
       if (enabled !== "true") {
         setStatus("disabled");
+        return;
+      }
+
+      // Validate items list — empty/invalid/no active prize = show clear fallback
+      let hasActiveItems = false;
+      try {
+        const parsed = itemsRaw ? JSON.parse(itemsRaw) : [];
+        if (Array.isArray(parsed)) {
+          hasActiveItems = parsed.some(
+            (p: any) => p?.enabled !== false && Number(p?.weight) > 0
+          );
+        }
+      } catch {
+        hasActiveItems = false;
+      }
+      if (!hasActiveItems) {
+        setStatus("no-items");
         return;
       }
 
@@ -106,6 +125,17 @@ const RoletaPremio = () => {
             </p>
             <p className="font-body text-xs text-muted-foreground">
               A roleta de prêmios está temporariamente desativada. Entre em contato conosco para mais informações.
+            </p>
+          </div>
+        )}
+
+        {status === "no-items" && (
+          <div className="rounded-2xl bg-muted/50 border border-border p-5 space-y-2">
+            <p className="font-body text-sm text-foreground font-medium">
+              🎁 Prêmios sendo preparados
+            </p>
+            <p className="font-body text-xs text-muted-foreground">
+              A roleta está ativa, mas ainda não há prêmios configurados. Volte em instantes ou fale com a recepção.
             </p>
           </div>
         )}
