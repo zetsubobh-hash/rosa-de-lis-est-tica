@@ -25,10 +25,29 @@ const RoletaPremio = () => {
     const check = async () => {
       // Check if welcome roulette feature is enabled (via public RPC — works for anon)
       const { data: cfg } = await supabase.rpc("get_public_payment_settings");
-      const enabled = (cfg as any[] | null)?.find((r) => r.key === "welcome_roulette_enabled")?.value;
+      const rows = (cfg as any[] | null) ?? [];
+      const enabled = rows.find((r) => r.key === "welcome_roulette_enabled")?.value;
+      const itemsRaw = rows.find((r) => r.key === "welcome_roulette_items")?.value;
 
       if (enabled !== "true") {
         setStatus("disabled");
+        return;
+      }
+
+      // Validate items list — empty/invalid/no active prize = show clear fallback
+      let hasActiveItems = false;
+      try {
+        const parsed = itemsRaw ? JSON.parse(itemsRaw) : [];
+        if (Array.isArray(parsed)) {
+          hasActiveItems = parsed.some(
+            (p: any) => p?.enabled !== false && Number(p?.weight) > 0
+          );
+        }
+      } catch {
+        hasActiveItems = false;
+      }
+      if (!hasActiveItems) {
+        setStatus("no-items");
         return;
       }
 
