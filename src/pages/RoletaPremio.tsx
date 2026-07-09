@@ -23,14 +23,11 @@ const RoletaPremio = () => {
     if (authLoading) return;
 
     const check = async () => {
-      // Check if welcome roulette feature is enabled
-      const { data: cfg } = await supabase
-        .from("payment_settings")
-        .select("key, value")
-        .eq("key", "welcome_roulette_enabled")
-        .maybeSingle();
+      // Check if welcome roulette feature is enabled (via public RPC — works for anon)
+      const { data: cfg } = await supabase.rpc("get_public_payment_settings");
+      const enabled = (cfg as any[] | null)?.find((r) => r.key === "welcome_roulette_enabled")?.value;
 
-      if ((cfg as any)?.value !== "true") {
+      if (enabled !== "true") {
         setStatus("disabled");
         return;
       }
