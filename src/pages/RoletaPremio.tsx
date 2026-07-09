@@ -129,6 +129,17 @@ const RoletaPremio = () => {
           </div>
         )}
 
+        {status === "no-items" && (
+          <div className="rounded-2xl bg-muted/50 border border-border p-5 space-y-2">
+            <p className="font-body text-sm text-foreground font-medium">
+              🎁 Prêmios sendo preparados
+            </p>
+            <p className="font-body text-xs text-muted-foreground">
+              A roleta está ativa, mas ainda não há prêmios configurados. Volte em instantes ou fale com a recepção.
+            </p>
+          </div>
+        )}
+
         {status === "must-auth" && (
           <>
             <div className="rounded-2xl bg-primary/5 border border-primary/20 p-5 space-y-3">
