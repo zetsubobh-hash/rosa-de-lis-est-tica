@@ -1118,6 +1118,9 @@ const AdminWhatsApp = () => {
         </button>
       </motion.div>
 
+      {/* WhatsApp QR Generator */}
+      <WhatsAppQRGenerator />
+
       {/* Save all button */}
       <button
         onClick={handleSave}
