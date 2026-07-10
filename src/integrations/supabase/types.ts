@@ -1118,6 +1118,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_welcome_roulette: {
+        Args: {
+          _code: string
+          _discount_type: string
+          _discount_value: number
+          _expires_at: string
+          _is_used: boolean
+          _service_slug?: string
+          _service_title?: string
+        }
+        Returns: Json
+      }
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_stale_pending_appointments: { Args: never; Returns: undefined }
       get_booked_slots: {
