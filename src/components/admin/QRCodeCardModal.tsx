@@ -135,8 +135,12 @@ const QRCodeCardModal = ({ open, onClose }: QRCodeCardModalProps) => {
 
         {/* URL */}
         <div className="bg-muted/50 rounded-xl p-3 mb-4 flex items-center justify-between gap-2">
-          <code className="font-mono text-xs text-foreground truncate flex-1">{PROD_URL}</code>
+          <code
+            className="font-mono text-xs text-foreground truncate flex-1 cursor-text select-all"
+            onClick={selectUrl}
+          >{PROD_URL}</code>
           <button
+            type="button"
             onClick={copyUrl}
             className="flex-shrink-0 p-2 rounded-lg hover:bg-background transition-colors"
             title="Copiar link"
