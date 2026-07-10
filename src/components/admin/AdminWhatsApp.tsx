@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import BirthdayRouletteComponent from "@/components/BirthdayRoulette";
 import ClientBirthdayPreview from "@/components/admin/ClientBirthdayPreview";
+import WhatsAppQRGenerator from "@/components/admin/WhatsAppQRGenerator";
 
 const CONFIG_KEYS = ["evolution_api_url", "evolution_api_key", "evolution_instance_name", "evolution_enabled", "evolution_notifications_enabled"];
 
@@ -1116,6 +1117,9 @@ const AdminWhatsApp = () => {
           {testSending ? "Enviando..." : "Enviar Mensagem de Teste"}
         </button>
       </motion.div>
+
+      {/* WhatsApp QR Generator */}
+      <WhatsAppQRGenerator />
 
       {/* Save all button */}
       <button
