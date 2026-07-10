@@ -51,14 +51,50 @@ const QRCodeCardModal = ({ open, onClose }: QRCodeCardModalProps) => {
   };
 
   const copyUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(PROD_URL);
+    const markCopied = () => {
       setCopied(true);
       toast.success("Link copiado!");
       setTimeout(() => setCopied(false), 2000);
+    };
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(PROD_URL);
+        markCopied();
+        return;
+      }
+      throw new Error("clipboard-unavailable");
     } catch {
-      toast.error("Erro ao copiar");
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = PROD_URL;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "0";
+        ta.style.left = "0";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, PROD_URL.length);
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (ok) {
+          markCopied();
+        } else {
+          throw new Error("execCommand-failed");
+        }
+      } catch {
+        window.prompt("Copie o link:", PROD_URL);
+      }
     }
+  };
+
+  const selectUrl = (e: React.MouseEvent<HTMLElement>) => {
+    const range = document.createRange();
+    range.selectNodeContents(e.currentTarget);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
   };
 
   if (!open) return null;
