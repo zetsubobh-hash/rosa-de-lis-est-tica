@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { DEFAULT_ITEMS, ITEM_COLORS, parseItems, pickWinnerIndex, RouletteItem, RouletteItemType } from "@/lib/welcomeRouletteItems";
 
+const normalizeSetting = (value: unknown) => String(value ?? "").trim().toLowerCase();
+
 interface RouletteSegment {
   label: string;
   type: RouletteItemType;
@@ -70,12 +72,10 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
   }, [show, segments]);
 
   const loadItems = async () => {
-    const { data } = await supabase
-      .from("payment_settings")
-      .select("value")
-      .eq("key", "welcome_roulette_items")
-      .maybeSingle();
-    const parsed = parseItems((data as any)?.value);
+    const { data } = await supabase.rpc("get_public_payment_settings");
+    const rows = (data as any[] | null) ?? [];
+    const itemsRaw = rows.find((r) => r.key === "welcome_roulette_items")?.value;
+    const parsed = parseItems(itemsRaw);
     setItems(parsed);
     setSegments(buildSegments(parsed));
   };
@@ -85,16 +85,12 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
     if (!user) return;
     setLoading(true);
 
-    // Check if welcome roulette is enabled
-    const { data: settingsData } = await supabase
-      .from("payment_settings")
-      .select("key, value")
-      .in("key", ["welcome_roulette_enabled"]);
+    // Check if welcome roulette is explicitly disabled (via public RPC — direct table is RLS-protected)
+    const { data: settingsData } = await supabase.rpc("get_public_payment_settings");
+    const rows = (settingsData as any[] | null) ?? [];
+    const enabled = normalizeSetting(rows.find((r) => r.key === "welcome_roulette_enabled")?.value);
 
-    const cfg: Record<string, string> = {};
-    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
-
-    if (cfg.welcome_roulette_enabled !== "true") {
+    if (enabled === "false") {
       setLoading(false);
       return;
     }
