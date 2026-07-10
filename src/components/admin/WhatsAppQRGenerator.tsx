@@ -13,13 +13,18 @@ const formatMask = (value: string) => {
   const d = local.slice(0, 11);
   if (d.length === 0) return "";
   if (d.length <= 2) return `(${d}`;
-  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 };
 
-const toRaw = (value: string) => {
+const getLocalDigits = (value: string) => {
   const digits = value.replace(/\D/g, "");
-  const local = digits.startsWith("55") ? digits.slice(2) : digits;
+  return digits.startsWith("55") ? digits.slice(2) : digits;
+};
+
+const toRaw = (value: string) => {
+  const local = getLocalDigits(value);
   return local.length > 0 ? `55${local.slice(0, 11)}` : "";
 };
 
@@ -65,8 +70,13 @@ const WhatsAppQRGenerator = () => {
   }, [waUrl]);
 
   const handleSave = async () => {
-    if (!rawNumber) {
-      toast({ title: "Digite um número válido", variant: "destructive" });
+    const localDigits = getLocalDigits(number);
+    if (localDigits.length !== 10 && localDigits.length !== 11) {
+      toast({
+        title: "Digite um número válido",
+        description: "Informe DDD + número com 10 ou 11 dígitos.",
+        variant: "destructive",
+      });
       return;
     }
     setSaving(true);
@@ -79,6 +89,7 @@ const WhatsAppQRGenerator = () => {
     if (error) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } else {
+      setNumber(formatMask(rawNumber));
       toast({ title: "Número salvo!" });
     }
   };
