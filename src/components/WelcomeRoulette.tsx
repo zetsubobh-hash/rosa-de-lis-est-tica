@@ -243,37 +243,27 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
     const days = Math.max(1, winnerItem?.expiresDays || 30);
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 
-    const { error } = await supabase.from("coupons").insert({
-      code,
-      user_id: user.id,
-      discount_type: winner.type === "service" ? "service" : "percent",
-      discount_value: winner.type === "service" ? 0 : winner.value,
-      expires_at: expiresAt,
-      is_used: winner.type === "none",
+    const { data: claimResult, error } = await supabase.rpc("claim_welcome_roulette", {
+      _code: code,
+      _discount_type: winner.type === "service" ? "service" : "percent",
+      _discount_value: winner.type === "service" ? 0 : winner.value,
+      _expires_at: expiresAt,
+      _is_used: winner.type === "none",
+      _service_slug: winner.type === "service" ? (winnerItem?.serviceSlug ?? null) : null,
+      _service_title: winner.type === "service" ? (winnerItem?.serviceTitle ?? winner.label) : null,
     });
 
-    if (error) {
-      console.error("Error creating welcome coupon:", error);
-      toast.error("Erro ao processar. Tente novamente.");
+    const result = claimResult as { ok?: boolean; error?: string } | null;
+
+    if (error || !result?.ok) {
+      console.error("Error creating welcome coupon:", error || result?.error);
+      toast.error(
+        result?.error === "already_claimed"
+          ? "Você já usou seu giro de boas-vindas."
+          : "Erro ao processar. Tente novamente."
+      );
       setSpinning(false);
       return;
-    }
-
-    // For service prizes, also create a free session plan
-    if (winner.type === "service" && winnerItem?.serviceSlug) {
-      const { error: planError } = await supabase.from("client_plans").insert({
-        id: crypto.randomUUID(),
-        user_id: user.id,
-        service_slug: winnerItem.serviceSlug,
-        service_title: winnerItem.serviceTitle || winner.label,
-        plan_name: "Brinde Boas-Vindas",
-        total_sessions: 1,
-        completed_sessions: 0,
-        status: "active",
-        created_by: "welcome_roulette",
-        notes: `Sessão grátis ganha na roleta de boas-vindas (cupom ${code})`,
-      });
-      if (planError) console.error("Error creating welcome plan:", planError);
     }
 
     setSpinning(false);
