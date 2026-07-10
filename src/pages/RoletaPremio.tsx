@@ -7,8 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/AuthModal";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { parseItems } from "@/lib/welcomeRouletteItems";
 
 type Status = "loading" | "must-auth" | "enabled-spin" | "already-spun" | "disabled" | "no-items";
+
+const normalizeSetting = (value: unknown) => String(value ?? "").trim().toLowerCase();
 
 const RoletaPremio = () => {
   const { user, loading: authLoading } = useAuth();
@@ -24,28 +27,19 @@ const RoletaPremio = () => {
 
     const check = async () => {
       // Check if welcome roulette feature is enabled (via public RPC — works for anon)
-      const { data: cfg } = await supabase.rpc("get_public_payment_settings");
+      const { data: cfg, error: cfgError } = await supabase.rpc("get_public_payment_settings");
       const rows = (cfg as any[] | null) ?? [];
-      const enabled = rows.find((r) => r.key === "welcome_roulette_enabled")?.value;
+      const enabled = normalizeSetting(rows.find((r) => r.key === "welcome_roulette_enabled")?.value);
       const itemsRaw = rows.find((r) => r.key === "welcome_roulette_items")?.value;
 
-      if (enabled !== "true") {
+      if (enabled === "false") {
         setStatus("disabled");
         return;
       }
 
       // Validate items list — empty/invalid/no active prize = show clear fallback
-      let hasActiveItems = false;
-      try {
-        const parsed = itemsRaw ? JSON.parse(itemsRaw) : [];
-        if (Array.isArray(parsed)) {
-          hasActiveItems = parsed.some(
-            (p: any) => p?.enabled !== false && Number(p?.weight) > 0
-          );
-        }
-      } catch {
-        hasActiveItems = false;
-      }
+      const parsedItems = cfgError || !itemsRaw ? [] : parseItems(itemsRaw);
+      const hasActiveItems = parsedItems.some((p) => p.enabled && p.weight > 0);
       if (!hasActiveItems) {
         setStatus("no-items");
         return;
