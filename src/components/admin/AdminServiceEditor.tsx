@@ -416,12 +416,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     >
       <div className="fixed inset-0 z-[60] bg-background overflow-y-auto" onPointerDownCapture={handleRootPointerDownCapture}>
       {/* Top toolbar */}
-      <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between gap-3">
-        <button onClick={onClose} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-body text-sm">
+      <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 flex-wrap">
+        <button onClick={onClose} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors font-body text-xs sm:text-sm">
           <ArrowLeft className="w-4 h-4" />
           Voltar
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           <button
             onClick={() => setEditingSection(editingSection === "settings" ? null : "settings")}
             className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -431,16 +431,16 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
           </button>
           <button
             onClick={() => { updateField("is_active", !service.is_active); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-body text-[11px] sm:text-xs font-medium border transition-colors ${
               service.is_active ? "border-primary/20 text-primary" : "border-muted-foreground/20 text-muted-foreground"
             }`}
           >
             {service.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            {service.is_active ? "Ativo" : "Inativo"}
+            <span className="hidden xs:inline">{service.is_active ? "Ativo" : "Inativo"}</span>
           </button>
-          <Button onClick={handleSave} disabled={saving || (!hasChanges && Object.keys(editedPrices).length === 0)} size="sm" className="gap-1.5">
+          <Button onClick={handleSave} disabled={saving || (!hasChanges && Object.keys(editedPrices).length === 0)} size="sm" className="gap-1.5 h-8 px-2.5 sm:px-3 text-[11px] sm:text-xs">
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            {saving ? "Salvando..." : "Salvar Tudo"}
+            {saving ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       </div>
@@ -452,7 +452,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
             initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden border-b border-border bg-muted/50"
           >
-            <div className="max-w-2xl mx-auto px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Slug (URL)</label>
                 <Input value={service.slug} onChange={(e) => updateField("slug", e.target.value)} className="font-body text-xs h-8" />
@@ -495,20 +495,20 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
           <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-primary-foreground opacity-[0.08]" />
           <div className="absolute bottom-0 -left-16 w-64 h-64 rounded-full bg-primary-foreground opacity-[0.05]" />
 
-          <div className="relative max-w-6xl mx-auto px-6 py-12 md:py-20">
-            <div className="flex items-center gap-2 mb-8 font-body text-sm text-primary-foreground/60">
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-20">
+            <div className="flex items-center gap-2 mb-6 sm:mb-8 font-body text-xs sm:text-sm text-primary-foreground/60 flex-wrap">
               <span>Início</span>
               <ChevronRight className="w-3 h-3" />
               <span>Serviços</span>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-primary-foreground">{service.title || "Novo Serviço"}</span>
+              <span className="text-primary-foreground truncate max-w-[180px] sm:max-w-none">{service.title || "Novo Serviço"}</span>
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <EditableWrapper section="icon">
                 {editingSection === "icon" ? (
                   <div
-                    className="w-[280px] md:w-[340px] p-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20"
+                    className="w-full max-w-[280px] md:w-[340px] md:max-w-none p-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <p className="font-body text-[11px] uppercase tracking-wider text-primary-foreground/70 mb-2">
@@ -556,7 +556,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                     <Input
                       value={service.title}
                       onChange={(e) => updateField("title", e.target.value)}
-                      className="font-heading text-2xl md:text-4xl font-bold bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/30"
+                      className="font-heading text-xl sm:text-2xl md:text-4xl font-bold bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/30"
                       placeholder="Nome do serviço"
                       autoFocus
                     />
@@ -566,7 +566,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                     <p className="font-body text-primary-foreground/60 text-xs tracking-[0.3em] uppercase font-semibold mb-2">
                       Tratamento Estético
                     </p>
-                    <h1 className="font-heading text-3xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight">
+                    <h1 className="font-heading text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight break-words">
                       {service.title || <span className="opacity-30">Título do Serviço</span>}
                     </h1>
                   </div>
@@ -577,12 +577,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
 
         {/* About section: image + description */}
-        <section className="max-w-6xl mx-auto px-6 py-12 md:py-20">
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-14">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-20">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-14">
             {/* Image */}
-            <EditableWrapper section="image" className="flex-shrink-0">
+            <EditableWrapper section="image" className="flex-shrink-0 w-full md:w-auto">
               {editingSection === "image" ? (
-                <div className="w-[260px] md:w-[320px] space-y-3" onClick={(e) => e.stopPropagation()}>
+                <div className="w-full max-w-[260px] md:w-[320px] md:max-w-none mx-auto space-y-3" onClick={(e) => e.stopPropagation()}>
                   {service.image_url && (
                     <img src={service.image_url} alt="" className="max-w-full rounded-xl" />
                   )}
@@ -599,9 +599,9 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                 </div>
               ) : (
                 service.image_url ? (
-                  <img src={service.image_url} alt={service.title} className="max-w-[260px] md:max-w-[320px] rounded-xl" />
+                  <img src={service.image_url} alt={service.title} className="w-full max-w-[260px] md:max-w-[320px] mx-auto rounded-xl" />
                 ) : (
-                  <div className="w-[260px] md:w-[320px] h-48 rounded-xl bg-muted border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <div className="w-full max-w-[260px] md:w-[320px] md:max-w-none mx-auto h-48 rounded-xl bg-muted border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 text-muted-foreground">
                     <Upload className="w-8 h-8" />
                     <span className="font-body text-sm">Clique para adicionar imagem</span>
                   </div>
@@ -653,8 +653,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
 
         {/* Benefits + Sidebar */}
-        <section className="max-w-6xl mx-auto px-6 pb-12 md:pb-20">
-          <div className="grid lg:grid-cols-5 gap-10 md:gap-16">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-8 sm:pb-12 md:pb-20">
+          <div className="grid lg:grid-cols-5 gap-8 md:gap-16">
             {/* Benefits */}
             <div className="lg:col-span-3">
               <p className="font-body text-primary text-xs tracking-[0.3em] uppercase font-semibold mb-2">Vantagens</p>
@@ -719,7 +719,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
             {/* Info sidebar */}
             <div className="lg:col-span-2">
-              <div className="bg-card rounded-3xl p-6 md:p-8 border border-border shadow-sm space-y-5">
+              <div className="bg-card rounded-3xl p-5 sm:p-6 md:p-8 border border-border shadow-sm space-y-5">
                 <h3 className="font-heading text-lg font-bold text-foreground mb-4">Informações</h3>
 
                 {[
@@ -765,7 +765,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
 
         {/* Pricing plans */}
-        <section className="max-w-6xl mx-auto px-6 pb-16 md:pb-24">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 md:pb-24">
           <div className="text-center mb-10">
             <p className="font-body text-primary text-xs tracking-[0.3em] uppercase font-semibold mb-2">Pacotes</p>
             <h2 className="font-heading text-2xl md:text-4xl font-bold text-foreground">
@@ -793,7 +793,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
                 return (
                   <EditableWrapper key={plan.id} section={`plan-${plan.id}` as EditingSection}>
-                    <div className={`relative rounded-3xl p-6 md:p-8 border ${
+                    <div className={`relative rounded-3xl p-5 sm:p-6 md:p-8 border ${
                       isHighlight
                         ? "bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] text-primary-foreground border-transparent shadow-xl"
                         : "bg-card text-foreground border-border shadow-sm"
@@ -942,7 +942,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       ref={(node) => {
                         if (editingSection === "new-plan") activePlanEditorRef.current = node;
                       }}
-                      className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3"
+                      className="rounded-3xl p-5 sm:p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3"
                       onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => e.stopPropagation()}
                       onPointerDown={(e) => e.stopPropagation()}
@@ -1001,7 +1001,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       </Button>
                     </div>
                   ) : (
-                    <div className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-border flex flex-col items-center justify-center gap-3 min-h-[280px] text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors">
+                    <div className="rounded-3xl p-5 sm:p-6 md:p-8 border-2 border-dashed border-border flex flex-col items-center justify-center gap-3 min-h-[220px] sm:min-h-[280px] text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors">
                       <Plus className="w-8 h-8" />
                       <span className="font-body text-sm font-medium">Adicionar Plano</span>
                     </div>
@@ -1013,8 +1013,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
 
         {/* CTA Preview */}
-        <section className="max-w-3xl mx-auto px-6 pb-16 md:pb-24">
-          <div className="bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] rounded-3xl p-8 md:p-10 text-primary-foreground text-center">
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 md:pb-24">
+          <div className="bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] rounded-3xl p-6 sm:p-8 md:p-10 text-primary-foreground text-center">
             <h3 className="font-heading text-xl md:text-2xl font-bold mb-3">Agende seu horário</h3>
             <p className="font-body text-primary-foreground/70 text-sm md:text-base mb-8 leading-relaxed max-w-lg mx-auto">
               Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
