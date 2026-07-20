@@ -15,9 +15,9 @@ serve(async (req) => {
   try {
     const { username, password, full_name, sex, phone, address, email, birth_date } = await req.json();
 
-    if (!username || !password || !full_name || !sex || !phone || !address) {
+    if (!username || !password || !full_name || !phone || !birth_date) {
       return new Response(
-        JSON.stringify({ error: "Campos obrigatórios faltando" }),
+        JSON.stringify({ error: "Campos obrigatórios faltando: Nome, Telefone e Data de Nascimento" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -75,15 +75,15 @@ serve(async (req) => {
       );
     }
 
-    // Normalize sex value to satisfy DB CHECK constraint ('masculino' | 'feminino')
+    // Normalize sex value when provided, otherwise leave null
     const sexNormalized =
       sex === "M" || sex === "m" || sex?.toLowerCase?.() === "masculino"
         ? "masculino"
         : sex === "F" || sex === "f" || sex?.toLowerCase?.() === "feminino"
         ? "feminino"
-        : "feminino";
+        : null;
 
-    // Create profile (with optional birth_date)
+    // Create profile
     const profileData: Record<string, unknown> = {
       user_id: userData.user.id,
       full_name: full_name.trim(),
@@ -91,12 +91,9 @@ serve(async (req) => {
       email: email?.trim() || null,
       sex: sexNormalized,
       phone: phone.trim(),
-      address: address.trim(),
+      address: address?.trim() || null,
+      birth_date: birth_date,
     };
-
-    if (birth_date) {
-      profileData.birth_date = birth_date;
-    }
 
     const { error: profileError } = await supabaseAdmin.from("profiles").insert(profileData);
 

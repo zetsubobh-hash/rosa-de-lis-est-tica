@@ -166,8 +166,8 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
 
   const handleCreate = async () => {
     const { full_name, phone, sex, address, email, birth_date } = form;
-    if (!full_name || !phone || !sex || !address || !birth_date) {
-      toast.error("Preencha todos os campos obrigatórios");
+    if (!full_name || !phone || !birth_date) {
+      toast.error("Preencha os campos obrigatórios: Nome, Telefone e Data de Nascimento");
       return;
     }
     const username = generateUsername(full_name);
@@ -177,7 +177,16 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
     try {
       const rawPhone = phone.replace(/\D/g, "");
       const res = await supabase.functions.invoke("register", {
-        body: { username, password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined, birth_date },
+        body: {
+          username,
+          password,
+          full_name: full_name.trim(),
+          sex: sex || undefined,
+          phone: rawPhone,
+          address: address?.trim() || undefined,
+          email: email.trim() || undefined,
+          birth_date,
+        },
       });
       if (res.error || res.data?.error) throw new Error(res.data?.error || res.error?.message || "Erro ao criar cliente");
 
@@ -267,15 +276,15 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
           <Input value={form.full_name} onChange={(e) => setForm(prev => ({ ...prev, full_name: capitalize(e.target.value) }))} placeholder="Maria Silva" className="font-body h-8 text-xs" />
         </div>
         <div className="space-y-1">
-          <label className="font-body text-[10px] font-medium text-foreground">Data de Nascimento *</label>
-          <Input type="date" value={form.birth_date} onChange={(e) => setForm(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body h-8 text-xs" />
-        </div>
-        <div className="space-y-1">
           <label className="font-body text-[10px] font-medium text-foreground">Telefone *</label>
           <Input value={form.phone} onChange={(e) => setForm(prev => ({ ...prev, phone: formatPhone(e.target.value) }))} placeholder="(31) 99999-9999" className="font-body h-8 text-xs" maxLength={15} />
         </div>
         <div className="space-y-1">
-          <label className="font-body text-[10px] font-medium text-foreground">Sexo *</label>
+          <label className="font-body text-[10px] font-medium text-foreground">Data de Nascimento *</label>
+          <Input type="date" value={form.birth_date} onChange={(e) => setForm(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body h-8 text-xs" />
+        </div>
+        <div className="space-y-1">
+          <label className="font-body text-[10px] font-medium text-foreground">Sexo</label>
           <Select value={form.sex} onValueChange={(v) => setForm(prev => ({ ...prev, sex: v }))}>
             <SelectTrigger className="font-body h-8 text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
             <SelectContent className="z-[9999]" position="popper" sideOffset={4}>
@@ -288,8 +297,8 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
           <label className="font-body text-[10px] font-medium text-foreground">E-mail</label>
           <Input type="email" value={form.email} onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))} placeholder="email@exemplo.com" className="font-body h-8 text-xs" />
         </div>
-        <div className="space-y-1">
-          <label className="font-body text-[10px] font-medium text-foreground">Endereço *</label>
+        <div className="space-y-1 sm:col-span-2">
+          <label className="font-body text-[10px] font-medium text-foreground">Endereço</label>
           <Input value={form.address} onChange={(e) => setForm(prev => ({ ...prev, address: capitalize(e.target.value) }))} placeholder="Rua..., Nº - Bairro, Cidade" className="font-body h-8 text-xs" />
         </div>
       </div>
