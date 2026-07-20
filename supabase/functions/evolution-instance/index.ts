@@ -102,6 +102,20 @@ Deno.serve(async (req) => {
       return json(data);
     }
 
+    if (action === "send_text") {
+      if (!phone || !message) return json({ error: "phone e message são obrigatórios" }, 400);
+      const digits = String(phone).replace(/\D/g, "");
+      const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+      const res = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ number: normalized, text: String(message) }),
+      });
+      const data = await res.json();
+      if (!res.ok) return json({ error: data?.message || data?.response?.message || "Erro ao enviar mensagem" }, res.status);
+      return json({ ok: true, data });
+    }
+
     return json({ error: `Ação desconhecida: ${action}` }, 400);
   } catch (err: any) {
     console.error("evolution-instance error:", err);
