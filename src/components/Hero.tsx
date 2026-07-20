@@ -88,7 +88,7 @@ const Hero = () => {
                 <h1 className="font-heading text-3xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-4 md:mb-6">
                   {slides[current].title}
                 </h1>
-                <p className="font-body text-primary-foreground/80 font-normal max-w-lg text-base md:text-[25px] md:leading-[35px] leading-relaxed">
+                <p className="font-body text-primary-foreground/80 font-normal max-w-lg text-base md:text-[25px] md:leading-[35px] leading-relaxed line-clamp-2">
                   {slides[current].subtitle}
                 </p>
               </motion.div>
