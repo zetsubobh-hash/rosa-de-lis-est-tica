@@ -121,8 +121,10 @@ const AdminPromoBroadcast = () => {
   const [campaignReportLoading, setCampaignReportLoading] = useState<Record<string, boolean>>({});
   const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
 
-  // ── test message state
-  const [testForm, setTestForm] = useState({ instance_id: "", phone: "", campaign_id: "", message: "" });
+  // ── test message state (per-campaign modal)
+  const [testModal, setTestModal] = useState<{ open: boolean; campaign: PromoCampaign | null; instance_id: string; phone: string; message: string }>({
+    open: false, campaign: null, instance_id: "", phone: "", message: "",
+  });
   const [sendingTest, setSendingTest] = useState(false);
 
   const maskPhoneBR = (raw: string) => {
@@ -133,17 +135,30 @@ const AdminPromoBroadcast = () => {
     return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   };
 
+  const openTestModal = (camp: PromoCampaign) => {
+    const svcTitle = camp.service_slug
+      ? (services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug)
+      : "nosso serviço";
+    const rendered = (camp.message_template || "")
+      .replace(/\{nome\}/g, "Cliente Teste")
+      .replace(/\{servico\}/g, svcTitle)
+      .replace(/\{empresa\}/g, "Rosa de Lis Estética")
+      .replace(/\{telefone\}/g, "");
+    const firstActive = instances.find(i => i.is_active)?.id || instances[0]?.id || "";
+    setTestModal({ open: true, campaign: camp, instance_id: firstActive, phone: "", message: rendered });
+  };
+
   const sendTestMessage = async () => {
-    if (!testForm.instance_id) {
+    if (!testModal.instance_id) {
       toast({ title: "Selecione uma instância", variant: "destructive" });
       return;
     }
-    const digits = testForm.phone.replace(/\D/g, "");
+    const digits = testModal.phone.replace(/\D/g, "");
     if (digits.length < 10) {
       toast({ title: "Telefone inválido", description: "Informe DDD + número (10 ou 11 dígitos).", variant: "destructive" });
       return;
     }
-    if (!testForm.message.trim()) {
+    if (!testModal.message.trim()) {
       toast({ title: "Escreva uma mensagem", variant: "destructive" });
       return;
     }
@@ -151,15 +166,16 @@ const AdminPromoBroadcast = () => {
     try {
       const { data, error } = await supabase.functions.invoke("evolution-instance", {
         body: {
-          instance_id: testForm.instance_id,
+          instance_id: testModal.instance_id,
           action: "send_text",
           phone: digits,
-          message: testForm.message,
+          message: testModal.message.replace(/\{telefone\}/g, digits),
         },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       toast({ title: "Mensagem enviada!", description: `Enviado para ${maskPhoneBR(digits)}` });
+      setTestModal(p => ({ ...p, open: false }));
     } catch (e: any) {
       toast({ title: "Erro ao enviar teste", description: e.message, variant: "destructive" });
     } finally {
@@ -742,104 +758,8 @@ const AdminPromoBroadcast = () => {
         </AnimatePresence>
       </Card>
 
-      {/* ─── TEST MESSAGE CARD ─── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-            <MessageCircle className="w-5 h-5 text-primary" />
-            Mensagem de Teste
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Envia a mensagem <strong>real da campanha selecionada</strong> para um número específico. Use antes de disparar em massa para validar template, imagens e variáveis.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Instância Evolution</Label>
-              <Select value={testForm.instance_id} onValueChange={(v) => setTestForm(p => ({ ...p, instance_id: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha a instância" />
-                </SelectTrigger>
-                <SelectContent className="z-[9999]">
-                  {instances.length === 0 ? (
-                    <SelectItem value="__none" disabled>Nenhuma instância cadastrada</SelectItem>
-                  ) : (
-                    instances.map(i => {
-                      const st = instanceStatus[i.id];
-                      return (
-                        <SelectItem key={i.id} value={i.id}>
-                          {i.name} {st === "open" ? "🟢" : st === "close" ? "🔴" : "⚪"}
-                        </SelectItem>
-                      );
-                    })
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Telefone (com DDD)</Label>
-              <Input
-                value={testForm.phone}
-                onChange={(e) => setTestForm(p => ({ ...p, phone: maskPhoneBR(e.target.value) }))}
-                placeholder="(31) 99999-9999"
-                inputMode="numeric"
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">O prefixo 55 (Brasil) é adicionado automaticamente.</p>
-            </div>
-            <div className="md:col-span-2">
-              <Label>Campanha a testar</Label>
-              <Select
-                value={testForm.campaign_id}
-                onValueChange={(v) => {
-                  const camp = campaigns.find(c => c.id === v);
-                  const svcTitle = camp?.service_slug
-                    ? (services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug)
-                    : "nosso serviço";
-                  const rendered = (camp?.message_template || "")
-                    .replace(/\{nome\}/g, "Cliente Teste")
-                    .replace(/\{servico\}/g, svcTitle)
-                    .replace(/\{empresa\}/g, "Rosa de Lis Estética")
-                    .replace(/\{telefone\}/g, testForm.phone || "");
-                  setTestForm(p => ({ ...p, campaign_id: v, message: rendered }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a campanha para carregar a mensagem" />
-                </SelectTrigger>
-                <SelectContent className="z-[9999]">
-                  {campaigns.length === 0 ? (
-                    <SelectItem value="__none" disabled>Nenhuma campanha criada</SelectItem>
-                  ) : (
-                    campaigns.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                As variáveis são pré-preenchidas: <code>{"{nome}"}</code> → "Cliente Teste", <code>{"{servico}"}</code> → serviço da campanha, <code>{"{empresa}"}</code> → Rosa de Lis Estética.
-              </p>
-            </div>
-            <div className="md:col-span-2">
-              <Label>Mensagem (pré-visualização — editável)</Label>
-              <Textarea
-                value={testForm.message}
-                onChange={(e) => setTestForm(p => ({ ...p, message: e.target.value }))}
-                rows={8}
-                className="font-mono text-sm"
-                maxLength={2000}
-                placeholder="Selecione uma campanha acima para carregar a mensagem real…"
-              />
-            </div>
-          </div>
+      {/* Test message is now per-campaign (see "Enviar teste" button in each campaign) */}
 
-          <Button onClick={sendTestMessage} disabled={sendingTest} className="gap-2">
-            {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            Enviar mensagem de teste
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* ─── CAMPAIGNS SECTION ─── */}
       <Card>
@@ -1088,6 +1008,15 @@ const AdminPromoBroadcast = () => {
                   >
                     {campaignReportOpen[camp.id] ? "Ocultar relatório" : "Ver relatório"}
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={() => openTestModal(camp)}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Enviar teste
+                  </Button>
                   <Button size="sm" variant="destructive" className="gap-2" onClick={() => deleteCampaign(camp.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -1210,6 +1139,75 @@ const AdminPromoBroadcast = () => {
             <Button onClick={saveInstance} disabled={savingInst} className="gap-2">
               {savingInst ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── TEST MESSAGE DIALOG (per campaign) ─── */}
+      <Dialog open={testModal.open} onOpenChange={(o) => setTestModal(p => ({ ...p, open: o }))}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              Enviar teste — {testModal.campaign?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Dispara a mensagem <strong>real desta campanha</strong> para um único número. Ideal para validar antes do envio em massa.
+            </p>
+            <div>
+              <Label>Instância Evolution</Label>
+              <Select value={testModal.instance_id} onValueChange={(v) => setTestModal(p => ({ ...p, instance_id: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha a instância" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  {instances.length === 0 ? (
+                    <SelectItem value="__none" disabled>Nenhuma instância cadastrada</SelectItem>
+                  ) : (
+                    instances.map(i => {
+                      const st = instanceStatus[i.id];
+                      return (
+                        <SelectItem key={i.id} value={i.id}>
+                          {i.name} {st === "open" ? "🟢" : st === "close" ? "🔴" : "⚪"}
+                        </SelectItem>
+                      );
+                    })
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Telefone de teste (com DDD)</Label>
+              <Input
+                value={testModal.phone}
+                onChange={(e) => setTestModal(p => ({ ...p, phone: maskPhoneBR(e.target.value) }))}
+                placeholder="(31) 99999-9999"
+                inputMode="numeric"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">O prefixo 55 (Brasil) é adicionado automaticamente.</p>
+            </div>
+            <div>
+              <Label>Mensagem (pré-visualização — editável)</Label>
+              <Textarea
+                value={testModal.message}
+                onChange={(e) => setTestModal(p => ({ ...p, message: e.target.value }))}
+                rows={8}
+                className="font-mono text-sm"
+                maxLength={2000}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Variáveis já renderizadas: <code>{"{nome}"}</code> → "Cliente Teste", <code>{"{servico}"}</code> → serviço da campanha.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTestModal(p => ({ ...p, open: false }))}>Cancelar</Button>
+            <Button onClick={sendTestMessage} disabled={sendingTest} className="gap-2">
+              {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Enviar teste
             </Button>
           </DialogFooter>
         </DialogContent>
