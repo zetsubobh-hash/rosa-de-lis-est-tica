@@ -71,11 +71,11 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
   // Register fields
   const [regName, setRegName] = useState("");
-  
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regSex, setRegSex] = useState("");
   const [regPhone, setRegPhone] = useState("");
+  const [regBirthDate, setRegBirthDate] = useState("");
   const [regCep, setRegCep] = useState("");
   const [regRua, setRegRua] = useState("");
   const [regNumero, setRegNumero] = useState("");
@@ -140,11 +140,11 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
     setLoginUsername("");
     setPassword("");
     setRegName("");
-    
     setRegEmail("");
     setRegPassword("");
     setRegSex("");
     setRegPhone("");
+    setRegBirthDate("");
     setRegCep("");
     setRegRua("");
     setRegNumero("");
@@ -188,7 +188,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
   const buildFullAddress = () => {
     const parts = [regRua, regNumero, regBairro, regCidade, regEstado].filter(Boolean);
-    return parts.join(", ");
+    return parts.join(", ") || undefined;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -243,8 +243,8 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName.trim() || !regPassword.trim() || !regSex || !regPhone.trim() || !regCep.replace(/\D/g, "").trim() || !regRua.trim() || !regNumero.trim() || !regBairro.trim() || !regCidade.trim() || !regEstado.trim()) {
-      toast({ title: "Preencha todos os campos obrigatórios (*)", variant: "destructive" });
+    if (!regName.trim() || !regPassword.trim() || !regPhone.trim() || !regBirthDate) {
+      toast({ title: "Preencha os campos obrigatórios: Nome, Telefone, Data de Nascimento e Senha", variant: "destructive" });
       return;
     }
     const fullAddress = buildFullAddress();
@@ -264,10 +264,11 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
           username: generatedUsername,
           password: regPassword,
           full_name: regName.trim(),
-          sex: regSex,
+          sex: regSex || undefined,
           phone: regPhone.trim(),
-          address: fullAddress.trim(),
+          address: fullAddress,
           email: regEmail.trim() || null,
+          birth_date: regBirthDate,
         }),
       });
 
