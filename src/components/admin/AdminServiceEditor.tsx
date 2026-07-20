@@ -577,12 +577,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
 
         {/* About section: image + description */}
-        <section className="max-w-6xl mx-auto px-6 py-12 md:py-20">
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-14">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-20">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-14">
             {/* Image */}
-            <EditableWrapper section="image" className="flex-shrink-0">
+            <EditableWrapper section="image" className="flex-shrink-0 w-full md:w-auto">
               {editingSection === "image" ? (
-                <div className="w-[260px] md:w-[320px] space-y-3" onClick={(e) => e.stopPropagation()}>
+                <div className="w-full max-w-[260px] md:w-[320px] md:max-w-none mx-auto space-y-3" onClick={(e) => e.stopPropagation()}>
                   {service.image_url && (
                     <img src={service.image_url} alt="" className="max-w-full rounded-xl" />
                   )}
