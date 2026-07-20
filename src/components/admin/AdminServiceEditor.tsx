@@ -765,7 +765,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
 
         {/* Pricing plans */}
-        <section className="max-w-6xl mx-auto px-6 pb-16 md:pb-24">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 md:pb-24">
           <div className="text-center mb-10">
             <p className="font-body text-primary text-xs tracking-[0.3em] uppercase font-semibold mb-2">Pacotes</p>
             <h2 className="font-heading text-2xl md:text-4xl font-bold text-foreground">
