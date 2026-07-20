@@ -1,19 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import referenceHero from "@/assets/reference-hero.webp";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import { BackgroundPaths } from "@/components/ui/background-paths";
 import { useOnlineBooking } from "@/hooks/useOnlineBooking";
-const slides = [
+import { useServices } from "@/hooks/useServices";
+
+const FALLBACK_SLIDES = [
   { title: "Drenagem Linfática", subtitle: "O melhor tratamento para combater a retenção de líquidos.", slug: "drenagem-linfatica" },
-  { title: "Criolipólise", subtitle: "Elimine gordura localizada sem cirurgia, com resultados visíveis.", slug: "criolipolise" },
-  { title: "Botox", subtitle: "Suavize rugas e linhas de expressão com aspecto natural.", slug: "botox" },
-  { title: "Carboxiterapia", subtitle: "Melhore circulação e trate celulite com tecnologia avançada.", slug: "carboxiterapia" },
-  { title: "Massagem Modeladora", subtitle: "Esculpa o corpo e defina suas curvas de forma natural.", slug: "massagem-modeladora" },
-  { title: "Peeling de Diamante", subtitle: "Renove sua pele e conquiste uma aparência luminosa e uniforme.", slug: "peeling-de-diamante" },
-  { title: "Radiofrequência", subtitle: "Combata a flacidez e estimule colágeno para rejuvenescer.", slug: "radiofrequencia" },
-  { title: "Microagulhamento", subtitle: "Estimule colágeno e trate cicatrizes com precisão.", slug: "microagulhamento" },
 ];
 
 const Hero = () => {
