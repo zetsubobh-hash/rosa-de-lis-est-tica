@@ -807,6 +807,40 @@ const AdminPromoBroadcast = () => {
                         ))}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Clique para inserir variáveis dinâmicas na mensagem.</p>
+
+                      <div className="mt-3 p-3 rounded-lg border border-dashed border-border bg-muted/30">
+                        <Label className="text-xs font-semibold">Inserir serviço cadastrado na mensagem</Label>
+                        <div className="flex gap-2 mt-1.5">
+                          <Select
+                            value=""
+                            onValueChange={(slug) => {
+                              const svc = services.find(s => s.slug === slug);
+                              if (svc) {
+                                setCampForm(prev => ({
+                                  ...prev,
+                                  message_template: prev.message_template + svc.title,
+                                }));
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="flex-1 h-9 text-sm">
+                              <SelectValue placeholder="Escolha um serviço para inserir o nome…" />
+                            </SelectTrigger>
+                            <SelectContent className="z-[9999]">
+                              {services.length === 0 ? (
+                                <SelectItem value="__none" disabled>Nenhum serviço ativo</SelectItem>
+                              ) : (
+                                services.map(s => (
+                                  <SelectItem key={s.slug} value={s.slug}>{s.title}</SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          Insere o nome do serviço direto no texto. Para usar a variável dinâmica que troca conforme a campanha, use <code className="font-mono">{"{servico}"}</code>.
+                        </p>
+                      </div>
                     </div>
 
                     <div>
