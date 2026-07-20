@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Save, Send, Pencil, Server, Megaphone, Clock,
   Hash, ChevronDown, ChevronUp, Loader2, CheckCircle2, XCircle,
-  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff, Users, Filter
+  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff, Users, Filter, MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,6 +120,52 @@ const AdminPromoBroadcast = () => {
   const [campaignReportOpen, setCampaignReportOpen] = useState<Record<string, boolean>>({});
   const [campaignReportLoading, setCampaignReportLoading] = useState<Record<string, boolean>>({});
   const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
+
+  // ── test message state
+  const [testForm, setTestForm] = useState({ instance_id: "", phone: "", message: "Olá! Esta é uma mensagem de teste do sistema Rosa de Lis 🌸" });
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const maskPhoneBR = (raw: string) => {
+    const d = raw.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 2) return d;
+    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+
+  const sendTestMessage = async () => {
+    if (!testForm.instance_id) {
+      toast({ title: "Selecione uma instância", variant: "destructive" });
+      return;
+    }
+    const digits = testForm.phone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      toast({ title: "Telefone inválido", description: "Informe DDD + número (10 ou 11 dígitos).", variant: "destructive" });
+      return;
+    }
+    if (!testForm.message.trim()) {
+      toast({ title: "Escreva uma mensagem", variant: "destructive" });
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("evolution-instance", {
+        body: {
+          instance_id: testForm.instance_id,
+          action: "send_text",
+          phone: digits,
+          message: testForm.message,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Mensagem enviada!", description: `Enviado para ${maskPhoneBR(digits)}` });
+    } catch (e: any) {
+      toast({ title: "Erro ao enviar teste", description: e.message, variant: "destructive" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   /* ───────── call evolution-instance edge function ───────── */
   const callInstanceAction = useCallback(async (instanceId: string, action: string) => {
@@ -694,6 +740,68 @@ const AdminPromoBroadcast = () => {
             </motion.div>
           )}
         </AnimatePresence>
+      </Card>
+
+      {/* ─── TEST MESSAGE CARD ─── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+            <MessageCircle className="w-5 h-5 text-primary" />
+            Mensagem de Teste
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Envia uma única mensagem para um número específico usando uma das instâncias conectadas. Útil para validar template ou conexão antes de disparar uma campanha.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Instância Evolution</Label>
+              <Select value={testForm.instance_id} onValueChange={(v) => setTestForm(p => ({ ...p, instance_id: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha a instância" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  {instances.length === 0 ? (
+                    <SelectItem value="__none" disabled>Nenhuma instância cadastrada</SelectItem>
+                  ) : (
+                    instances.map(i => {
+                      const st = instanceStatus[i.id];
+                      return (
+                        <SelectItem key={i.id} value={i.id}>
+                          {i.name} {st === "open" ? "🟢" : st === "close" ? "🔴" : "⚪"}
+                        </SelectItem>
+                      );
+                    })
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Telefone (com DDD)</Label>
+              <Input
+                value={testForm.phone}
+                onChange={(e) => setTestForm(p => ({ ...p, phone: maskPhoneBR(e.target.value) }))}
+                placeholder="(31) 99999-9999"
+                inputMode="numeric"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">O prefixo 55 (Brasil) é adicionado automaticamente.</p>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Mensagem</Label>
+              <Textarea
+                value={testForm.message}
+                onChange={(e) => setTestForm(p => ({ ...p, message: e.target.value }))}
+                rows={4}
+                maxLength={2000}
+              />
+            </div>
+          </div>
+          <Button onClick={sendTestMessage} disabled={sendingTest} className="gap-2">
+            {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            Enviar mensagem de teste
+          </Button>
+        </CardContent>
       </Card>
 
       {/* ─── CAMPAIGNS SECTION ─── */}
