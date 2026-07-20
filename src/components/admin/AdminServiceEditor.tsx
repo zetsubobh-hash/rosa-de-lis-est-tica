@@ -1001,7 +1001,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       </Button>
                     </div>
                   ) : (
-                    <div className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-border flex flex-col items-center justify-center gap-3 min-h-[280px] text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors">
+                    <div className="rounded-3xl p-5 sm:p-6 md:p-8 border-2 border-dashed border-border flex flex-col items-center justify-center gap-3 min-h-[220px] sm:min-h-[280px] text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors">
                       <Plus className="w-8 h-8" />
                       <span className="font-body text-sm font-medium">Adicionar Plano</span>
                     </div>
