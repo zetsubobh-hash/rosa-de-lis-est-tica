@@ -1013,8 +1013,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
 
         {/* CTA Preview */}
-        <section className="max-w-3xl mx-auto px-6 pb-16 md:pb-24">
-          <div className="bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] rounded-3xl p-8 md:p-10 text-primary-foreground text-center">
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 md:pb-24">
+          <div className="bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] rounded-3xl p-6 sm:p-8 md:p-10 text-primary-foreground text-center">
             <h3 className="font-heading text-xl md:text-2xl font-bold mb-3">Agende seu horário</h3>
             <p className="font-body text-primary-foreground/70 text-sm md:text-base mb-8 leading-relaxed max-w-lg mx-auto">
               Escolha o melhor dia e horário para o seu tratamento diretamente pelo nosso sistema de agendamento.
