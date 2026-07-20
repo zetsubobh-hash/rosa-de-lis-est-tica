@@ -26,6 +26,8 @@ const Hero = () => {
       slug: s.slug,
     }));
   }, [services]);
+
+  const handleAgendar = () => {
     if (isEnabled) {
       navigate(`/servico/${slides[current].slug}`);
     } else {
@@ -34,11 +36,15 @@ const Hero = () => {
   };
 
   useEffect(() => {
+    if (current >= slides.length) setCurrent(0);
+  }, [slides.length, current]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   return (
     <section className="relative min-h-[85vh] md:min-h-screen flex items-center overflow-hidden bg-primary pt-20 md:pt-0">
