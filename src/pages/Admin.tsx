@@ -281,7 +281,7 @@ const Admin = () => {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-64 pt-14 md:pt-0">
+      <main className="flex-1 min-w-0 md:ml-64 md:w-[calc(100%-16rem)] pt-14 md:pt-0">
         <div className="sticky top-14 md:top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-8 py-4">
           <motion.h1
             key={activeTab}
