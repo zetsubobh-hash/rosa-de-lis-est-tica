@@ -416,12 +416,12 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     >
       <div className="fixed inset-0 z-[60] bg-background overflow-y-auto" onPointerDownCapture={handleRootPointerDownCapture}>
       {/* Top toolbar */}
-      <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between gap-3">
-        <button onClick={onClose} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-body text-sm">
+      <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 flex-wrap">
+        <button onClick={onClose} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors font-body text-xs sm:text-sm">
           <ArrowLeft className="w-4 h-4" />
           Voltar
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           <button
             onClick={() => setEditingSection(editingSection === "settings" ? null : "settings")}
             className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -431,16 +431,16 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
           </button>
           <button
             onClick={() => { updateField("is_active", !service.is_active); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-medium border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-body text-[11px] sm:text-xs font-medium border transition-colors ${
               service.is_active ? "border-primary/20 text-primary" : "border-muted-foreground/20 text-muted-foreground"
             }`}
           >
             {service.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            {service.is_active ? "Ativo" : "Inativo"}
+            <span className="hidden xs:inline">{service.is_active ? "Ativo" : "Inativo"}</span>
           </button>
-          <Button onClick={handleSave} disabled={saving || (!hasChanges && Object.keys(editedPrices).length === 0)} size="sm" className="gap-1.5">
+          <Button onClick={handleSave} disabled={saving || (!hasChanges && Object.keys(editedPrices).length === 0)} size="sm" className="gap-1.5 h-8 px-2.5 sm:px-3 text-[11px] sm:text-xs">
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            {saving ? "Salvando..." : "Salvar Tudo"}
+            {saving ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       </div>
