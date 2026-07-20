@@ -506,9 +506,41 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <EditableWrapper section="icon">
-                <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center rounded-3xl bg-primary-foreground/15 backdrop-blur-sm border border-primary-foreground/10">
-                  <Icon className="w-10 h-10 md:w-12 md:h-12 text-primary-foreground" strokeWidth={1.5} />
-                </div>
+                {editingSection === "icon" ? (
+                  <div
+                    className="w-[280px] md:w-[340px] p-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <p className="font-body text-[11px] uppercase tracking-wider text-primary-foreground/70 mb-2">
+                      Escolha um ícone
+                    </p>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {ICON_OPTIONS.map((icon) => {
+                        const IconOpt = getIconByName(icon);
+                        const selected = service.icon_name === icon;
+                        return (
+                          <button
+                            key={icon}
+                            type="button"
+                            onClick={() => updateField("icon_name", icon)}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                              selected
+                                ? "bg-primary-foreground text-primary"
+                                : "bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+                            }`}
+                            title={icon}
+                          >
+                            <IconOpt className="w-4 h-4" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center rounded-3xl bg-primary-foreground/15 backdrop-blur-sm border border-primary-foreground/10">
+                    <Icon className="w-10 h-10 md:w-12 md:h-12 text-primary-foreground" strokeWidth={1.5} />
+                  </div>
+                )}
               </EditableWrapper>
 
               <EditableWrapper section="title" className="flex-1">
