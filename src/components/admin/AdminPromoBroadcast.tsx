@@ -1008,6 +1008,15 @@ const AdminPromoBroadcast = () => {
                   >
                     {campaignReportOpen[camp.id] ? "Ocultar relatório" : "Ver relatório"}
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={() => openTestModal(camp)}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Enviar teste
+                  </Button>
                   <Button size="sm" variant="destructive" className="gap-2" onClick={() => deleteCampaign(camp.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
