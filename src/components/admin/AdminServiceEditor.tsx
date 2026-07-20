@@ -556,7 +556,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                     <Input
                       value={service.title}
                       onChange={(e) => updateField("title", e.target.value)}
-                      className="font-heading text-2xl md:text-4xl font-bold bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/30"
+                      className="font-heading text-xl sm:text-2xl md:text-4xl font-bold bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/30"
                       placeholder="Nome do serviço"
                       autoFocus
                     />
