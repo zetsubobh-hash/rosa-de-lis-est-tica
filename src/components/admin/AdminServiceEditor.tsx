@@ -653,8 +653,8 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         </section>
 
         {/* Benefits + Sidebar */}
-        <section className="max-w-6xl mx-auto px-6 pb-12 md:pb-20">
-          <div className="grid lg:grid-cols-5 gap-10 md:gap-16">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-8 sm:pb-12 md:pb-20">
+          <div className="grid lg:grid-cols-5 gap-8 md:gap-16">
             {/* Benefits */}
             <div className="lg:col-span-3">
               <p className="font-body text-primary text-xs tracking-[0.3em] uppercase font-semibold mb-2">Vantagens</p>
