@@ -123,124 +123,124 @@ const AdminServices = () => {
       </div>
 
       {/* Services list */}
-      <div className="space-y-2">
-        {filtered.map((service, i) => (
-          <motion.div
-            key={service.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.03 }}
-            className={`bg-muted rounded-xl border border-border overflow-hidden transition-shadow hover:shadow-sm ${
-              !service.is_active ? "opacity-60" : ""
-            }`}
-          >
-            <div className="flex items-center gap-3 px-3 sm:px-4 py-3 flex-wrap">
-              <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0 hidden sm:block" />
-              {service.image_url && (
-                <img src={service.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
-              )}
-              <div className="min-w-0 flex-1 basis-[calc(100%-3.25rem)] sm:basis-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-heading text-sm font-bold text-foreground truncate">
-                    {service.title}
-                  </p>
-                  {!service.is_active && (
-                    <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-muted-foreground/10 text-muted-foreground">
-                      Inativo
-                    </span>
+      <div className="overflow-x-auto pb-3 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="space-y-2 min-w-[980px] md:min-w-0">
+          {filtered.map((service, i) => (
+            <motion.div
+              key={service.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.03 }}
+              className={`bg-muted rounded-xl border border-border overflow-hidden transition-shadow hover:shadow-sm ${
+                !service.is_active ? "opacity-60" : ""
+              }`}
+            >
+              <div className="grid grid-cols-[24px_40px_minmax(520px,1fr)_188px] items-center gap-3 px-3 sm:px-4 py-3">
+                <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+                <div className="w-10 h-10 shrink-0">
+                  {service.image_url && (
+                    <img src={service.image_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
                   )}
                 </div>
-                <p className="font-body text-xs text-muted-foreground truncate mt-0.5">
-                  {service.short_description}
-                </p>
-              </div>
-              <div className="grid grid-cols-4 gap-1.5 w-full shrink-0 basis-full sm:basis-auto sm:w-auto sm:flex sm:items-center sm:gap-1 sm:ml-auto sm:justify-end">
-
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(expandedId === service.id ? null : service.id)}
-                  className="min-h-11 px-2 rounded-lg text-muted-foreground bg-background/70 border border-border hover:text-foreground hover:bg-background transition-colors flex items-center justify-center gap-1.5 sm:min-h-0 sm:p-2 sm:bg-transparent sm:border-transparent"
-                  title={expandedId === service.id ? "Recolher detalhes" : "Ver detalhes"}
-                  aria-label={expandedId === service.id ? "Recolher detalhes" : "Ver detalhes"}
-                >
-                  {expandedId === service.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  <span className="text-[11px] font-body sm:hidden">Detalhes</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleActive(service)}
-                  className="min-h-11 px-2 rounded-lg text-muted-foreground bg-background/70 border border-border hover:text-foreground hover:bg-background transition-colors flex items-center justify-center gap-1.5 sm:min-h-0 sm:p-2 sm:bg-transparent sm:border-transparent"
-                  title={service.is_active ? "Desativar" : "Ativar"}
-                  aria-label={service.is_active ? "Ocultar serviço" : "Mostrar serviço"}
-                >
-                  {service.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  <span className="text-[11px] font-body sm:hidden">{service.is_active ? "Ocultar" : "Ativar"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openEdit(service)}
-                  className="min-h-11 px-2 rounded-lg text-muted-foreground bg-background/70 border border-border hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5 sm:min-h-0 sm:p-2 sm:bg-transparent sm:border-transparent"
-                  title="Editar serviço"
-                  aria-label="Editar serviço"
-                >
-                  <Pencil className="w-4 h-4" />
-                  <span className="text-[11px] font-body sm:hidden">Editar</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(service.id)}
-                  className="min-h-11 px-2 rounded-lg text-muted-foreground bg-background/70 border border-border hover:text-destructive hover:bg-destructive/5 transition-colors flex items-center justify-center gap-1.5 sm:min-h-0 sm:p-2 sm:bg-transparent sm:border-transparent"
-                  title="Excluir serviço"
-                  aria-label="Excluir serviço"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="text-[11px] font-body sm:hidden">Excluir</span>
-                </button>
-              </div>
-            </div>
-            <AnimatePresence>
-              {expandedId === service.id && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-4 pb-4 border-t border-border pt-3">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-body">
-                      <div>
-                        <span className="text-muted-foreground">Slug:</span>
-                        <p className="text-foreground font-medium">{service.slug}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Duração:</span>
-                        <p className="text-foreground font-medium">{service.duration}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Preço:</span>
-                        <p className="text-foreground font-medium">{service.price_label}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Ícone:</span>
-                        <p className="text-foreground font-medium">{service.icon_name}</p>
-                      </div>
-                    </div>
-                    {service.benefits.length > 0 && (
-                      <div className="mt-3">
-                        <span className="text-xs text-muted-foreground font-body">Benefícios:</span>
-                        <ul className="mt-1 space-y-0.5">
-                          {service.benefits.map((b, j) => (
-                            <li key={j} className="text-xs font-body text-foreground">• {b}</li>
-                          ))}
-                        </ul>
-                      </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-heading text-sm font-bold text-foreground truncate">
+                      {service.title}
+                    </p>
+                    {!service.is_active && (
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-muted-foreground/10 text-muted-foreground">
+                        Inativo
+                      </span>
                     )}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        ))}
+                  <p className="font-body text-xs text-muted-foreground truncate mt-0.5">
+                    {service.short_description}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 justify-end">
+
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(expandedId === service.id ? null : service.id)}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+                    title={expandedId === service.id ? "Recolher detalhes" : "Ver detalhes"}
+                    aria-label={expandedId === service.id ? "Recolher detalhes" : "Ver detalhes"}
+                  >
+                    {expandedId === service.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleActive(service)}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+                    title={service.is_active ? "Desativar" : "Ativar"}
+                    aria-label={service.is_active ? "Ocultar serviço" : "Mostrar serviço"}
+                  >
+                    {service.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openEdit(service)}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                    title="Editar serviço"
+                    aria-label="Editar serviço"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(service.id)}
+                    className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                    title="Excluir serviço"
+                    aria-label="Excluir serviço"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <AnimatePresence>
+                {expandedId === service.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 border-t border-border pt-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-body">
+                        <div>
+                          <span className="text-muted-foreground">Slug:</span>
+                          <p className="text-foreground font-medium">{service.slug}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Duração:</span>
+                          <p className="text-foreground font-medium">{service.duration}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Preço:</span>
+                          <p className="text-foreground font-medium">{service.price_label}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Ícone:</span>
+                          <p className="text-foreground font-medium">{service.icon_name}</p>
+                        </div>
+                      </div>
+                      {service.benefits.length > 0 && (
+                        <div className="mt-3">
+                          <span className="text-xs text-muted-foreground font-body">Benefícios:</span>
+                          <ul className="mt-1 space-y-0.5">
+                            {service.benefits.map((b, j) => (
+                              <li key={j} className="text-xs font-body text-foreground">• {b}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </motion.div>
   );
