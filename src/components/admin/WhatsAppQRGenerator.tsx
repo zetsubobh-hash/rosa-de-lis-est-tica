@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { QrCode, Save, Download, Loader2, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 const NUMBER_KEY = "whatsapp_qr_target_number";
 const MESSAGE_KEY = "whatsapp_qr_target_message";
@@ -37,9 +38,7 @@ const WhatsAppQRGenerator = () => {
   const [loading, setLoading] = useState(true);
 
   const rawNumber = toRaw(number);
-  const waUrl = rawNumber
-    ? `https://wa.me/${rawNumber}${message ? `?text=${encodeURIComponent(message)}` : ""}`
-    : "";
+  const waUrl = rawNumber ? buildWhatsAppLink(rawNumber, message) : "";
 
   useEffect(() => {
     (async () => {

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useState, useCallback } from "react";
 import { Send, CheckCircle, AlertCircle } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 // Simple math captcha
 const generateCaptcha = () => {
@@ -61,7 +62,7 @@ const Contact = () => {
     setStatus("sending");
 
     // Build WhatsApp message as fallback (no Resend key configured yet)
-    const whatsappPhone = (settings.phone || "(31) 99588-2521").replace(/\D/g, "");
+    const whatsappPhone = settings.phone || "(31) 99588-2521";
     const text = encodeURIComponent(
       `Olá! Meu nome é ${formData.name.trim()}.\n` +
       `E-mail: ${formData.email.trim()}\n` +
@@ -70,7 +71,7 @@ const Contact = () => {
       `\nMensagem: ${formData.message.trim()}`
     );
 
-    window.open(`https://wa.me/55${whatsappPhone}?text=${text}`, "_blank");
+    window.open(buildWhatsAppLink(whatsappPhone, decodeURIComponent(text)), "_blank");
     
     setStatus("success");
     setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
