@@ -953,7 +953,22 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       onMouseDown={(e) => e.stopPropagation()}
                       onPointerDown={(e) => e.stopPropagation()}
                     >
-                      <h3 className="font-heading text-lg font-bold text-foreground">Novo Plano</h3>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-heading text-lg font-bold text-foreground">Novo Plano</h3>
+                        <button
+                          type="button"
+                          aria-label="Fechar sem salvar"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setNewPlan({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
+                            setNewPlanRaw({ pps: "0,00", total: "0,00" });
+                            setEditingSection(null);
+                          }}
+                          className="h-7 w-7 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Nome</label>
                         <Input value={newPlan.plan_name} onChange={(e) => setNewPlan(p => ({ ...p, plan_name: e.target.value }))} placeholder="Ex: Premium" className="h-8 font-body text-sm" />
