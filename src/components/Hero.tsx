@@ -85,7 +85,7 @@ const Hero = () => {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.6, ease: "easeInOut" }}
               >
-                <h1 className="font-heading text-3xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-4 md:mb-6">
+                <h1 className="font-heading text-2xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-3 md:mb-6 line-clamp-2">
                   {slides[current].title}
                 </h1>
                 <p className="font-body text-primary-foreground/80 font-normal max-w-lg text-base md:text-[25px] md:leading-[35px] leading-relaxed line-clamp-2">
