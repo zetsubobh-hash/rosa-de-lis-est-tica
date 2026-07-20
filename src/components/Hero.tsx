@@ -16,8 +16,16 @@ const Hero = () => {
   const navigate = useNavigate();
   const { logoWhite } = useBrandingLogos();
   const { isEnabled, getWhatsAppUrl } = useOnlineBooking();
+  const { services } = useServices();
 
-  const handleAgendar = () => {
+  const slides = useMemo(() => {
+    if (!services || services.length === 0) return FALLBACK_SLIDES;
+    return services.map((s) => ({
+      title: s.title,
+      subtitle: s.short_description || "",
+      slug: s.slug,
+    }));
+  }, [services]);
     if (isEnabled) {
       navigate(`/servico/${slides[current].slug}`);
     } else {
