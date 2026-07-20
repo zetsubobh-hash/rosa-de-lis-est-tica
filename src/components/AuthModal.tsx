@@ -527,6 +527,16 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="reg-birth" className="font-body text-sm">Data de Nascimento *</Label>
+              <Input
+                id="reg-birth"
+                type="date"
+                value={regBirthDate}
+                onChange={(e) => setRegBirthDate(e.target.value)}
+                autoComplete="bday"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="reg-email" className="font-body text-sm">E-mail (opcional)</Label>
               <Input
                 id="reg-email"
@@ -538,7 +548,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-sex" className="font-body text-sm">Sexo *</Label>
+              <Label htmlFor="reg-sex" className="font-body text-sm">Sexo</Label>
               <Select value={regSex} onValueChange={setRegSex}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
