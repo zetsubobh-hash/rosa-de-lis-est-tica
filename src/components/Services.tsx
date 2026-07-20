@@ -16,19 +16,13 @@ const Services = () => {
   const { services, loading } = useServices();
   const { isEnabled, getWhatsAppUrl } = useOnlineBooking();
 
-  const handleClick = (slug: string, title: string) => {
+  const handleClick = (slug: string, _title: string) => {
     setClicked(slug);
-    if (isEnabled) {
-      setTimeout(() => {
-        navigate(`/servico/${slug}`);
-      }, 400);
-    } else {
-      setTimeout(() => {
-        window.open(getWhatsAppUrl(title), "_blank");
-        setClicked(null);
-      }, 400);
-    }
+    setTimeout(() => {
+      navigate(`/servico/${slug}`);
+    }, 400);
   };
+
 
   return (
     <section id="servicos" className="py-20 md:py-28 bg-rose-soft">
