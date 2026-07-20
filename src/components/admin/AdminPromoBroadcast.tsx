@@ -122,7 +122,7 @@ const AdminPromoBroadcast = () => {
   const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
 
   // ── test message state
-  const [testForm, setTestForm] = useState({ instance_id: "", phone: "", message: "Olá! Esta é uma mensagem de teste do sistema Rosa de Lis 🌸" });
+  const [testForm, setTestForm] = useState({ instance_id: "", phone: "", campaign_id: "", message: "" });
   const [sendingTest, setSendingTest] = useState(false);
 
   const maskPhoneBR = (raw: string) => {
