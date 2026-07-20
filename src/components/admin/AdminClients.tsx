@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Users, Phone, Mail, MessageCircle, UserPlus } from "lucide-react";
+import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
@@ -28,6 +28,7 @@ const AdminClients = () => {
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showNewClient, setShowNewClient] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
 
   useEffect(() => {
     const fetch = async () => {
