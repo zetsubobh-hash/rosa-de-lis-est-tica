@@ -121,6 +121,52 @@ const AdminPromoBroadcast = () => {
   const [campaignReportLoading, setCampaignReportLoading] = useState<Record<string, boolean>>({});
   const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
 
+  // ── test message state
+  const [testForm, setTestForm] = useState({ instance_id: "", phone: "", message: "Olá! Esta é uma mensagem de teste do sistema Rosa de Lis 🌸" });
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const maskPhoneBR = (raw: string) => {
+    const d = raw.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 2) return d;
+    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+
+  const sendTestMessage = async () => {
+    if (!testForm.instance_id) {
+      toast({ title: "Selecione uma instância", variant: "destructive" });
+      return;
+    }
+    const digits = testForm.phone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      toast({ title: "Telefone inválido", description: "Informe DDD + número (10 ou 11 dígitos).", variant: "destructive" });
+      return;
+    }
+    if (!testForm.message.trim()) {
+      toast({ title: "Escreva uma mensagem", variant: "destructive" });
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("evolution-instance", {
+        body: {
+          instance_id: testForm.instance_id,
+          action: "send_text",
+          phone: digits,
+          message: testForm.message,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Mensagem enviada!", description: `Enviado para ${maskPhoneBR(digits)}` });
+    } catch (e: any) {
+      toast({ title: "Erro ao enviar teste", description: e.message, variant: "destructive" });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   /* ───────── call evolution-instance edge function ───────── */
   const callInstanceAction = useCallback(async (instanceId: string, action: string) => {
     const { data, error } = await supabase.functions.invoke("evolution-instance", {
