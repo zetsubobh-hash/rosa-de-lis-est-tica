@@ -537,9 +537,16 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                     </div>
                   </div>
                 ) : (
-                  <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center rounded-3xl bg-primary-foreground/15 backdrop-blur-sm border border-primary-foreground/10">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setEditingSection("icon"); }}
+                    className="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center rounded-3xl bg-primary-foreground/15 backdrop-blur-sm border border-primary-foreground/10 hover:bg-primary-foreground/25 transition-colors"
+                  >
                     <Icon className="w-10 h-10 md:w-12 md:h-12 text-primary-foreground" strokeWidth={1.5} />
-                  </div>
+                    <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap font-body text-[10px] uppercase tracking-wider text-primary-foreground/70">
+                      Trocar ícone
+                    </span>
+                  </button>
                 )}
               </EditableWrapper>
 
