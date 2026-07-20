@@ -121,8 +121,10 @@ const AdminPromoBroadcast = () => {
   const [campaignReportLoading, setCampaignReportLoading] = useState<Record<string, boolean>>({});
   const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
 
-  // ── test message state
-  const [testForm, setTestForm] = useState({ instance_id: "", phone: "", campaign_id: "", message: "" });
+  // ── test message state (per-campaign modal)
+  const [testModal, setTestModal] = useState<{ open: boolean; campaign: PromoCampaign | null; instance_id: string; phone: string; message: string }>({
+    open: false, campaign: null, instance_id: "", phone: "", message: "",
+  });
   const [sendingTest, setSendingTest] = useState(false);
 
   const maskPhoneBR = (raw: string) => {
@@ -133,17 +135,30 @@ const AdminPromoBroadcast = () => {
     return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   };
 
+  const openTestModal = (camp: PromoCampaign) => {
+    const svcTitle = camp.service_slug
+      ? (services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug)
+      : "nosso serviço";
+    const rendered = (camp.message_template || "")
+      .replace(/\{nome\}/g, "Cliente Teste")
+      .replace(/\{servico\}/g, svcTitle)
+      .replace(/\{empresa\}/g, "Rosa de Lis Estética")
+      .replace(/\{telefone\}/g, "");
+    const firstActive = instances.find(i => i.is_active)?.id || instances[0]?.id || "";
+    setTestModal({ open: true, campaign: camp, instance_id: firstActive, phone: "", message: rendered });
+  };
+
   const sendTestMessage = async () => {
-    if (!testForm.instance_id) {
+    if (!testModal.instance_id) {
       toast({ title: "Selecione uma instância", variant: "destructive" });
       return;
     }
-    const digits = testForm.phone.replace(/\D/g, "");
+    const digits = testModal.phone.replace(/\D/g, "");
     if (digits.length < 10) {
       toast({ title: "Telefone inválido", description: "Informe DDD + número (10 ou 11 dígitos).", variant: "destructive" });
       return;
     }
-    if (!testForm.message.trim()) {
+    if (!testModal.message.trim()) {
       toast({ title: "Escreva uma mensagem", variant: "destructive" });
       return;
     }
@@ -151,15 +166,16 @@ const AdminPromoBroadcast = () => {
     try {
       const { data, error } = await supabase.functions.invoke("evolution-instance", {
         body: {
-          instance_id: testForm.instance_id,
+          instance_id: testModal.instance_id,
           action: "send_text",
           phone: digits,
-          message: testForm.message,
+          message: testModal.message.replace(/\{telefone\}/g, digits),
         },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       toast({ title: "Mensagem enviada!", description: `Enviado para ${maskPhoneBR(digits)}` });
+      setTestModal(p => ({ ...p, open: false }));
     } catch (e: any) {
       toast({ title: "Erro ao enviar teste", description: e.message, variant: "destructive" });
     } finally {
