@@ -253,8 +253,8 @@ const AdminCounterSales = () => {
   /* ─── Create new client ─── */
   const createNewClient = async () => {
     const { full_name, phone, sex, address, email, birth_date } = newClient;
-    if (!full_name || !phone || !sex || !address || !birth_date) {
-      toast.error("Preencha todos os campos obrigatórios");
+    if (!full_name || !phone || !birth_date) {
+      toast.error("Preencha os campos obrigatórios: Nome, Telefone e Data de Nascimento");
       return;
     }
     const username = generateUsername(full_name);
@@ -263,7 +263,16 @@ const AdminCounterSales = () => {
     try {
       const rawPhone = phone.replace(/\D/g, "");
       const res = await supabase.functions.invoke("register", {
-        body: { username, password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined, birth_date },
+        body: {
+          username,
+          password,
+          full_name: full_name.trim(),
+          sex: sex === "F" || sex === "M" ? sex : undefined,
+          phone: rawPhone,
+          address: address?.trim() || undefined,
+          email: email.trim() || undefined,
+          birth_date,
+        },
       });
       if (res.error || res.data?.error) throw new Error(res.data?.error || res.error?.message || "Erro ao criar cliente");
 
@@ -572,15 +581,15 @@ const AdminCounterSales = () => {
                       <Input value={newClient.full_name} onChange={(e) => setNewClient(prev => ({ ...prev, full_name: capitalize(e.target.value) }))} placeholder="Maria Silva" className="font-body" />
                     </div>
                     <div className="space-y-1">
-                      <label className="font-body text-xs font-medium text-foreground">Data de Nascimento *</label>
-                      <Input type="date" value={newClient.birth_date} onChange={(e) => setNewClient(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body" />
-                    </div>
-                    <div className="space-y-1">
                       <label className="font-body text-xs font-medium text-foreground">Telefone *</label>
                       <Input value={newClient.phone} onChange={(e) => setNewClient(prev => ({ ...prev, phone: formatPhone(e.target.value) }))} placeholder="(31) 99999-9999" className="font-body" maxLength={15} />
                     </div>
                     <div className="space-y-1">
-                      <label className="font-body text-xs font-medium text-foreground">Sexo *</label>
+                      <label className="font-body text-xs font-medium text-foreground">Data de Nascimento *</label>
+                      <Input type="date" value={newClient.birth_date} onChange={(e) => setNewClient(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-body text-xs font-medium text-foreground">Sexo</label>
                       <Select value={newClient.sex} onValueChange={(v) => setNewClient(prev => ({ ...prev, sex: v }))}>
                         <SelectTrigger className="font-body"><SelectValue placeholder="Selecione" /></SelectTrigger>
                         <SelectContent>
@@ -594,8 +603,8 @@ const AdminCounterSales = () => {
                       <label className="font-body text-xs font-medium text-foreground">E-mail</label>
                       <Input type="email" value={newClient.email} onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))} placeholder="email@exemplo.com" className="font-body" />
                     </div>
-                    <div className="space-y-1">
-                      <label className="font-body text-xs font-medium text-foreground">Endereço *</label>
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="font-body text-xs font-medium text-foreground">Endereço</label>
                       <Input value={newClient.address} onChange={(e) => setNewClient(prev => ({ ...prev, address: capitalize(e.target.value) }))} placeholder="Rua..., Nº - Bairro, Cidade" className="font-body" />
                     </div>
                   </div>

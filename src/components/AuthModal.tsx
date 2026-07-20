@@ -71,11 +71,11 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
   // Register fields
   const [regName, setRegName] = useState("");
-  
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regSex, setRegSex] = useState("");
   const [regPhone, setRegPhone] = useState("");
+  const [regBirthDate, setRegBirthDate] = useState("");
   const [regCep, setRegCep] = useState("");
   const [regRua, setRegRua] = useState("");
   const [regNumero, setRegNumero] = useState("");
@@ -140,11 +140,11 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
     setLoginUsername("");
     setPassword("");
     setRegName("");
-    
     setRegEmail("");
     setRegPassword("");
     setRegSex("");
     setRegPhone("");
+    setRegBirthDate("");
     setRegCep("");
     setRegRua("");
     setRegNumero("");
@@ -188,7 +188,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
   const buildFullAddress = () => {
     const parts = [regRua, regNumero, regBairro, regCidade, regEstado].filter(Boolean);
-    return parts.join(", ");
+    return parts.join(", ") || undefined;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -243,8 +243,8 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName.trim() || !regPassword.trim() || !regSex || !regPhone.trim() || !regCep.replace(/\D/g, "").trim() || !regRua.trim() || !regNumero.trim() || !regBairro.trim() || !regCidade.trim() || !regEstado.trim()) {
-      toast({ title: "Preencha todos os campos obrigatórios (*)", variant: "destructive" });
+    if (!regName.trim() || !regPassword.trim() || !regPhone.trim() || !regBirthDate) {
+      toast({ title: "Preencha os campos obrigatórios: Nome, Telefone, Data de Nascimento e Senha", variant: "destructive" });
       return;
     }
     const fullAddress = buildFullAddress();
@@ -264,10 +264,11 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
           username: generatedUsername,
           password: regPassword,
           full_name: regName.trim(),
-          sex: regSex,
+          sex: regSex || undefined,
           phone: regPhone.trim(),
-          address: fullAddress.trim(),
+          address: fullAddress,
           email: regEmail.trim() || null,
+          birth_date: regBirthDate,
         }),
       });
 
@@ -526,6 +527,16 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="reg-birth" className="font-body text-sm">Data de Nascimento *</Label>
+              <Input
+                id="reg-birth"
+                type="date"
+                value={regBirthDate}
+                onChange={(e) => setRegBirthDate(e.target.value)}
+                autoComplete="bday"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="reg-email" className="font-body text-sm">E-mail (opcional)</Label>
               <Input
                 id="reg-email"
@@ -537,7 +548,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-sex" className="font-body text-sm">Sexo *</Label>
+              <Label htmlFor="reg-sex" className="font-body text-sm">Sexo</Label>
               <Select value={regSex} onValueChange={setRegSex}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
@@ -583,7 +594,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
             {/* CEP + Address */}
             <div className="space-y-2">
-              <Label htmlFor="reg-cep" className="font-body text-sm">CEP *</Label>
+              <Label htmlFor="reg-cep" className="font-body text-sm">CEP</Label>
               <div className="relative">
                 <Input
                   id="reg-cep"
@@ -602,7 +613,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="reg-rua" className="font-body text-sm">Rua *</Label>
+                <Label htmlFor="reg-rua" className="font-body text-sm">Rua</Label>
                 <Input
                   id="reg-rua"
                   placeholder="Rua / Avenida"
@@ -611,7 +622,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-numero" className="font-body text-sm">Nº *</Label>
+                <Label htmlFor="reg-numero" className="font-body text-sm">Nº</Label>
                 <Input
                   id="reg-numero"
                   placeholder="123"
@@ -623,7 +634,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-2">
-                <Label htmlFor="reg-bairro" className="font-body text-sm">Bairro *</Label>
+                <Label htmlFor="reg-bairro" className="font-body text-sm">Bairro</Label>
                 <Input
                   id="reg-bairro"
                   placeholder="Bairro"
@@ -632,7 +643,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-cidade" className="font-body text-sm">Cidade *</Label>
+                <Label htmlFor="reg-cidade" className="font-body text-sm">Cidade</Label>
                 <Input
                   id="reg-cidade"
                   placeholder="Cidade"
@@ -643,7 +654,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reg-estado" className="font-body text-sm">Estado (UF) *</Label>
+              <Label htmlFor="reg-estado" className="font-body text-sm">Estado (UF)</Label>
               <Input
                 id="reg-estado"
                 placeholder="MG"

@@ -648,7 +648,7 @@ export type Database = {
       }
       profiles: {
         Row: {
-          address: string
+          address: string | null
           avatar_url: string | null
           birth_date: string | null
           created_at: string
@@ -657,13 +657,13 @@ export type Database = {
           id: string
           last_seen: string | null
           phone: string
-          sex: string
+          sex: string | null
           updated_at: string
           user_id: string
           username: string
         }
         Insert: {
-          address: string
+          address?: string | null
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
@@ -672,13 +672,13 @@ export type Database = {
           id?: string
           last_seen?: string | null
           phone: string
-          sex: string
+          sex?: string | null
           updated_at?: string
           user_id: string
           username: string
         }
         Update: {
-          address?: string
+          address?: string | null
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
@@ -687,7 +687,7 @@ export type Database = {
           id?: string
           last_seen?: string | null
           phone?: string
-          sex?: string
+          sex?: string | null
           updated_at?: string
           user_id?: string
           username?: string
