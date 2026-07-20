@@ -122,7 +122,7 @@ const AdminPromoBroadcast = () => {
   const [campaignReports, setCampaignReports] = useState<Record<string, CampaignReportRow[]>>({});
 
   // ── test message state
-  const [testForm, setTestForm] = useState({ instance_id: "", phone: "", message: "Olá! Esta é uma mensagem de teste do sistema Rosa de Lis 🌸" });
+  const [testForm, setTestForm] = useState({ instance_id: "", phone: "", campaign_id: "", message: "" });
   const [sendingTest, setSendingTest] = useState(false);
 
   const maskPhoneBR = (raw: string) => {
@@ -752,7 +752,7 @@ const AdminPromoBroadcast = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Envia uma única mensagem para um número específico usando uma das instâncias conectadas. Útil para validar template ou conexão antes de disparar uma campanha.
+            Envia a mensagem <strong>real da campanha selecionada</strong> para um número específico. Use antes de disparar em massa para validar template, imagens e variáveis.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -788,15 +788,52 @@ const AdminPromoBroadcast = () => {
               <p className="text-[10px] text-muted-foreground mt-1">O prefixo 55 (Brasil) é adicionado automaticamente.</p>
             </div>
             <div className="md:col-span-2">
-              <Label>Mensagem</Label>
+              <Label>Campanha a testar</Label>
+              <Select
+                value={testForm.campaign_id}
+                onValueChange={(v) => {
+                  const camp = campaigns.find(c => c.id === v);
+                  const svcTitle = camp?.service_slug
+                    ? (services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug)
+                    : "nosso serviço";
+                  const rendered = (camp?.message_template || "")
+                    .replace(/\{nome\}/g, "Cliente Teste")
+                    .replace(/\{servico\}/g, svcTitle)
+                    .replace(/\{empresa\}/g, "Rosa de Lis Estética")
+                    .replace(/\{telefone\}/g, testForm.phone || "");
+                  setTestForm(p => ({ ...p, campaign_id: v, message: rendered }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a campanha para carregar a mensagem" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  {campaigns.length === 0 ? (
+                    <SelectItem value="__none" disabled>Nenhuma campanha criada</SelectItem>
+                  ) : (
+                    campaigns.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                As variáveis são pré-preenchidas: <code>{"{nome}"}</code> → "Cliente Teste", <code>{"{servico}"}</code> → serviço da campanha, <code>{"{empresa}"}</code> → Rosa de Lis Estética.
+              </p>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Mensagem (pré-visualização — editável)</Label>
               <Textarea
                 value={testForm.message}
                 onChange={(e) => setTestForm(p => ({ ...p, message: e.target.value }))}
-                rows={4}
+                rows={8}
+                className="font-mono text-sm"
                 maxLength={2000}
+                placeholder="Selecione uma campanha acima para carregar a mensagem real…"
               />
             </div>
           </div>
+
           <Button onClick={sendTestMessage} disabled={sendingTest} className="gap-2">
             {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             Enviar mensagem de teste
