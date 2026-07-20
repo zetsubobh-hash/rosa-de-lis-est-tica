@@ -63,7 +63,7 @@ const AdminClients = () => {
 
   return (
     <div className="space-y-4">
-      {/* Header: search + new client button */}
+      {/* Header: search + view toggle + new client button */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -75,13 +75,41 @@ const AdminClients = () => {
             className="w-full h-10 pl-9 pr-3 rounded-xl border border-border bg-background font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none"
           />
         </div>
-        <button
-          onClick={() => setShowNewClient((v) => !v)}
-          className="h-10 px-4 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shrink-0"
-        >
-          {showNewClient ? <UserPlus className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-          {showNewClient ? "Fechar Cadastro" : "Novo Cliente"}
-        </button>
+        <div className="flex gap-2 items-center">
+          <div className="flex items-center rounded-xl border border-border bg-background p-1 h-10">
+            <button
+              onClick={() => setViewMode("card")}
+              title="Visualização em cards"
+              className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                viewMode === "card"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span className="hidden sm:inline">Cards</span>
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              title="Visualização em lista"
+              className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                viewMode === "list"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <List className="w-4 h-4" />
+              <span className="hidden sm:inline">Lista</span>
+            </button>
+          </div>
+          <button
+            onClick={() => setShowNewClient((v) => !v)}
+            className="h-10 px-4 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shrink-0"
+          >
+            <UserPlus className="w-4 h-4" />
+            {showNewClient ? "Fechar Cadastro" : "Novo Cliente"}
+          </button>
+        </div>
       </div>
 
       {/* New client form */}
