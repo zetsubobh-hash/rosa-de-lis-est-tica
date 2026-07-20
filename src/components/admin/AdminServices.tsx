@@ -133,12 +133,12 @@ const AdminServices = () => {
               !service.is_active ? "opacity-60" : ""
             }`}
           >
-            <div className="flex items-center gap-3 px-4 py-3">
-              <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+            <div className="flex items-center gap-3 px-3 sm:px-4 py-3 flex-wrap">
+              <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0 hidden sm:block" />
               {service.image_url && (
                 <img src={service.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
               )}
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 basis-[60%]">
                 <div className="flex items-center gap-2">
                   <p className="font-heading text-sm font-bold text-foreground truncate">
                     {service.title}
@@ -153,7 +153,8 @@ const AdminServices = () => {
                   {service.short_description}
                 </p>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 shrink-0 ml-auto flex-wrap justify-end">
+
                 <button
                   onClick={() => setExpandedId(expandedId === service.id ? null : service.id)}
                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
