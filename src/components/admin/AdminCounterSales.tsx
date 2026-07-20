@@ -253,8 +253,8 @@ const AdminCounterSales = () => {
   /* ─── Create new client ─── */
   const createNewClient = async () => {
     const { full_name, phone, sex, address, email, birth_date } = newClient;
-    if (!full_name || !phone || !sex || !address || !birth_date) {
-      toast.error("Preencha todos os campos obrigatórios");
+    if (!full_name || !phone || !birth_date) {
+      toast.error("Preencha os campos obrigatórios: Nome, Telefone e Data de Nascimento");
       return;
     }
     const username = generateUsername(full_name);
@@ -263,7 +263,16 @@ const AdminCounterSales = () => {
     try {
       const rawPhone = phone.replace(/\D/g, "");
       const res = await supabase.functions.invoke("register", {
-        body: { username, password, full_name: full_name.trim(), sex, phone: rawPhone, address: address.trim(), email: email.trim() || undefined, birth_date },
+        body: {
+          username,
+          password,
+          full_name: full_name.trim(),
+          sex: sex === "F" || sex === "M" ? sex : undefined,
+          phone: rawPhone,
+          address: address?.trim() || undefined,
+          email: email.trim() || undefined,
+          birth_date,
+        },
       });
       if (res.error || res.data?.error) throw new Error(res.data?.error || res.error?.message || "Erro ao criar cliente");
 
