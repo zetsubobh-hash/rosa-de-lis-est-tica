@@ -76,7 +76,7 @@ const Hero = () => {
           </motion.p>
 
           {/* Rotating text area */}
-          <div className="h-[140px] md:h-[200px] relative">
+          <div className="min-h-[190px] md:min-h-[220px] relative">
             <AnimatePresence mode="wait">
               <motion.div
                 key={current}
@@ -85,10 +85,10 @@ const Hero = () => {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.6, ease: "easeInOut" }}
               >
-                <h1 className="font-heading text-2xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-3 md:mb-6 line-clamp-2">
+                <h1 className="font-heading text-2xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-5 md:mb-7 line-clamp-2">
                   {slides[current].title}
                 </h1>
-                <p className="font-body text-primary-foreground/80 font-normal max-w-lg text-base md:text-[25px] md:leading-[35px] leading-relaxed line-clamp-2">
+                <p className="font-body text-primary-foreground/80 font-normal max-w-lg text-base md:text-[25px] md:leading-[35px] leading-relaxed line-clamp-2 pb-2 md:pb-0">
                   {slides[current].subtitle}
                 </p>
               </motion.div>
@@ -96,7 +96,7 @@ const Hero = () => {
           </div>
 
           {/* Slide indicators */}
-          <div className="flex gap-1.5 md:gap-2 mb-6 md:mb-8 justify-start flex-wrap">
+          <div className="flex gap-1.5 md:gap-2 mb-6 md:mb-8 justify-start flex-wrap pt-2 md:pt-0">
             {slides.map((_, i) => (
               <button
                 key={i}
