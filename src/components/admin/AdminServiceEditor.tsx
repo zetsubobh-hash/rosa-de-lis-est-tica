@@ -599,9 +599,9 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                 </div>
               ) : (
                 service.image_url ? (
-                  <img src={service.image_url} alt={service.title} className="max-w-[260px] md:max-w-[320px] rounded-xl" />
+                  <img src={service.image_url} alt={service.title} className="w-full max-w-[260px] md:max-w-[320px] mx-auto rounded-xl" />
                 ) : (
-                  <div className="w-[260px] md:w-[320px] h-48 rounded-xl bg-muted border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <div className="w-full max-w-[260px] md:w-[320px] md:max-w-none mx-auto h-48 rounded-xl bg-muted border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 text-muted-foreground">
                     <Upload className="w-8 h-8" />
                     <span className="font-body text-sm">Clique para adicionar imagem</span>
                   </div>
