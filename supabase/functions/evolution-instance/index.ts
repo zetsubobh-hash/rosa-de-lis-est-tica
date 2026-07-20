@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!roleData) return json({ error: "Acesso negado" }, 403);
 
-    const { action, instance_id } = await req.json();
+    const { action, instance_id, phone, message } = await req.json();
     if (!instance_id) return json({ error: "instance_id required" }, 400);
 
     // Fetch instance from DB
