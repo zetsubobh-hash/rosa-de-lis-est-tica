@@ -99,24 +99,25 @@ const AdminServices = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div className="flex items-start sm:items-center justify-between mb-6 flex-col sm:flex-row gap-3">
         <h2 className="font-heading text-lg font-bold text-foreground">
           Serviços ({services.length})
         </h2>
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             <Input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9 text-xs font-body w-44"
+              className="pl-9 h-9 text-xs font-body w-full sm:w-44"
               placeholder="Buscar..."
             />
           </div>
-          <Button onClick={openNew} size="sm" className="gap-1.5">
+          <Button onClick={openNew} size="sm" className="gap-1.5 shrink-0">
             <Plus className="w-4 h-4" />
-            Novo Serviço
+            <span className="hidden min-[380px]:inline">Novo Serviço</span>
+            <span className="min-[380px]:hidden">Novo</span>
           </Button>
         </div>
       </div>
@@ -138,7 +139,7 @@ const AdminServices = () => {
               {service.image_url && (
                 <img src={service.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
               )}
-              <div className="min-w-0 flex-1 basis-[60%]">
+              <div className="min-w-0 flex-1 basis-[calc(100%-3.25rem)] sm:basis-0">
                 <div className="flex items-center gap-2">
                   <p className="font-heading text-sm font-bold text-foreground truncate">
                     {service.title}
@@ -153,32 +154,47 @@ const AdminServices = () => {
                   {service.short_description}
                 </p>
               </div>
-              <div className="flex items-center gap-1 shrink-0 ml-auto flex-wrap justify-end">
+              <div className="grid grid-cols-4 gap-1.5 w-full shrink-0 basis-full sm:basis-auto sm:w-auto sm:flex sm:items-center sm:gap-1 sm:ml-auto sm:justify-end">
 
                 <button
+                  type="button"
                   onClick={() => setExpandedId(expandedId === service.id ? null : service.id)}
-                  className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+                  className="min-h-11 px-2 rounded-lg text-muted-foreground bg-background/70 border border-border hover:text-foreground hover:bg-background transition-colors flex items-center justify-center gap-1.5 sm:min-h-0 sm:p-2 sm:bg-transparent sm:border-transparent"
+                  title={expandedId === service.id ? "Recolher detalhes" : "Ver detalhes"}
+                  aria-label={expandedId === service.id ? "Recolher detalhes" : "Ver detalhes"}
                 >
                   {expandedId === service.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  <span className="text-[11px] font-body sm:hidden">Detalhes</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleToggleActive(service)}
-                  className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+                  className="min-h-11 px-2 rounded-lg text-muted-foreground bg-background/70 border border-border hover:text-foreground hover:bg-background transition-colors flex items-center justify-center gap-1.5 sm:min-h-0 sm:p-2 sm:bg-transparent sm:border-transparent"
                   title={service.is_active ? "Desativar" : "Ativar"}
+                  aria-label={service.is_active ? "Ocultar serviço" : "Mostrar serviço"}
                 >
                   {service.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <span className="text-[11px] font-body sm:hidden">{service.is_active ? "Ocultar" : "Ativar"}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => openEdit(service)}
-                  className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                  className="min-h-11 px-2 rounded-lg text-muted-foreground bg-background/70 border border-border hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5 sm:min-h-0 sm:p-2 sm:bg-transparent sm:border-transparent"
+                  title="Editar serviço"
+                  aria-label="Editar serviço"
                 >
                   <Pencil className="w-4 h-4" />
+                  <span className="text-[11px] font-body sm:hidden">Editar</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleDelete(service.id)}
-                  className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                  className="min-h-11 px-2 rounded-lg text-muted-foreground bg-background/70 border border-border hover:text-destructive hover:bg-destructive/5 transition-colors flex items-center justify-center gap-1.5 sm:min-h-0 sm:p-2 sm:bg-transparent sm:border-transparent"
+                  title="Excluir serviço"
+                  aria-label="Excluir serviço"
                 >
                   <Trash2 className="w-4 h-4" />
+                  <span className="text-[11px] font-body sm:hidden">Excluir</span>
                 </button>
               </div>
             </div>
