@@ -719,7 +719,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
             {/* Info sidebar */}
             <div className="lg:col-span-2">
-              <div className="bg-card rounded-3xl p-6 md:p-8 border border-border shadow-sm space-y-5">
+              <div className="bg-card rounded-3xl p-5 sm:p-6 md:p-8 border border-border shadow-sm space-y-5">
                 <h3 className="font-heading text-lg font-bold text-foreground mb-4">Informações</h3>
 
                 {[
