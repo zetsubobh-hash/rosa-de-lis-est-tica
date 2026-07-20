@@ -566,7 +566,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                     <p className="font-body text-primary-foreground/60 text-xs tracking-[0.3em] uppercase font-semibold mb-2">
                       Tratamento Estético
                     </p>
-                    <h1 className="font-heading text-3xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight">
+                    <h1 className="font-heading text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight break-words">
                       {service.title || <span className="opacity-30">Título do Serviço</span>}
                     </h1>
                   </div>
