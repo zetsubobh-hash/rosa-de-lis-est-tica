@@ -495,20 +495,20 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
           <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-primary-foreground opacity-[0.08]" />
           <div className="absolute bottom-0 -left-16 w-64 h-64 rounded-full bg-primary-foreground opacity-[0.05]" />
 
-          <div className="relative max-w-6xl mx-auto px-6 py-12 md:py-20">
-            <div className="flex items-center gap-2 mb-8 font-body text-sm text-primary-foreground/60">
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-20">
+            <div className="flex items-center gap-2 mb-6 sm:mb-8 font-body text-xs sm:text-sm text-primary-foreground/60 flex-wrap">
               <span>Início</span>
               <ChevronRight className="w-3 h-3" />
               <span>Serviços</span>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-primary-foreground">{service.title || "Novo Serviço"}</span>
+              <span className="text-primary-foreground truncate max-w-[180px] sm:max-w-none">{service.title || "Novo Serviço"}</span>
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <EditableWrapper section="icon">
                 {editingSection === "icon" ? (
                   <div
-                    className="w-[280px] md:w-[340px] p-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20"
+                    className="w-full max-w-[280px] md:w-[340px] md:max-w-none p-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <p className="font-body text-[11px] uppercase tracking-wider text-primary-foreground/70 mb-2">
