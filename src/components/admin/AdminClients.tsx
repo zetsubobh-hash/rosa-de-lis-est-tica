@@ -148,66 +148,139 @@ const AdminClients = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((client, i) => (
-            <motion.button
-              key={client.user_id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i * 0.02, 0.5) }}
-              onClick={() => setSelectedClient(client)}
-              className="bg-card rounded-2xl border border-border p-4 text-left hover:border-primary/50 hover:shadow-md transition-all group"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                  {client.avatar_url ? (
-                    <img src={client.avatar_url} alt={client.full_name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="font-heading text-sm font-bold text-primary">
-                      {getInitials(client.full_name)}
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-heading text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                    {client.full_name}
-                  </p>
-                  <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
-                    <Phone className="w-3 h-3 shrink-0" />
-                    {client.phone}
-                  </p>
-                  {client.email && (
-                    <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
-                      <Mail className="w-3 h-3 shrink-0" />
-                      {client.email}
+        viewMode === "card" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filtered.map((client, i) => (
+              <motion.button
+                key={client.user_id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i * 0.02, 0.5) }}
+                onClick={() => setSelectedClient(client)}
+                className="bg-card rounded-2xl border border-border p-4 text-left hover:border-primary/50 hover:shadow-md transition-all group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                    {client.avatar_url ? (
+                      <img src={client.avatar_url} alt={client.full_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-heading text-sm font-bold text-primary">
+                        {getInitials(client.full_name)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-heading text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                      {client.full_name}
                     </p>
-                  )}
+                    <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                      <Phone className="w-3 h-3 shrink-0" />
+                      {client.phone}
+                    </p>
+                    {client.email && (
+                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                        <Mail className="w-3 h-3 shrink-0" />
+                        {client.email}
+                      </p>
+                    )}
+                  </div>
+                  {/* Quick action icons */}
+                  <div className="flex flex-col gap-1.5 shrink-0">
+                    <a
+                      href={`tel:${client.phone.replace(/\D/g, "")}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                      title="Ligar"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                    </a>
+                    <a
+                      href={buildWhatsAppLink(client.phone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
+                      title="WhatsApp"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
                 </div>
-                {/* Quick action icons */}
-                <div className="flex flex-col gap-1.5 shrink-0">
-                  <a
-                    href={`tel:${client.phone.replace(/\D/g, "")}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-                    title="Ligar"
+              </motion.button>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
+            <div className="hidden sm:grid sm:grid-cols-[1fr,1fr,auto] gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <span>Cliente</span>
+              <span>Contato</span>
+              <span className="text-right">Ações</span>
+            </div>
+            <div className="divide-y divide-border">
+              {filtered.map((client, i) => (
+                <motion.div
+                  key={client.user_id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.02, 0.5) }}
+                  className="flex flex-col sm:grid sm:grid-cols-[1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center hover:bg-muted/30 transition-colors group"
+                >
+                  <button
+                    onClick={() => setSelectedClient(client)}
+                    className="flex items-center gap-3 text-left min-w-0"
                   >
-                    <Phone className="w-3.5 h-3.5" />
-                  </a>
-                  <a
-                    href={buildWhatsAppLink(client.phone)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
-                    title="WhatsApp"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-            </motion.button>
-          ))}
-        </div>
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                      {client.avatar_url ? (
+                        <img src={client.avatar_url} alt={client.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-heading text-xs font-bold text-primary">
+                          {getInitials(client.full_name)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-heading text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                        {client.full_name}
+                      </p>
+                    </div>
+                  </button>
+
+                  <div className="flex flex-col gap-1 min-w-0 w-full sm:w-auto pl-[52px] sm:pl-0">
+                    <p className="font-body text-xs text-muted-foreground flex items-center gap-1 truncate">
+                      <Phone className="w-3 h-3 shrink-0" />
+                      {client.phone}
+                    </p>
+                    {client.email && (
+                      <p className="font-body text-xs text-muted-foreground flex items-center gap-1 truncate">
+                        <Mail className="w-3 h-3 shrink-0" />
+                        {client.email}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pl-[52px] sm:pl-0">
+                    <a
+                      href={`tel:${client.phone.replace(/\D/g, "")}`}
+                      className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                      title="Ligar"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                    </a>
+                    <a
+                      href={buildWhatsAppLink(client.phone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-colors"
+                      title="WhatsApp"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )
       )}
 
       {/* Client Detail Modal */}
