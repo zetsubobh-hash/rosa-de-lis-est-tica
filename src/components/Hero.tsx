@@ -31,7 +31,7 @@ const Hero = () => {
     if (isEnabled) {
       navigate(`/servico/${slides[current].slug}`);
     } else {
-      window.open(getWhatsAppUrl(slides[current].title), "_blank");
+      window.open(getWhatsAppUrl(slides[current].title), "_blank", "noopener,noreferrer");
     }
   };
 

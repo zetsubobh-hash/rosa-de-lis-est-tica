@@ -71,7 +71,7 @@ const Contact = () => {
       `\nMensagem: ${formData.message.trim()}`
     );
 
-    window.open(buildWhatsAppLink(whatsappPhone, decodeURIComponent(text)), "_blank");
+    window.open(buildWhatsAppLink(whatsappPhone, decodeURIComponent(text)), "_blank", "noopener,noreferrer");
     
     setStatus("success");
     setFormData({ name: "", email: "", phone: "", subject: "", message: "" });

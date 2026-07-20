@@ -33,7 +33,7 @@ const ServiceDetail = () => {
 
   const handleAgendar = (planName?: string, priceCents?: number) => {
     if (!bookingEnabled) {
-      window.open(getWhatsAppUrl(service?.title), "_blank");
+      window.open(getWhatsAppUrl(service?.title), "_blank", "noopener,noreferrer");
       return;
     }
     if (!user) {
