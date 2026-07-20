@@ -942,7 +942,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       ref={(node) => {
                         if (editingSection === "new-plan") activePlanEditorRef.current = node;
                       }}
-                      className="rounded-3xl p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3"
+                      className="rounded-3xl p-5 sm:p-6 md:p-8 border-2 border-dashed border-primary/30 bg-primary/5 space-y-3"
                       onClick={(e) => e.stopPropagation()}
                       onMouseDown={(e) => e.stopPropagation()}
                       onPointerDown={(e) => e.stopPropagation()}
