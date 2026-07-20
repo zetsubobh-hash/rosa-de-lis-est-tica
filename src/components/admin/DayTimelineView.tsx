@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, CheckCircle2, PlusCircle, CalendarClock, CalendarX, FileText, ClipboardList, BellRing } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { useMemo, useState, useRef } from "react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -500,7 +501,7 @@ const DayTimelineView = ({
                           <a href={`tel:${profile.phone.replace(/\D/g, "")}`} className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all">
                             <Phone className="w-3.5 h-3.5" />
                           </a>
-                          <a href={`https://wa.me/55${profile.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all">
+                          <a href={buildWhatsAppLink(profile.phone)} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all">
                             <MessageCircle className="w-3.5 h-3.5" />
                           </a>
                         </div>

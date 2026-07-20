@@ -12,6 +12,7 @@ import { useServices } from "@/hooks/useServices";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PartnerAvatarUpload from "@/components/admin/PartnerAvatarUpload";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 interface Partner {
   id: string;
@@ -520,7 +521,7 @@ const AdminPartners = () => {
                 <div className="flex items-center gap-0.5 shrink-0">
                   {p.phone && (
                     <a
-                      href={`https://wa.me/55${p.phone.replace(/\D/g, "")}`}
+                      href={buildWhatsAppLink(p.phone)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-500/5 transition-colors"
