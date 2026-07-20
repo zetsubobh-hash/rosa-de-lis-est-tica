@@ -1143,6 +1143,75 @@ const AdminPromoBroadcast = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ─── TEST MESSAGE DIALOG (per campaign) ─── */}
+      <Dialog open={testModal.open} onOpenChange={(o) => setTestModal(p => ({ ...p, open: o }))}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              Enviar teste — {testModal.campaign?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Dispara a mensagem <strong>real desta campanha</strong> para um único número. Ideal para validar antes do envio em massa.
+            </p>
+            <div>
+              <Label>Instância Evolution</Label>
+              <Select value={testModal.instance_id} onValueChange={(v) => setTestModal(p => ({ ...p, instance_id: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha a instância" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  {instances.length === 0 ? (
+                    <SelectItem value="__none" disabled>Nenhuma instância cadastrada</SelectItem>
+                  ) : (
+                    instances.map(i => {
+                      const st = instanceStatus[i.id];
+                      return (
+                        <SelectItem key={i.id} value={i.id}>
+                          {i.name} {st === "open" ? "🟢" : st === "close" ? "🔴" : "⚪"}
+                        </SelectItem>
+                      );
+                    })
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Telefone de teste (com DDD)</Label>
+              <Input
+                value={testModal.phone}
+                onChange={(e) => setTestModal(p => ({ ...p, phone: maskPhoneBR(e.target.value) }))}
+                placeholder="(31) 99999-9999"
+                inputMode="numeric"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">O prefixo 55 (Brasil) é adicionado automaticamente.</p>
+            </div>
+            <div>
+              <Label>Mensagem (pré-visualização — editável)</Label>
+              <Textarea
+                value={testModal.message}
+                onChange={(e) => setTestModal(p => ({ ...p, message: e.target.value }))}
+                rows={8}
+                className="font-mono text-sm"
+                maxLength={2000}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Variáveis já renderizadas: <code>{"{nome}"}</code> → "Cliente Teste", <code>{"{servico}"}</code> → serviço da campanha.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTestModal(p => ({ ...p, open: false }))}>Cancelar</Button>
+            <Button onClick={sendTestMessage} disabled={sendingTest} className="gap-2">
+              {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Enviar teste
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
