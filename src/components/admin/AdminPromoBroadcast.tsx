@@ -797,10 +797,10 @@ const AdminPromoBroadcast = () => {
                     ? (services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug)
                     : "nosso serviço";
                   const rendered = (camp?.message_template || "")
-                    .replaceAll("{nome}", "Cliente Teste")
-                    .replaceAll("{servico}", svcTitle)
-                    .replaceAll("{empresa}", "Rosa de Lis Estética")
-                    .replaceAll("{telefone}", testForm.phone || "");
+                    .replace(/\{nome\}/g, "Cliente Teste")
+                    .replace(/\{servico\}/g, svcTitle)
+                    .replace(/\{empresa\}/g, "Rosa de Lis Estética")
+                    .replace(/\{telefone\}/g, testForm.phone || "");
                   setTestForm(p => ({ ...p, campaign_id: v, message: rendered }));
                 }}
               >
