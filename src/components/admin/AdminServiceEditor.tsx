@@ -793,7 +793,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
 
                 return (
                   <EditableWrapper key={plan.id} section={`plan-${plan.id}` as EditingSection}>
-                    <div className={`relative rounded-3xl p-6 md:p-8 border ${
+                    <div className={`relative rounded-3xl p-5 sm:p-6 md:p-8 border ${
                       isHighlight
                         ? "bg-gradient-to-br from-primary to-[hsl(var(--pink-dark))] text-primary-foreground border-transparent shadow-xl"
                         : "bg-card text-foreground border-border shadow-sm"
