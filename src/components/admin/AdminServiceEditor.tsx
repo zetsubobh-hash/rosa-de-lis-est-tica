@@ -452,7 +452,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
             initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden border-b border-border bg-muted/50"
           >
-            <div className="max-w-2xl mx-auto px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Slug (URL)</label>
                 <Input value={service.slug} onChange={(e) => updateField("slug", e.target.value)} className="font-body text-xs h-8" />
