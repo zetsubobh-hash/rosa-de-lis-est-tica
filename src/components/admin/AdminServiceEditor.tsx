@@ -960,7 +960,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           aria-label="Fechar sem salvar"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setNewPlan({ plan_name: "", sessions: 1, price_per_session: 0, total_price: 0 });
+                            setNewPlan({ plan_name: "", sessions: 1, price_per_session_cents: 0, total_price_cents: 0 });
                             setNewPlanRaw({ pps: "0,00", total: "0,00" });
                             setEditingSection(null);
                           }}
