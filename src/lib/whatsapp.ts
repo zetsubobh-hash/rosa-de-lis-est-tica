@@ -14,7 +14,11 @@ export const normalizeWhatsAppPhone = (value?: string | null) => {
 
 export const buildWhatsAppLink = (phone?: string | null, message?: string) => {
   const normalizedPhone = normalizeWhatsAppPhone(phone);
-  const params = message ? `?text=${encodeURIComponent(message)}` : "";
+  const params = new URLSearchParams();
 
-  return normalizedPhone ? `https://wa.me/${normalizedPhone}${params}` : "https://wa.me/";
+  if (normalizedPhone) params.set("phone", normalizedPhone);
+  if (message) params.set("text", message);
+
+  const query = params.toString();
+  return query ? `https://web.whatsapp.com/send?${query}` : "https://web.whatsapp.com/";
 };

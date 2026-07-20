@@ -4,6 +4,7 @@ import { Search, Users, Phone, Mail, MessageCircle, UserPlus } from "lucide-reac
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 interface Client {
   user_id: string;
@@ -164,7 +165,7 @@ const AdminClients = () => {
                     <Phone className="w-3.5 h-3.5" />
                   </a>
                   <a
-                    href={`https://wa.me/55${client.phone.replace(/\D/g, "")}`}
+                    href={buildWhatsAppLink(client.phone)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
