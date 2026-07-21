@@ -73,6 +73,8 @@ const QuickBookModal = ({
       setShowNewClient(false);
       setSelectedPlanId("");
       setServicePrices([]);
+      setClientSearch("");
+      setClientDropdownOpen(false);
     }
   }, [open]);
 
