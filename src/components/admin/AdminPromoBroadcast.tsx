@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Save, Send, Pencil, Server, Megaphone, Clock,
   Hash, ChevronDown, ChevronUp, Loader2, CheckCircle2, XCircle,
-  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff, Users, Filter, MessageCircle
+  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff, Users, Filter, MessageCircle, UserX, RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,6 +106,10 @@ const AdminPromoBroadcast = () => {
   const [campaignFormOpen, setCampaignFormOpen] = useState(false);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [unsubCount, setUnsubCount] = useState(0);
+  const [unsubModalOpen, setUnsubModalOpen] = useState(false);
+  const [unsubList, setUnsubList] = useState<Array<{ id: string; phone: string; user_id: string | null; created_at: string; full_name?: string | null }>>([]);
+  const [loadingUnsub, setLoadingUnsub] = useState(false);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
   const [campForm, setCampForm] = useState({
     title: "",
