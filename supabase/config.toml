@@ -44,6 +44,3 @@ verify_jwt = false
 
 [functions.reset-password]
 verify_jwt = false
-
-[functions.evolution-webhook]
-verify_jwt = false
