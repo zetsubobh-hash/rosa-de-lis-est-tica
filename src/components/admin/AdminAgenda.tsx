@@ -149,7 +149,9 @@ const AdminAgenda = () => {
         .order("appointment_time", { ascending: true }),
       supabase
         .from("profiles")
-        .select("user_id, full_name, phone, email, sex, address, avatar_url"),
+        .select("user_id, full_name, phone, email, sex, address, avatar_url")
+        .order("full_name", { ascending: true })
+        .limit(5000),
       supabase
         .from("partners")
         .select("id, full_name")
