@@ -129,6 +129,8 @@ const AdminAgenda = () => {
   const [qbServiceSlug, setQbServiceSlug] = useState("");
   const [qbSaving, setQbSaving] = useState(false);
   const [qbShowNewClient, setQbShowNewClient] = useState(false);
+  const [qbClientSearch, setQbClientSearch] = useState("");
+  const [qbClientDropdownOpen, setQbClientDropdownOpen] = useState(false);
   // Client detail modal
   const [clientDetail, setClientDetail] = useState<{ userId: string; userName: string; avatarUrl: string | null } | null>(null);
   const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
@@ -622,6 +624,8 @@ const AdminAgenda = () => {
           setQbUserId("");
           setQbServiceSlug("");
           setQbShowNewClient(false);
+          setQbClientSearch("");
+          setQbClientDropdownOpen(false);
         }}
         onDragReschedule={handleDragReschedule}
         onScheduleSession={(params) => setScheduleModal(params)}
@@ -803,21 +807,62 @@ const AdminAgenda = () => {
                     onClientCreated={(client) => {
                       setAllProfiles(prev => [{ user_id: client.user_id, full_name: client.full_name }, ...prev]);
                       setQbUserId(client.user_id);
+                      setQbClientSearch(client.full_name);
                       setQbShowNewClient(false);
                     }}
                     onCancel={() => setQbShowNewClient(false)}
                   />
                 ) : (
-                  <select
-                    value={qbUserId}
-                    onChange={(e) => setQbUserId(e.target.value)}
-                    className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
-                  >
-                    <option value="">Selecione o cliente...</option>
-                    {allProfiles.map((p) => (
-                      <option key={p.user_id} value={p.user_id}>{p.full_name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={qbClientSearch}
+                      onChange={(e) => {
+                        setQbClientSearch(e.target.value);
+                        setQbUserId("");
+                        setQbClientDropdownOpen(true);
+                      }}
+                      onFocus={() => setQbClientDropdownOpen(true)}
+                      onBlur={() => setTimeout(() => setQbClientDropdownOpen(false), 150)}
+                      placeholder="Digite o nome do cliente..."
+                      className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                    {qbClientDropdownOpen && (
+                      <div className="absolute z-[9999] top-full left-0 right-0 mt-1 bg-background border border-border rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                        {allProfiles
+                          .filter((p) =>
+                            !qbClientSearch ||
+                            p.full_name.toLowerCase().includes(qbClientSearch.toLowerCase())
+                          )
+                          .slice(0, 50)
+                          .map((p) => (
+                            <button
+                              key={p.user_id}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setQbUserId(p.user_id);
+                                setQbClientSearch(p.full_name);
+                                setQbClientDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 font-body text-sm hover:bg-primary/10 transition-colors ${
+                                qbUserId === p.user_id ? "bg-primary/10 text-primary font-semibold" : "text-foreground"
+                              }`}
+                            >
+                              {p.full_name}
+                            </button>
+                          ))}
+                        {allProfiles.filter((p) =>
+                          !qbClientSearch ||
+                          p.full_name.toLowerCase().includes(qbClientSearch.toLowerCase())
+                        ).length === 0 && (
+                          <div className="px-3 py-2 font-body text-xs text-muted-foreground">
+                            Nenhum cliente encontrado
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
