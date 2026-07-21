@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import BirthdayRoulette from "@/components/BirthdayRoulette";
+import WelcomePromoPopup from "@/components/WelcomePromoPopup";
 
 const CHUNK_RELOAD_KEY = "chunk_reload_ts";
 const CHUNK_RELOAD_WINDOW_MS = 15_000;
