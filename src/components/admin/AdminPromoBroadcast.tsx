@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Save, Send, Pencil, Server, Megaphone, Clock,
   Hash, ChevronDown, ChevronUp, Loader2, CheckCircle2, XCircle,
-  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff, Users, Filter, MessageCircle
+  AlertTriangle, RefreshCw, QrCode, LogOut, Wifi, WifiOff, Users, Filter, MessageCircle, UserX, RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,6 +106,10 @@ const AdminPromoBroadcast = () => {
   const [campaignFormOpen, setCampaignFormOpen] = useState(false);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [unsubCount, setUnsubCount] = useState(0);
+  const [unsubModalOpen, setUnsubModalOpen] = useState(false);
+  const [unsubList, setUnsubList] = useState<Array<{ id: string; phone: string; user_id: string | null; created_at: string; full_name?: string | null }>>([]);
+  const [loadingUnsub, setLoadingUnsub] = useState(false);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
   const [campForm, setCampForm] = useState({
     title: "",
@@ -329,6 +333,37 @@ const AdminPromoBroadcast = () => {
       .select("id", { count: "exact", head: true });
     setUnsubCount(count || 0);
   }, []);
+
+  const fetchUnsubList = useCallback(async () => {
+    setLoadingUnsub(true);
+    const { data } = await supabase
+      .from("promo_unsubscribes" as any)
+      .select("id, phone, user_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    const rows = (data as any[]) || [];
+    const userIds = rows.map(r => r.user_id).filter(Boolean);
+    let nameMap: Record<string, string> = {};
+    if (userIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+      profs?.forEach((p: any) => { nameMap[p.user_id] = p.full_name; });
+    }
+    setUnsubList(rows.map(r => ({ ...r, full_name: r.user_id ? nameMap[r.user_id] : null })));
+    setLoadingUnsub(false);
+  }, []);
+
+  const reactivateUnsub = async (id: string) => {
+    setReactivatingId(id);
+    const { error } = await supabase.from("promo_unsubscribes" as any).delete().eq("id", id);
+    setReactivatingId(null);
+    if (error) {
+      toast({ title: "Erro ao reativar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Cliente reativado", description: "Voltará a receber promoções." });
+    setUnsubList(prev => prev.filter(u => u.id !== id));
+    fetchUnsubCount();
+  };
 
   useEffect(() => {
     fetchInstances();
@@ -811,10 +846,22 @@ const AdminPromoBroadcast = () => {
               Campanhas de Promoção
             </CardTitle>
             {!campaignFormOpen && (
-              <Button onClick={openNewCampaign} className="gap-2" size="sm">
-                <Plus className="w-4 h-4" />
-                Nova Campanha
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => { setUnsubModalOpen(true); fetchUnsubList(); }}
+                >
+                  <UserX className="w-4 h-4" />
+                  Descadastros
+                  {unsubCount > 0 && <Badge variant="secondary" className="ml-1">{unsubCount}</Badge>}
+                </Button>
+                <Button onClick={openNewCampaign} className="gap-2" size="sm">
+                  <Plus className="w-4 h-4" />
+                  Nova Campanha
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -1220,6 +1267,63 @@ const AdminPromoBroadcast = () => {
               {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Enviar teste
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── UNSUBSCRIBES MODAL ─── */}
+      <Dialog open={unsubModalOpen} onOpenChange={setUnsubModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserX className="w-5 h-5 text-primary" />
+              Clientes descadastrados
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto -mx-6 px-6">
+            {loadingUnsub ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : unsubList.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">
+                Nenhum cliente se descadastrou até agora.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {unsubList.map((u) => {
+                  const d = new Date(u.created_at);
+                  const when = `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+                  const localPhone = u.phone.replace(/^55/, "");
+                  const masked = localPhone.length === 11
+                    ? `(${localPhone.slice(0,2)}) ${localPhone.slice(2,7)}-${localPhone.slice(7)}`
+                    : localPhone.length === 10
+                    ? `(${localPhone.slice(0,2)}) ${localPhone.slice(2,6)}-${localPhone.slice(6)}`
+                    : u.phone;
+                  return (
+                    <div key={u.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{u.full_name || "Cliente não cadastrado"}</p>
+                        <p className="text-xs text-muted-foreground">{masked} • {when}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 shrink-0"
+                        onClick={() => reactivateUnsub(u.id)}
+                        disabled={reactivatingId === u.id}
+                      >
+                        {reactivatingId === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                        Reativar
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnsubModalOpen(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
