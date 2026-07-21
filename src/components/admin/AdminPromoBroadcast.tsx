@@ -846,10 +846,22 @@ const AdminPromoBroadcast = () => {
               Campanhas de Promoção
             </CardTitle>
             {!campaignFormOpen && (
-              <Button onClick={openNewCampaign} className="gap-2" size="sm">
-                <Plus className="w-4 h-4" />
-                Nova Campanha
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => { setUnsubModalOpen(true); fetchUnsubList(); }}
+                >
+                  <UserX className="w-4 h-4" />
+                  Descadastros
+                  {unsubCount > 0 && <Badge variant="secondary" className="ml-1">{unsubCount}</Badge>}
+                </Button>
+                <Button onClick={openNewCampaign} className="gap-2" size="sm">
+                  <Plus className="w-4 h-4" />
+                  Nova Campanha
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
