@@ -149,7 +149,9 @@ const AdminAgenda = () => {
         .order("appointment_time", { ascending: true }),
       supabase
         .from("profiles")
-        .select("user_id, full_name, phone, email, sex, address, avatar_url"),
+        .select("user_id, full_name, phone, email, sex, address, avatar_url")
+        .order("full_name", { ascending: true })
+        .limit(5000),
       supabase
         .from("partners")
         .select("id, full_name")
@@ -834,7 +836,7 @@ const AdminAgenda = () => {
                             !qbClientSearch ||
                             p.full_name.toLowerCase().includes(qbClientSearch.toLowerCase())
                           )
-                          .slice(0, 50)
+                          .slice(0, 500)
                           .map((p) => (
                             <button
                               key={p.user_id}

@@ -273,7 +273,7 @@ const QuickBookModal = ({
                         !clientSearch ||
                         p.full_name.toLowerCase().includes(clientSearch.toLowerCase())
                       )
-                      .slice(0, 50)
+                      .slice(0, 500)
                       .map((p) => (
                         <button
                           key={p.user_id}
