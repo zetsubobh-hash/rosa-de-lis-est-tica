@@ -76,7 +76,6 @@ const AUDIENCE_FILTERS = [
   { value: "recent", label: "Clientes recentes", description: "Com agendamentos nos últimos 30 dias" },
   { value: "birthday_today", label: "Aniversariantes do dia", description: "Clientes que fazem aniversário hoje" },
   { value: "birthday_week", label: "Aniversariantes da semana", description: "Clientes que fazem aniversário esta semana" },
-  { value: "birthday_month", label: "Aniversariantes da semana", description: "Clientes que fazem aniversário esta semana" },
   { value: "birthday_month", label: "Aniversariantes do mês", description: "Clientes que fazem aniversário este mês" },
 ];
 
