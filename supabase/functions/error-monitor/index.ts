@@ -91,7 +91,7 @@ serve(async (req) => {
     const businessName = siteData?.value || "Rosa de Lis Estética";
 
     // Build a single consolidated message for all errors
-    const errorLines = errors.slice(0, 5).map((e: any, i: number) => {
+    const errorLines = safeErrors.map((e: any, i: number) => {
       return `❌ *Erro ${i + 1}:*\n${e.message || "Erro desconhecido"}\n📍 ${e.source || "N/A"}\n🕐 ${e.timestamp || "N/A"}`;
     });
 
