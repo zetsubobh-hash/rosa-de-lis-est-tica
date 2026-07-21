@@ -66,6 +66,7 @@ const DYNAMIC_VARS = [
   { key: "{servico}", label: "Nome do serviço" },
   { key: "{empresa}", label: "Nome da empresa" },
   { key: "{telefone}", label: "Telefone do cliente" },
+  { key: "{link_agendar}", label: "Link do WhatsApp para agendar" },
 ];
 
 const AUDIENCE_FILTERS = [
@@ -75,11 +76,12 @@ const AUDIENCE_FILTERS = [
   { value: "recent", label: "Clientes recentes", description: "Com agendamentos nos últimos 30 dias" },
   { value: "birthday_today", label: "Aniversariantes do dia", description: "Clientes que fazem aniversário hoje" },
   { value: "birthday_week", label: "Aniversariantes da semana", description: "Clientes que fazem aniversário esta semana" },
+  { value: "birthday_month", label: "Aniversariantes da semana", description: "Clientes que fazem aniversário esta semana" },
   { value: "birthday_month", label: "Aniversariantes do mês", description: "Clientes que fazem aniversário este mês" },
 ];
 
 const DEFAULT_TEMPLATE =
-  "Olá {nome}! 🌸\n\nTemos uma promoção especial para você na _{empresa}_ 💖\n\n*Promoção exclusiva somente na data de hoje: {servico}!*\n\nConsulte condições e não perca esta oportunidade única!\n\nAgende agora. ✨\n\n_{empresa}_\n\n---\n_Não deseja mais receber promoções? Responda SAIR._";
+  "Olá {nome}! 🌸\n\nTemos uma promoção especial para você na _{empresa}_ 💖\n\n*Promoção exclusiva somente na data de hoje: {servico}!*\n\nConsulte condições e não perca esta oportunidade única!\n\nAgende agora ✨\n👉 {link_agendar}\n\n_{empresa}_\n\n---\n_Não deseja mais receber promoções? Responda SAIR._";
 
 /* ───────── component ───────── */
 const AdminPromoBroadcast = () => {
