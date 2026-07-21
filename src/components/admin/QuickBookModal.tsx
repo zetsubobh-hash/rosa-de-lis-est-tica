@@ -57,6 +57,8 @@ const QuickBookModal = ({
   const [serviceSlug, setServiceSlug] = useState("");
   const [saving, setSaving] = useState(false);
   const [showNewClient, setShowNewClient] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
 
   // Plan selection
   const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
@@ -71,6 +73,8 @@ const QuickBookModal = ({
       setShowNewClient(false);
       setSelectedPlanId("");
       setServicePrices([]);
+      setClientSearch("");
+      setClientDropdownOpen(false);
     }
   }, [open]);
 
@@ -242,21 +246,62 @@ const QuickBookModal = ({
                 onClientCreated={(client) => {
                   onProfileCreated({ user_id: client.user_id, full_name: client.full_name });
                   setUserId(client.user_id);
+                  setClientSearch(client.full_name);
                   setShowNewClient(false);
                 }}
                 onCancel={() => setShowNewClient(false)}
               />
             ) : (
-              <select
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
-              >
-                <option value="">Selecione o cliente...</option>
-                {allProfiles.map((p) => (
-                  <option key={p.user_id} value={p.user_id}>{p.full_name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={clientSearch}
+                  onChange={(e) => {
+                    setClientSearch(e.target.value);
+                    setUserId("");
+                    setClientDropdownOpen(true);
+                  }}
+                  onFocus={() => setClientDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setClientDropdownOpen(false), 150)}
+                  placeholder="Digite o nome do cliente..."
+                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                />
+                {clientDropdownOpen && (
+                  <div className="absolute z-[9999] top-full left-0 right-0 mt-1 bg-background border border-border rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                    {allProfiles
+                      .filter((p) =>
+                        !clientSearch ||
+                        p.full_name.toLowerCase().includes(clientSearch.toLowerCase())
+                      )
+                      .slice(0, 50)
+                      .map((p) => (
+                        <button
+                          key={p.user_id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setUserId(p.user_id);
+                            setClientSearch(p.full_name);
+                            setClientDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 font-body text-sm hover:bg-primary/10 transition-colors ${
+                            userId === p.user_id ? "bg-primary/10 text-primary font-semibold" : "text-foreground"
+                          }`}
+                        >
+                          {p.full_name}
+                        </button>
+                      ))}
+                    {allProfiles.filter((p) =>
+                      !clientSearch ||
+                      p.full_name.toLowerCase().includes(clientSearch.toLowerCase())
+                    ).length === 0 && (
+                      <div className="px-3 py-2 font-body text-xs text-muted-foreground">
+                        Nenhum cliente encontrado
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
