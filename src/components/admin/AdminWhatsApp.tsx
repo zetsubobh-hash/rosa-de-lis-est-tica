@@ -273,6 +273,29 @@ const AdminWhatsApp = () => {
     setSaving(false);
   };
 
+  const extractQrValue = (data: any) =>
+    data?.base64 ||
+    data?.qrcode?.base64 ||
+    data?.qrCode?.base64 ||
+    data?.data?.base64 ||
+    data?.code ||
+    data?.qrcode?.code ||
+    data?.qrCode?.code ||
+    data?.pairingCode ||
+    null;
+
+  const looksLikeImageBase64 = (value: string) =>
+    value.startsWith("data:image") ||
+    value.startsWith("iVBOR") ||
+    value.startsWith("/9j/") ||
+    value.startsWith("R0lGOD");
+
+  const qrImageSrc = (value: string) => {
+    if (value.startsWith("data:image")) return value;
+    if (looksLikeImageBase64(value)) return `data:image/png;base64,${value}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(value)}`;
+  };
+
   const callEvolution = async (action: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     const url = `${SUPABASE_URL}/functions/v1/evolution`;
@@ -302,15 +325,18 @@ const AdminWhatsApp = () => {
       // 1) Try to create — if the instance already exists, the edge function
       // restarts it and returns a fresh QR directly (reused: true).
       let data: any = await callEvolution("create_instance");
+      let qrValue = extractQrValue(data);
 
       // If create didn't return a QR yet, poll /connect a few times.
       // Evolution API may need a moment to generate the QR after creation.
-      if (!data?.base64 && !data?.code) {
+      if (!qrValue) {
         for (let i = 0; i < 4; i++) {
           await new Promise((r) => setTimeout(r, 1200));
           const qr = await callEvolution("get_qrcode");
-          if (qr?.base64 || qr?.code) {
+          const nextQrValue = extractQrValue(qr);
+          if (nextQrValue) {
             data = qr;
+            qrValue = nextQrValue;
             break;
           }
           if (qr?.error && !String(qr.error).toLowerCase().includes("connecting")) {
@@ -320,10 +346,8 @@ const AdminWhatsApp = () => {
         }
       }
 
-      if (data?.base64) {
-        setQrCode(data.base64);
-      } else if (data?.code) {
-        setQrCode(data.code);
+      if (qrValue) {
+        setQrCode(qrValue);
       } else if (data?.error) {
         toast({ title: "Erro ao gerar QR Code", description: data.error, variant: "destructive" });
       } else {
@@ -1067,7 +1091,7 @@ const AdminWhatsApp = () => {
         {qrCode && (
           <div className="flex flex-col items-center py-4">
             <div className="bg-white p-4 rounded-2xl shadow-sm">
-              <img src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code WhatsApp" className="w-64 h-64" />
+              <img src={qrImageSrc(qrCode)} alt="QR Code WhatsApp" className="w-64 h-64" />
             </div>
             <p className="font-body text-xs text-muted-foreground mt-3 text-center max-w-xs">
               Abra o WhatsApp no celular → Dispositivos conectados → Conectar dispositivo → Escaneie este QR Code

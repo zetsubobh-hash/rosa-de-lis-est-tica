@@ -135,6 +135,29 @@ const AdminPromoBroadcast = () => {
     return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   };
 
+  const extractQrValue = (data: any) =>
+    data?.base64 ||
+    data?.qrcode?.base64 ||
+    data?.qrCode?.base64 ||
+    data?.data?.base64 ||
+    data?.code ||
+    data?.qrcode?.code ||
+    data?.qrCode?.code ||
+    data?.pairingCode ||
+    null;
+
+  const looksLikeImageBase64 = (value: string) =>
+    value.startsWith("data:image") ||
+    value.startsWith("iVBOR") ||
+    value.startsWith("/9j/") ||
+    value.startsWith("R0lGOD");
+
+  const qrImageSrc = (value: string) => {
+    if (value.startsWith("data:image")) return value;
+    if (looksLikeImageBase64(value)) return `data:image/png;base64,${value}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(value)}`;
+  };
+
   const openTestModal = (camp: PromoCampaign) => {
     const svcTitle = camp.service_slug
       ? (services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug)
@@ -306,12 +329,25 @@ const AdminPromoBroadcast = () => {
     setInstanceLoading(p => ({ ...p, [instId]: "qr" }));
     setInstanceQr(p => ({ ...p, [instId]: null }));
     try {
-      await callInstanceAction(instId, "create_instance");
-      const data = await callInstanceAction(instId, "get_qrcode");
-      if (data.base64) {
-        setInstanceQr(p => ({ ...p, [instId]: data.base64 }));
-      } else if (data.code) {
-        setInstanceQr(p => ({ ...p, [instId]: data.code }));
+      let data = await callInstanceAction(instId, "create_instance");
+      let qrValue = extractQrValue(data);
+
+      if (!qrValue) {
+        for (let i = 0; i < 4; i++) {
+          await new Promise((r) => setTimeout(r, 1200));
+          const qrData = await callInstanceAction(instId, "get_qrcode");
+          const nextQrValue = extractQrValue(qrData);
+          if (nextQrValue) {
+            data = qrData;
+            qrValue = nextQrValue;
+            break;
+          }
+          if (qrData?.error && !String(qrData.error).toLowerCase().includes("connecting")) break;
+        }
+      }
+
+      if (qrValue) {
+        setInstanceQr(p => ({ ...p, [instId]: qrValue }));
       } else {
         toast({ title: "QR Code não disponível", description: "A instância pode já estar conectada. Verifique o status.", variant: "destructive" });
       }
@@ -718,19 +754,11 @@ const AdminPromoBroadcast = () => {
                             >
                               <p className="text-xs text-muted-foreground">Escaneie o QR Code com o WhatsApp:</p>
                               <div className="bg-background p-3 rounded-xl border border-border inline-block">
-                                {qr.startsWith("data:") || qr.length > 200 ? (
-                                  <img
-                                    src={qr.startsWith("data:") ? qr : `data:image/png;base64,${qr}`}
-                                    alt="QR Code"
-                                    className="w-48 h-48"
-                                  />
-                                ) : (
-                                  <img
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr)}`}
-                                    alt="QR Code"
-                                    className="w-48 h-48"
-                                  />
-                                )}
+                                <img
+                                  src={qrImageSrc(qr)}
+                                  alt="QR Code"
+                                  className="w-48 h-48"
+                                />
                               </div>
                               <Button
                                 size="sm"

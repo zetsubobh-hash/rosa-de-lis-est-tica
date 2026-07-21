@@ -12,6 +12,55 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const readJson = async (res: Response) => {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
+
+const normalizeQrPayload = (payload: any) => {
+  const qr =
+    payload?.qrcode ||
+    payload?.qrCode ||
+    payload?.qr ||
+    payload?.data?.qrcode ||
+    payload?.data?.qrCode ||
+    payload?.instance?.qrcode;
+
+  const base64 =
+    payload?.base64 ||
+    payload?.data?.base64 ||
+    qr?.base64 ||
+    qr?.image ||
+    qr?.qrCode;
+
+  const code =
+    payload?.code ||
+    payload?.data?.code ||
+    qr?.code ||
+    qr?.pairingCode ||
+    payload?.pairingCode;
+
+  if (!base64 && !code) return payload;
+
+  return {
+    ...payload,
+    base64,
+    code,
+    qrcode: {
+      ...(qr || {}),
+      base64,
+      code,
+    },
+  };
+};
+
+const hasQr = (payload: any) => Boolean(payload?.base64 || payload?.code || payload?.qrcode?.base64 || payload?.qrcode?.code);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -64,27 +113,29 @@ Deno.serve(async (req) => {
           qrcode: true,
         }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         const msg = JSON.stringify(data).toLowerCase();
-        if (res.status === 403 && msg.includes("already in use")) {
+        if ([400, 403, 409].includes(res.status) && (msg.includes("already") || msg.includes("exist") || msg.includes("em uso") || msg.includes("in use"))) {
           try {
-            await fetch(`${baseUrl}/instance/restart/${instanceName}`, { method: "PUT", headers });
+            const restartRes = await fetch(`${baseUrl}/instance/restart/${instanceName}`, { method: "PUT", headers });
+            const restartData = normalizeQrPayload(await readJson(restartRes));
+            if (hasQr(restartData)) return json({ ...restartData, reused: true, source: "restart" });
           } catch (_e) { /* ignore */ }
           await new Promise((r) => setTimeout(r, 1500));
           const qrRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, { method: "GET", headers });
-          const qrData = await qrRes.json();
+          const qrData = normalizeQrPayload(await readJson(qrRes));
           if (!qrRes.ok) return json({ error: qrData?.message || "Erro ao conectar instância existente" }, qrRes.status);
           return json({ ...qrData, reused: true });
         }
         return json({ error: data?.message || "Erro ao criar instância" }, res.status);
       }
-      return json(data);
+      return json(normalizeQrPayload(data));
     }
 
     if (action === "get_qrcode") {
       const res = await fetch(`${baseUrl}/instance/connect/${instanceName}`, { method: "GET", headers });
-      const data = await res.json();
+      const data = normalizeQrPayload(await readJson(res));
       if (!res.ok) return json({ error: data?.message || "Erro ao buscar QR Code" }, res.status);
       return json(data);
     }
