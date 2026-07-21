@@ -624,6 +624,8 @@ const AdminAgenda = () => {
           setQbUserId("");
           setQbServiceSlug("");
           setQbShowNewClient(false);
+          setQbClientSearch("");
+          setQbClientDropdownOpen(false);
         }}
         onDragReschedule={handleDragReschedule}
         onScheduleSession={(params) => setScheduleModal(params)}
