@@ -57,6 +57,8 @@ const QuickBookModal = ({
   const [serviceSlug, setServiceSlug] = useState("");
   const [saving, setSaving] = useState(false);
   const [showNewClient, setShowNewClient] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
 
   // Plan selection
   const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
