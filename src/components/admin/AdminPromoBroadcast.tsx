@@ -159,15 +159,27 @@ const AdminPromoBroadcast = () => {
     return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(value)}`;
   };
 
-  const openTestModal = (camp: PromoCampaign) => {
+  const openTestModal = async (camp: PromoCampaign) => {
     const svcTitle = camp.service_slug
       ? (services.find(s => s.slug === camp.service_slug)?.title || camp.service_slug)
       : "nosso serviço";
+    // Fetch whatsapp_number to build link_agendar preview
+    let waLink = "https://wa.me/";
+    try {
+      const { data } = await supabase.from("site_settings").select("value").eq("key", "whatsapp_number").maybeSingle();
+      const raw = (data?.value || "").replace(/\D/g, "");
+      if (raw) {
+        const digits = raw.startsWith("55") ? raw : `55${raw}`;
+        const msg = encodeURIComponent(`Olá! Vi a promoção de ${svcTitle} e quero agendar.`);
+        waLink = `https://wa.me/${digits}?text=${msg}`;
+      }
+    } catch { /* noop */ }
     const rendered = (camp.message_template || "")
       .replace(/\{nome\}/g, "Cliente Teste")
       .replace(/\{servico\}/g, svcTitle)
       .replace(/\{empresa\}/g, "Rosa de Lis Estética")
-      .replace(/\{telefone\}/g, "");
+      .replace(/\{telefone\}/g, "")
+      .replace(/\{link_agendar\}/g, waLink);
     const firstActive = instances.find(i => i.is_active)?.id || instances[0]?.id || "";
     setTestModal({ open: true, campaign: camp, instance_id: firstActive, phone: "", message: rendered });
   };
