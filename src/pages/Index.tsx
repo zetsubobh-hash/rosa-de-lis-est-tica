@@ -48,6 +48,7 @@ const Index = () => {
       <LazySection><Footer /></LazySection>
       <WhatsAppButton />
       <BirthdayRoulette />
+      <WelcomePromoPopup />
     </div>
   );
 };
