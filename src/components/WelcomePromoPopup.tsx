@@ -18,6 +18,8 @@ const WelcomePromoPopup = () => {
 
   useEffect(() => {
     if (loading) return;
+    if (authLoading) return;
+    if (user) return; // não exibe para usuários já logados
     if (settings.welcome_popup_enabled !== "true") return;
 
     const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || "0");
@@ -26,7 +28,7 @@ const WelcomePromoPopup = () => {
 
     const t = setTimeout(() => setShow(true), 1200);
     return () => clearTimeout(t);
-  }, [loading, settings.welcome_popup_enabled]);
+  }, [loading, authLoading, user, settings.welcome_popup_enabled]);
 
   const close = () => {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
