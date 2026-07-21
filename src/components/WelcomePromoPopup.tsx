@@ -33,7 +33,7 @@ const WelcomePromoPopup = () => {
   const title = settings.welcome_popup_title || "🎁 Ganhe seu prêmio de boas-vindas!";
   const subtitle =
     settings.welcome_popup_subtitle ||
-    "Cadastre-se e gire a roleta — até 60% OFF ou sessão grátis!";
+    "Faça o seu cadastro e concorra a brindes em procedimentos estéticos.";
   const cta = settings.welcome_popup_cta || "Girar a Roleta";
   const link = settings.welcome_popup_link || "/roleta-premio";
 
