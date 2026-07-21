@@ -18,7 +18,7 @@ const KEYS = {
 
 const DEFAULTS = {
   title: "🎁 Ganhe seu prêmio de boas-vindas!",
-  subtitle: "Cadastre-se e gire a roleta — até 60% OFF ou sessão grátis!",
+  subtitle: "Faça o seu cadastro e concorra a brindes em procedimentos estéticos.",
   cta: "Girar a Roleta",
   link: "/roleta-premio",
 };
