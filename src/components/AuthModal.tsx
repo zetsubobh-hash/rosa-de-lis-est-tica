@@ -36,6 +36,7 @@ interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  defaultMode?: "login" | "register" | "forgot";
 }
 
 const formatPhone = (value: string) => {
@@ -55,8 +56,8 @@ const capitalizeWords = (value: string) => {
   return value.replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
-  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: AuthModalProps) => {
+  const [mode, setMode] = useState<"login" | "register" | "forgot">(defaultMode);
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
