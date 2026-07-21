@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     const { data: settingsRows } = await supabase
       .from("site_settings")
       .select("key, value")
-      .in("key", ["business_name", "site_url"]);
+      .in("key", ["business_name", "site_url", "whatsapp_number"]);
     const settingsMap: Record<string, string> = {};
     (settingsRows || []).forEach((r: any) => { settingsMap[r.key] = r.value; });
     const businessName = settingsMap.business_name || "Nossa Clínica";
