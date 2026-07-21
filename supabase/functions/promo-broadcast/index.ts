@@ -214,11 +214,17 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      const waDigits = (settingsMap.whatsapp_number || "").replace(/\D/g, "");
+      const waNumber = waDigits ? (waDigits.startsWith("55") ? waDigits : `55${waDigits}`) : "";
+      const linkMsg = encodeURIComponent(`Olá! Vi a promoção de ${serviceTitle} e quero agendar.`);
+      const linkAgendar = waNumber ? `https://wa.me/${waNumber}?text=${linkMsg}` : "https://wa.me/";
+
       let message = template
         .replace(/{nome}/g, profile?.full_name || "Cliente")
         .replace(/{servico}/g, serviceTitle)
         .replace(/{empresa}/g, businessName)
-        .replace(/{telefone}/g, record.phone || profile?.phone || "");
+        .replace(/{telefone}/g, record.phone || profile?.phone || "")
+        .replace(/{link_agendar}/g, linkAgendar);
 
       if (siteBaseUrl) {
         const unsubUrl = `${siteBaseUrl}/cancelar?phone=${encodeURIComponent(phone)}`;
