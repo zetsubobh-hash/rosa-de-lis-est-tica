@@ -23,11 +23,27 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { errors } = await req.json();
+    const raw = await req.text();
+    // Hard cap payload size to prevent WhatsApp spam abuse
+    if (raw.length > 8000) {
+      return json({ skipped: true, reason: "Payload too large" });
+    }
+    let parsed: any;
+    try { parsed = JSON.parse(raw); } catch { return json({ error: "Invalid JSON" }, 400); }
+    const { errors } = parsed ?? {};
 
     if (!errors || !Array.isArray(errors) || errors.length === 0) {
       return json({ skipped: true, reason: "No errors provided" });
     }
+
+    // Sanitize and truncate — never trust page-supplied strings verbatim
+    const clean = (s: unknown, max: number) =>
+      String(s ?? "").replace(/[\r\n]+/g, " ").slice(0, max);
+    const safeErrors = errors.slice(0, 5).map((e: any) => ({
+      message: clean(e?.message, 300),
+      source: clean(e?.source, 120),
+      timestamp: clean(e?.timestamp, 40),
+    }));
 
     // Check if debug monitoring is enabled
     const { data: settingsData } = await supabase
@@ -75,7 +91,7 @@ serve(async (req) => {
     const businessName = siteData?.value || "Rosa de Lis Estética";
 
     // Build a single consolidated message for all errors
-    const errorLines = errors.slice(0, 5).map((e: any, i: number) => {
+    const errorLines = safeErrors.map((e: any, i: number) => {
       return `❌ *Erro ${i + 1}:*\n${e.message || "Erro desconhecido"}\n📍 ${e.source || "N/A"}\n🕐 ${e.timestamp || "N/A"}`;
     });
 

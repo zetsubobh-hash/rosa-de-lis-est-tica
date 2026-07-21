@@ -21,13 +21,47 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { appointment_ids, type } = await req.json();
-    const notificationType = type || "new"; // "new" | "reschedule"
+    // Require authenticated caller (admin or the appointment owner)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return json({ error: "Não autorizado" }, 401);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user } } = await createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    }).auth.getUser();
+    if (!user) return json({ error: "Não autorizado" }, 401);
 
-    if (!appointment_ids || !Array.isArray(appointment_ids) || appointment_ids.length === 0) {
-      return json({ skipped: true, reason: "No appointment IDs" });
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    const isAdmin = !!roleData;
+
+    const body = await req.json();
+    const { appointment_ids, type } = body ?? {};
+    const notificationType = type === "reschedule" ? "reschedule" : "new";
+
+    if (!Array.isArray(appointment_ids) || appointment_ids.length === 0 || appointment_ids.length > 50) {
+      return json({ skipped: true, reason: "Invalid appointment IDs" });
+    }
+    if (!appointment_ids.every((id) => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id))) {
+      return json({ error: "IDs inválidos" }, 400);
+    }
+
+    // Non-admins can only notify for their own appointments
+    if (!isAdmin) {
+      const { data: owned } = await supabase
+        .from("appointments")
+        .select("id")
+        .in("id", appointment_ids)
+        .eq("user_id", user.id);
+      if (!owned || owned.length !== appointment_ids.length) {
+        return json({ error: "Acesso negado" }, 403);
+      }
     }
 
     // Check if notifications are enabled and Evolution is configured
