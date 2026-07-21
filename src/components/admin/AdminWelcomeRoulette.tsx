@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DEFAULT_ITEMS, RouletteItem, computeChances, parseItems } from "@/lib/welcomeRouletteItems";
 import QRCodeCardModal from "./QRCodeCardModal";
+import WelcomePopupSettings from "./WelcomePopupSettings";
 
 interface WelcomeCoupon {
   id: string;
