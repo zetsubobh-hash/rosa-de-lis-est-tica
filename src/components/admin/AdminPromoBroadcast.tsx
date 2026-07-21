@@ -1270,6 +1270,63 @@ const AdminPromoBroadcast = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ─── UNSUBSCRIBES MODAL ─── */}
+      <Dialog open={unsubModalOpen} onOpenChange={setUnsubModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserX className="w-5 h-5 text-primary" />
+              Clientes descadastrados
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto -mx-6 px-6">
+            {loadingUnsub ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : unsubList.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">
+                Nenhum cliente se descadastrou até agora.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {unsubList.map((u) => {
+                  const d = new Date(u.created_at);
+                  const when = `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+                  const localPhone = u.phone.replace(/^55/, "");
+                  const masked = localPhone.length === 11
+                    ? `(${localPhone.slice(0,2)}) ${localPhone.slice(2,7)}-${localPhone.slice(7)}`
+                    : localPhone.length === 10
+                    ? `(${localPhone.slice(0,2)}) ${localPhone.slice(2,6)}-${localPhone.slice(6)}`
+                    : u.phone;
+                  return (
+                    <div key={u.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{u.full_name || "Cliente não cadastrado"}</p>
+                        <p className="text-xs text-muted-foreground">{masked} • {when}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 shrink-0"
+                        onClick={() => reactivateUnsub(u.id)}
+                        disabled={reactivatingId === u.id}
+                      >
+                        {reactivatingId === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                        Reativar
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnsubModalOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
