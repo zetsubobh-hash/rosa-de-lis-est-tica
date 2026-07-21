@@ -299,16 +299,39 @@ const AdminWhatsApp = () => {
     setQrLoading(true);
     setQrCode(null);
     try {
-      await callEvolution("create_instance");
-      const data = await callEvolution("get_qrcode");
-      if (data.base64) {
+      // 1) Try to create — if the instance already exists, the edge function
+      // restarts it and returns a fresh QR directly (reused: true).
+      let data: any = await callEvolution("create_instance");
+
+      // If create didn't return a QR yet, poll /connect a few times.
+      // Evolution API may need a moment to generate the QR after creation.
+      if (!data?.base64 && !data?.code) {
+        for (let i = 0; i < 4; i++) {
+          await new Promise((r) => setTimeout(r, 1200));
+          const qr = await callEvolution("get_qrcode");
+          if (qr?.base64 || qr?.code) {
+            data = qr;
+            break;
+          }
+          if (qr?.error && !String(qr.error).toLowerCase().includes("connecting")) {
+            data = qr;
+            break;
+          }
+        }
+      }
+
+      if (data?.base64) {
         setQrCode(data.base64);
-      } else if (data.code) {
+      } else if (data?.code) {
         setQrCode(data.code);
-      } else if (data.error) {
-        toast({ title: "Erro", description: data.error, variant: "destructive" });
+      } else if (data?.error) {
+        toast({ title: "Erro ao gerar QR Code", description: data.error, variant: "destructive" });
       } else {
-        toast({ title: "QR Code não disponível", description: "A instância pode já estar conectada.", variant: "destructive" });
+        toast({
+          title: "QR Code não disponível",
+          description: "A instância pode já estar conectada. Clique em 'Verificar status'.",
+          variant: "destructive",
+        });
       }
     } catch (e: any) {
       toast({ title: "Erro ao gerar QR Code", description: e.message, variant: "destructive" });
