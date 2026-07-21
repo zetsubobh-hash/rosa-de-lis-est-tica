@@ -334,6 +334,37 @@ const AdminPromoBroadcast = () => {
     setUnsubCount(count || 0);
   }, []);
 
+  const fetchUnsubList = useCallback(async () => {
+    setLoadingUnsub(true);
+    const { data } = await supabase
+      .from("promo_unsubscribes" as any)
+      .select("id, phone, user_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    const rows = (data as any[]) || [];
+    const userIds = rows.map(r => r.user_id).filter(Boolean);
+    let nameMap: Record<string, string> = {};
+    if (userIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+      profs?.forEach((p: any) => { nameMap[p.user_id] = p.full_name; });
+    }
+    setUnsubList(rows.map(r => ({ ...r, full_name: r.user_id ? nameMap[r.user_id] : null })));
+    setLoadingUnsub(false);
+  }, []);
+
+  const reactivateUnsub = async (id: string) => {
+    setReactivatingId(id);
+    const { error } = await supabase.from("promo_unsubscribes" as any).delete().eq("id", id);
+    setReactivatingId(null);
+    if (error) {
+      toast({ title: "Erro ao reativar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Cliente reativado", description: "Voltará a receber promoções." });
+    setUnsubList(prev => prev.filter(u => u.id !== id));
+    fetchUnsubCount();
+  };
+
   useEffect(() => {
     fetchInstances();
     fetchCampaigns();
