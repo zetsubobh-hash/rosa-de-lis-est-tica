@@ -337,6 +337,49 @@ const WelcomeRouletteCampaign = () => {
 
         <div className="rounded-2xl border border-border p-3 md:p-4 bg-muted/30">
           <div className="flex items-center gap-2 mb-3">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <h3 className="font-heading text-sm font-bold text-foreground">Envio de teste</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div>
+              <label className="font-body text-[11px] text-muted-foreground block mb-1">Instância</label>
+              <Select value={testInstanceId} onValueChange={setTestInstanceId}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999] bg-popover">
+                  {instances.map((i) => (
+                    <SelectItem key={i.id} value={i.id}>
+                      {i.name} {i.is_active ? "" : "(inativa)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="font-body text-[11px] text-muted-foreground block mb-1">Telefone de teste (com DDD)</label>
+              <Input
+                value={testPhone}
+                onChange={(e) => setTestPhone(maskPhone(e.target.value))}
+                placeholder="(11) 99999-9999"
+                inputMode="numeric"
+                className="h-9"
+              />
+            </div>
+            <Button variant="outline" onClick={sendTest} disabled={sendingTest} className="gap-2 h-9">
+              {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+              Enviar teste
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-3">
+            Envia a mensagem atual da campanha para o número informado, com as variáveis preenchidas por exemplo. Não conta
+            na campanha nem nas estatísticas.
+          </p>
+        </div>
+
+
+        <div className="rounded-2xl border border-border p-3 md:p-4 bg-muted/30">
+          <div className="flex items-center gap-2 mb-3">
             <CalendarClock className="w-4 h-4 text-primary" />
             <h3 className="font-heading text-sm font-bold text-foreground">Agendar início da campanha</h3>
           </div>
