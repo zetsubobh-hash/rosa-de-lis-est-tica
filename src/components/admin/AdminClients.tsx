@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List } from "lucide-react";
+import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
-import MissingPhoneAlert from "@/components/admin/MissingPhoneAlert";
+import MissingPhoneAlert, { isPhoneMissing } from "@/components/admin/MissingPhoneAlert";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 interface Client {
@@ -168,7 +168,11 @@ const AdminClients = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.02, 0.5) }}
                 onClick={() => setSelectedClient(client)}
-                className="bg-card rounded-2xl border border-border p-4 text-left hover:border-primary/50 hover:shadow-md transition-all group"
+                className={`rounded-2xl border p-4 text-left hover:shadow-md transition-all group ${
+                  isPhoneMissing(client.phone)
+                    ? "bg-destructive/5 border-destructive/50 hover:border-destructive"
+                    : "bg-card border-border hover:border-primary/50"
+                }`}
               >
                 <div className="flex items-start gap-3">
                   <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
@@ -181,12 +185,17 @@ const AdminClients = () => {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-heading text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                      {client.full_name}
+                    <p className={`font-heading text-sm font-bold truncate flex items-center gap-1 transition-colors ${
+                      isPhoneMissing(client.phone) ? "text-destructive" : "text-foreground group-hover:text-primary"
+                    }`}>
+                      {isPhoneMissing(client.phone) && <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-destructive" />}
+                      <span className="truncate">{client.full_name}</span>
                     </p>
-                    <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                    <p className={`font-body text-xs flex items-center gap-1 mt-0.5 truncate ${
+                      isPhoneMissing(client.phone) ? "text-destructive font-semibold" : "text-muted-foreground"
+                    }`}>
                       <Phone className="w-3 h-3 shrink-0" />
-                      {client.phone}
+                      {isPhoneMissing(client.phone) ? "Sem telefone — requer atenção" : client.phone}
                     </p>
                     {client.email && (
                       <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
@@ -234,7 +243,9 @@ const AdminClients = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.02, 0.5) }}
-                  className="flex flex-col sm:grid sm:grid-cols-[1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center hover:bg-muted/30 transition-colors group"
+                  className={`flex flex-col sm:grid sm:grid-cols-[1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center transition-colors group ${
+                    isPhoneMissing(client.phone) ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/30"
+                  }`}
                 >
                   <button
                     onClick={() => setSelectedClient(client)}
@@ -250,16 +261,21 @@ const AdminClients = () => {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-heading text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                        {client.full_name}
+                      <p className={`font-heading text-sm font-semibold truncate flex items-center gap-1 transition-colors ${
+                        isPhoneMissing(client.phone) ? "text-destructive" : "text-foreground group-hover:text-primary"
+                      }`}>
+                        {isPhoneMissing(client.phone) && <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-destructive" />}
+                        <span className="truncate">{client.full_name}</span>
                       </p>
                     </div>
                   </button>
 
                   <div className="flex flex-col gap-1 min-w-0 w-full sm:w-auto pl-[52px] sm:pl-0">
-                    <p className="font-body text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <p className={`font-body text-xs flex items-center gap-1 truncate ${
+                      isPhoneMissing(client.phone) ? "text-destructive font-semibold" : "text-muted-foreground"
+                    }`}>
                       <Phone className="w-3 h-3 shrink-0" />
-                      {client.phone}
+                      {isPhoneMissing(client.phone) ? "Sem telefone — requer atenção" : client.phone}
                     </p>
                     {client.email && (
                       <p className="font-body text-xs text-muted-foreground flex items-center gap-1 truncate">
