@@ -243,7 +243,9 @@ const AdminClients = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.02, 0.5) }}
-                  className="flex flex-col sm:grid sm:grid-cols-[1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center hover:bg-muted/30 transition-colors group"
+                  className={`flex flex-col sm:grid sm:grid-cols-[1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center transition-colors group ${
+                    isPhoneMissing(client.phone) ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/30"
+                  }`}
                 >
                   <button
                     onClick={() => setSelectedClient(client)}
@@ -259,16 +261,21 @@ const AdminClients = () => {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-heading text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                        {client.full_name}
+                      <p className={`font-heading text-sm font-semibold truncate flex items-center gap-1 transition-colors ${
+                        isPhoneMissing(client.phone) ? "text-destructive" : "text-foreground group-hover:text-primary"
+                      }`}>
+                        {isPhoneMissing(client.phone) && <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-destructive" />}
+                        <span className="truncate">{client.full_name}</span>
                       </p>
                     </div>
                   </button>
 
                   <div className="flex flex-col gap-1 min-w-0 w-full sm:w-auto pl-[52px] sm:pl-0">
-                    <p className="font-body text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <p className={`font-body text-xs flex items-center gap-1 truncate ${
+                      isPhoneMissing(client.phone) ? "text-destructive font-semibold" : "text-muted-foreground"
+                    }`}>
                       <Phone className="w-3 h-3 shrink-0" />
-                      {client.phone}
+                      {isPhoneMissing(client.phone) ? "Sem telefone — requer atenção" : client.phone}
                     </p>
                     {client.email && (
                       <p className="font-body text-xs text-muted-foreground flex items-center gap-1 truncate">
