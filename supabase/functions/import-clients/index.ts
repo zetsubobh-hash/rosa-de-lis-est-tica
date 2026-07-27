@@ -163,13 +163,14 @@ Deno.serve(async (req) => {
 
     for (const row of rows) {
       const fullNameRaw = String(row?.full_name ?? "").trim();
-      if (!fullNameRaw) {
+      const phone = normalizePhone(String(row?.phone ?? ""));
+      if (fullNameRaw.length < 3 || (phone && phone.length < 10)) {
         skipped++;
         continue;
       }
       const fullName = titleCase(fullNameRaw);
-      const phone = normalizePhone(String(row?.phone ?? ""));
       const nkey = normalizeName(fullName);
+
 
       if ((phone && phones.has(phone)) || names.has(nkey)) {
         skipped++;
