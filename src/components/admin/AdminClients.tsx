@@ -185,12 +185,17 @@ const AdminClients = () => {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-heading text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                      {client.full_name}
+                    <p className={`font-heading text-sm font-bold truncate flex items-center gap-1 transition-colors ${
+                      isPhoneMissing(client.phone) ? "text-destructive" : "text-foreground group-hover:text-primary"
+                    }`}>
+                      {isPhoneMissing(client.phone) && <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-destructive" />}
+                      <span className="truncate">{client.full_name}</span>
                     </p>
-                    <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                    <p className={`font-body text-xs flex items-center gap-1 mt-0.5 truncate ${
+                      isPhoneMissing(client.phone) ? "text-destructive font-semibold" : "text-muted-foreground"
+                    }`}>
                       <Phone className="w-3 h-3 shrink-0" />
-                      {client.phone}
+                      {isPhoneMissing(client.phone) ? "Sem telefone — requer atenção" : client.phone}
                     </p>
                     {client.email && (
                       <p className="font-body text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
