@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
     // Update campaign status
     await supabase
       .from("promo_campaigns")
-      .update({ status: "sending", total_target: profiles.length, total_sent: 0, total_failed: 0, current_instance_index: 0 })
+      .update({ status: "sending", total_target: profiles.length, total_sent: 0, total_failed: 0, current_instance_index: 0, started_at: new Date().toISOString(), finished_at: null, last_error: null })
       .eq("id", campaign_id);
 
     // Create send records
