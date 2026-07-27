@@ -28,6 +28,8 @@ Deno.serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+  let currentCampaignId: string | null = null;
+
   try {
     // Auth check (internal scheduler bypass)
     const internalSecret = req.headers.get("x-internal-secret") ?? "";
@@ -50,6 +52,7 @@ Deno.serve(async (req) => {
 
     const { campaign_id } = await req.json();
     if (!campaign_id) return json({ error: "campaign_id required" }, 400);
+    currentCampaignId = campaign_id;
 
     // Fetch campaign
     const { data: campaign, error: campErr } = await supabase
@@ -331,9 +334,7 @@ Deno.serve(async (req) => {
     console.error("promo-broadcast error:", err);
     try {
       const body = { status: "failed", last_error: String(err?.message || err).substring(0, 500), finished_at: new Date().toISOString() };
-      const url = new URL(req.url);
-      const cid = url.searchParams.get("campaign_id");
-      if (cid) await supabase.from("promo_campaigns").update(body).eq("id", cid);
+      if (currentCampaignId) await supabase.from("promo_campaigns").update(body).eq("id", currentCampaignId);
     } catch (_) { /* ignore */ }
     return json({ error: err.message }, 500);
   }
