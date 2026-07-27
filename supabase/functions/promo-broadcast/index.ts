@@ -282,10 +282,23 @@ Deno.serve(async (req) => {
         sentOnCurrentInstance = 0;
       }
 
-      if (campaign.interval_seconds > 0) {
-        await new Promise((resolve) => setTimeout(resolve, campaign.interval_seconds * 1000));
+      processedCount++;
+
+      // Anti-block: long pause every N messages
+      if (batchSize > 0 && batchPauseMinutes > 0 && processedCount % batchSize === 0) {
+        await new Promise((r) => setTimeout(r, batchPauseMinutes * 60 * 1000));
+      }
+
+      // Anti-block: randomized delay between messages
+      const base = campaign.interval_seconds || 0;
+      if (base > 0) {
+        const min = Math.max(1, intervalMin || base);
+        const max = Math.max(min, intervalMax || base);
+        const wait = min + Math.random() * (max - min);
+        await new Promise((resolve) => setTimeout(resolve, wait * 1000));
       }
     }
+
 
     // Update campaign final status
     await supabase
