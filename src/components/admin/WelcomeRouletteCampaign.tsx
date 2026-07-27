@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Send, Users, Loader2, ShieldCheck, RefreshCw, CalendarClock, X, Activity } from "lucide-react";
+import { Send, Users, Loader2, ShieldCheck, RefreshCw, CalendarClock, X, Activity, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -30,6 +31,72 @@ const WelcomeRouletteCampaign = () => {
   const [scheduleTime, setScheduleTime] = useState("");
   const [scheduling, setScheduling] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [instances, setInstances] = useState<any[]>([]);
+  const [testInstanceId, setTestInstanceId] = useState("");
+  const [testPhone, setTestPhone] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const maskPhone = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 2) return d;
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("evolution_instances" as any)
+        .select("id, name, is_active")
+        .order("sort_order", { ascending: true });
+      const list = (data as any[]) || [];
+      setInstances(list);
+      setTestInstanceId(list.find((i) => i.is_active)?.id || list[0]?.id || "");
+    })();
+  }, []);
+
+  const sendTest = async () => {
+    if (!testInstanceId) {
+      toast.error("Selecione uma instância do WhatsApp.");
+      return;
+    }
+    const digits = testPhone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      toast.error("Informe DDD + número (10 ou 11 dígitos).");
+      return;
+    }
+    if (!message.trim()) {
+      toast.error("Escreva a mensagem da campanha.");
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const rendered = message
+        .replace(/\{nome\}/g, "Cliente Teste")
+        .replace(/\{primeiro_nome\}/g, "Cliente")
+        .replace(/\{empresa\}/g, "Rosa de Lis Estética")
+        .replace(/\{link_roleta\}/g, "https://rosadelis.com/roleta-premio")
+        .replace(/\{link_agendar\}/g, "https://rosadelis.com/agendar");
+
+      const { data, error } = await supabase.functions.invoke("evolution-instance", {
+        body: {
+          instance_id: testInstanceId,
+          action: "send_text",
+          phone: digits,
+          message: `${rendered}\n\n_[MENSAGEM DE TESTE]_`,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`Teste enviado para ${maskPhone(digits)}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao enviar o teste.");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
 
   const countEligible = async () => {
     setCounting(true);
@@ -267,6 +334,49 @@ const WelcomeRouletteCampaign = () => {
             </p>
           ) : null}
         </div>
+
+        <div className="rounded-2xl border border-border p-3 md:p-4 bg-muted/30">
+          <div className="flex items-center gap-2 mb-3">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <h3 className="font-heading text-sm font-bold text-foreground">Envio de teste</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div>
+              <label className="font-body text-[11px] text-muted-foreground block mb-1">Instância</label>
+              <Select value={testInstanceId} onValueChange={setTestInstanceId}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999] bg-popover">
+                  {instances.map((i) => (
+                    <SelectItem key={i.id} value={i.id}>
+                      {i.name} {i.is_active ? "" : "(inativa)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="font-body text-[11px] text-muted-foreground block mb-1">Telefone de teste (com DDD)</label>
+              <Input
+                value={testPhone}
+                onChange={(e) => setTestPhone(maskPhone(e.target.value))}
+                placeholder="(11) 99999-9999"
+                inputMode="numeric"
+                className="h-9"
+              />
+            </div>
+            <Button variant="outline" onClick={sendTest} disabled={sendingTest} className="gap-2 h-9">
+              {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+              Enviar teste
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-3">
+            Envia a mensagem atual da campanha para o número informado, com as variáveis preenchidas por exemplo. Não conta
+            na campanha nem nas estatísticas.
+          </p>
+        </div>
+
 
         <div className="rounded-2xl border border-border p-3 md:p-4 bg-muted/30">
           <div className="flex items-center gap-2 mb-3">
