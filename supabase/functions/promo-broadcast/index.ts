@@ -206,9 +206,18 @@ Deno.serve(async (req) => {
     let sentOnCurrentInstance = 0;
     let totalSent = 0;
     let totalFailed = 0;
+    let processedCount = 0;
+
+    // Anti-block pacing config (stored inside audience_filter jsonb)
+    const pacing = (campaign.audience_filter || {}) as any;
+    const intervalMin = Number(pacing.interval_min) || 0;
+    const intervalMax = Number(pacing.interval_max) || 0;
+    const batchSize = Number(pacing.batch_size) || 0;
+    const batchPauseMinutes = Number(pacing.batch_pause_minutes) || 0;
 
     const template = campaign.message_template || "";
     const profileByUserId = new Map(profiles.map((p: any) => [p.user_id, p]));
+
 
     for (const record of insertedRecords) {
       const currentInstance = instances[instanceIdx];
