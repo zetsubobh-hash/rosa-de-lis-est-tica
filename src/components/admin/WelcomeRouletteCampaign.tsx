@@ -268,6 +268,111 @@ const WelcomeRouletteCampaign = () => {
           ) : null}
         </div>
 
+        <div className="rounded-2xl border border-border p-3 md:p-4 bg-muted/30">
+          <div className="flex items-center gap-2 mb-3">
+            <CalendarClock className="w-4 h-4 text-primary" />
+            <h3 className="font-heading text-sm font-bold text-foreground">Agendar início da campanha</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div>
+              <label className="font-body text-[11px] text-muted-foreground block mb-1">Data</label>
+              <Input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <label className="font-body text-[11px] text-muted-foreground block mb-1">Horário</label>
+              <Input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="h-9" />
+            </div>
+            <Button variant="outline" onClick={scheduleCampaign} disabled={scheduling} className="gap-2 h-9">
+              {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarClock className="w-4 h-4" />}
+              Agendar campanha
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-3">
+            A campanha inicia sozinha na data e horário definidos (verificação a cada minuto). Você pode acompanhar o
+            progresso abaixo enquanto ela roda.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border p-3 md:p-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-primary" />
+              <h3 className="font-heading text-sm font-bold text-foreground">Status das campanhas</h3>
+            </div>
+            <Button variant="ghost" size="icon" onClick={loadCampaigns} title="Atualizar">
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
+          {campaigns.length === 0 ? (
+            <p className="font-body text-xs text-muted-foreground">Nenhuma campanha criada ainda.</p>
+          ) : (
+            <div className="space-y-2">
+              {campaigns.map((c) => {
+                const target = c.total_target || 0;
+                const done = (c.total_sent || 0) + (c.total_failed || 0);
+                const pct = target > 0 ? Math.min(100, Math.round((done / target) * 100)) : 0;
+                const labels: Record<string, string> = {
+                  draft: "Rascunho",
+                  scheduled: "Agendada",
+                  sending: "Enviando",
+                  completed: "Concluída",
+                  failed: "Falhou",
+                  cancelled: "Cancelada",
+                };
+                const tone: Record<string, string> = {
+                  scheduled: "bg-primary/10 text-primary",
+                  sending: "bg-amber-500/10 text-amber-600",
+                  completed: "bg-emerald-500/10 text-emerald-600",
+                  failed: "bg-destructive/10 text-destructive",
+                  cancelled: "bg-muted text-muted-foreground",
+                  draft: "bg-muted text-muted-foreground",
+                };
+                return (
+                  <div key={c.id} className="rounded-xl border border-border p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-body text-xs font-semibold text-foreground truncate">{c.title}</p>
+                        <p className="font-body text-[11px] text-muted-foreground">
+                          {c.scheduled_at
+                            ? `Início: ${new Date(c.scheduled_at).toLocaleString("pt-BR")}`
+                            : c.started_at
+                            ? `Iniciada: ${new Date(c.started_at).toLocaleString("pt-BR")}`
+                            : new Date(c.created_at).toLocaleString("pt-BR")}
+                          {c.finished_at ? ` · Fim: ${new Date(c.finished_at).toLocaleTimeString("pt-BR")}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] px-2 py-1 rounded-full font-body font-semibold ${tone[c.status] || "bg-muted text-muted-foreground"}`}>
+                          {c.status === "sending" && <Loader2 className="w-3 h-3 inline mr-1 animate-spin" />}
+                          {labels[c.status] || c.status}
+                        </span>
+                        {c.status === "scheduled" && (
+                          <Button variant="ghost" size="icon" onClick={() => cancelScheduled(c.id)} title="Cancelar agendamento">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {(c.status === "sending" || c.status === "completed" || c.status === "failed") && (
+                      <div className="mt-2">
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="font-body text-[11px] text-muted-foreground mt-1">
+                          {done}/{target} · ✅ {c.total_sent || 0} enviadas · ❌ {c.total_failed || 0} falhas ({pct}%)
+                        </p>
+                      </div>
+                    )}
+                    {c.last_error && (
+                      <p className="font-body text-[11px] text-destructive mt-1 break-words">{c.last_error}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
           <Button onClick={startCampaign} disabled={sending || !eligible} className="gap-2">
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
