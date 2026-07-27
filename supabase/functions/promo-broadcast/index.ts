@@ -124,7 +124,16 @@ Deno.serve(async (req) => {
         if (!p.birth_date) return false;
         return p.birth_date.slice(5, 7) === currentMonth;
       });
+    } else if (filterType === "no_welcome_roulette") {
+      // Clients who never spun the welcome roulette (no BV- coupon)
+      const { data: bvCoupons } = await supabase
+        .from("coupons")
+        .select("user_id")
+        .like("code", "BV-%");
+      const spunUserIds = new Set((bvCoupons || []).map((c: any) => c.user_id));
+      filteredProfiles = filteredProfiles.filter((p: any) => !spunUserIds.has(p.user_id));
     }
+
 
     // Fetch unsubscribed phones
     const { data: unsubRows } = await supabase
@@ -197,9 +206,18 @@ Deno.serve(async (req) => {
     let sentOnCurrentInstance = 0;
     let totalSent = 0;
     let totalFailed = 0;
+    let processedCount = 0;
+
+    // Anti-block pacing config (stored inside audience_filter jsonb)
+    const pacing = (campaign.audience_filter || {}) as any;
+    const intervalMin = Number(pacing.interval_min) || 0;
+    const intervalMax = Number(pacing.interval_max) || 0;
+    const batchSize = Number(pacing.batch_size) || 0;
+    const batchPauseMinutes = Number(pacing.batch_pause_minutes) || 0;
 
     const template = campaign.message_template || "";
     const profileByUserId = new Map(profiles.map((p: any) => [p.user_id, p]));
+
 
     for (const record of insertedRecords) {
       const currentInstance = instances[instanceIdx];
@@ -219,12 +237,18 @@ Deno.serve(async (req) => {
       const linkMsg = encodeURIComponent(`Olá! Vi a promoção de ${serviceTitle} e quero agendar.`);
       const linkAgendar = waNumber ? `https://wa.me/${waNumber}?text=${linkMsg}` : "https://wa.me/";
 
+      const linkRoleta = siteBaseUrl ? `${siteBaseUrl}/roleta-premio` : "";
+
       let message = template
         .replace(/{nome}/g, profile?.full_name || "Cliente")
+        .replace(/{primeiro_nome}/g, (profile?.full_name || "Cliente").split(" ")[0])
+
         .replace(/{servico}/g, serviceTitle)
         .replace(/{empresa}/g, businessName)
         .replace(/{telefone}/g, record.phone || profile?.phone || "")
+        .replace(/{link_roleta}/g, linkRoleta)
         .replace(/{link_agendar}/g, linkAgendar);
+
 
       if (siteBaseUrl) {
         const unsubUrl = `${siteBaseUrl}/cancelar?phone=${encodeURIComponent(phone)}`;
@@ -267,10 +291,23 @@ Deno.serve(async (req) => {
         sentOnCurrentInstance = 0;
       }
 
-      if (campaign.interval_seconds > 0) {
-        await new Promise((resolve) => setTimeout(resolve, campaign.interval_seconds * 1000));
+      processedCount++;
+
+      // Anti-block: long pause every N messages
+      if (batchSize > 0 && batchPauseMinutes > 0 && processedCount % batchSize === 0) {
+        await new Promise((r) => setTimeout(r, batchPauseMinutes * 60 * 1000));
+      }
+
+      // Anti-block: randomized delay between messages
+      const base = campaign.interval_seconds || 0;
+      if (base > 0) {
+        const min = Math.max(1, intervalMin || base);
+        const max = Math.max(min, intervalMax || base);
+        const wait = min + Math.random() * (max - min);
+        await new Promise((resolve) => setTimeout(resolve, wait * 1000));
       }
     }
+
 
     // Update campaign final status
     await supabase

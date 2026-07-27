@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { DEFAULT_ITEMS, RouletteItem, computeChances, parseItems } from "@/lib/welcomeRouletteItems";
 import QRCodeCardModal from "./QRCodeCardModal";
 import WelcomePopupSettings from "./WelcomePopupSettings";
+import WelcomeRouletteCampaign from "./WelcomeRouletteCampaign";
+
 
 interface WelcomeCoupon {
   id: string;
@@ -185,6 +187,9 @@ const AdminWelcomeRoulette = () => {
   return (
     <div className="space-y-6">
       <WelcomePopupSettings />
+
+      <WelcomeRouletteCampaign />
+
 
       {/* Header */}
       <div className="bg-card rounded-2xl border border-border p-4 md:p-6">

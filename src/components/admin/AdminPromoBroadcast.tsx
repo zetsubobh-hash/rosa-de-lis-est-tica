@@ -77,6 +77,8 @@ const AUDIENCE_FILTERS = [
   { value: "birthday_today", label: "Aniversariantes do dia", description: "Clientes que fazem aniversário hoje" },
   { value: "birthday_week", label: "Aniversariantes da semana", description: "Clientes que fazem aniversário esta semana" },
   { value: "birthday_month", label: "Aniversariantes do mês", description: "Clientes que fazem aniversário este mês" },
+  { value: "no_welcome_roulette", label: "Nunca giraram a roleta", description: "Clientes que ainda não giraram a Roleta de Boas-Vindas" },
+
 ];
 
 const DEFAULT_TEMPLATE =
