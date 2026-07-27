@@ -1,0 +1,206 @@
+import { useEffect, useRef, useState } from "react";
+import { Upload, Trash2, ImageIcon, X, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface PhotoRow {
+  id: string;
+  kind: "before" | "after";
+  storage_path: string;
+  created_at: string;
+  url?: string;
+}
+
+interface ProcedurePhotosProps {
+  appointmentId: string;
+  clientUserId: string;
+  readOnly?: boolean;
+}
+
+const BUCKET = "procedure-photos";
+
+const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: ProcedurePhotosProps) => {
+  const [photos, setPhotos] = useState<PhotoRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState<"before" | "after" | null>(null);
+  const [lightbox, setLightbox] = useState<PhotoRow | null>(null);
+  const beforeInput = useRef<HTMLInputElement>(null);
+  const afterInput = useRef<HTMLInputElement>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("procedure_photos" as any)
+      .select("id, kind, storage_path, created_at")
+      .eq("appointment_id", appointmentId)
+      .order("created_at", { ascending: true });
+
+    const rows = (data || []) as unknown as PhotoRow[];
+    if (rows.length) {
+      const { data: signed } = await supabase.storage
+        .from(BUCKET)
+        .createSignedUrls(rows.map((r) => r.storage_path), 3600);
+      rows.forEach((r, i) => {
+        r.url = signed?.[i]?.signedUrl || undefined;
+      });
+    }
+    setPhotos(rows);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointmentId]);
+
+  const handleUpload = async (kind: "before" | "after", file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 8MB)");
+      return;
+    }
+    setUploading(kind);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${clientUserId}/${appointmentId}/${kind}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false });
+    if (upErr) {
+      toast.error("Erro ao enviar foto");
+      setUploading(null);
+      return;
+    }
+    const { data: auth } = await supabase.auth.getUser();
+    const { error } = await supabase.from("procedure_photos" as any).insert({
+      appointment_id: appointmentId,
+      user_id: clientUserId,
+      kind,
+      storage_path: path,
+      created_by: auth?.user?.id || null,
+    } as any);
+    if (error) {
+      toast.error("Erro ao registrar foto");
+      await supabase.storage.from(BUCKET).remove([path]);
+    } else {
+      toast.success(kind === "before" ? "Foto do antes enviada!" : "Foto do depois enviada!");
+      await load();
+    }
+    setUploading(null);
+  };
+
+  const handleDelete = async (photo: PhotoRow) => {
+    if (!confirm("Excluir esta foto?")) return;
+    const { error } = await supabase.from("procedure_photos" as any).delete().eq("id", photo.id);
+    if (error) {
+      toast.error("Erro ao excluir foto");
+      return;
+    }
+    await supabase.storage.from(BUCKET).remove([photo.storage_path]);
+    toast.success("Foto excluída");
+    setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+  };
+
+  const renderColumn = (kind: "before" | "after") => {
+    const list = photos.filter((p) => p.kind === kind);
+    const label = kind === "before" ? "Antes" : "Depois";
+    const inputRef = kind === "before" ? beforeInput : afterInput;
+    return (
+      <div className="flex-1 min-w-0 rounded-xl border border-border bg-muted/20 p-2.5">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <p className="font-body text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+          {!readOnly && (
+            <>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  handleUpload(kind, e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                disabled={uploading !== null}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {uploading === kind ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                Enviar
+              </button>
+            </>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="h-20 flex items-center justify-center">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : list.length === 0 ? (
+          <div className="h-20 flex flex-col items-center justify-center text-center gap-1">
+            <ImageIcon className="w-5 h-5 text-muted-foreground/40" />
+            <p className="font-body text-[10px] text-muted-foreground">Sem fotos</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            {list.map((p) => (
+              <div key={p.id} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
+                <button type="button" onClick={() => setLightbox(p)} className="w-full h-full">
+                  <img src={p.url} alt={`Foto ${label}`} loading="lazy" className="w-full h-full object-cover" />
+                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p)}
+                    aria-label="Excluir foto"
+                    className="absolute top-1 right-1 p-1 rounded-md bg-background/80 text-destructive opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="pt-1">
+      <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">📸 Fotos antes e depois</p>
+      <div className="flex flex-col sm:flex-row gap-2">
+        {renderColumn("before")}
+        {renderColumn("after")}
+      </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4"
+          onMouseDown={(e) => e.target === e.currentTarget && setLightbox(null)}
+        >
+          <div className="relative max-w-3xl w-full">
+            <button
+              type="button"
+              onClick={() => setLightbox(null)}
+              aria-label="Fechar"
+              className="absolute -top-10 right-0 p-2 rounded-full bg-background/90 text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <img
+              src={lightbox.url}
+              alt={lightbox.kind === "before" ? "Foto antes" : "Foto depois"}
+              className="w-full max-h-[80vh] object-contain rounded-xl"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProcedurePhotos;

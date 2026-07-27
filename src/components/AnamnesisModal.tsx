@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ProcedurePhotos from "@/components/ProcedurePhotos";
+
 
 interface AnamnesisModalProps {
   open: boolean;
@@ -681,7 +683,9 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
                     {savingNoteId === p.id ? "Salvando..." : "Salvar observação"}
                   </button>
                 </div>
+                <ProcedurePhotos appointmentId={p.id} clientUserId={clientUserId} readOnly={readOnly} />
               </div>
+
             );
           })}
           <p className="font-body text-[10px] text-muted-foreground/60 pt-1 text-center">

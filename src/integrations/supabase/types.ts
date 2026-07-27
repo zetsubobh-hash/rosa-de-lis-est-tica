@@ -646,6 +646,42 @@ export type Database = {
           },
         ]
       }
+      procedure_photos: {
+        Row: {
+          appointment_id: string
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          storage_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id: string
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          storage_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
