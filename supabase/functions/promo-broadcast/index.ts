@@ -29,19 +29,24 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
-    // Auth check
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
-    if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+    // Auth check (internal scheduler bypass)
+    const internalSecret = req.headers.get("x-internal-secret") ?? "";
+    const isInternal = internalSecret && internalSecret === SUPABASE_SERVICE_ROLE_KEY;
 
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleData) return json({ error: "Admin only" }, 403);
+    if (!isInternal) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+      if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roleData) return json({ error: "Admin only" }, 403);
+    }
 
     const { campaign_id } = await req.json();
     if (!campaign_id) return json({ error: "campaign_id required" }, 400);
