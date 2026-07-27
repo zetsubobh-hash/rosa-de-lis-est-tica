@@ -31,6 +31,72 @@ const WelcomeRouletteCampaign = () => {
   const [scheduleTime, setScheduleTime] = useState("");
   const [scheduling, setScheduling] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [instances, setInstances] = useState<any[]>([]);
+  const [testInstanceId, setTestInstanceId] = useState("");
+  const [testPhone, setTestPhone] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const maskPhone = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 2) return d;
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("evolution_instances" as any)
+        .select("id, name, is_active")
+        .order("sort_order", { ascending: true });
+      const list = (data as any[]) || [];
+      setInstances(list);
+      setTestInstanceId(list.find((i) => i.is_active)?.id || list[0]?.id || "");
+    })();
+  }, []);
+
+  const sendTest = async () => {
+    if (!testInstanceId) {
+      toast.error("Selecione uma instância do WhatsApp.");
+      return;
+    }
+    const digits = testPhone.replace(/\D/g, "");
+    if (digits.length < 10) {
+      toast.error("Informe DDD + número (10 ou 11 dígitos).");
+      return;
+    }
+    if (!message.trim()) {
+      toast.error("Escreva a mensagem da campanha.");
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const rendered = message
+        .replace(/\{nome\}/g, "Cliente Teste")
+        .replace(/\{primeiro_nome\}/g, "Cliente")
+        .replace(/\{empresa\}/g, "Rosa de Lis Estética")
+        .replace(/\{link_roleta\}/g, "https://rosadelis.com/roleta-premio")
+        .replace(/\{link_agendar\}/g, "https://rosadelis.com/agendar");
+
+      const { data, error } = await supabase.functions.invoke("evolution-instance", {
+        body: {
+          instance_id: testInstanceId,
+          action: "send_text",
+          phone: digits,
+          message: `${rendered}\n\n_[MENSAGEM DE TESTE]_`,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`Teste enviado para ${maskPhone(digits)}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao enviar o teste.");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
 
   const countEligible = async () => {
     setCounting(true);
