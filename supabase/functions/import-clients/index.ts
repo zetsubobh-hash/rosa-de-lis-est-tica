@@ -88,8 +88,10 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => null);
     const rows = Array.isArray(body?.rows) ? body.rows : null;
+    const dryRun = body?.dryRun === true;
     if (!rows) return json({ error: "Nenhuma linha enviada" }, 400);
-    if (rows.length > 200) return json({ error: "Máximo de 200 linhas por lote" }, 400);
+    if (!dryRun && rows.length > 200) return json({ error: "Máximo de 200 linhas por lote" }, 400);
+    if (dryRun && rows.length > 5000) return json({ error: "Máximo de 5000 linhas por análise" }, 400);
 
     // Load existing profiles for dedupe
     const { data: existing } = await admin
@@ -107,9 +109,57 @@ Deno.serve(async (req) => {
       if (p.username) usernames.add(p.username);
     });
 
+    // ---- Preview (dry run): classify without writing anything ----
+    if (dryRun) {
+      const seenPhones = new Set<string>();
+      const seenNames = new Set<string>();
+      let novos = 0;
+      let duplicados = 0;
+      let invalidos = 0;
+      const samples: { row: number; full_name: string; phone: string; status: string; reason: string }[] = [];
+
+      rows.forEach((row: any, idx: number) => {
+        const fullNameRaw = String(row?.full_name ?? "").trim();
+        const phone = normalizePhone(String(row?.phone ?? ""));
+        let status = "novo";
+        let reason = "";
+
+        if (fullNameRaw.length < 3) {
+          status = "invalido";
+          reason = "Nome ausente ou muito curto";
+        } else if (phone && phone.length < 10) {
+          status = "invalido";
+          reason = "Telefone inválido";
+        } else {
+          const nkey = normalizeName(titleCase(fullNameRaw));
+          if ((phone && phones.has(phone)) || names.has(nkey)) {
+            status = "duplicado";
+            reason = "Já cadastrado na base";
+          } else if ((phone && seenPhones.has(phone)) || seenNames.has(nkey)) {
+            status = "duplicado";
+            reason = "Repetido na própria planilha";
+          } else {
+            if (phone) seenPhones.add(phone);
+            seenNames.add(nkey);
+          }
+        }
+
+        if (status === "novo") novos++;
+        else if (status === "duplicado") duplicados++;
+        else invalidos++;
+
+        if (status !== "novo" && samples.length < 50) {
+          samples.push({ row: idx + 2, full_name: fullNameRaw || "(sem nome)", phone, status, reason });
+        }
+      });
+
+      return json({ success: true, preview: true, total: rows.length, novos, duplicados, invalidos, samples });
+    }
+
     let created = 0;
     let skipped = 0;
     const errors: string[] = [];
+
 
     for (const row of rows) {
       const fullNameRaw = String(row?.full_name ?? "").trim();
