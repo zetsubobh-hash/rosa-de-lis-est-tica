@@ -120,10 +120,6 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
 
   const handleUpload = async (kind: "before" | "after", file: File | undefined) => {
     if (!file) return;
-    if (!consent?.authorized) {
-      toast.error("Registre o termo de autorização de uso de imagem antes de enviar fotos");
-      return;
-    }
     if (!file.type.startsWith("image/")) {
       toast.error("Selecione um arquivo de imagem");
       return;
