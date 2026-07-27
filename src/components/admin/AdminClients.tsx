@@ -4,6 +4,7 @@ import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List }
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
+import MissingPhoneAlert from "@/components/admin/MissingPhoneAlert";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 interface Client {
