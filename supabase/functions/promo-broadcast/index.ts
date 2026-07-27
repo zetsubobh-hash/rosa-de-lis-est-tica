@@ -323,12 +323,18 @@ Deno.serve(async (req) => {
     // Update campaign final status
     await supabase
       .from("promo_campaigns")
-      .update({ status: "completed", total_sent: totalSent, total_failed: totalFailed })
+      .update({ status: "completed", total_sent: totalSent, total_failed: totalFailed, finished_at: new Date().toISOString() })
       .eq("id", campaign_id);
 
     return json({ success: true, queued: profiles.length, sent: totalSent, failed: totalFailed });
   } catch (err: any) {
     console.error("promo-broadcast error:", err);
+    try {
+      const body = { status: "failed", last_error: String(err?.message || err).substring(0, 500), finished_at: new Date().toISOString() };
+      const url = new URL(req.url);
+      const cid = url.searchParams.get("campaign_id");
+      if (cid) await supabase.from("promo_campaigns").update(body).eq("id", cid);
+    } catch (_) { /* ignore */ }
     return json({ error: err.message }, 500);
   }
 });
