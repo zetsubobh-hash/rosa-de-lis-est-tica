@@ -298,6 +298,12 @@ Deno.serve(async (req) => {
 
       processedCount++;
 
+      // Live progress for the admin panel
+      await supabase
+        .from("promo_campaigns")
+        .update({ total_sent: totalSent, total_failed: totalFailed, current_instance_index: instanceIdx })
+        .eq("id", campaign_id);
+
       // Anti-block: long pause every N messages
       if (batchSize > 0 && batchPauseMinutes > 0 && processedCount % batchSize === 0) {
         await new Promise((r) => setTimeout(r, batchPauseMinutes * 60 * 1000));
