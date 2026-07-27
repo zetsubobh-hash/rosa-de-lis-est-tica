@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { DEFAULT_ITEMS, RouletteItem, computeChances, parseItems } from "@/lib/welcomeRouletteItems";
 import QRCodeCardModal from "./QRCodeCardModal";
 import WelcomePopupSettings from "./WelcomePopupSettings";
+import WelcomeRouletteCampaign from "./WelcomeRouletteCampaign";
+
 
 interface WelcomeCoupon {
   id: string;
