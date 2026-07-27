@@ -228,12 +228,17 @@ Deno.serve(async (req) => {
       const linkMsg = encodeURIComponent(`Olá! Vi a promoção de ${serviceTitle} e quero agendar.`);
       const linkAgendar = waNumber ? `https://wa.me/${waNumber}?text=${linkMsg}` : "https://wa.me/";
 
+      const linkRoleta = siteBaseUrl ? `${siteBaseUrl}/roleta-premio` : "";
+
       let message = template
-        .replace(/{nome}/g, profile?.full_name || "Cliente")
+        .replace(/{nome}/g, (profile?.full_name || "Cliente").split(" ")[0])
+        .replace(/{nome_completo}/g, profile?.full_name || "Cliente")
         .replace(/{servico}/g, serviceTitle)
         .replace(/{empresa}/g, businessName)
         .replace(/{telefone}/g, record.phone || profile?.phone || "")
+        .replace(/{link_roleta}/g, linkRoleta)
         .replace(/{link_agendar}/g, linkAgendar);
+
 
       if (siteBaseUrl) {
         const unsubUrl = `${siteBaseUrl}/cancelar?phone=${encodeURIComponent(phone)}`;
