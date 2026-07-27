@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.reset-password]
 verify_jwt = false
+
+[functions.import-clients]
+verify_jwt = false
