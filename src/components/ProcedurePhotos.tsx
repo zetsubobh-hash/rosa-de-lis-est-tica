@@ -24,6 +24,7 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<"before" | "after" | null>(null);
   const [lightbox, setLightbox] = useState<PhotoRow | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
   const beforeInput = useRef<HTMLInputElement>(null);
   const afterInput = useRef<HTMLInputElement>(null);
 
