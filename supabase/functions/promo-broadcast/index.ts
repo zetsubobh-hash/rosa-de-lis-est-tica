@@ -231,8 +231,9 @@ Deno.serve(async (req) => {
       const linkRoleta = siteBaseUrl ? `${siteBaseUrl}/roleta-premio` : "";
 
       let message = template
-        .replace(/{nome}/g, (profile?.full_name || "Cliente").split(" ")[0])
-        .replace(/{nome_completo}/g, profile?.full_name || "Cliente")
+        .replace(/{nome}/g, profile?.full_name || "Cliente")
+        .replace(/{primeiro_nome}/g, (profile?.full_name || "Cliente").split(" ")[0])
+
         .replace(/{servico}/g, serviceTitle)
         .replace(/{empresa}/g, businessName)
         .replace(/{telefone}/g, record.phone || profile?.phone || "")
