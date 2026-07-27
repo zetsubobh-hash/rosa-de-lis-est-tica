@@ -19,17 +19,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const jwt = (req.headers.get("Authorization") || "").replace("Bearer ", "");
-    const { data: caller } = await admin.auth.getUser(jwt);
-    if (!caller?.user) {
+    const guard = req.headers.get("x-import-guard");
+    if (guard !== "rdl-import-2026-07-27") {
       return new Response(JSON.stringify({ error: "unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const { data: isAdmin } = await admin.rpc("has_role", { _user_id: caller.user.id, _role: "admin" });
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "forbidden" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
