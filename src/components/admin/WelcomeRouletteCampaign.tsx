@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Send, Users, Loader2, ShieldCheck, RefreshCw } from "lucide-react";
+import { Send, Users, Loader2, ShieldCheck, RefreshCw, CalendarClock, X, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +26,10 @@ const WelcomeRouletteCampaign = () => {
   const [batchPause, setBatchPause] = useState(10);
   const [sending, setSending] = useState(false);
   const [lastResult, setLastResult] = useState<{ sent: number; failed: number } | null>(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [scheduling, setScheduling] = useState(false);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
 
   const countEligible = async () => {
     setCounting(true);
@@ -53,6 +57,92 @@ const WelcomeRouletteCampaign = () => {
     countEligible();
   }, []);
 
+  const createCampaign = async (status: "draft" | "scheduled", scheduledAt: string | null) => {
+    const { data: camp, error: campErr } = await supabase
+      .from("promo_campaigns" as any)
+      .insert({
+        title: `Roleta de Boas-Vindas — ${new Date().toLocaleDateString("pt-BR")}`,
+        message_template: message,
+        start_time: (scheduledAt ? new Date(scheduledAt) : new Date()).toTimeString().slice(0, 5),
+        interval_seconds: intervalMin,
+        status,
+        scheduled_at: scheduledAt,
+        audience_filter: {
+          type: "no_welcome_roulette",
+          interval_min: intervalMin,
+          interval_max: intervalMax,
+          batch_size: batchSize,
+          batch_pause_minutes: batchPause,
+        },
+      } as any)
+      .select("id")
+      .single();
+    if (campErr || !camp) throw campErr || new Error("Falha ao criar campanha");
+    return camp as any;
+  };
+
+  const loadCampaigns = async () => {
+    const { data } = await supabase
+      .from("promo_campaigns" as any)
+      .select("id, title, status, scheduled_at, started_at, finished_at, total_sent, total_failed, total_target, last_error, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5);
+    setCampaigns((data as any[]) || []);
+  };
+
+  useEffect(() => {
+    loadCampaigns();
+    const t = setInterval(loadCampaigns, 10000);
+    return () => clearInterval(t);
+  }, []);
+
+  const scheduleCampaign = async () => {
+    if (!message.trim()) {
+      toast.error("Escreva a mensagem da campanha.");
+      return;
+    }
+    if (!scheduleDate || !scheduleTime) {
+      toast.error("Escolha a data e o horário de início.");
+      return;
+    }
+    const when = new Date(`${scheduleDate}T${scheduleTime}:00`);
+    if (isNaN(when.getTime())) {
+      toast.error("Data ou horário inválido.");
+      return;
+    }
+    if (when.getTime() < Date.now() - 60000) {
+      toast.error("Escolha uma data/horário no futuro.");
+      return;
+    }
+    setScheduling(true);
+    try {
+      await createCampaign("scheduled", when.toISOString());
+      toast.success(`Campanha agendada para ${when.toLocaleString("pt-BR")}.`);
+      setScheduleDate("");
+      setScheduleTime("");
+      loadCampaigns();
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao agendar a campanha.");
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  const cancelScheduled = async (id: string) => {
+    if (!confirm("Cancelar esta campanha agendada?")) return;
+    const { error } = await supabase
+      .from("promo_campaigns" as any)
+      .update({ status: "cancelled" } as any)
+      .eq("id", id)
+      .eq("status", "scheduled");
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Agendamento cancelado.");
+    loadCampaigns();
+  };
+
   const startCampaign = async () => {
     if (!message.trim()) {
       toast.error("Escreva a mensagem da campanha.");
@@ -67,26 +157,7 @@ const WelcomeRouletteCampaign = () => {
     setSending(true);
     setLastResult(null);
     try {
-      const { data: camp, error: campErr } = await supabase
-        .from("promo_campaigns" as any)
-        .insert({
-          title: `Roleta de Boas-Vindas — ${new Date().toLocaleDateString("pt-BR")}`,
-          message_template: message,
-          start_time: new Date().toTimeString().slice(0, 5),
-          interval_seconds: intervalMin,
-          status: "draft",
-          audience_filter: {
-            type: "no_welcome_roulette",
-            interval_min: intervalMin,
-            interval_max: intervalMax,
-            batch_size: batchSize,
-            batch_pause_minutes: batchPause,
-          },
-        } as any)
-        .select("id")
-        .single();
-
-      if (campErr || !camp) throw campErr || new Error("Falha ao criar campanha");
+      const camp = await createCampaign("draft", null);
 
       const { data, error } = await supabase.functions.invoke("promo-broadcast", {
         body: { campaign_id: (camp as any).id },
@@ -97,6 +168,7 @@ const WelcomeRouletteCampaign = () => {
       setLastResult({ sent: (data as any)?.sent ?? 0, failed: (data as any)?.failed ?? 0 });
       toast.success(`Campanha finalizada: ${(data as any)?.sent ?? 0} enviadas.`);
       countEligible();
+      loadCampaigns();
     } catch (err: any) {
       toast.error(err?.message || "Erro ao iniciar a campanha.");
     } finally {
