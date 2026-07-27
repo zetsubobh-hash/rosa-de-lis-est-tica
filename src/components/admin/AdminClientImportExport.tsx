@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
-import { Upload, Download, FileSpreadsheet, CheckCircle2, AlertTriangle, Loader2, X } from "lucide-react";
+import { Upload, Download, FileSpreadsheet, CheckCircle2, AlertTriangle, Loader2, X, Search, UserPlus, Copy, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -36,10 +36,15 @@ const excelDateToISO = (serial: number) => {
   return d.toISOString().slice(0, 10);
 };
 
+type PreviewSample = { row: number; full_name: string; phone: string; status: string; reason: string };
+type PreviewResult = { total: number; novos: number; duplicados: number; invalidos: number; samples: PreviewSample[] };
+
 const AdminClientImportExport = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
@@ -84,6 +89,7 @@ const AdminClientImportExport = () => {
 
       setRows(parsed);
       setFileName(file.name);
+      setPreview(null);
       setResult(null);
       toast.success(`${parsed.length} registros lidos de ${file.name}`);
     } catch (e: any) {
@@ -91,8 +97,33 @@ const AdminClientImportExport = () => {
     }
   };
 
-  const runImport = async () => {
+  const runAnalyze = async () => {
     if (!rows.length) return;
+    setAnalyzing(true);
+    setPreview(null);
+    setResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("import-clients", {
+        body: { rows, dryRun: true },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setPreview({
+        total: (data as any).total ?? rows.length,
+        novos: (data as any).novos ?? 0,
+        duplicados: (data as any).duplicados ?? 0,
+        invalidos: (data as any).invalidos ?? 0,
+        samples: (data as any).samples ?? [],
+      });
+    } catch (e: any) {
+      toast.error("Erro ao analisar: " + (e?.message || "tente novamente"));
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const runImport = async () => {
+    if (!rows.length || !preview) return;
     setImporting(true);
     setProgress(0);
     setResult(null);
@@ -116,6 +147,7 @@ const AdminClientImportExport = () => {
         setProgress(Math.min(100, Math.round(((i + chunk.length) / rows.length) * 100)));
       }
       setResult({ created, skipped, errors });
+      setPreview(null);
       toast.success(`${created} clientes importados · ${skipped} ignorados`);
     } catch (e: any) {
       toast.error("Erro na importação: " + (e?.message || "tente novamente"));
@@ -235,6 +267,7 @@ const AdminClientImportExport = () => {
                   onClick={() => {
                     setRows([]);
                     setFileName("");
+                    setPreview(null);
                     setResult(null);
                   }}
                 >
@@ -269,17 +302,85 @@ const AdminClientImportExport = () => {
                 </div>
               )}
 
-              <Button onClick={runImport} disabled={importing} className="w-full">
-                {importing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Importando… {progress}%
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" /> Importar {rows.length} clientes
-                  </>
-                )}
-              </Button>
+              {!preview && (
+                <Button onClick={runAnalyze} disabled={analyzing || importing} className="w-full">
+                  {analyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Analisando…
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4" /> Analisar planilha (prévia)
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {preview && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 text-center">
+                      <UserPlus className="w-4 h-4 mx-auto text-primary mb-1" />
+                      <p className="font-heading text-lg font-bold text-foreground">{preview.novos}</p>
+                      <p className="font-body text-[11px] text-muted-foreground">Novos</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 text-center">
+                      <Copy className="w-4 h-4 mx-auto text-muted-foreground mb-1" />
+                      <p className="font-heading text-lg font-bold text-foreground">{preview.duplicados}</p>
+                      <p className="font-body text-[11px] text-muted-foreground">Duplicados</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 text-center">
+                      <Ban className="w-4 h-4 mx-auto text-destructive mb-1" />
+                      <p className="font-heading text-lg font-bold text-foreground">{preview.invalidos}</p>
+                      <p className="font-body text-[11px] text-muted-foreground">Inválidos</p>
+                    </div>
+                  </div>
+
+                  {preview.samples.length > 0 && (
+                    <div className="max-h-44 overflow-auto rounded-lg border border-border">
+                      <table className="w-full text-xs font-body">
+                        <thead className="bg-muted/60 sticky top-0">
+                          <tr>
+                            <th className="text-left p-2 font-semibold">Linha</th>
+                            <th className="text-left p-2 font-semibold">Nome</th>
+                            <th className="text-left p-2 font-semibold">Motivo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {preview.samples.map((s, i) => (
+                            <tr key={i} className="border-t border-border">
+                              <td className="p-2 whitespace-nowrap">{s.row}</td>
+                              <td className="p-2 truncate max-w-[150px]">{s.full_name}</td>
+                              <td className={`p-2 ${s.status === "invalido" ? "text-destructive" : "text-muted-foreground"}`}>{s.reason}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  <p className="font-body text-xs text-muted-foreground">
+                    Serão importados apenas os <strong>{preview.novos}</strong> registros novos. Duplicados e inválidos são ignorados.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button onClick={runImport} disabled={importing || preview.novos === 0} className="flex-1">
+                      {importing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Importando… {progress}%
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" /> Confirmar importação ({preview.novos})
+                        </>
+                      )}
+                    </Button>
+                    <Button variant="outline" onClick={() => setPreview(null)} disabled={importing} className="flex-1">
+                      Refazer análise
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
