@@ -241,10 +241,117 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
   return (
     <div className="pt-1">
       <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">📸 Fotos antes e depois</p>
+      {/* Termo de autorização de uso de imagem */}
+      <div className="mb-2 rounded-xl border border-border bg-muted/20 p-3">
+        {consent?.authorized ? (
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="font-body text-[12px] font-semibold text-foreground">Autorização de uso de imagem registrada</p>
+              <p className="font-body text-[11px] text-muted-foreground break-words">
+                Assinado por {consent.signature || "cliente"}
+                {consent.date ? ` em ${new Date(consent.date + "T00:00:00").toLocaleDateString("pt-BR")}` : ""}
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowTerm((v) => !v)}
+                className="font-body text-[11px] text-primary underline mt-1"
+              >
+                {showTerm ? "Ocultar termo" : "Ver termo"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2">
+            <FileSignature className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            <div className="min-w-0 w-full">
+              <p className="font-body text-[12px] font-semibold text-foreground">Termo de autorização de uso de imagem pendente</p>
+              <p className="font-body text-[11px] text-muted-foreground">
+                O envio de fotos só é liberado após o aceite do termo pelo cliente.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowTerm((v) => !v)}
+                className="font-body text-[11px] text-primary underline mt-1"
+              >
+                {showTerm ? "Ocultar termo" : "Ler termo completo"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showTerm && (
+          <div className="mt-2 max-h-52 overflow-y-auto rounded-lg border border-border bg-background p-3 font-body text-[11px] leading-relaxed text-muted-foreground space-y-2">
+            <p className="font-semibold text-foreground">TERMO DE AUTORIZAÇÃO DE USO DE IMAGEM</p>
+            <p>
+              Autorizo, de forma livre, expressa, gratuita e por prazo indeterminado, o uso das minhas imagens
+              (fotografias e vídeos) captadas antes, durante e após os procedimentos estéticos realizados nesta clínica,
+              para fins de divulgação institucional, educativa e publicitária, incluindo publicação em redes sociais
+              (Instagram, Facebook, TikTok, WhatsApp e similares), site, materiais impressos e digitais.
+            </p>
+            <p>
+              Declaro estar ciente de que as imagens poderão ser editadas (recorte, ajuste de cor, marca d'água), sem
+              alteração do resultado do procedimento, e de que não terei direito a qualquer remuneração, pagamento ou
+              indenização pela veiculação, presente ou futura.
+            </p>
+            <p>
+              Nos termos da Lei nº 13.709/2018 (LGPD) e do art. 20 do Código Civil, autorizo o tratamento dos meus dados
+              pessoais e da minha imagem para as finalidades acima, podendo revogar esta autorização a qualquer momento
+              mediante solicitação escrita à clínica, hipótese em que a publicação das imagens será interrompida,
+              preservadas as veiculações já realizadas antes da revogação.
+            </p>
+            <p>
+              As imagens não serão utilizadas em contexto que exponha o titular a situação vexatória ou ofensiva à sua
+              honra, e os dados de identificação (nome, contato) não serão divulgados sem autorização adicional.
+            </p>
+            <p>
+              Ao assinar digitalmente abaixo, declaro ter lido e compreendido integralmente este termo e concordo com
+              todas as suas cláusulas.
+            </p>
+          </div>
+        )}
+
+        {!consent?.authorized && !readOnly && (
+          <div className="mt-2 space-y-2">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={(e) => setConsentChecked(e.target.checked)}
+                className="mt-0.5 accent-primary"
+              />
+              <span className="font-body text-[11px] text-foreground">
+                O cliente leu e concorda com o termo de autorização de uso de imagem para publicação em redes sociais e
+                materiais de divulgação.
+              </span>
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                placeholder="Nome completo do cliente (assinatura digital)"
+                className="flex-1 min-w-0 rounded-lg border border-border bg-background px-3 py-2 font-body text-[12px] text-foreground"
+              />
+              <button
+                type="button"
+                onClick={saveConsent}
+                disabled={savingConsent}
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 font-body text-[12px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {savingConsent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                Registrar autorização
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-2">
         {renderColumn("before")}
         {renderColumn("after")}
       </div>
+
 
       {lightbox && (
         <div
