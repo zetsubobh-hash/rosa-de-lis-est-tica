@@ -735,11 +735,15 @@ export type Database = {
           audience_filter: Json
           created_at: string
           current_instance_index: number
+          finished_at: string | null
           id: string
           interval_seconds: number
+          last_error: string | null
           message_template: string
+          scheduled_at: string | null
           service_slug: string | null
           start_time: string
+          started_at: string | null
           status: string
           title: string
           total_failed: number
@@ -751,11 +755,15 @@ export type Database = {
           audience_filter?: Json
           created_at?: string
           current_instance_index?: number
+          finished_at?: string | null
           id?: string
           interval_seconds?: number
+          last_error?: string | null
           message_template?: string
+          scheduled_at?: string | null
           service_slug?: string | null
           start_time?: string
+          started_at?: string | null
           status?: string
           title: string
           total_failed?: number
@@ -767,11 +775,15 @@ export type Database = {
           audience_filter?: Json
           created_at?: string
           current_instance_index?: number
+          finished_at?: string | null
           id?: string
           interval_seconds?: number
+          last_error?: string | null
           message_template?: string
+          scheduled_at?: string | null
           service_slug?: string | null
           start_time?: string
+          started_at?: string | null
           status?: string
           title?: string
           total_failed?: number

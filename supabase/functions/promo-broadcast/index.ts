@@ -28,23 +28,31 @@ Deno.serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  try {
-    // Auth check
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
-    if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+  let currentCampaignId: string | null = null;
 
-    const { data: roleData } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleData) return json({ error: "Admin only" }, 403);
+  try {
+    // Auth check (internal scheduler bypass)
+    const internalSecret = req.headers.get("x-internal-secret") ?? "";
+    const isInternal = internalSecret && internalSecret === SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!isInternal) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+      if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roleData) return json({ error: "Admin only" }, 403);
+    }
 
     const { campaign_id } = await req.json();
     if (!campaign_id) return json({ error: "campaign_id required" }, 400);
+    currentCampaignId = campaign_id;
 
     // Fetch campaign
     const { data: campaign, error: campErr } = await supabase
@@ -179,7 +187,7 @@ Deno.serve(async (req) => {
     // Update campaign status
     await supabase
       .from("promo_campaigns")
-      .update({ status: "sending", total_target: profiles.length, total_sent: 0, total_failed: 0, current_instance_index: 0 })
+      .update({ status: "sending", total_target: profiles.length, total_sent: 0, total_failed: 0, current_instance_index: 0, started_at: new Date().toISOString(), finished_at: null, last_error: null })
       .eq("id", campaign_id);
 
     // Create send records
@@ -293,6 +301,12 @@ Deno.serve(async (req) => {
 
       processedCount++;
 
+      // Live progress for the admin panel
+      await supabase
+        .from("promo_campaigns")
+        .update({ total_sent: totalSent, total_failed: totalFailed, current_instance_index: instanceIdx })
+        .eq("id", campaign_id);
+
       // Anti-block: long pause every N messages
       if (batchSize > 0 && batchPauseMinutes > 0 && processedCount % batchSize === 0) {
         await new Promise((r) => setTimeout(r, batchPauseMinutes * 60 * 1000));
@@ -312,12 +326,16 @@ Deno.serve(async (req) => {
     // Update campaign final status
     await supabase
       .from("promo_campaigns")
-      .update({ status: "completed", total_sent: totalSent, total_failed: totalFailed })
+      .update({ status: "completed", total_sent: totalSent, total_failed: totalFailed, finished_at: new Date().toISOString() })
       .eq("id", campaign_id);
 
     return json({ success: true, queued: profiles.length, sent: totalSent, failed: totalFailed });
   } catch (err: any) {
     console.error("promo-broadcast error:", err);
+    try {
+      const body = { status: "failed", last_error: String(err?.message || err).substring(0, 500), finished_at: new Date().toISOString() };
+      if (currentCampaignId) await supabase.from("promo_campaigns").update(body).eq("id", currentCampaignId);
+    } catch (_) { /* ignore */ }
     return json({ error: err.message }, 500);
   }
 });
