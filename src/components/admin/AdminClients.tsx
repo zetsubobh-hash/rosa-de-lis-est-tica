@@ -137,9 +137,19 @@ const AdminClients = () => {
         )}
       </AnimatePresence>
 
+      <MissingPhoneAlert
+        clients={clients}
+        onFixed={(userId, phone) =>
+          setClients((prev) =>
+            prev.map((c) => (c.user_id === userId ? { ...c, phone } : c))
+          )
+        }
+      />
+
       <p className="font-body text-xs text-muted-foreground">
         {filtered.length} cliente{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
       </p>
+
 
       {filtered.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
