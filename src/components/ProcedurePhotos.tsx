@@ -236,7 +236,19 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
 
   return (
     <div className="pt-1">
-      <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">📸 Fotos antes e depois</p>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider">📸 Fotos antes e depois</p>
+        <button
+          type="button"
+          onClick={() => setShowGallery(true)}
+          disabled={photos.length === 0}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium border border-border bg-background text-foreground hover:bg-muted disabled:opacity-40 transition-colors"
+        >
+          <ImageIcon className="w-3 h-3" />
+          Galeria ({photos.length})
+        </button>
+      </div>
+
       {/* Termo de autorização de uso de imagem */}
       <div className="mb-2 rounded-xl border border-border bg-muted/20 p-3">
         {consent?.authorized ? (
