@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List } from "lucide-react";
+import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
-import MissingPhoneAlert from "@/components/admin/MissingPhoneAlert";
+import MissingPhoneAlert, { isPhoneMissing } from "@/components/admin/MissingPhoneAlert";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 interface Client {
@@ -168,7 +168,11 @@ const AdminClients = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.02, 0.5) }}
                 onClick={() => setSelectedClient(client)}
-                className="bg-card rounded-2xl border border-border p-4 text-left hover:border-primary/50 hover:shadow-md transition-all group"
+                className={`rounded-2xl border p-4 text-left hover:shadow-md transition-all group ${
+                  isPhoneMissing(client.phone)
+                    ? "bg-destructive/5 border-destructive/50 hover:border-destructive"
+                    : "bg-card border-border hover:border-primary/50"
+                }`}
               >
                 <div className="flex items-start gap-3">
                   <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
