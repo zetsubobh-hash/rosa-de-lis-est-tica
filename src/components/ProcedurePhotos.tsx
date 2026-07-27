@@ -194,7 +194,7 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                disabled={uploading !== null}
+                disabled={uploading !== null || !consent?.authorized}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {uploading === kind ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
