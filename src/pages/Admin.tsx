@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift, Megaphone, UserCheck, Wallet } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift, Megaphone, UserCheck, Wallet, FileUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,9 +30,10 @@ import AdminWelcomeRoulette from "@/components/admin/AdminWelcomeRoulette";
 import AdminPromoBroadcast from "@/components/admin/AdminPromoBroadcast";
 import AdminClients from "@/components/admin/AdminClients";
 import AdminCashRegister from "@/components/admin/AdminCashRegister";
+import AdminClientImportExport from "@/components/admin/AdminClientImportExport";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast";
+type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast" | "import-export";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -43,7 +44,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast"];
+  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast","import-export"];
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && validTabs.includes(tabParam)) {
@@ -131,6 +132,7 @@ const Admin = () => {
     { key: "cash", label: "Caixa", icon: Wallet },
     { key: "clients", label: "Clientes", icon: UserCheck },
     { key: "counter-sales", label: "Venda Balcão", icon: ShoppingBag },
+    { key: "import-export", label: "Importar / Exportar", icon: FileUp },
     { key: "services", label: "Serviços", icon: Briefcase },
     { key: "pricing", label: "Preços", icon: DollarSign },
     { key: "payments", label: "Pagamento", icon: CreditCard },
@@ -302,6 +304,7 @@ const Admin = () => {
             </PasswordGate>
           )}
           {activeTab === "clients" && <AdminClients />}
+          {activeTab === "import-export" && <AdminClientImportExport />}
           {activeTab === "counter-sales" && <AdminCounterSales />}
           {activeTab === "services" && <AdminServices />}
           {activeTab === "pricing" && <AdminPricing />}
