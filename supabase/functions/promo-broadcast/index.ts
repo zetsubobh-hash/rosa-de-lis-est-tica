@@ -124,7 +124,16 @@ Deno.serve(async (req) => {
         if (!p.birth_date) return false;
         return p.birth_date.slice(5, 7) === currentMonth;
       });
+    } else if (filterType === "no_welcome_roulette") {
+      // Clients who never spun the welcome roulette (no BV- coupon)
+      const { data: bvCoupons } = await supabase
+        .from("coupons")
+        .select("user_id")
+        .like("code", "BV-%");
+      const spunUserIds = new Set((bvCoupons || []).map((c: any) => c.user_id));
+      filteredProfiles = filteredProfiles.filter((p: any) => !spunUserIds.has(p.user_id));
     }
+
 
     // Fetch unsubscribed phones
     const { data: unsubRows } = await supabase
