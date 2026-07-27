@@ -24,6 +24,7 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<"before" | "after" | null>(null);
   const [lightbox, setLightbox] = useState<PhotoRow | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
   const beforeInput = useRef<HTMLInputElement>(null);
   const afterInput = useRef<HTMLInputElement>(null);
 
@@ -236,7 +237,19 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
 
   return (
     <div className="pt-1">
-      <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">📸 Fotos antes e depois</p>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider">📸 Fotos antes e depois</p>
+        <button
+          type="button"
+          onClick={() => setShowGallery(true)}
+          disabled={photos.length === 0}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium border border-border bg-background text-foreground hover:bg-muted disabled:opacity-40 transition-colors"
+        >
+          <ImageIcon className="w-3 h-3" />
+          Galeria ({photos.length})
+        </button>
+      </div>
+
       {/* Termo de autorização de uso de imagem */}
       <div className="mb-2 rounded-xl border border-border bg-muted/20 p-3">
         {consent?.authorized ? (
@@ -348,6 +361,59 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
         {renderColumn("after")}
       </div>
 
+      {showGallery && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-3 sm:p-6"
+          onMouseDown={(e) => e.target === e.currentTarget && setShowGallery(false)}
+        >
+          <div className="w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-background p-4">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="font-body text-sm font-semibold text-foreground">Galeria de fotos ({photos.length})</p>
+              <button
+                type="button"
+                onClick={() => setShowGallery(false)}
+                aria-label="Fechar galeria"
+                className="p-1.5 rounded-lg hover:bg-muted text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {(["before", "after"] as const).map((kind) => {
+              const list = photos.filter((p) => p.kind === kind);
+              if (!list.length) return null;
+              return (
+                <div key={kind} className="mb-4">
+                  <p className="font-body text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                    {kind === "before" ? "Antes" : "Depois"} ({list.length})
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {list.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setLightbox(p)}
+                        className="aspect-square rounded-lg overflow-hidden border border-border"
+                      >
+                        <img
+                          src={p.url}
+                          alt={`Foto ${kind === "before" ? "antes" : "depois"}`}
+                          loading="lazy"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            {photos.length === 0 && (
+              <p className="font-body text-xs text-muted-foreground text-center py-8">Nenhuma foto enviada ainda.</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {lightbox && (
         <div
@@ -371,6 +437,7 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
           </div>
         </div>
       )}
+
     </div>
   );
 };
