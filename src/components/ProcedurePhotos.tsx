@@ -27,6 +27,66 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
   const beforeInput = useRef<HTMLInputElement>(null);
   const afterInput = useRef<HTMLInputElement>(null);
 
+  // Termo de autorização de uso de imagem
+  const [consent, setConsent] = useState<{ authorized: boolean; signature: string | null; date: string | null } | null>(null);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [signature, setSignature] = useState("");
+  const [savingConsent, setSavingConsent] = useState(false);
+  const [showTerm, setShowTerm] = useState(false);
+
+  const loadConsent = async () => {
+    const { data } = await supabase
+      .from("anamnesis" as any)
+      .select("id, autorizacao_imagem, assinatura_cliente, data_assinatura")
+      .eq("user_id", clientUserId)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    const row: any = (data || [])[0];
+    setConsent({
+      authorized: !!row?.autorizacao_imagem,
+      signature: row?.assinatura_cliente || null,
+      date: row?.data_assinatura || null,
+    });
+  };
+
+  const saveConsent = async () => {
+    if (!consentChecked) {
+      toast.error("Marque a caixa de aceite do termo");
+      return;
+    }
+    if (signature.trim().length < 3) {
+      toast.error("Informe o nome completo do cliente para assinatura");
+      return;
+    }
+    setSavingConsent(true);
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: existing } = await supabase
+      .from("anamnesis" as any)
+      .select("id")
+      .eq("user_id", clientUserId)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    const row: any = (existing || [])[0];
+
+    const payload = {
+      autorizacao_imagem: true,
+      assinatura_cliente: signature.trim(),
+      data_assinatura: today,
+    };
+
+    const { error } = row?.id
+      ? await supabase.from("anamnesis" as any).update(payload as any).eq("id", row.id)
+      : await supabase.from("anamnesis" as any).insert({ user_id: clientUserId, ...payload } as any);
+
+    if (error) {
+      toast.error("Erro ao registrar autorização");
+    } else {
+      toast.success("Autorização de uso de imagem registrada");
+      setConsent({ authorized: true, signature: signature.trim(), date: today });
+    }
+    setSavingConsent(false);
+  };
+
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -52,6 +112,11 @@ const ProcedurePhotos = ({ appointmentId, clientUserId, readOnly = false }: Proc
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointmentId]);
+
+  useEffect(() => {
+    loadConsent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientUserId]);
 
   const handleUpload = async (kind: "before" | "after", file: File | undefined) => {
     if (!file) return;
