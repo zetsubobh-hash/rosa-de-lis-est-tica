@@ -182,6 +182,9 @@ const WelcomePromoPopup = ({ previewMode = false, onClose }: WelcomePromoPopupPr
       />
     </>
   );
+
+  if (typeof document === "undefined") return overlay;
+  return createPortal(overlay, document.body);
 };
 
 export default WelcomePromoPopup;
