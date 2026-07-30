@@ -56,7 +56,13 @@ const WelcomePromoPopup = ({ previewMode = false, onClose }: WelcomePromoPopupPr
 
   const close = () => {
     closedRef.current = true;
-    if (!previewMode) localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    if (!previewMode) {
+      try {
+        localStorage.setItem(DISMISS_KEY, String(Date.now()));
+      } catch {
+        /* storage indisponível (modo privado no mobile) */
+      }
+    }
     setShow(false);
     onClose?.();
   };
