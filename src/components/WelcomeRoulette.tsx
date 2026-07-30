@@ -168,11 +168,15 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
   };
 
   const spin = async () => {
-    if (spinning || !user) return;
+    if (spinning) return;
+    if (!testMode && !user) return;
+    if (segments.length === 0) {
+      toast.info("Nenhum prêmio ativo na roleta. Ative ao menos um item com chance maior que zero.");
+      return;
+    }
     setSpinning(true);
     setResult(null);
 
-    if (segments.length === 0) { setSpinning(false); return; }
     const arc = (2 * Math.PI) / segments.length;
 
     // Weighted random pick using item weights, then map to displayed segment index
@@ -411,13 +415,24 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
           )}
 
           {result && (
-            <button
-              onClick={() => { setShow(false); onClose?.(); }}
-              className="w-full py-3 rounded-2xl border border-border text-foreground font-body text-sm font-semibold hover:bg-muted transition-all"
-            >
-              Fechar
-            </button>
+            <div className="space-y-2">
+              {testMode && (
+                <button
+                  onClick={() => { setResult(null); drawWheel(rotation); }}
+                  className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-heading text-sm font-bold hover:bg-primary/90 transition-all"
+                >
+                  🎰 Girar novamente (teste)
+                </button>
+              )}
+              <button
+                onClick={() => { setShow(false); onClose?.(); }}
+                className="w-full py-3 rounded-2xl border border-border text-foreground font-body text-sm font-semibold hover:bg-muted transition-all"
+              >
+                Fechar
+              </button>
+            </div>
           )}
+
         </motion.div>
       </motion.div>
     </AnimatePresence>
