@@ -415,13 +415,24 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
           )}
 
           {result && (
-            <button
-              onClick={() => { setShow(false); onClose?.(); }}
-              className="w-full py-3 rounded-2xl border border-border text-foreground font-body text-sm font-semibold hover:bg-muted transition-all"
-            >
-              Fechar
-            </button>
+            <div className="space-y-2">
+              {testMode && (
+                <button
+                  onClick={() => { setResult(null); drawWheel(rotation); }}
+                  className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-heading text-sm font-bold hover:bg-primary/90 transition-all"
+                >
+                  🎰 Girar novamente (teste)
+                </button>
+              )}
+              <button
+                onClick={() => { setShow(false); onClose?.(); }}
+                className="w-full py-3 rounded-2xl border border-border text-foreground font-body text-sm font-semibold hover:bg-muted transition-all"
+              >
+                Fechar
+              </button>
+            </div>
           )}
+
         </motion.div>
       </motion.div>
     </AnimatePresence>
