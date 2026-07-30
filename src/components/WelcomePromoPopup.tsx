@@ -34,9 +34,15 @@ const WelcomePromoPopup = ({ previewMode = false, onClose }: WelcomePromoPopupPr
     if (loading) return;
     if (authLoading) return;
     if (user) return; // não exibe para usuários já logados
-    if (settings.welcome_popup_enabled !== "true") return;
+    if (String(settings.welcome_popup_enabled ?? "").trim().toLowerCase() !== "true") return;
 
-    const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || "0");
+    let dismissedAt = 0;
+    try {
+      dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || "0");
+      localStorage.removeItem("welcome_popup_dismissed_at"); // limpa chave antiga
+    } catch {
+      dismissedAt = 0;
+    }
     const hoursSince = (Date.now() - dismissedAt) / (1000 * 60 * 60);
     if (dismissedAt && hoursSince < DISMISS_HOURS) return;
 
