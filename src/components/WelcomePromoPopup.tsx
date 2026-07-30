@@ -7,7 +7,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 
-const DISMISS_KEY = "welcome_popup_dismissed_at";
+const DISMISS_KEY = "welcome_popup_dismissed_at_v2";
 const DISMISS_HOURS = 12;
 
 interface WelcomePromoPopupProps {
