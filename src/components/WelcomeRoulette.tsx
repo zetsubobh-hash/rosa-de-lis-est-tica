@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Sparkles, X, Frown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -284,13 +285,13 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
   if (!testMode && (loading || !show)) return null;
   if (testMode && !show) return null;
 
-  return (
+  const overlay = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto"
+        className="fixed inset-0 z-[10000] flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto"
       >
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -437,6 +438,9 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
       </motion.div>
     </AnimatePresence>
   );
+
+  if (typeof document === "undefined") return overlay;
+  return createPortal(overlay, document.body);
 };
 
 export default WelcomeRoulette;
