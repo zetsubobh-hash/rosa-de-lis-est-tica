@@ -147,15 +147,7 @@ const WelcomePopupSettings = () => {
         </p>
       </div>
 
-      {preview && (
-        <div
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setPreview(false);
-          }}
-        >
-          <WelcomePromoPopup />
-        </div>
-      )}
+      {preview && <WelcomePromoPopup previewMode onClose={() => setPreview(false)} />}
     </>
   );
 };

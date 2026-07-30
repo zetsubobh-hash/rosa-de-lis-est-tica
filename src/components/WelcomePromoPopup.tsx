@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Sparkles, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,14 +10,24 @@ import AuthModal from "@/components/AuthModal";
 const DISMISS_KEY = "welcome_popup_dismissed_at";
 const DISMISS_HOURS = 12;
 
-const WelcomePromoPopup = () => {
+interface WelcomePromoPopupProps {
+  /** Modo pré-visualização (admin): ignora login, cookie e status ativo */
+  previewMode?: boolean;
+  onClose?: () => void;
+}
+
+const WelcomePromoPopup = ({ previewMode = false, onClose }: WelcomePromoPopupProps) => {
   const { settings, loading } = useSiteSettings();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(previewMode);
   const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
+    if (previewMode) {
+      setShow(true);
+      return;
+    }
     if (loading) return;
     if (authLoading) return;
     if (user) return; // não exibe para usuários já logados
@@ -28,11 +39,12 @@ const WelcomePromoPopup = () => {
 
     const t = setTimeout(() => setShow(true), 1200);
     return () => clearTimeout(t);
-  }, [loading, authLoading, user, settings.welcome_popup_enabled]);
+  }, [previewMode, loading, authLoading, user, settings.welcome_popup_enabled]);
 
   const close = () => {
-    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    if (!previewMode) localStorage.setItem(DISMISS_KEY, String(Date.now()));
     setShow(false);
+    onClose?.();
   };
 
   const title = settings.welcome_popup_title || "🎁 Ganhe seu prêmio de boas-vindas!";
@@ -44,6 +56,7 @@ const WelcomePromoPopup = () => {
 
   const handleCta = () => {
     close();
+    if (previewMode) return;
     if (authLoading) return;
     if (!user) {
       // Cliente não cadastrado → abre cadastro
@@ -70,7 +83,7 @@ const WelcomePromoPopup = () => {
     );
   }
 
-  return (
+  const overlay = (
     <>
       <AnimatePresence>
         <motion.div
@@ -80,7 +93,7 @@ const WelcomePromoPopup = () => {
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) close();
           }}
-          className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
+          className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 30 }}
@@ -169,6 +182,9 @@ const WelcomePromoPopup = () => {
       />
     </>
   );
+
+  if (typeof document === "undefined") return overlay;
+  return createPortal(overlay, document.body);
 };
 
 export default WelcomePromoPopup;
