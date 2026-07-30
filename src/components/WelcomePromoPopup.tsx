@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Sparkles, X } from "lucide-react";
@@ -22,12 +22,15 @@ const WelcomePromoPopup = ({ previewMode = false, onClose }: WelcomePromoPopupPr
   const navigate = useNavigate();
   const [show, setShow] = useState(previewMode);
   const [authOpen, setAuthOpen] = useState(false);
+  const openedRef = useRef(false);
+  const closedRef = useRef(false);
 
   useEffect(() => {
     if (previewMode) {
       setShow(true);
       return;
     }
+    if (openedRef.current || closedRef.current) return; // já exibido/fechado nesta sessão
     if (loading) return;
     if (authLoading) return;
     if (user) return; // não exibe para usuários já logados
@@ -37,15 +40,21 @@ const WelcomePromoPopup = ({ previewMode = false, onClose }: WelcomePromoPopupPr
     const hoursSince = (Date.now() - dismissedAt) / (1000 * 60 * 60);
     if (dismissedAt && hoursSince < DISMISS_HOURS) return;
 
-    const t = setTimeout(() => setShow(true), 1200);
+    const t = setTimeout(() => {
+      if (closedRef.current) return;
+      openedRef.current = true;
+      setShow(true);
+    }, 1200);
     return () => clearTimeout(t);
   }, [previewMode, loading, authLoading, user, settings.welcome_popup_enabled]);
 
   const close = () => {
+    closedRef.current = true;
     if (!previewMode) localStorage.setItem(DISMISS_KEY, String(Date.now()));
     setShow(false);
     onClose?.();
   };
+
 
   const title = settings.welcome_popup_title || "🎁 Ganhe seu prêmio de boas-vindas!";
   const subtitle =
