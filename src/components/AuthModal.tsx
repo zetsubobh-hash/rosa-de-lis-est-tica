@@ -529,13 +529,12 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
             </div>
             <div className="space-y-2">
               <Label htmlFor="reg-birth" className="font-body text-sm">Data de Nascimento *</Label>
-              <Input
+              <BirthDateInput
                 id="reg-birth"
-                type="date"
                 value={regBirthDate}
-                onChange={(e) => setRegBirthDate(e.target.value)}
-                autoComplete="bday"
+                onChange={setRegBirthDate}
               />
+
             </div>
             <div className="space-y-2">
               <Label htmlFor="reg-email" className="font-body text-sm">E-mail (opcional)</Label>

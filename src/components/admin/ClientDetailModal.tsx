@@ -125,17 +125,22 @@ const EditableRow = ({ icon: Icon, label, value, onChange, type = "text", placeh
       <Icon className="w-4 h-4 text-primary mt-2.5 shrink-0" />
       <div className="flex-1">
         <p className="font-body text-[11px] text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
-        <Input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="h-8 text-sm"
-        />
+        {type === "date" ? (
+          <BirthDateInput value={value} onChange={onChange} className="h-8 text-sm" />
+        ) : (
+          <Input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="h-8 text-sm"
+          />
+        )}
       </div>
     </div>
   );
 };
+
 
 const AnamnesisField = ({ label, value }: { label: string; value: any }) => {
   if (!value || (Array.isArray(value) && value.length === 0) || value === "" || value === "nao") return null;
