@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, X, Camera, Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import BirthDateInput from "@/components/BirthDateInput";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -281,7 +282,7 @@ const NewClientInlineForm = ({ onClientCreated, onCancel }: NewClientInlineFormP
         </div>
         <div className="space-y-1">
           <label className="font-body text-[10px] font-medium text-foreground">Data de Nascimento *</label>
-          <Input type="date" value={form.birth_date} onChange={(e) => setForm(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body h-8 text-xs" />
+          <BirthDateInput value={form.birth_date} onChange={(v) => setForm(prev => ({ ...prev, birth_date: v }))} className="font-body h-8 text-xs" />
         </div>
         <div className="space-y-1">
           <label className="font-body text-[10px] font-medium text-foreground">Sexo</label>
