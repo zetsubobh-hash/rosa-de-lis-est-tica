@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, X, Camera, Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import BirthDateInput from "@/components/BirthDateInput";
 import { Button } from "@/components/ui/button";
 import {
   Select,
