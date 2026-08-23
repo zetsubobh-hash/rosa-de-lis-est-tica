@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List, AlertTriangle } from "lucide-react";
+import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List, AlertTriangle, ArrowUpDown, Clock, SortAsc } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
@@ -30,19 +30,25 @@ const AdminClients = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showNewClient, setShowNewClient] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [sortBy, setSortBy] = useState<"name" | "recent">("name");
 
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
       const { data } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen")
-        .order("full_name");
-      setClients((data as Client[]) || []);
+        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen");
+      
+      const sorted = ((data as Client[]) || []).sort((a, b) => 
+        sortBy === "name" 
+          ? a.full_name.localeCompare(b.full_name)
+          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setClients(sorted);
       setLoading(false);
     };
     fetch();
-  }, []);
+  }, [sortBy]);
 
   const filtered = clients.filter((c) => {
     if (!search) return true;
@@ -65,51 +71,91 @@ const AdminClients = () => {
   return (
     <div className="space-y-4">
       {/* Header: search + view toggle + new client button */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar por nome, telefone ou e-mail..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 rounded-xl border border-border bg-background font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none"
-          />
-        </div>
-        <div className="flex gap-2 items-center">
-          <div className="flex items-center rounded-xl border border-border bg-background p-1 h-10">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar por nome, telefone ou e-mail..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-10 pl-9 pr-3 rounded-xl border border-border bg-background font-body text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary focus:outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+            <div className="flex items-center rounded-xl border border-border bg-background p-1 h-10 shrink-0">
+              <button
+                onClick={() => setSortBy("name")}
+                title="Ordenar por Nome"
+                className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                  sortBy === "name"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <SortAsc className="w-4 h-4" />
+                <span className="hidden xs:inline">A-Z</span>
+              </button>
+              <button
+                onClick={() => setSortBy("recent")}
+                title="Ordenar por Recentes"
+                className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                  sortBy === "recent"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                <span className="hidden xs:inline">Recentes</span>
+              </button>
+            </div>
+            
+            <div className="flex items-center rounded-xl border border-border bg-background p-1 h-10 shrink-0">
+              <button
+                onClick={() => setViewMode("card")}
+                title="Visualização em cards"
+                className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                  viewMode === "card"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                title="Visualização em lista"
+                className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                  viewMode === "list"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+
             <button
-              onClick={() => setViewMode("card")}
-              title="Visualização em cards"
-              className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
-                viewMode === "card"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              onClick={() => setShowNewClient((v) => !v)}
+              className="h-10 px-4 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shrink-0 ml-auto"
             >
-              <LayoutGrid className="w-4 h-4" />
-              <span className="hidden sm:inline">Cards</span>
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              title="Visualização em lista"
-              className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
-                viewMode === "list"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <List className="w-4 h-4" />
-              <span className="hidden sm:inline">Lista</span>
+              <UserPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">{showNewClient ? "Fechar" : "Novo Cliente"}</span>
             </button>
           </div>
-          <button
-            onClick={() => setShowNewClient((v) => !v)}
-            className="h-10 px-4 rounded-xl bg-primary text-primary-foreground font-body text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shrink-0"
-          >
-            <UserPlus className="w-4 h-4" />
-            {showNewClient ? "Fechar Cadastro" : "Novo Cliente"}
-          </button>
+        </div>
+        
+        <div className="flex items-center gap-2 px-1">
+          <div className="flex items-center gap-1.5 bg-primary/5 text-primary px-2.5 py-1 rounded-full border border-primary/10">
+            <Users className="w-3.5 h-3.5" />
+            <span className="text-xs font-bold uppercase tracking-wider">{clients.length} Clientes Totais</span>
+          </div>
+          {search && (
+            <div className="text-xs text-muted-foreground italic">
+              — {filtered.length} encontrado{filtered.length !== 1 ? "s" : ""}
+            </div>
+          )}
         </div>
       </div>
 
@@ -146,9 +192,6 @@ const AdminClients = () => {
         }
       />
 
-      <p className="font-body text-xs text-muted-foreground">
-        {filtered.length} cliente{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
-      </p>
 
 
       {filtered.length === 0 ? (
