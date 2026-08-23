@@ -285,6 +285,16 @@ const AdminWelcomeRoulette = () => {
           </div>
         </div>
 
+        <div className="hidden sm:grid sm:grid-cols-12 gap-2 px-4 py-2 bg-muted/30 border-b border-border text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="sm:col-span-1 text-center">Ativo</div>
+          <div className="sm:col-span-3">Nome / Rótulo</div>
+          <div className="sm:col-span-2">Tipo de Prêmio</div>
+          <div className="sm:col-span-2">Valor / Serviço</div>
+          <div className="sm:col-span-2">Peso (Chance)</div>
+          <div className="sm:col-span-1">Validade</div>
+          <div className="sm:col-span-1"></div>
+        </div>
+
         <div className="divide-y divide-border">
           {itemsWithChance.map((it) => (
             <div key={it.id} className="p-3 sm:grid sm:grid-cols-12 sm:gap-2 sm:items-center space-y-2 sm:space-y-0">
@@ -295,13 +305,14 @@ const AdminWelcomeRoulette = () => {
               </div>
 
               <div className="sm:col-span-1 flex justify-start sm:justify-center">
+                <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Ativo</label>
                 <Switch
                   checked={it.enabled}
                   onCheckedChange={(v) => updateItem(it.id, { enabled: v })}
                 />
               </div>
               <div className="sm:col-span-3">
-                <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Texto</label>
+                <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Nome / Rótulo</label>
                 <Input
                   value={it.label}
                   onChange={(e) => updateItem(it.id, { label: e.target.value })}
@@ -311,7 +322,7 @@ const AdminWelcomeRoulette = () => {
               </div>
               <div className="grid grid-cols-2 sm:contents gap-2">
                 <div className="sm:col-span-2">
-                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Tipo</label>
+                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Tipo de Prêmio</label>
                   <select
                     value={it.type}
                     onChange={(e) => {
@@ -326,7 +337,7 @@ const AdminWelcomeRoulette = () => {
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Valor</label>
+                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Valor / Serviço</label>
                   {it.type === "service" ? (
                     <select
                       value={it.serviceSlug || ""}
@@ -362,7 +373,7 @@ const AdminWelcomeRoulette = () => {
                   )}
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Peso</label>
+                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Peso (Chance)</label>
                   <div className="relative">
                     <Input
                       type="number"
@@ -378,7 +389,7 @@ const AdminWelcomeRoulette = () => {
                   </div>
                 </div>
                 <div className="sm:col-span-1">
-                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Validade</label>
+                  <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Validade (dias)</label>
                   <div className="relative">
                     <Input
                       type="number"
