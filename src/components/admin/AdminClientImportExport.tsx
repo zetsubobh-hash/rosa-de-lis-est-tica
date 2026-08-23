@@ -50,42 +50,85 @@ const AdminClientImportExport = () => {
   const [result, setResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
   const [exporting, setExporting] = useState(false);
 
+  const parseVCF = (text: string): ParsedRow[] => {
+    const contacts: ParsedRow[] = [];
+    const blocks = text.split(/BEGIN:VCARD/i).slice(1);
+
+    blocks.forEach((block) => {
+      const fnMatch = block.match(/FN:(.*)/i);
+      const telMatch = block.match(/TEL(?:;[^:]*)?:(.*)/i);
+      const emailMatch = block.match(/EMAIL(?:;[^:]*)?:(.*)/i);
+      const bdayMatch = block.match(/BDAY:(.*)/i);
+      const adrMatch = block.match(/ADR(?:;[^:]*)?:(.*)/i);
+
+      if (fnMatch) {
+        let phone = telMatch ? telMatch[1].replace(/[^\d+]/g, "").trim() : "";
+        if (phone && !phone.startsWith("+") && phone.length >= 10) {
+          if (!phone.startsWith("55")) phone = "55" + phone;
+        }
+
+        contacts.push({
+          full_name: fnMatch[1].trim(),
+          phone: phone,
+          email: emailMatch ? emailMatch[1].trim() : "",
+          birth_date: bdayMatch ? bdayMatch[1].trim() : "",
+          address: adrMatch ? adrMatch[1].replace(/;/g, " ").trim() : "",
+        });
+      }
+    });
+
+    return contacts;
+  };
+
   const handleFile = async (file: File) => {
     try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const raw: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-      if (!raw.length) {
-        toast.error("Planilha vazia ou sem cabeçalho.");
-        return;
+      const isVCF = file.name.toLowerCase().endsWith(".vcf");
+      let parsed: ParsedRow[] = [];
+
+      if (isVCF) {
+        const text = await file.text();
+        parsed = parseVCF(text);
+      } else {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const raw: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        if (!raw.length) {
+          toast.error("Arquivo vazio ou sem cabeçalho.");
+          return;
+        }
+
+        const headers = Object.keys(raw[0]);
+        const map: Partial<Record<keyof ParsedRow, string>> = {};
+        (Object.keys(HEADER_ALIASES) as (keyof ParsedRow)[]).forEach((field) => {
+          const found = headers.find((h) => HEADER_ALIASES[field].includes(norm(h)));
+          if (found) map[field] = found;
+        });
+
+        if (!map.full_name) {
+          toast.error("Não encontrei a coluna de nome no Excel. Use um cabeçalho 'Nome'.");
+          return;
+        }
+
+        parsed = raw
+          .map((r) => {
+            const birthRaw = map.birth_date ? r[map.birth_date] : "";
+            const birth = typeof birthRaw === "number" ? excelDateToISO(birthRaw) : String(birthRaw ?? "").trim();
+            return {
+              full_name: String(r[map.full_name!] ?? "").trim(),
+              phone: map.phone ? String(r[map.phone] ?? "").trim() : "",
+              birth_date: birth,
+              email: map.email ? String(r[map.email] ?? "").trim() : "",
+              address: map.address ? String(r[map.address] ?? "").trim() : "",
+            };
+          })
+          .filter((r) => r.full_name);
       }
 
-      const headers = Object.keys(raw[0]);
-      const map: Partial<Record<keyof ParsedRow, string>> = {};
-      (Object.keys(HEADER_ALIASES) as (keyof ParsedRow)[]).forEach((field) => {
-        const found = headers.find((h) => HEADER_ALIASES[field].includes(norm(h)));
-        if (found) map[field] = found;
-      });
-
-      if (!map.full_name) {
-        toast.error("Não encontrei a coluna de nome. Use um cabeçalho 'Nome'.");
+      if (!parsed.length) {
+        toast.error("Nenhum contato válido encontrado no arquivo.");
         return;
       }
-
-      const parsed: ParsedRow[] = raw
-        .map((r) => {
-          const birthRaw = map.birth_date ? r[map.birth_date] : "";
-          const birth = typeof birthRaw === "number" ? excelDateToISO(birthRaw) : String(birthRaw ?? "").trim();
-          return {
-            full_name: String(r[map.full_name!] ?? "").trim(),
-            phone: map.phone ? String(r[map.phone] ?? "").trim() : "",
-            birth_date: birth,
-            email: map.email ? String(r[map.email] ?? "").trim() : "",
-            address: map.address ? String(r[map.address] ?? "").trim() : "",
-          };
-        })
-        .filter((r) => r.full_name);
 
       setRows(parsed);
       setFileName(file.name);
@@ -221,7 +264,7 @@ const AdminClientImportExport = () => {
             </div>
             <div className="min-w-0">
               <h3 className="font-heading text-base md:text-lg font-bold text-foreground">Importar clientes</h3>
-              <p className="font-body text-xs text-muted-foreground">Planilha .xlsx, .xls ou .csv — duplicados são ignorados</p>
+              <p className="font-body text-xs text-muted-foreground">Planilha .xlsx, .xls, .csv ou arquivo .vcf — duplicados são ignorados</p>
             </div>
           </div>
 
@@ -246,7 +289,7 @@ const AdminClientImportExport = () => {
           <input
             ref={fileRef}
             type="file"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls,.csv,.vcf"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
