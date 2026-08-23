@@ -460,6 +460,7 @@ const AdminPricing = () => {
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Sessões</label>
                                 <Input
                                   type="number"
+                                  inputMode="numeric"
                                   min={1}
                                   value={currentSessions}
                                   onChange={(e) => handleSessionsChange(plan.id, e.target.value)}
