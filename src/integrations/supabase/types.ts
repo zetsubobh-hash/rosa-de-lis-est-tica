@@ -685,6 +685,7 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          allow_welcome_roulette: boolean | null
           avatar_url: string | null
           birth_date: string | null
           created_at: string
@@ -700,6 +701,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          allow_welcome_roulette?: boolean | null
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
@@ -715,6 +717,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          allow_welcome_roulette?: boolean | null
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
