@@ -825,7 +825,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           <div>
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Sessões</label>
                             <Input
-                              type="number" min={1} value={sessions}
+                              type="number" inputMode="numeric" min={1} value={sessions}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") e.preventDefault();
                               }}
@@ -977,6 +977,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Sessões</label>
                         <Input
                           type="number"
+                          inputMode="numeric"
                           min={1}
                           value={newPlan.sessions}
                           onKeyDown={(e) => {
