@@ -164,9 +164,13 @@ const AdminClients = () => {
             <Users className="w-3.5 h-3.5" />
             <span className="text-xs font-bold uppercase tracking-wider">{totalCount} Clientes Totais</span>
           </div>
-          {search && (
+          {search ? (
             <div className="text-xs text-muted-foreground italic">
               — {filtered.length} encontrado{filtered.length !== 1 ? "s" : ""}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground italic">
+              — exibindo todos os {clients.length} clientes
             </div>
           )}
         </div>

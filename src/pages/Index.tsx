@@ -6,6 +6,7 @@
 {/* aba cliente continua a visualisar somente 1000 clientes arrume */}
 {/* permitir excluir cliente selecionado na aba clientes */}
 {/* continua aparecer texto falando que foram encontrados 1000 clientes na aba clientes arrume isso de uma vez */}
+{/* minha base de dados é de 4305 existe um texto na aba cliente falando que foi encontrado 1000 clientes somente arrume este texto para mostrar corretamente */}
 import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
