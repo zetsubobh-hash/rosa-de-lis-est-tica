@@ -1,4 +1,5 @@
 {/* aba cliente no admim não foi adicionado filtros e não foi adicionado a chave que eu pedi */}
+{/* colocar para opção de importar no admim clientes de arquivo vcf exportados do whatsapp */}
 import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
