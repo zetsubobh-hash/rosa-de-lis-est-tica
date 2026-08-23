@@ -5,6 +5,7 @@
 {/* aba cliente ainda continua a mostrar somente 1000 clientes, tem que ser visualizado todos */}
 {/* aba cliente continua a visualisar somente 1000 clientes arrume */}
 {/* permitir excluir cliente selecionado na aba clientes */}
+{/* continua aparecer texto falando que foram encontrados 1000 clientes na aba clientes arrume isso de uma vez */}
 import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";

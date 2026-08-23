@@ -26,6 +26,7 @@ const getInitials = (name: string) =>
 
 const AdminClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -36,6 +37,15 @@ const AdminClients = () => {
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
+      
+      // Get the total count from the database
+      const { count } = await supabase
+        .from("profiles")
+        .select("*", { count: 'exact', head: true });
+
+      const totalCount = count || 0;
+
+      // Fetch up to 10,000 records
       const { data } = await supabase
         .from("profiles")
         .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette")
@@ -47,6 +57,7 @@ const AdminClients = () => {
           : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setClients(sorted);
+      setTotalCount(totalCount);
       setLoading(false);
     };
     fetch();
@@ -151,7 +162,7 @@ const AdminClients = () => {
         <div className="flex items-center gap-2 px-1">
           <div className="flex items-center gap-1.5 bg-primary/5 text-primary px-2.5 py-1 rounded-full border border-primary/10">
             <Users className="w-3.5 h-3.5" />
-            <span className="text-xs font-bold uppercase tracking-wider">{clients.length} Clientes Totais</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{totalCount} Clientes Totais</span>
           </div>
           {search && (
             <div className="text-xs text-muted-foreground italic">
