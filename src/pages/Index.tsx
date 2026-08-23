@@ -3,6 +3,7 @@
 {/* na aba importar cliente ainda não consegui importar arquivos com e extensão vcf. adicione esta opção */}
 {/* meu arquivo tem mais te 3000 cliente foram importados somente 1000 olha se tem alguma limitação e corrija */}
 {/* aba cliente ainda continua a mostrar somente 1000 clientes, tem que ser visualizado todos */}
+{/* aba cliente continua a visualisar somente 1000 clientes arrume */}
 {/* permitir excluir cliente selecionado na aba clientes */}
 import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
