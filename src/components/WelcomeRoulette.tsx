@@ -96,6 +96,19 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
       return;
     }
 
+    // Check if user is explicitly allowed to spin again (bypass previous spin check)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("allow_welcome_roulette")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profile?.allow_welcome_roulette) {
+      setShow(true);
+      setLoading(false);
+      return;
+    }
+
     // Check if user already spun (any coupon with BV- prefix)
     const { data: existingCoupon } = await supabase
       .from("coupons")
@@ -279,6 +292,20 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
       toast.success("🎉 Parabéns! Sua sessão grátis foi adicionada à sua conta!");
     } else {
       toast.success("🎉 Parabéns! Seu cupom de boas-vindas foi gerado!");
+    }
+
+    // If it was an explicit re-spin permission, revoke it after spin
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("allow_welcome_roulette")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profile?.allow_welcome_roulette) {
+      await supabase
+        .from("profiles")
+        .update({ allow_welcome_roulette: false } as any)
+        .eq("user_id", user.id);
     }
   };
 
