@@ -18,6 +18,7 @@ interface Client {
   birth_date: string | null;
   created_at: string;
   last_seen: string | null;
+  allow_welcome_roulette?: boolean;
 }
 
 const getInitials = (name: string) =>
