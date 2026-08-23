@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import BirthDateInput from "@/components/BirthDateInput";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatCents } from "@/hooks/useServicePrices";
@@ -181,6 +182,9 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [paymentsUnlocked, setPaymentsUnlocked] = useState(false);
   const [paymentsPassword, setPaymentsPassword] = useState("");
   const [verifyingPayments, setVerifyingPayments] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
+  const [deleteClientPassword, setDeleteClientPassword] = useState("");
   // Coupon application
   const [couponInput, setCouponInput] = useState("");
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
@@ -561,6 +565,40 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     }
   };
 
+  const handleDeleteClient = async () => {
+    if (!deleteClientPassword.trim() || !user?.email) return;
+    setDeletingClient(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: deleteClientPassword,
+      });
+      if (authError) {
+        toast.error("Senha incorreta");
+        setDeletingClient(false);
+        setDeleteClientPassword("");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("delete-client", {
+        body: { target_user_id: userId },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error.message || "Erro ao excluir");
+      }
+
+      toast.success("Cliente excluído permanentemente");
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao excluir cliente");
+    } finally {
+      setDeletingClient(false);
+      setShowDeleteConfirm(false);
+      setDeleteClientPassword("");
+    }
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -596,9 +634,20 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                   </p>
                 )}
               </div>
-              <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted transition-colors">
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
+              <div className="flex items-center gap-1">
+                {!editing && !isMasterAdmin && (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="p-2 rounded-xl hover:bg-destructive/10 text-destructive transition-colors"
+                    title="Excluir Cliente"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
+                <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted transition-colors">
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -1227,11 +1276,84 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                 </div>
               </Tabs>
             )}
+            {/* Delete Client Confirmation Modal Overlay */}
+            {showDeleteConfirm && (
+              <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 rounded-2xl">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-card border border-border rounded-xl p-6 w-full max-w-sm shadow-2xl space-y-4"
+                >
+                  <div className="text-center space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto text-destructive">
+                      <Trash2 className="w-6 h-6" />
+                    </div>
+                    <h3 className="font-heading text-lg font-bold text-foreground">Excluir Cliente?</h3>
+                    <p className="font-body text-sm text-muted-foreground">
+                      Isso removerá <strong>{userName}</strong> e todo o seu histórico permanentemente. Esta ação não pode ser desfeita.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground ml-1">Confirme sua senha de Admin</p>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="password"
+                          value={deleteClientPassword}
+                          onChange={(e) => setDeleteClientPassword(e.target.value)}
+                          placeholder="Sua senha de acesso"
+                          className="pl-9 h-10"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteClient}
+                        disabled={deletingClient || !deleteClientPassword.trim()}
+                        className="w-full h-10 font-bold"
+                      >
+                        {deletingClient ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                        Confirmar Exclusão
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => { setShowDeleteConfirm(false); setDeleteClientPassword(""); }}
+                        disabled={deletingClient}
+                        className="w-full h-10"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 };
+
+const Loader2 = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={`animate-spin ${className}`}
+  >
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+);
 
 export default ClientDetailModal;
