@@ -291,7 +291,8 @@ const AdminClients = () => {
           </div>
         ) : (
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <div className="hidden sm:grid sm:grid-cols-[1fr,1fr,auto] gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="hidden sm:grid sm:grid-cols-[60px,1fr,1fr,auto] gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <span>#</span>
               <span>Cliente</span>
               <span>Contato</span>
               <span className="text-right">Ações</span>
@@ -303,10 +304,13 @@ const AdminClients = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.02, 0.5) }}
-                  className={`flex flex-col sm:grid sm:grid-cols-[1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center transition-colors group ${
+                  className={`flex flex-col sm:grid sm:grid-cols-[60px,1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center transition-colors group ${
                     isPhoneMissing(client.phone) ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/30"
                   }`}
                 >
+                  <div className="hidden sm:flex text-xs font-medium text-muted-foreground w-8 items-center justify-center bg-muted/30 rounded-md py-1">
+                    {i + 1}
+                  </div>
                   <button
                     onClick={() => setSelectedClient(client)}
                     className="flex items-center gap-3 text-left min-w-0"
@@ -330,7 +334,7 @@ const AdminClients = () => {
                     </div>
                   </button>
 
-                  <div className="flex flex-col gap-1 min-w-0 w-full sm:w-auto pl-[52px] sm:pl-0">
+                  <div className="flex flex-col gap-1 min-w-0 w-full sm:w-auto pl-[40px] sm:pl-0">
                     <p className={`font-body text-xs flex items-center gap-1 truncate ${
                       isPhoneMissing(client.phone) ? "text-destructive font-semibold" : "text-muted-foreground"
                     }`}>
@@ -345,7 +349,7 @@ const AdminClients = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 pl-[52px] sm:pl-0">
+                  <div className="flex items-center gap-2 pl-[40px] sm:pl-0">
                     <a
                       href={`tel:${client.phone.replace(/\D/g, "")}`}
                       className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
