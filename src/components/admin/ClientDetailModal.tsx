@@ -662,30 +662,6 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
                           <EditableRow icon={User} label="Usuário (login)" value={editData.username} onChange={(v) => setEditData(d => ({ ...d, username: v.toLowerCase().replace(/[^a-z0-9._-]/g, "") }))} placeholder="nome.usuario" />
                           <InfoRow icon={Calendar} label="Cadastro" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString("pt-BR") : null} />
                           
-                          <div className="flex items-center justify-between py-3 px-1 border-y border-border/50 my-2 bg-primary/5 rounded-xl">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <Ticket className="w-4 h-4 text-primary" />
-                              </div>
-                              <div>
-                                <p className="font-heading text-xs font-bold text-foreground">Permitir Roleta</p>
-                                <p className="font-body text-[10px] text-muted-foreground">Permite que o cliente gire a roleta novamente</p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleToggleRoulette(!profile?.allow_welcome_roulette)}
-                              disabled={updatingRoulette}
-                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${
-                                profile?.allow_welcome_roulette ? "bg-primary" : "bg-input"
-                              }`}
-                            >
-                              <span
-                                className={`pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform ${
-                                  profile?.allow_welcome_roulette ? "translate-x-4" : "translate-x-1"
-                                }`}
-                              />
-                            </button>
-                          </div>
 
                           <InfoRow icon={Clock} label="Último acesso" value={profile?.last_seen ? new Date(profile.last_seen).toLocaleString("pt-BR") : "Nunca acessou"} />
 
