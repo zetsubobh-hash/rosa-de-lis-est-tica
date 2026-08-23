@@ -800,8 +800,8 @@ const AddItemModal = ({ services, onClose, onAdd }: AddItemModalProps) => {
           {/* Common fields */}
           <div className="space-y-3 pt-2 border-t border-border">
             <div>
-              <label className="font-body text-xs font-semibold text-foreground mb-1 block">
-                Texto exibido na roleta (opcional)
+              <label className="font-body text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                Nome / Rótulo (Texto exibido)
               </label>
               <Input
                 value={label}
@@ -818,8 +818,8 @@ const AddItemModal = ({ services, onClose, onAdd }: AddItemModalProps) => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="font-body text-xs font-semibold text-foreground mb-1 block">
-                  Peso (chance relativa)
+                <label className="font-body text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                  Peso (Chance relativa)
                 </label>
                 <Input
                   type="number"
@@ -831,8 +831,8 @@ const AddItemModal = ({ services, onClose, onAdd }: AddItemModalProps) => {
               </div>
               {tab !== "none" && (
                 <div>
-                  <label className="font-body text-xs font-semibold text-foreground mb-1 block">
-                    Validade (dias)
+                  <label className="font-body text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 block">
+                    Validade (Dias)
                   </label>
                   <Input
                     type="number"
