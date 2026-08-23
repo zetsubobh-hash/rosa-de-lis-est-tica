@@ -311,11 +311,13 @@ const AdminPricing = () => {
             <div>
               <label className="font-body text-[11px] text-muted-foreground mb-1 block">Sessões</label>
               <Input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 min={1}
                 value={newPlan.sessions}
                 onChange={(e) => {
-                  const sessions = e.target.value;
+                  const sessions = e.target.value.replace(/\D/g, "");
                   const sessionsNumber = Math.max(1, parseInt(sessions, 10) || 1);
                   const currentPpsCents = parseMoneyInput(newPlan.price_per_session).cents;
 
