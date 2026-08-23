@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import BirthDateInput from "@/components/BirthDateInput";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatCents } from "@/hooks/useServicePrices";
