@@ -158,7 +158,7 @@ const AdminPricing = () => {
       const original = prices.find((p) => p.id === id);
       if (!original) continue;
 
-      const sessions = changes.sessions ?? original.sessions;
+      const sessions = Math.max(1, changes.sessions ?? original.sessions);
       const pricePerSession = changes.price_per_session_cents ?? original.price_per_session_cents;
       const totalPrice = pricePerSession * sessions;
 
@@ -193,7 +193,7 @@ const AdminPricing = () => {
     }
 
     setAddingPlan(true);
-    const sessions = parseInt(newPlan.sessions) || 1;
+    const sessions = Math.max(1, parseInt(newPlan.sessions) || 1);
     const pricePerSession = parseMoneyInput(newPlan.price_per_session).cents;
     const totalPrice = parseMoneyInput(newPlan.total_price).cents || pricePerSession * sessions;
 
