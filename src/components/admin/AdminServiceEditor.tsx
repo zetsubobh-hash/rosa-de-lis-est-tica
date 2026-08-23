@@ -261,7 +261,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
         const rawPps = rawPriceInputs[id]?.pps;
         const parsedRawPps = rawPps !== undefined ? parseMoneyInput(rawPps).cents : undefined;
 
-        const sessions = changes.sessions ?? original.sessions;
+        const sessions = Math.max(1, changes.sessions ?? original.sessions);
         const pps = parsedRawPps ?? changes.price_per_session_cents ?? original.price_per_session_cents;
         const total = pps * sessions;
 
@@ -364,7 +364,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
     const rawPps = rawPriceInputs[planId]?.pps;
     const parsedRawPps = rawPps !== undefined ? parseMoneyInput(rawPps).cents : undefined;
 
-    const sessions = changes.sessions ?? original.sessions;
+    const sessions = Math.max(1, changes.sessions ?? original.sessions);
     const pps = parsedRawPps ?? changes.price_per_session_cents ?? original.price_per_session_cents;
     const total = pps * sessions;
 
@@ -835,7 +835,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                               }}
                               onChange={(e) => {
                                 const value = e.target.value.replace(/\D/g, "");
-                                const newSessions = parseInt(value, 10) || 1;
+                                const newSessions = value === "" ? 0 : parseInt(value, 10) || 0;
                                 setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], sessions: newSessions } }));
                                 setHasChanges(true);
                               }}
@@ -991,7 +991,7 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           }}
                           onChange={(e) => {
                             const value = e.target.value.replace(/\D/g, "");
-                            setNewPlan(p => ({ ...p, sessions: parseInt(value) || 1 }));
+                            setNewPlan(p => ({ ...p, sessions: value === "" ? 0 : parseInt(value) || 0 }));
                           }}
                           className="h-8 font-body text-sm"
                         />

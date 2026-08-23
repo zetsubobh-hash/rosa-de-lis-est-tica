@@ -60,7 +60,7 @@ const AdminPricing = () => {
   };
 
   const handleSessionsChange = (id: string, value: string) => {
-    const sessions = Math.max(1, parseInt(value, 10) || 1);
+    const sessions = value === "" ? 0 : parseInt(value, 10) || 0;
 
     setEditedPrices((prev) => {
       const original = prices.find((p) => p.id === id);
@@ -158,7 +158,7 @@ const AdminPricing = () => {
       const original = prices.find((p) => p.id === id);
       if (!original) continue;
 
-      const sessions = changes.sessions ?? original.sessions;
+      const sessions = Math.max(1, changes.sessions ?? original.sessions);
       const pricePerSession = changes.price_per_session_cents ?? original.price_per_session_cents;
       const totalPrice = pricePerSession * sessions;
 
@@ -193,7 +193,7 @@ const AdminPricing = () => {
     }
 
     setAddingPlan(true);
-    const sessions = parseInt(newPlan.sessions) || 1;
+    const sessions = Math.max(1, parseInt(newPlan.sessions) || 1);
     const pricePerSession = parseMoneyInput(newPlan.price_per_session).cents;
     const totalPrice = parseMoneyInput(newPlan.total_price).cents || pricePerSession * sessions;
 
@@ -318,7 +318,7 @@ const AdminPricing = () => {
                 value={newPlan.sessions}
                 onChange={(e) => {
                   const sessions = e.target.value.replace(/\D/g, "");
-                  const sessionsNumber = Math.max(1, parseInt(sessions, 10) || 1);
+                  const sessionsNumber = parseInt(sessions, 10) || 0;
                   const currentPpsCents = parseMoneyInput(newPlan.price_per_session).cents;
 
                   setNewPlan({
