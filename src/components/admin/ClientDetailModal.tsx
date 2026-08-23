@@ -181,6 +181,9 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
   const [paymentsUnlocked, setPaymentsUnlocked] = useState(false);
   const [paymentsPassword, setPaymentsPassword] = useState("");
   const [verifyingPayments, setVerifyingPayments] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
+  const [deleteClientPassword, setDeleteClientPassword] = useState("");
   // Coupon application
   const [couponInput, setCouponInput] = useState("");
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
