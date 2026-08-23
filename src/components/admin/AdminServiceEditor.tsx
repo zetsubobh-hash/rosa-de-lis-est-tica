@@ -825,12 +825,17 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                           <div>
                             <label className={`font-body text-[11px] mb-1 block ${isHighlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>Sessões</label>
                             <Input
-                              type="number" inputMode="numeric" min={1} value={sessions}
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              min={1}
+                              value={sessions}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") e.preventDefault();
                               }}
                               onChange={(e) => {
-                                const newSessions = parseInt(e.target.value, 10) || 1;
+                                const value = e.target.value.replace(/\D/g, "");
+                                const newSessions = parseInt(value, 10) || 1;
                                 setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], sessions: newSessions } }));
                                 setHasChanges(true);
                               }}
@@ -976,14 +981,18 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                       <div>
                         <label className="font-body text-[11px] text-muted-foreground mb-1 block">Sessões</label>
                         <Input
-                          type="number"
+                          type="text"
                           inputMode="numeric"
+                          pattern="[0-9]*"
                           min={1}
                           value={newPlan.sessions}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") e.preventDefault();
                           }}
-                          onChange={(e) => setNewPlan(p => ({ ...p, sessions: parseInt(e.target.value) || 1 }))}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+                            setNewPlan(p => ({ ...p, sessions: parseInt(value) || 1 }));
+                          }}
                           className="h-8 font-body text-sm"
                         />
                       </div>
