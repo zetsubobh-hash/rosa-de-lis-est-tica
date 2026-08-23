@@ -839,8 +839,6 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
                                 setEditedPrices((p) => ({ ...p, [plan.id]: { ...p[plan.id], sessions: newSessions } }));
                                 setHasChanges(true);
                               }}
-                              className={`h-8 font-body text-sm ${isHighlight ? "bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground" : ""}`}
-                            />
                               onBlur={() => {
                                 const currentSessions = editedPrices[plan.id]?.sessions ?? plan.sessions;
                                 const rawPps = rawPriceInputs[plan.id]?.pps;
