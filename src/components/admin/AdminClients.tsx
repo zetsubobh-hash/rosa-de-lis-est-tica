@@ -38,7 +38,8 @@ const AdminClients = () => {
       setLoading(true);
       const { data } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette");
+        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette")
+        .limit(10000);
       
       const sorted = ((data as any[]) || []).sort((a, b) => 
         sortBy === "name" 
