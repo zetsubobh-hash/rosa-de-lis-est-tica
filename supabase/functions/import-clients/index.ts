@@ -90,8 +90,8 @@ Deno.serve(async (req) => {
     const rows = Array.isArray(body?.rows) ? body.rows : null;
     const dryRun = body?.dryRun === true;
     if (!rows) return json({ error: "Nenhuma linha enviada" }, 400);
-    if (!dryRun && rows.length > 200) return json({ error: "Máximo de 200 linhas por lote" }, 400);
-    if (dryRun && rows.length > 5000) return json({ error: "Máximo de 5000 linhas por análise" }, 400);
+    if (!dryRun && rows.length > 500) return json({ error: "Máximo de 500 linhas por lote" }, 400);
+    if (dryRun && rows.length > 10000) return json({ error: "Máximo de 10000 linhas por análise" }, 400);
 
     // Load existing profiles for dedupe
     const { data: existing } = await admin

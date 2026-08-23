@@ -1,6 +1,7 @@
 {/* aba cliente no admim não foi adicionado filtros e não foi adicionado a chave que eu pedi */}
 {/* colocar para opção de importar no admim clientes de arquivo vcf exportados do whatsapp */}
 {/* na aba importar cliente ainda não consegui importar arquivos com e extensão vcf. adicione esta opção */}
+{/* meu arquivo tem mais te 3000 cliente foram importados somente 1000 olha se tem alguma limitação e corrija */}
 import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";

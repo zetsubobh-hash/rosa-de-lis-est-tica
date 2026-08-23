@@ -174,7 +174,7 @@ const AdminClientImportExport = () => {
     let created = 0;
     let skipped = 0;
     const errors: string[] = [];
-    const BATCH = 50;
+    const BATCH = 200;
 
     try {
       for (let i = 0; i < rows.length; i += BATCH) {
