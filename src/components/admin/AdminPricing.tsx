@@ -459,11 +459,15 @@ const AdminPricing = () => {
                               <div>
                                 <label className="font-body text-[11px] text-muted-foreground mb-1 block">Sessões</label>
                                 <Input
-                                  type="number"
+                                  type="text"
                                   inputMode="numeric"
+                                  pattern="[0-9]*"
                                   min={1}
                                   value={currentSessions}
-                                  onChange={(e) => handleSessionsChange(plan.id, e.target.value)}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, "");
+                                    handleSessionsChange(plan.id, value);
+                                  }}
                                   className="font-body text-sm h-9"
                                 />
                               </div>
