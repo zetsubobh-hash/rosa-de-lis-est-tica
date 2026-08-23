@@ -99,11 +99,11 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
     // Check if user is explicitly allowed to spin again (bypass previous spin check)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("allow_welcome_roulette")
+      .select("*")
       .eq("user_id", user.id)
       .single();
 
-    if (profile?.allow_welcome_roulette) {
+    if ((profile as any)?.allow_welcome_roulette) {
       setShow(true);
       setLoading(false);
       return;
@@ -297,11 +297,11 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
     // If it was an explicit re-spin permission, revoke it after spin
     const { data: profile } = await supabase
       .from("profiles")
-      .select("allow_welcome_roulette")
+      .select("*")
       .eq("user_id", user.id)
       .single();
 
-    if (profile?.allow_welcome_roulette) {
+    if ((profile as any)?.allow_welcome_roulette) {
       await supabase
         .from("profiles")
         .update({ allow_welcome_roulette: false } as any)
