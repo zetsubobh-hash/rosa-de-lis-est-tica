@@ -1,3 +1,4 @@
+{/* aba cliente no admim não foi adicionado filtros e não foi adicionado a chave que eu pedi */}
 import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";

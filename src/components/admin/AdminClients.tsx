@@ -37,9 +37,9 @@ const AdminClients = () => {
       setLoading(true);
       const { data } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen");
+        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette");
       
-      const sorted = ((data as Client[]) || []).sort((a, b) => 
+      const sorted = ((data as any[]) || []).sort((a, b) => 
         sortBy === "name" 
           ? a.full_name.localeCompare(b.full_name)
           : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
