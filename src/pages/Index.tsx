@@ -9,6 +9,7 @@
 {/* minha base de dados é de 4305 existe um texto na aba cliente falando que foi encontrado 1000 clientes somente arrume este texto para mostrar corretamente */}
 {/* visualização dos clientes esta se limitando a 1000 na aba clientes arrume isso de vez */}
 {/* no modo de visualização por lista numerar os clientes exibindo numero crescente */}
+{/* continua com erro na aba de clientes visualizando somente 1000 esta mostrando para mim ultimo cliente Zenite Costa. Tenho que visualizar todos. Coloque paginação para melhorar a navegação */}
 import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
