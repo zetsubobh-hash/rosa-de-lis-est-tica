@@ -373,6 +373,45 @@ const AdminClients = () => {
         )
       )}
 
+      {/* Pagination */}
+      {totalCount > pageSize && (
+        <div className="flex items-center justify-center gap-2 py-6">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="h-9 px-4 rounded-xl border border-border bg-background text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Anterior
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => {
+              const pageNum = i + 1;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`w-9 h-9 rounded-xl border text-sm font-semibold transition-colors ${
+                    page === pageNum
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border hover:bg-muted"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            {Math.ceil(totalCount / pageSize) > 5 && <span className="px-1 text-muted-foreground">...</span>}
+          </div>
+          <button
+            onClick={() => setPage((p) => Math.min(Math.ceil(totalCount / pageSize), p + 1))}
+            disabled={page === Math.ceil(totalCount / pageSize)}
+            className="h-9 px-4 rounded-xl border border-border bg-background text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Próxima
+          </button>
+        </div>
+      )}
+
       {/* Client Detail Modal */}
       {selectedClient && (
         <ClientDetailModal
