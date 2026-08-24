@@ -33,35 +33,40 @@ const AdminClients = () => {
   const [showNewClient, setShowNewClient] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [sortBy, setSortBy] = useState<"name" | "recent">("name");
+  const [page, setPage] = useState(1);
+  const pageSize = 100;
 
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
       
-      // Get the total count from the database
       const { count } = await supabase
         .from("profiles")
         .select("*", { count: 'exact', head: true });
 
-      const totalCount = count || 0;
+      const total = count || 0;
+      setTotalCount(total);
 
-      // Fetch all records (increased limit)
-      const { data } = await supabase
+      let query = supabase
         .from("profiles")
-        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette")
-        .limit(20000);
+        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette");
+
+      if (sortBy === "name") {
+        query = query.order("full_name", { ascending: true });
+      } else {
+        query = query.order("created_at", { ascending: false });
+      }
+
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data } = await query.range(from, to);
       
-      const sorted = ((data as any[]) || []).sort((a, b) => 
-        sortBy === "name" 
-          ? a.full_name.localeCompare(b.full_name)
-          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      setClients(sorted);
-      setTotalCount(totalCount);
+      setClients((data as any[]) || []);
       setLoading(false);
     };
     fetch();
-  }, [sortBy]);
+  }, [sortBy, page]);
 
   const filtered = clients.filter((c) => {
     if (!search) return true;
@@ -159,20 +164,14 @@ const AdminClients = () => {
           </div>
         </div>
         
-        <div className="flex items-center gap-2 px-1">
+        <div className="flex flex-wrap items-center gap-2 px-1">
           <div className="flex items-center gap-1.5 bg-primary/5 text-primary px-2.5 py-1 rounded-full border border-primary/10">
             <Users className="w-3.5 h-3.5" />
             <span className="text-xs font-bold uppercase tracking-wider">{totalCount} Clientes Totais</span>
           </div>
-          {search ? (
-            <div className="text-xs text-muted-foreground italic">
-              — {filtered.length} encontrado{filtered.length !== 1 ? "s" : ""}
-            </div>
-          ) : (
-            <div className="text-xs text-muted-foreground italic">
-              — exibindo todos os {clients.length} clientes
-            </div>
-          )}
+          <div className="text-xs text-muted-foreground italic">
+            — exibindo {clients.length} clientes (Página {page} de {Math.ceil(totalCount / pageSize)})
+          </div>
         </div>
       </div>
 
@@ -372,6 +371,45 @@ const AdminClients = () => {
             </div>
           </div>
         )
+      )}
+
+      {/* Pagination */}
+      {totalCount > pageSize && (
+        <div className="flex items-center justify-center gap-2 py-6">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="h-9 px-4 rounded-xl border border-border bg-background text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Anterior
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => {
+              const pageNum = i + 1;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`w-9 h-9 rounded-xl border text-sm font-semibold transition-colors ${
+                    page === pageNum
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border hover:bg-muted"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            {Math.ceil(totalCount / pageSize) > 5 && <span className="px-1 text-muted-foreground">...</span>}
+          </div>
+          <button
+            onClick={() => setPage((p) => Math.min(Math.ceil(totalCount / pageSize), p + 1))}
+            disabled={page === Math.ceil(totalCount / pageSize)}
+            className="h-9 px-4 rounded-xl border border-border bg-background text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Próxima
+          </button>
+        </div>
       )}
 
       {/* Client Detail Modal */}
