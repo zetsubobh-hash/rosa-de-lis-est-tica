@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 interface Props {
   open: boolean;
-  onClose: () => void;
+  onClose: (deletedUserId?: string) => void;
   userId: string;
   userName: string;
   avatarUrl: string | null;
@@ -589,7 +589,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       }
 
       toast.success("Cliente excluído permanentemente");
-      onClose();
+      onClose(userId);
     } catch (err: any) {
       toast.error(err.message || "Erro ao excluir cliente");
     } finally {

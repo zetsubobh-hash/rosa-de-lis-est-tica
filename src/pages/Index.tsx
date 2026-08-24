@@ -11,6 +11,7 @@
 {/* no modo de visualização por lista numerar os clientes exibindo numero crescente */}
 {/* continua com erro na aba de clientes visualizando somente 1000 esta mostrando para mim ultimo cliente Zenite Costa. Tenho que visualizar todos. Coloque paginação para melhorar a navegação */}
 {/* adcione esta função na versão mobile */}
+{/* ao excluir um cliente a lista não carrega corretamente aparece nenhum resultado encontrado. Arrume */}
 import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";

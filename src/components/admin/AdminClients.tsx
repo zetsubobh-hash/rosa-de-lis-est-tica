@@ -416,7 +416,13 @@ const AdminClients = () => {
       {selectedClient && (
         <ClientDetailModal
           open={!!selectedClient}
-          onClose={() => setSelectedClient(null)}
+          onClose={(deletedUserId) => {
+            setSelectedClient(null);
+            if (deletedUserId && typeof deletedUserId === 'string') {
+              setClients(prev => prev.filter(c => c.user_id !== deletedUserId));
+              setTotalCount(prev => Math.max(0, prev - 1));
+            }
+          }}
           userId={selectedClient.user_id}
           userName={selectedClient.full_name}
           avatarUrl={selectedClient.avatar_url}
