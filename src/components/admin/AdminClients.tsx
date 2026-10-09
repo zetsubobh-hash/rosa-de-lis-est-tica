@@ -364,6 +364,21 @@ const AdminClients = () => {
                   </div>
 
                   <div className="flex items-center gap-2 pl-[40px] sm:pl-0">
+                    <p className={`font-body text-xs flex items-center gap-1 ${
+                      isRecentSignup(client.created_at) ? "text-primary font-semibold" : "text-muted-foreground"
+                    }`}>
+                      <CalendarDays className="w-3 h-3 shrink-0" />
+                      {formatSignupDate(client.created_at)}
+                    </p>
+                    {isRecentSignup(client.created_at) && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Novo
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pl-[40px] sm:pl-0">
                     <a
                       href={`tel:${client.phone.replace(/\D/g, "")}`}
                       className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
