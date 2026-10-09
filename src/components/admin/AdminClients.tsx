@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List, AlertTriangle, ArrowUpDown, Clock, SortAsc } from "lucide-react";
+import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List, AlertTriangle, ArrowUpDown, Clock, SortAsc, CalendarDays, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
@@ -23,6 +23,16 @@ interface Client {
 
 const getInitials = (name: string) =>
   name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+
+const RECENT_DAYS = 7;
+
+const isRecentSignup = (createdAt: string) => {
+  const created = new Date(createdAt).getTime();
+  return Date.now() - created <= RECENT_DAYS * 24 * 60 * 60 * 1000;
+};
+
+const formatSignupDate = (createdAt: string) =>
+  new Date(createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 const AdminClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
