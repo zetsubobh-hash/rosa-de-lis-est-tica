@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List, AlertTriangle, ArrowUpDown, Clock, SortAsc } from "lucide-react";
+import { Search, Users, Phone, Mail, MessageCircle, UserPlus, LayoutGrid, List, AlertTriangle, ArrowUpDown, Clock, SortAsc, CalendarDays, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
@@ -23,6 +23,16 @@ interface Client {
 
 const getInitials = (name: string) =>
   name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+
+const RECENT_DAYS = 7;
+
+const isRecentSignup = (createdAt: string) => {
+  const created = new Date(createdAt).getTime();
+  return Date.now() - created <= RECENT_DAYS * 24 * 60 * 60 * 1000;
+};
+
+const formatSignupDate = (createdAt: string) =>
+  new Date(createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 const AdminClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -290,10 +300,11 @@ const AdminClients = () => {
           </div>
         ) : (
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <div className="hidden sm:grid sm:grid-cols-[60px,1fr,1fr,auto] gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="hidden sm:grid sm:grid-cols-[60px,1fr,1fr,150px,auto] gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               <span>#</span>
               <span>Cliente</span>
               <span>Contato</span>
+              <span>Cadastro</span>
               <span className="text-right">Ações</span>
             </div>
             <div className="divide-y divide-border">
@@ -303,8 +314,12 @@ const AdminClients = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.02, 0.5) }}
-                  className={`flex flex-col sm:grid sm:grid-cols-[60px,1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center transition-colors group ${
-                    isPhoneMissing(client.phone) ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/30"
+                  className={`flex flex-col sm:grid sm:grid-cols-[60px,1fr,1fr,150px,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center transition-colors group ${
+                    isPhoneMissing(client.phone)
+                      ? "bg-destructive/5 hover:bg-destructive/10"
+                      : isRecentSignup(client.created_at)
+                        ? "bg-primary/5 hover:bg-primary/10 border-l-4 border-l-primary"
+                        : "hover:bg-muted/30"
                   }`}
                 >
                   <div className="hidden sm:flex text-xs font-medium text-muted-foreground w-8 items-center justify-center bg-muted/30 rounded-md py-1">
@@ -345,6 +360,21 @@ const AdminClients = () => {
                         <Mail className="w-3 h-3 shrink-0" />
                         {client.email}
                       </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pl-[40px] sm:pl-0">
+                    <p className={`font-body text-xs flex items-center gap-1 ${
+                      isRecentSignup(client.created_at) ? "text-primary font-semibold" : "text-muted-foreground"
+                    }`}>
+                      <CalendarDays className="w-3 h-3 shrink-0" />
+                      {formatSignupDate(client.created_at)}
+                    </p>
+                    {isRecentSignup(client.created_at) && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Novo
+                      </span>
                     )}
                   </div>
 
