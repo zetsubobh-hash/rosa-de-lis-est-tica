@@ -300,10 +300,11 @@ const AdminClients = () => {
           </div>
         ) : (
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <div className="hidden sm:grid sm:grid-cols-[60px,1fr,1fr,auto] gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="hidden sm:grid sm:grid-cols-[60px,1fr,1fr,150px,auto] gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               <span>#</span>
               <span>Cliente</span>
               <span>Contato</span>
+              <span>Cadastro</span>
               <span className="text-right">Ações</span>
             </div>
             <div className="divide-y divide-border">
@@ -313,8 +314,12 @@ const AdminClients = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.02, 0.5) }}
-                  className={`flex flex-col sm:grid sm:grid-cols-[60px,1fr,1fr,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center transition-colors group ${
-                    isPhoneMissing(client.phone) ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/30"
+                  className={`flex flex-col sm:grid sm:grid-cols-[60px,1fr,1fr,150px,auto] gap-2 sm:gap-3 px-4 py-3 items-start sm:items-center transition-colors group ${
+                    isPhoneMissing(client.phone)
+                      ? "bg-destructive/5 hover:bg-destructive/10"
+                      : isRecentSignup(client.created_at)
+                        ? "bg-primary/5 hover:bg-primary/10 border-l-4 border-l-primary"
+                        : "hover:bg-muted/30"
                   }`}
                 >
                   <div className="hidden sm:flex text-xs font-medium text-muted-foreground w-8 items-center justify-center bg-muted/30 rounded-md py-1">
