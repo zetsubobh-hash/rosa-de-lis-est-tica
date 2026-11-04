@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Plus, Trash2, Upload, Loader2, ImagePlus, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, Upload, Loader2, ImagePlus, ArrowUp, ArrowDown, Images } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -105,7 +105,10 @@ const ServiceGalleryEditor = ({ serviceId, slug, enabled, onEnabledChange }: Pro
       <div className="rounded-3xl border border-border bg-muted/40 p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
           <div>
-            <h3 className="font-heading text-lg sm:text-xl font-bold text-foreground">Galeria Antes e Depois</h3>
+            <h3 className="font-heading text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
+              <Images className="w-5 h-5 text-primary shrink-0" />
+              Editar fotos Antes e Depois
+            </h3>
             <p className="font-body text-xs text-muted-foreground">Aparece abaixo dos valores na página do serviço. Desligada, a página fica como está.</p>
           </div>
           <label className="flex items-center gap-2 font-body text-sm font-medium">
