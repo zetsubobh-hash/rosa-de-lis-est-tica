@@ -1250,6 +1250,8 @@ export type Database = {
         Returns: undefined
       }
       redeem_coupon: { Args: { p_code: string }; Returns: boolean }
+      system_health: { Args: never; Returns: Json }
+      system_maintenance: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user" | "partner"
