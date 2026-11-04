@@ -246,10 +246,12 @@ const DayTimelineView = ({
             className="absolute left-0 right-0 flex"
             style={{ top: `${i * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}
           >
-            <div className={cn("shrink-0 flex items-start justify-end pr-1.5 pt-0.5", isMobile ? "w-[40px]" : "w-[52px]")}>
+            <div className={cn("shrink-0 flex items-start justify-end pr-2 pt-1", isMobile ? "w-[68px]" : "w-[52px]")}>
               <span className={cn(
-                "font-body",
-                isMobile ? "text-[9px]" : "text-[11px]",
+                "font-body tabular-nums",
+                isMobile
+                  ? (i % 2 === 0 ? "text-[17px] font-bold" : "text-[14px] font-medium")
+                  : "text-[11px]",
                 i % 2 === 0 ? "text-muted-foreground font-medium" : "text-muted-foreground/40"
               )}>
                 {label}
