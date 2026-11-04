@@ -101,7 +101,7 @@ const ServiceGalleryEditor = ({ serviceId, slug, enabled, onEnabledChange }: Pro
   );
 
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16">
+    <section id="galeria-antes-depois" className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 scroll-mt-24">
       <div className="rounded-3xl border border-border bg-muted/40 p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
           <div>
