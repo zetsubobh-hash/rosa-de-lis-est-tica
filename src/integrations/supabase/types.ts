@@ -868,6 +868,39 @@ export type Database = {
         }
         Relationships: []
       }
+      service_gallery: {
+        Row: {
+          after_url: string
+          before_url: string
+          caption: string | null
+          created_at: string
+          id: string
+          service_slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          after_url: string
+          before_url: string
+          caption?: string | null
+          created_at?: string
+          id?: string
+          service_slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          after_url?: string
+          before_url?: string
+          caption?: string | null
+          created_at?: string
+          id?: string
+          service_slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_prices: {
         Row: {
           id: string
@@ -904,6 +937,7 @@ export type Database = {
           created_at: string
           duration: string
           full_description: string
+          gallery_enabled: boolean
           icon_name: string
           id: string
           image_url: string | null
@@ -921,6 +955,7 @@ export type Database = {
           created_at?: string
           duration?: string
           full_description?: string
+          gallery_enabled?: boolean
           icon_name?: string
           id?: string
           image_url?: string | null
@@ -938,6 +973,7 @@ export type Database = {
           created_at?: string
           duration?: string
           full_description?: string
+          gallery_enabled?: boolean
           icon_name?: string
           id?: string
           image_url?: string | null
