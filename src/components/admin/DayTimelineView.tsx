@@ -389,31 +389,31 @@ const DayTimelineView = ({
                   onSelectAppointment?.(block.id);
                 }}
               >
-                <p className={cn("font-bold leading-tight truncate", isMobile ? "text-[15px]" : "text-[11px]")}>{timeRange}</p>
-                <div className={cn("flex items-center mt-0.5", isMobile ? "gap-1.5" : "gap-1")}>
+                <p className={cn("font-bold leading-tight truncate", isMobile ? "text-[15px]" : "text-[14px]")}>{timeRange}</p>
+                <div className={cn("flex items-center mt-0.5 gap-1.5")}>
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} className={cn("rounded-full object-cover shrink-0", isMobile ? "w-5 h-5" : "w-4 h-4")} alt="" />
+                    <img src={profile.avatar_url} className={cn("rounded-full object-cover shrink-0", isMobile ? "w-5 h-5" : "w-5 h-5")} alt="" />
                   ) : (
-                    <User className={cn("shrink-0 opacity-70", isMobile ? "w-5 h-5" : "w-3.5 h-3.5")} />
+                    <User className={cn("shrink-0 opacity-70", isMobile ? "w-5 h-5" : "w-4 h-4")} />
                   )}
-                  <span className={cn("font-semibold truncate", isMobile ? "text-[13px]" : "text-[11px]")}>{profile?.full_name || "Cliente"}</span>
+                  <span className={cn("font-semibold truncate", isMobile ? "text-[13px]" : "text-[13px]")}>{profile?.full_name || "Cliente"}</span>
                 </div>
                 {height > 50 && (
-                  <div className={cn("flex items-center mt-0.5", isMobile ? "gap-1.5" : "gap-1")}>
-                    <Scissors className={cn("shrink-0 opacity-60", isMobile ? "w-4 h-4" : "w-3 h-3")} />
-                    <span className={cn("font-medium truncate opacity-80", isMobile ? "text-[12px]" : "text-[10px]")}>{block.service_title}</span>
+                  <div className={cn("flex items-center mt-0.5 gap-1.5")}>
+                    <Scissors className={cn("shrink-0 opacity-60", isMobile ? "w-4 h-4" : "w-4 h-4")} />
+                    <span className={cn("font-medium truncate opacity-80", isMobile ? "text-[12px]" : "text-[12px]")}>{block.service_title}</span>
                   </div>
                 )}
                 {needsDecision && (
-                  <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-destructive animate-pulse">
-                    <BellRing className="w-3 h-3" />
-                    <span className="text-[9px] font-bold">Pendente</span>
+                  <div className={cn("absolute top-1.5 flex items-center gap-1 rounded-full bg-destructive/15 text-destructive animate-pulse", isMobile ? "right-1.5 px-1.5 py-0.5" : "right-2 px-2 py-1")}>
+                    <BellRing className={cn("shrink-0", isMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
+                    <span className={cn("font-bold", isMobile ? "text-[9px]" : "text-[11px]")}>Pendente</span>
                   </div>
                 )}
                 {isCompleted && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <CheckCircle2 className="w-3 h-3 shrink-0" />
-                    <span className="text-[10px] font-bold truncate">Realizado ✓</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span className={cn("font-bold truncate", isMobile ? "text-[10px]" : "text-[11px]")}>Realizado ✓</span>
                   </div>
                 )}
               </motion.div>
