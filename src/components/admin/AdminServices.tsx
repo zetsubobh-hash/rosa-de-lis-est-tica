@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, GripVertical, Eye, EyeOff,
-  ChevronDown, ChevronUp, Search
+  ChevronDown, ChevronUp, Search, Images, X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,6 +10,7 @@ import { useServices, DBService } from "@/hooks/useServices";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AdminServiceEditor from "./AdminServiceEditor";
+import ServiceGalleryEditor from "./ServiceGalleryEditor";
 
 const emptyService: Omit<DBService, "id" | "created_at" | "updated_at"> = {
   slug: "",
