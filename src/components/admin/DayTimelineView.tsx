@@ -389,19 +389,19 @@ const DayTimelineView = ({
                   onSelectAppointment?.(block.id);
                 }}
               >
-                <p className="text-[11px] font-bold leading-tight truncate">{timeRange}</p>
-                <div className="flex items-center gap-1 mt-0.5">
+                <p className={cn("font-bold leading-tight truncate", isMobile ? "text-[15px]" : "text-[11px]")}>{timeRange}</p>
+                <div className={cn("flex items-center mt-0.5", isMobile ? "gap-1.5" : "gap-1")}>
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} className="w-4 h-4 rounded-full object-cover shrink-0" alt="" />
+                    <img src={profile.avatar_url} className={cn("rounded-full object-cover shrink-0", isMobile ? "w-5 h-5" : "w-4 h-4")} alt="" />
                   ) : (
-                    <User className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                    <User className={cn("shrink-0 opacity-70", isMobile ? "w-4.5 h-4.5" : "w-3.5 h-3.5")} />
                   )}
-                  <span className="text-[11px] font-semibold truncate">{profile?.full_name || "Cliente"}</span>
+                  <span className={cn("font-semibold truncate", isMobile ? "text-[13px]" : "text-[11px]")}>{profile?.full_name || "Cliente"}</span>
                 </div>
                 {height > 50 && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <Scissors className="w-3 h-3 shrink-0 opacity-60" />
-                    <span className="text-[10px] font-medium truncate opacity-80">{block.service_title}</span>
+                  <div className={cn("flex items-center mt-0.5", isMobile ? "gap-1.5" : "gap-1")}>
+                    <Scissors className={cn("shrink-0 opacity-60", isMobile ? "w-4 h-4" : "w-3 h-3")} />
+                    <span className={cn("font-medium truncate opacity-80", isMobile ? "text-[12px]" : "text-[10px]")}>{block.service_title}</span>
                   </div>
                 )}
                 {needsDecision && (
