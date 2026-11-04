@@ -61,7 +61,9 @@ const Hero = () => {
             src={logoWhite}
             alt="Rosa de Lis"
             className="h-24 mx-auto md:h-20 md:mx-0 w-auto mb-4"
-            initial={{ opacity: 0, y: 20 }}
+            fetchPriority="high"
+            decoding="async"
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           />
