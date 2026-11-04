@@ -162,9 +162,9 @@ const DayTimelineView = ({
   markingAppointmentId = null,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
-  // Larger rows on mobile so hours and appointments are clearly readable
-  const ROW_HEIGHT = isMobile ? 72 : 40;
-  const TIME_COL = isMobile ? 68 : 52;
+  // Larger rows on mobile and desktop so hours and appointments are clearly readable
+  const ROW_HEIGHT = isMobile ? 72 : 60;
+  const TIME_COL = isMobile ? 68 : 78;
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   // Mobile: long-press to pick an appointment, then tap a slot to move it
   const [mobileMovingId, setMobileMovingId] = useState<string | null>(null);
@@ -246,12 +246,12 @@ const DayTimelineView = ({
             className="absolute left-0 right-0 flex"
             style={{ top: `${i * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}
           >
-            <div className={cn("shrink-0 flex items-start justify-end pr-2 pt-1", isMobile ? "w-[68px]" : "w-[52px]")}>
+            <div className={cn("shrink-0 flex items-start justify-end pr-2 pt-1", isMobile ? "w-[68px]" : "w-[78px]")}>
               <span className={cn(
                 "font-body tabular-nums",
                 isMobile
                   ? (i % 2 === 0 ? "text-[17px] font-bold text-muted-foreground" : "text-[14px] text-muted-foreground/40")
-                  : (i % 2 === 0 ? "text-[11px] text-muted-foreground font-medium" : "text-[11px] text-muted-foreground/40")
+                  : (i % 2 === 0 ? "text-[15px] font-bold text-muted-foreground" : "text-[12px] text-muted-foreground/45")
               )}>
                 {label}
               </span>
@@ -302,7 +302,7 @@ const DayTimelineView = ({
         {/* Current time line */}
         {showNowLine && (
           <div
-            className={cn("absolute right-0 z-30 flex items-center pointer-events-none", isMobile ? "left-[64px]" : "left-[48px]")}
+            className={cn("absolute right-0 z-30 flex items-center pointer-events-none", isMobile ? "left-[64px]" : "left-[74px]")}
             style={{ top: `${nowSlot * ROW_HEIGHT}px` }}
           >
             <div className="w-2.5 h-2.5 rounded-full bg-destructive -ml-1 shrink-0" />
@@ -366,7 +366,7 @@ const DayTimelineView = ({
                 }}
                 className={cn(
                   "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden",
-                  isMobile ? "px-2.5 py-2" : "px-2 py-1.5",
+                  isMobile ? "px-2.5 py-2" : "px-3 py-2",
                   isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
                   !readOnly && !isCompleted && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing",
                   isMoving && "ring-2 ring-primary animate-pulse",
