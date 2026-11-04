@@ -24,7 +24,9 @@ function FloatingPaths({ position, count, isMobile }: { position: number; count:
                 fill="none"
             >
                 <title>Background Paths</title>
-                {paths.map((path) => (
+                {paths.map((path) => isMobile ? (
+                    <path key={path.id} d={path.d} stroke="currentColor" strokeWidth={path.width} strokeOpacity={0.35 + path.id * 0.04} />
+                ) : (
                     <motion.path
                         key={path.id}
                         d={path.d}

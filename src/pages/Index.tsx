@@ -16,8 +16,6 @@ import { lazy, Suspense, ComponentType } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import BirthdayRoulette from "@/components/BirthdayRoulette";
-import WelcomePromoPopup from "@/components/WelcomePromoPopup";
 
 const CHUNK_RELOAD_KEY = "chunk_reload_ts";
 const CHUNK_RELOAD_WINDOW_MS = 15_000;
@@ -41,6 +39,8 @@ const Services = lazyRetry(() => import("@/components/Services"));
 const Benefits = lazyRetry(() => import("@/components/Benefits"));
 const GoogleReviews = lazyRetry(() => import("@/components/GoogleReviews"));
 const Contact = lazyRetry(() => import("@/components/Contact"));
+const BirthdayRoulette = lazy(() => import("@/components/BirthdayRoulette"));
+const WelcomePromoPopup = lazy(() => import("@/components/WelcomePromoPopup"));
 const Footer = lazyRetry(() => import("@/components/Footer"));
 
 const LazySection = ({ children }: { children: React.ReactNode }) => (
@@ -61,8 +61,7 @@ const Index = () => {
       <LazySection><Contact /></LazySection>
       <LazySection><Footer /></LazySection>
       <WhatsAppButton />
-      <BirthdayRoulette />
-      <WelcomePromoPopup />
+      <Suspense fallback={null}><BirthdayRoulette /><WelcomePromoPopup /></Suspense>
     </div>
   );
 };
