@@ -116,7 +116,6 @@ const estimateDuration = (serviceSlug: string): number => {
 const START_HOUR = 8;
 const END_HOUR = 21;
 const TOTAL_SLOTS = (END_HOUR - START_HOUR) * 2;
-const ROW_HEIGHT = 40;
 
 const timeToSlotIndex = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -163,6 +162,9 @@ const DayTimelineView = ({
   markingAppointmentId = null,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
+  // Larger rows on mobile so hours and appointments are clearly readable
+  const ROW_HEIGHT = isMobile ? 72 : 40;
+  const TIME_COL = isMobile ? 68 : 52;
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   // Mobile: long-press to pick an appointment, then tap a slot to move it
   const [mobileMovingId, setMobileMovingId] = useState<string | null>(null);
@@ -244,11 +246,12 @@ const DayTimelineView = ({
             className="absolute left-0 right-0 flex"
             style={{ top: `${i * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}
           >
-            <div className={cn("shrink-0 flex items-start justify-end pr-1.5 pt-0.5", isMobile ? "w-[40px]" : "w-[52px]")}>
+            <div className={cn("shrink-0 flex items-start justify-end pr-2 pt-1", isMobile ? "w-[68px]" : "w-[52px]")}>
               <span className={cn(
-                "font-body",
-                isMobile ? "text-[9px]" : "text-[11px]",
-                i % 2 === 0 ? "text-muted-foreground font-medium" : "text-muted-foreground/40"
+                "font-body tabular-nums",
+                isMobile
+                  ? (i % 2 === 0 ? "text-[17px] font-bold text-muted-foreground" : "text-[14px] text-muted-foreground/40")
+                  : (i % 2 === 0 ? "text-[11px] text-muted-foreground font-medium" : "text-[11px] text-muted-foreground/40")
               )}>
                 {label}
               </span>
@@ -299,7 +302,7 @@ const DayTimelineView = ({
         {/* Current time line */}
         {showNowLine && (
           <div
-            className={cn("absolute right-0 z-30 flex items-center pointer-events-none", isMobile ? "left-[36px]" : "left-[48px]")}
+            className={cn("absolute right-0 z-30 flex items-center pointer-events-none", isMobile ? "left-[64px]" : "left-[48px]")}
             style={{ top: `${nowSlot * ROW_HEIGHT}px` }}
           >
             <div className="w-2.5 h-2.5 rounded-full bg-destructive -ml-1 shrink-0" />
@@ -312,7 +315,7 @@ const DayTimelineView = ({
           const color = colorMap[block.service_slug] || PALETTE[0];
           const profile = block.profiles;
           const col = aptCol.get(block.id) || 0;
-          const timeCol = isMobile ? 40 : 52;
+          const timeCol = TIME_COL;
           const colWidth = `calc((100% - ${timeCol}px) / ${totalCols})`;
           const colLeft = `calc(${timeCol}px + ${col} * (100% - ${timeCol}px) / ${totalCols})`;
           const top = block.startSlot * ROW_HEIGHT;
@@ -362,7 +365,8 @@ const DayTimelineView = ({
                   }
                 }}
                 className={cn(
-                  "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
+                  "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden",
+                  isMobile ? "px-2.5 py-2" : "px-2 py-1.5",
                   isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
                   !readOnly && !isCompleted && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing",
                   isMoving && "ring-2 ring-primary animate-pulse",
@@ -385,19 +389,19 @@ const DayTimelineView = ({
                   onSelectAppointment?.(block.id);
                 }}
               >
-                <p className="text-[11px] font-bold leading-tight truncate">{timeRange}</p>
-                <div className="flex items-center gap-1 mt-0.5">
+                <p className={cn("font-bold leading-tight truncate", isMobile ? "text-[15px]" : "text-[11px]")}>{timeRange}</p>
+                <div className={cn("flex items-center mt-0.5", isMobile ? "gap-1.5" : "gap-1")}>
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} className="w-4 h-4 rounded-full object-cover shrink-0" alt="" />
+                    <img src={profile.avatar_url} className={cn("rounded-full object-cover shrink-0", isMobile ? "w-5 h-5" : "w-4 h-4")} alt="" />
                   ) : (
-                    <User className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                    <User className={cn("shrink-0 opacity-70", isMobile ? "w-5 h-5" : "w-3.5 h-3.5")} />
                   )}
-                  <span className="text-[11px] font-semibold truncate">{profile?.full_name || "Cliente"}</span>
+                  <span className={cn("font-semibold truncate", isMobile ? "text-[13px]" : "text-[11px]")}>{profile?.full_name || "Cliente"}</span>
                 </div>
                 {height > 50 && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <Scissors className="w-3 h-3 shrink-0 opacity-60" />
-                    <span className="text-[10px] font-medium truncate opacity-80">{block.service_title}</span>
+                  <div className={cn("flex items-center mt-0.5", isMobile ? "gap-1.5" : "gap-1")}>
+                    <Scissors className={cn("shrink-0 opacity-60", isMobile ? "w-4 h-4" : "w-3 h-3")} />
+                    <span className={cn("font-medium truncate opacity-80", isMobile ? "text-[12px]" : "text-[10px]")}>{block.service_title}</span>
                   </div>
                 )}
                 {needsDecision && (
