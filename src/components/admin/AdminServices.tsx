@@ -268,8 +268,8 @@ const AdminServices = () => {
         >
           <div className="w-full max-w-5xl bg-background sm:rounded-3xl border border-border shadow-2xl min-h-full sm:min-h-0">
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-card/95 backdrop-blur-md border-b border-border sm:rounded-t-3xl">
-              <div className="min-w-0">
-                <p className="font-heading text-sm sm:text-base font-bold text-foreground truncate">
+              <div className="min-w-0 flex-1">
+                <p className="font-heading text-sm sm:text-base font-bold text-foreground leading-snug line-clamp-2">
                   Antes e Depois — {galleryFor.title}
                 </p>
                 <p className="font-body text-[11px] text-muted-foreground">
