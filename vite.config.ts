@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      selfDestroying: true,
+      injectRegister: false,
       includeAssets: ["favicon.ico", "robots.txt"],
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
@@ -32,23 +34,10 @@ export default defineConfig(({ mode }) => ({
         display: "standalone",
         orientation: "portrait",
         start_url: "/",
+        // Ícone oficial configurado pelo admin (sempre o mesmo, sem recorte "maskable")
         icons: [
-          {
-            src: "https://sxzmtnsfsyifujdnqyzr.supabase.co/storage/v1/object/public/branding/pwa-icon.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "https://sxzmtnsfsyifujdnqyzr.supabase.co/storage/v1/object/public/branding/pwa-icon.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-          {
-            src: "/pwa-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
+          { src: "https://sxzmtnsfsyifujdnqyzr.supabase.co/storage/v1/object/public/branding/pwa-icon.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "https://sxzmtnsfsyifujdnqyzr.supabase.co/storage/v1/object/public/branding/pwa-icon.png", sizes: "512x512", type: "image/png", purpose: "any" },
         ],
       },
     }),
