@@ -131,9 +131,11 @@ const Hero = () => {
           src={referenceHero}
           alt="Rosa de Lis Estética"
           className="h-[85%] w-auto object-contain object-bottom"
-          initial={{ opacity: 0, x: 50 }}
+          {...({ fetchpriority: "high" } as Record<string, string>)}
+          decoding="async"
+          initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         />
       </div>
 

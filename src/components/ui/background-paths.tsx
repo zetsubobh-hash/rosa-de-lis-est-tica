@@ -19,7 +19,7 @@ function FloatingPaths({ position, count, isMobile }: { position: number; count:
     return (
         <div className="absolute inset-0 pointer-events-none">
             <svg
-                className="w-full h-full"
+                className="w-full h-full" style={{ willChange: "transform" }}
                 viewBox="0 0 696 316"
                 fill="none"
             >
@@ -59,7 +59,7 @@ export function BackgroundPaths() {
         return () => window.removeEventListener("resize", check);
     }, []);
 
-    const pathCount = isMobile ? 8 : 24;
+    const pathCount = isMobile ? 6 : 10;
 
     return (
         <div className={`absolute inset-0 ${isMobile ? 'text-primary-foreground/70' : 'text-primary-foreground/40'}`}>
