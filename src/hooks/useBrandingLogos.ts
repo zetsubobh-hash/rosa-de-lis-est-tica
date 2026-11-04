@@ -5,8 +5,11 @@ import fallbackLogo from "@/assets/logo-branca.png";
 const BUCKET = "branding";
 
 export const useBrandingLogos = () => {
-  const [logo, setLogo] = useState<string>(fallbackLogo);
-  const [logoWhite, setLogoWhite] = useState<string>(fallbackLogo);
+  const cached = (k: string) => {
+    try { return localStorage.getItem("brand_" + k) || fallbackLogo; } catch { return fallbackLogo; }
+  };
+  const [logo, setLogo] = useState<string>(() => cached("logo.png"));
+  const [logoWhite, setLogoWhite] = useState<string>(() => cached("logo-white.png"));
 
   useEffect(() => {
     const loadLogo = async (fileName: string, setter: (url: string) => void) => {
@@ -17,7 +20,10 @@ export const useBrandingLogos = () => {
         });
         if (files && files.some((f) => f.name === fileName)) {
           const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
-          setter(data.publicUrl + "?t=" + Date.now());
+          const day = new Date().toISOString().slice(0, 10);
+          const url = data.publicUrl + "?v=" + day;
+          try { localStorage.setItem("brand_" + fileName, url); } catch { /* ignore */ }
+          setter(url);
         }
       } catch {
         // keep fallback
