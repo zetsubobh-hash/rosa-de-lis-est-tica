@@ -62,7 +62,16 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      retryDelay: (n) => Math.min(1000 * 2 ** n, 8000),
+      refetchOnReconnect: true,
+      staleTime: 30_000,
+    },
+  },
+});
 
 const AppInit = ({ children }: { children: React.ReactNode }) => {
   usePageTracking();
