@@ -449,10 +449,10 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
             <button
               onClick={() => document.getElementById("galeria-antes-depois")?.scrollIntoView({ behavior: "smooth", block: "start" })}
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-body text-[11px] sm:text-xs font-medium border border-primary/25 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
-              title="Ir para as fotos de antes e depois"
+              title="Editar fotos de antes e depois"
             >
               <Images className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Antes/Depois</span>
+              <span className="hidden min-[380px]:inline">Fotos Antes/Depois</span>
             </button>
           )}
           <Button onClick={handleSave} disabled={saving || (!hasChanges && Object.keys(editedPrices).length === 0)} size="sm" className="gap-1.5 h-8 px-2.5 sm:px-3 text-[11px] sm:text-xs">

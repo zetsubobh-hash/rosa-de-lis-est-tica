@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Pencil, Trash2, GripVertical, Eye, EyeOff,
-  ChevronDown, ChevronUp, Search, Images, X
+  ChevronDown, ChevronUp, Search
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,7 +10,6 @@ import { useServices, DBService } from "@/hooks/useServices";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AdminServiceEditor from "./AdminServiceEditor";
-import ServiceGalleryEditor from "./ServiceGalleryEditor";
 
 const emptyService: Omit<DBService, "id" | "created_at" | "updated_at"> = {
   slug: "",
@@ -33,7 +32,6 @@ const AdminServices = () => {
   const [editing, setEditing] = useState<{ service: DBService; isNew: boolean } | null>(null);
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [galleryFor, setGalleryFor] = useState<DBService | null>(null);
 
   const openNew = () => {
     const maxOrder = services.reduce((max, s) => Math.max(max, s.sort_order), 0);
@@ -137,7 +135,7 @@ const AdminServices = () => {
                 !service.is_active ? "opacity-60" : ""
               }`}
             >
-              <div className="grid grid-cols-[24px_40px_minmax(520px,1fr)_228px] items-center gap-3 px-3 sm:px-4 py-3">
+              <div className="grid grid-cols-[24px_40px_minmax(520px,1fr)_188px] items-center gap-3 px-3 sm:px-4 py-3">
                 <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0" />
                 <div className="w-10 h-10 shrink-0">
                   {service.image_url && (
@@ -178,20 +176,6 @@ const AdminServices = () => {
                     aria-label={service.is_active ? "Ocultar serviço" : "Mostrar serviço"}
                   >
                     {service.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGalleryFor(service)}
-                    className={`flex items-center gap-1 px-2 h-8 rounded-lg border font-body text-[10px] font-semibold uppercase tracking-wide transition-colors ${
-                      service.gallery_enabled
-                        ? "border-primary/30 text-primary bg-primary/5"
-                        : "border-border text-muted-foreground hover:text-primary"
-                    }`}
-                    title="Editar fotos de antes e depois"
-                    aria-label="Editar fotos de antes e depois"
-                  >
-                    <Images className="w-3.5 h-3.5" />
-                    Antes/Depois
                   </button>
                   <button
                     type="button"
@@ -258,41 +242,6 @@ const AdminServices = () => {
           ))}
         </div>
       </div>
-
-      {galleryFor && (
-        <div
-          onMouseDown={(e) => { if (e.target === e.currentTarget) setGalleryFor(null); }}
-          className="fixed inset-0 z-[80] bg-background/85 backdrop-blur-sm overflow-y-auto flex items-start justify-center sm:p-6"
-          role="dialog"
-          aria-label="Fotos de antes e depois"
-        >
-          <div className="w-full max-w-5xl bg-background sm:rounded-3xl border border-border shadow-2xl min-h-full sm:min-h-0">
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-card/95 backdrop-blur-md border-b border-border sm:rounded-t-3xl">
-              <div className="min-w-0 flex-1">
-                <p className="font-heading text-sm sm:text-base font-bold text-foreground leading-snug line-clamp-2">
-                  Antes e Depois — {galleryFor.title}
-                </p>
-                <p className="font-body text-[11px] text-muted-foreground">
-                  Aparece abaixo dos valores na página do serviço.
-                </p>
-              </div>
-              <button
-                onClick={() => { setGalleryFor(null); refetch(); }}
-                className="flex items-center gap-1.5 px-3 h-9 shrink-0 rounded-lg border border-border font-body text-xs font-medium hover:bg-muted transition-colors"
-              >
-                <X className="w-4 h-4" />
-                Fechar
-              </button>
-            </div>
-            <ServiceGalleryEditor
-              serviceId={galleryFor.id}
-              slug={galleryFor.slug}
-              enabled={!!galleryFor.gallery_enabled}
-              onEnabledChange={(v) => setGalleryFor((g) => (g ? { ...g, gallery_enabled: v } : g))}
-            />
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 };
