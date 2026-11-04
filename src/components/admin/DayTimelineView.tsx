@@ -394,7 +394,7 @@ const DayTimelineView = ({
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} className={cn("rounded-full object-cover shrink-0", isMobile ? "w-5 h-5" : "w-4 h-4")} alt="" />
                   ) : (
-                    <User className={cn("shrink-0 opacity-70", isMobile ? "w-4.5 h-4.5" : "w-3.5 h-3.5")} />
+                    <User className={cn("shrink-0 opacity-70", isMobile ? "w-5 h-5" : "w-3.5 h-3.5")} />
                   )}
                   <span className={cn("font-semibold truncate", isMobile ? "text-[13px]" : "text-[11px]")}>{profile?.full_name || "Cliente"}</span>
                 </div>
