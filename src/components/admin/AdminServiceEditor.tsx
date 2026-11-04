@@ -13,6 +13,7 @@ import { getIconByName } from "@/lib/iconMap";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import ServiceGalleryEditor from "./ServiceGalleryEditor";
 
 const ICON_OPTIONS = [
   "Droplets", "Snowflake", "Syringe", "Wind", "Gem", "CircleDot",
@@ -1042,6 +1043,17 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
             </div>
           )}
         </section>
+
+        {!isNew && service.id && service.slug ? (
+          <ServiceGalleryEditor
+            serviceId={service.id}
+            slug={service.slug}
+            enabled={!!service.gallery_enabled}
+            onEnabledChange={(v) => updateField("gallery_enabled" as any, v as any)}
+          />
+        ) : (
+          <p className="max-w-6xl mx-auto px-4 sm:px-6 pb-8 font-body text-xs text-muted-foreground">Salve o serviço para adicionar a galeria Antes e Depois.</p>
+        )}
 
         {/* CTA Preview */}
         <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 md:pb-24">

@@ -15,6 +15,7 @@ export interface DBService {
   image_url: string | null;
   sort_order: number;
   is_active: boolean;
+  gallery_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }

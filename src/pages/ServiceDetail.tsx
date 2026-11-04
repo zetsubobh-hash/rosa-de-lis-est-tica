@@ -12,6 +12,7 @@ import { useServicePrices, formatCents } from "@/hooks/useServicePrices";
 import { useServices, DBService } from "@/hooks/useServices";
 import { getIconByName } from "@/lib/iconMap";
 import { useOnlineBooking } from "@/hooks/useOnlineBooking";
+import ServiceGallery from "@/components/ServiceGallery";
 
 const DotScreenShader = lazy(() =>
   import("@/components/ui/dot-shader-background").then((m) => ({ default: m.DotScreenShader }))
@@ -354,6 +355,8 @@ const ServiceDetail = () => {
           </div>
         </section>
       )}
+
+      {service.gallery_enabled && service.slug && <ServiceGallery slug={service.slug} />}
 
       {/* CTA Agende */}
       <section className="max-w-3xl mx-auto px-6 pb-16 md:pb-24">
