@@ -23,7 +23,7 @@ const uploadImage = async (slug: string, file: File) => {
 
 const ServiceGalleryEditor = ({ serviceId, slug, enabled, onEnabledChange }: Props) => {
   const { toast } = useToast();
-  const { items, reload } = useServiceGallery(slug);
+  const { items, reload, loading } = useServiceGallery(slug);
   const db = supabase as any;
   const [busy, setBusy] = useState<string | null>(null);
   const [before, setBefore] = useState<File | null>(null);
@@ -101,7 +101,7 @@ const ServiceGalleryEditor = ({ serviceId, slug, enabled, onEnabledChange }: Pro
   );
 
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16">
+    <section id="galeria-antes-depois" className="max-w-6xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 scroll-mt-24">
       <div className="rounded-3xl border border-border bg-muted/40 p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
           <div>
@@ -115,6 +115,11 @@ const ServiceGalleryEditor = ({ serviceId, slug, enabled, onEnabledChange }: Pro
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 sm:gap-5 mb-6">
+          {loading && items.length === 0 && (
+            <div className="md:col-span-2 rounded-3xl border border-dashed border-border py-10 text-center font-body text-xs text-muted-foreground">
+              Carregando fotos...
+            </div>
+          )}
           {items.map((item, idx) => (
             <div key={item.id} className="space-y-2">
               <div className="relative">

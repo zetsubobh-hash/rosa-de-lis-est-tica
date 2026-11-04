@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Save, Pencil, X, Plus, Trash2, Upload, Check,
   Clock, CreditCard, CalendarCheck, ChevronRight, Star, CalendarPlus,
-  Loader2, Eye, EyeOff, Settings2
+  Loader2, Eye, EyeOff, Settings2, Images
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -445,6 +445,16 @@ const AdminServiceEditor = ({ service: initialService, isNew, onClose, onSaved }
             {service.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
             <span className="hidden xs:inline">{service.is_active ? "Ativo" : "Inativo"}</span>
           </button>
+          {!isNew && (
+            <button
+              onClick={() => document.getElementById("galeria-antes-depois")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-body text-[11px] sm:text-xs font-medium border border-primary/25 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+              title="Ir para as fotos de antes e depois"
+            >
+              <Images className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Antes/Depois</span>
+            </button>
+          )}
           <Button onClick={handleSave} disabled={saving || (!hasChanges && Object.keys(editedPrices).length === 0)} size="sm" className="gap-1.5 h-8 px-2.5 sm:px-3 text-[11px] sm:text-xs">
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             {saving ? "Salvando..." : "Salvar"}
