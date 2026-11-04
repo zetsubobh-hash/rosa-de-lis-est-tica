@@ -365,7 +365,8 @@ const DayTimelineView = ({
                   }
                 }}
                 className={cn(
-                  "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden px-2 py-1.5",
+                  "absolute z-10 rounded-md cursor-pointer transition-all overflow-hidden",
+                  isMobile ? "px-2.5 py-2" : "px-2 py-1.5",
                   isExpanded ? "ring-2 ring-primary shadow-lg" : "hover:brightness-95",
                   !readOnly && !isCompleted && onDragReschedule && !isMobile && "cursor-grab active:cursor-grabbing",
                   isMoving && "ring-2 ring-primary animate-pulse",
