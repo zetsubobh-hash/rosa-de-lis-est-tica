@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift, Megaphone, UserCheck, Wallet, FileUp } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift, Megaphone, UserCheck, Wallet, FileUp, Activity } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,9 +31,10 @@ import AdminPromoBroadcast from "@/components/admin/AdminPromoBroadcast";
 import AdminClients from "@/components/admin/AdminClients";
 import AdminCashRegister from "@/components/admin/AdminCashRegister";
 import AdminClientImportExport from "@/components/admin/AdminClientImportExport";
+import AdminSystemHealth from "@/components/admin/AdminSystemHealth";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast" | "import-export";
+type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast" | "import-export" | "system-health";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -44,7 +45,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast","import-export"];
+  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast","import-export","system-health"];
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && validTabs.includes(tabParam)) {
@@ -147,6 +148,7 @@ const Admin = () => {
     { key: "users", label: "Usuários", icon: Users },
     { key: "install-app", label: "Instalar App", icon: Smartphone },
     { key: "site-settings", label: "Configurações", icon: Settings },
+    { key: "system-health", label: "Saúde do Sistema", icon: Activity },
     ...(user?.id === MASTER_ADMIN_ID ? [
       { key: "audit-log" as Tab, label: "Auditoria", icon: FileText },
       { key: "debug-monitor" as Tab, label: "Debug Monitor", icon: Bug },
@@ -327,6 +329,7 @@ const Admin = () => {
             </PasswordGate>
           )}
           {activeTab === "install-app" && <AdminInstallApp />}
+          {activeTab === "system-health" && <AdminSystemHealth />}
           {activeTab === "audit-log" && user?.id === MASTER_ADMIN_ID && <AdminAuditLog />}
           {activeTab === "debug-monitor" && user?.id === MASTER_ADMIN_ID && <AdminDebugMonitor />}
           {activeTab === "site-settings" && (
