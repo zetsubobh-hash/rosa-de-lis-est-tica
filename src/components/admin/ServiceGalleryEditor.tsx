@@ -23,7 +23,7 @@ const uploadImage = async (slug: string, file: File) => {
 
 const ServiceGalleryEditor = ({ serviceId, slug, enabled, onEnabledChange }: Props) => {
   const { toast } = useToast();
-  const { items, reload } = useServiceGallery(slug);
+  const { items, reload, loading } = useServiceGallery(slug);
   const db = supabase as any;
   const [busy, setBusy] = useState<string | null>(null);
   const [before, setBefore] = useState<File | null>(null);
