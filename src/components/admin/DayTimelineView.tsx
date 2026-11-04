@@ -302,7 +302,7 @@ const DayTimelineView = ({
         {/* Current time line */}
         {showNowLine && (
           <div
-            className={cn("absolute right-0 z-30 flex items-center pointer-events-none", isMobile ? "left-[36px]" : "left-[48px]")}
+            className={cn("absolute right-0 z-30 flex items-center pointer-events-none", isMobile ? "left-[64px]" : "left-[48px]")}
             style={{ top: `${nowSlot * ROW_HEIGHT}px` }}
           >
             <div className="w-2.5 h-2.5 rounded-full bg-destructive -ml-1 shrink-0" />
