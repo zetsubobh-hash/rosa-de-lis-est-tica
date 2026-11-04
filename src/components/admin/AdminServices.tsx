@@ -242,41 +242,6 @@ const AdminServices = () => {
           ))}
         </div>
       </div>
-
-      {galleryFor && (
-        <div
-          onMouseDown={(e) => { if (e.target === e.currentTarget) setGalleryFor(null); }}
-          className="fixed inset-0 z-[80] bg-background/85 backdrop-blur-sm overflow-y-auto flex items-start justify-center sm:p-6"
-          role="dialog"
-          aria-label="Fotos de antes e depois"
-        >
-          <div className="w-full max-w-5xl bg-background sm:rounded-3xl border border-border shadow-2xl min-h-full sm:min-h-0">
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-card/95 backdrop-blur-md border-b border-border sm:rounded-t-3xl">
-              <div className="min-w-0 flex-1">
-                <p className="font-heading text-sm sm:text-base font-bold text-foreground leading-snug line-clamp-2">
-                  Antes e Depois — {galleryFor.title}
-                </p>
-                <p className="font-body text-[11px] text-muted-foreground">
-                  Aparece abaixo dos valores na página do serviço.
-                </p>
-              </div>
-              <button
-                onClick={() => { setGalleryFor(null); refetch(); }}
-                className="flex items-center gap-1.5 px-3 h-9 shrink-0 rounded-lg border border-border font-body text-xs font-medium hover:bg-muted transition-colors"
-              >
-                <X className="w-4 h-4" />
-                Fechar
-              </button>
-            </div>
-            <ServiceGalleryEditor
-              serviceId={galleryFor.id}
-              slug={galleryFor.slug}
-              enabled={!!galleryFor.gallery_enabled}
-              onEnabledChange={(v) => setGalleryFor((g) => (g ? { ...g, gallery_enabled: v } : g))}
-            />
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 };
