@@ -250,9 +250,9 @@ const DayTimelineView = ({
               <span className={cn(
                 "font-body tabular-nums",
                 isMobile
-                  ? (i % 2 === 0 ? "text-[17px] font-bold" : "text-[14px] font-medium")
+                  ? (i % 2 === 0 ? "text-[17px] font-bold" : "text-[14px] text-muted-foreground/40")
                   : "text-[11px]",
-                i % 2 === 0 ? "text-muted-foreground font-medium" : "text-muted-foreground/40"
+                i % 2 === 0 && !isMobile ? "text-muted-foreground font-medium" : ""
               )}>
                 {label}
               </span>
