@@ -71,10 +71,11 @@ const ServiceGallery = ({ slug }: { slug: string }) => {
           Antes e <span className="text-pink-vibrant">Depois</span>
         </h2>
       </motion.div>
-      <div className="grid md:grid-cols-2 gap-5 md:gap-6">
+      <div className="flex flex-wrap justify-center gap-5 md:gap-6">
         {items.map((item) => (
           <motion.div
             key={item.id}
+            className="w-full md:w-[calc(50%-12px)] max-w-xl"
             initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
