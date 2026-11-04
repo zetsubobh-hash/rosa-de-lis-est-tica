@@ -162,6 +162,9 @@ const DayTimelineView = ({
   markingAppointmentId = null,
 }: DayTimelineViewProps) => {
   const isMobile = useIsMobile();
+  // Larger rows on mobile so hours and appointments are clearly readable
+  const ROW_HEIGHT = isMobile ? 72 : 40;
+  const TIME_COL = isMobile ? 68 : 52;
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   // Mobile: long-press to pick an appointment, then tap a slot to move it
   const [mobileMovingId, setMobileMovingId] = useState<string | null>(null);
