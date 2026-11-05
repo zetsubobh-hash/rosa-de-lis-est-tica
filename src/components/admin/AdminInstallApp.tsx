@@ -186,7 +186,7 @@ const AdminInstallApp = () => {
       const url = data.publicUrl + "?t=" + Date.now();
       setIconUrl(url);
       setImageSrc(null);
-      toast.success("Ícone do app atualizado!");
+      toast.success("Imagem salva! O ícone do app instalado é fixo e só muda após nova publicação do site.");
     } catch (err: any) {
       toast.error("Erro: " + err.message);
     } finally {
