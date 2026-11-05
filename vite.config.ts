@@ -34,10 +34,15 @@ export default defineConfig(({ mode }) => ({
         display: "standalone",
         orientation: "portrait",
         start_url: "/",
-        // Ícone oficial configurado pelo admin (sempre o mesmo, sem recorte "maskable")
+        // Ícone FIXO do app (cópia local do ícone oficial). Nunca apontar para o storage:
+        // qualquer alteração no arquivo remoto faz o Android regenerar o ícone instalado.
+        id: "/",
+        scope: "/",
         icons: [
-          { src: "https://sxzmtnsfsyifujdnqyzr.supabase.co/storage/v1/object/public/branding/pwa-icon.png", sizes: "192x192", type: "image/png", purpose: "any" },
-          { src: "https://sxzmtnsfsyifujdnqyzr.supabase.co/storage/v1/object/public/branding/pwa-icon.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/icons/rosadelis-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/icons/rosadelis-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/icons/rosadelis-icon-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+          { src: "/icons/rosadelis-icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
     }),
