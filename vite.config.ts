@@ -30,7 +30,8 @@ export default defineConfig(({ mode }) => ({
         short_name: "Rosa de Lis",
         description: "Realce sua beleza natural com tratamentos personalizados.",
         theme_color: "#E91E63",
-        background_color: "#ffffff",
+        // Mesma cor do fundo do ícone: se o celular colocar moldura/placa, ela fica rosa e não branca.
+        background_color: "#FF0066",
         display: "standalone",
         orientation: "portrait",
         start_url: "/",
