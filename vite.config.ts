@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       selfDestroying: true,
       injectRegister: false,
-      includeAssets: ["favicon.ico", "robots.txt"],
+      includeAssets: ["robots.txt"],
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,webp,woff2}"],
