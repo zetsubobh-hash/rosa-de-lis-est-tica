@@ -16,6 +16,19 @@ const Instalar = () => {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   const isAndroid = /Android/i.test(navigator.userAgent);
 
+  // QR Code costuma abrir no leitor/navegador do fabricante (Xiaomi, Samsung...), que só cria
+  // "atalho" com moldura branca. No Android, reabrimos no Chrome, que instala o app de verdade.
+  const ua = navigator.userAgent;
+  const isRealChrome =
+    /Chrome\/\d+/i.test(ua) && !/(MiuiBrowser|XiaoMi|SamsungBrowser|OPR|EdgA|Firefox|HeyTap|VivoBrowser|HuaweiBrowser|UCBrowser|; wv\))/i.test(ua);
+  const chromeIntent = `intent://${window.location.host}/instalar#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(window.location.href)};end`;
+
+  useEffect(() => {
+    if (isAndroid && !isRealChrome && !window.matchMedia("(display-mode: standalone)").matches) {
+      window.location.href = chromeIntent;
+    }
+  }, []);
+
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
@@ -90,6 +103,12 @@ const Instalar = () => {
             <p className="font-body text-sm text-muted-foreground leading-relaxed">
               Tenha acesso rápido aos seus agendamentos direto da tela inicial do celular — sem precisar abrir o navegador.
             </p>
+
+            {isAndroid && !isRealChrome && (
+              <Button asChild size="lg" className="w-full gap-2 text-base">
+                <a href={chromeIntent}>Abrir no Chrome para instalar</a>
+              </Button>
+            )}
 
             {deferredPrompt && (
               <Button
