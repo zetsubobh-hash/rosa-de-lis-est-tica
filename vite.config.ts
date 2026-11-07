@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       selfDestroying: true,
       injectRegister: false,
-      includeAssets: ["favicon.ico", "robots.txt"],
+      includeAssets: ["robots.txt"],
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,webp,woff2}"],
@@ -40,10 +40,10 @@ export default defineConfig(({ mode }) => ({
         id: "/",
         scope: "/",
         icons: [
-          { src: "/icons/rosadelis-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-          { src: "/icons/rosadelis-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-          { src: "/icons/rosadelis-icon-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
-          { src: "/icons/rosadelis-icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "/icons/rosadelis-app-v2-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/icons/rosadelis-app-v2-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/icons/rosadelis-app-v2-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+          { src: "/icons/rosadelis-app-v2-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
     }),
