@@ -49,7 +49,7 @@ const AdminInstallApp = () => {
   const [isIOS, setIsIOS] = useState(false);
 
   // Icon upload
-  const [iconUrl, setIconUrl] = useState<string>("/icons/rosadelis-app-v2-512.png");
+  const [iconUrl, setIconUrl] = useState<string>("/icons/rosadelis-app-v3-512.png");
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
