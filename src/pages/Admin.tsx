@@ -51,8 +51,16 @@ const Admin = () => {
     if (tabParam && validTabs.includes(tabParam)) {
       return tabParam as Tab;
     }
+    // Keep the admin on the last tab they chose (survives reloads/returning to the app)
+    try {
+      const saved = localStorage.getItem("admin_active_tab");
+      if (saved && validTabs.includes(saved)) return saved as Tab;
+    } catch { /* ignore */ }
     return "dashboard";
   });
+  useEffect(() => {
+    try { localStorage.setItem("admin_active_tab", activeTab); } catch { /* ignore */ }
+  }, [activeTab]);
   const [settingsMap, setSettingsMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
