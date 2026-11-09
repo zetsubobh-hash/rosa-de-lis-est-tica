@@ -121,7 +121,11 @@ const AdminClients = () => {
     };
     fetch();
     return () => { active = false; };
-  }, [sortBy, page, reloadKey, searchTerm]);
+  }, [sortBy, page, reloadKey, searchTerm, datePreset, dateFrom, dateTo]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [datePreset, dateFrom, dateTo]);
 
   const filtered = clients;
 
@@ -217,8 +221,55 @@ const AdminClients = () => {
             <span className="text-xs font-bold uppercase tracking-wider">{totalCount} Clientes Totais</span>
           </div>
           <div className="text-xs text-muted-foreground italic">
-            {loading ? "Buscando..." : `— exibindo ${clients.length} de ${resultCount} ${searchTerm ? "encontrados" : "clientes"} (Página ${page} de ${Math.max(1, Math.ceil(resultCount / pageSize))})`}
+            {loading ? "Buscando..." : `— exibindo ${clients.length} de ${resultCount} ${searchTerm || datePreset !== "all" ? "encontrados" : "clientes"} (Página ${page} de ${Math.max(1, Math.ceil(resultCount / pageSize))})`}
           </div>
+        </div>
+
+        {/* Filtro por data de cadastro */}
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+            <CalendarDays className="w-3.5 h-3.5" /> Cadastro:
+          </span>
+          {([
+            ["all", "Todos"],
+            ["today", "Hoje"],
+            ["7d", "7 dias"],
+            ["30d", "30 dias"],
+            ["custom", "Período"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setDatePreset(value)}
+              className={`h-8 px-3 rounded-full text-xs font-semibold transition-colors border ${
+                datePreset === value
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          {datePreset === "custom" && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <input
+                type="date"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-8 px-2 rounded-lg border border-border bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                aria-label="Data inicial"
+              />
+              <span className="text-xs text-muted-foreground">até</span>
+              <input
+                type="date"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-8 px-2 rounded-lg border border-border bg-background text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                aria-label="Data final"
+              />
+            </div>
+          )}
         </div>
       </div>
 
