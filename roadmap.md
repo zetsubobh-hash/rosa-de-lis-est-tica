@@ -3,3 +3,4 @@
 - [x] Verificar regras no banco e seis testes; painel logado não verificável neste ambiente.
 - [x] Corrigir busca em Clientes para consultar toda a base antes de paginar.
 - [x] Fazer busca da agenda diretamente no banco e atualizar listagem após edição de nome; sete testes passaram, painel logado não verificável neste ambiente.
+- [x] Remover a manutenção do banco da limpeza de clientes e identificar explicitamente a remoção de espaços antes/depois dos nomes; RPC existente já remove esses espaços sem apagar fichas ou fotos.
