@@ -643,7 +643,6 @@ const AdminAgenda = () => {
           setQbUserId("");
           setQbServiceSlug("");
           setQbPartnerId("");
-          setQbPartnerId("");
           setQbShowNewClient(false);
           setQbClientSearch("");
           setQbClientDropdownOpen(false);
