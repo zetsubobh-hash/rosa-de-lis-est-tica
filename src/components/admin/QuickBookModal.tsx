@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { toast } from "sonner";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
-import { matchesClientName } from "@/lib/agendaClients";
+import { useAgendaClientSearch } from "@/hooks/useAgendaClientSearch";
 
 const notifyWhatsApp = (appointmentId: string | undefined, accessToken: string | undefined) => {
   if (!appointmentId) return;
@@ -60,6 +60,7 @@ const QuickBookModal = ({
   const [showNewClient, setShowNewClient] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
+  const clientResults = useAgendaClientSearch(clientSearch, open && clientDropdownOpen);
 
   // Plan selection
   const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
@@ -269,12 +270,7 @@ const QuickBookModal = ({
                 />
                 {clientDropdownOpen && (
                   <div className="absolute z-[9999] top-full left-0 right-0 mt-1 bg-background border border-border rounded-xl shadow-lg max-h-56 overflow-y-auto">
-                    {allProfiles
-                      .filter((p) =>
-                        matchesClientName(p.full_name, clientSearch)
-                      )
-                      .slice(0, 500)
-                      .map((p) => (
+                    {clientResults.clients.map((p) => (
                         <button
                           key={p.user_id}
                           type="button"
@@ -291,11 +287,9 @@ const QuickBookModal = ({
                           {p.full_name}
                         </button>
                       ))}
-                    {allProfiles.filter((p) =>
-                      matchesClientName(p.full_name, clientSearch)
-                    ).length === 0 && (
+                    {(clientResults.loading || clientResults.error || clientResults.clients.length === 0) && (
                       <div className="px-3 py-2 font-body text-xs text-muted-foreground">
-                        Nenhum cliente encontrado
+                        {clientResults.loading ? "Buscando no banco..." : clientResults.error ? "Não foi possível buscar. Tente novamente." : "Nenhum cliente encontrado"}
                       </div>
                     )}
                   </div>
