@@ -6,6 +6,7 @@ import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import MissingPhoneAlert, { isPhoneMissing } from "@/components/admin/MissingPhoneAlert";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import ClientCleanupActions from "@/components/admin/ClientCleanupActions";
 
 interface Client {
   user_id: string;
@@ -44,6 +45,7 @@ const AdminClients = () => {
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [sortBy, setSortBy] = useState<"name" | "recent">("name");
   const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
   const pageSize = 100;
 
   useEffect(() => {
@@ -76,7 +78,7 @@ const AdminClients = () => {
       setLoading(false);
     };
     fetch();
-  }, [sortBy, page]);
+  }, [sortBy, page, reloadKey]);
 
   const filtered = clients.filter((c) => {
     if (!search) return true;
@@ -219,6 +221,8 @@ const AdminClients = () => {
       />
 
 
+
+      <ClientCleanupActions onNamesCleaned={() => setReloadKey((key) => key + 1)} />
 
       {filtered.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
