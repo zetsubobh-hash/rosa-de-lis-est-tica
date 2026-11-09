@@ -77,6 +77,8 @@ interface DayTimelineViewProps {
   onScheduleSession?: (params: { planId: string; sessionNumber: number; serviceSlug: string; serviceTitle: string; userId: string; partnerId?: string | null }) => void;
   /** Called when an empty time slot is clicked */
   onSlotClick?: (time: string) => void;
+  /** Configured treatment rooms; free room lanes stay clickable for parallel bookings. */
+  rooms?: number;
   /** Called when an appointment is dragged to a new time slot */
   onDragReschedule?: (appointmentId: string, newTime: string) => void;
   /** Day represented by this timeline in YYYY-MM-DD */
@@ -155,6 +157,7 @@ const DayTimelineView = ({
   onHistory,
   onScheduleSession,
   onSlotClick,
+  rooms = 1,
   onDragReschedule,
   timelineDate,
   readOnly = false,
@@ -217,7 +220,7 @@ const DayTimelineView = ({
     }
   }
 
-  const totalCols = Math.max(1, columns.length);
+  const totalCols = Math.max(1, rooms, columns.length);
 
   const now = new Date();
   const nowSlot = (now.getHours() - START_HOUR) * 2 + now.getMinutes() / 30;
