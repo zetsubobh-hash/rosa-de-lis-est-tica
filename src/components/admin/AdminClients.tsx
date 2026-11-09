@@ -7,6 +7,7 @@ import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import MissingPhoneAlert, { isPhoneMissing } from "@/components/admin/MissingPhoneAlert";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import ClientCleanupActions from "@/components/admin/ClientCleanupActions";
+import PhoneValidationPanel from "@/components/admin/PhoneValidationPanel";
 import { toast } from "sonner";
 
 interface Client {
@@ -230,6 +231,11 @@ const AdminClients = () => {
       />
 
 
+
+      <PhoneValidationPanel onOpenClient={async (userId) => {
+        const { data } = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
+        if (data) setSelectedClient(data as unknown as Client);
+      }} />
 
       <ClientCleanupActions onNamesCleaned={() => {
         setSearch("");
