@@ -7,3 +7,4 @@
 - [x] Adicionar busca por telefone completo/parcial na agenda administrativa, ignorando formatação antes do limite; oito testes passaram e verificações SQL passaram, painel logado indisponível por autenticação externa.
 - [x] Adicionar botão para remover apenas sinais -, vírgula, ~ e ponto no início dos nomes, mantendo cadastros protegidos e nomes não vazios; verificações SQL e nove testes passaram, painel logado indisponível por autenticação externa.
 - [x] Investigar -Mimi: cadastro 𝑴𝒊𝒎𝒊 e dois agendamentos preservados; corrigir busca de letras estilizadas/prefixos e reiniciar filtro/página após limpeza; dez testes e verificações SQL passaram. Painel logado não verificável com autenticação externa.
+- [ ] Adicionar limpeza financeira do parceiro em edição com senha admin, preservando cadastro, agenda e fichas.
