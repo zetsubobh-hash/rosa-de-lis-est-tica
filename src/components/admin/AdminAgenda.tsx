@@ -831,7 +831,7 @@ const AdminAgenda = () => {
                       }}
                       onFocus={() => setQbClientDropdownOpen(true)}
                       onBlur={() => setTimeout(() => setQbClientDropdownOpen(false), 150)}
-                      placeholder="Digite o nome do cliente..."
+                      placeholder="Digite o nome ou telefone do cliente..."
                       className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                     />
                     {qbClientDropdownOpen && (
