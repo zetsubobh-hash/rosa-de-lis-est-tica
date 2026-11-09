@@ -7,3 +7,4 @@
 - Client name search normalizes compatibility lettering and leading cleanup punctuation without rewriting stored names; cleanup resets search/page so renamed clients do not appear deleted.
 - Agenda autocomplete uses `useAgendaClientSearch` and the invoker RPC `search_agenda_clients` on every input change/open; search precedes result limits and must not use a stale in-memory directory after profile edits.
 - Agenda phone search normalizes punctuation server-side before result limits, is restricted to admins, and returns only client IDs/names to preserve partner contact restrictions.
+- Partner financial resets require server-side admin role and password reauthentication; a service-only atomic RPC clears payments and zeroes salary/commission without touching clinical or account data.
