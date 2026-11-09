@@ -23,6 +23,11 @@ describe("agenda client search", () => {
     expect(matchesClientName("Kevin Costa", "Alisson")).toBe(false);
   });
 
+  it("finds Fernanda advogada even with blank spaces before the saved name", () => {
+    expect(matchesClientName("   Fernanda advogada  ", "Fernanda advogada")).toBe(true);
+    expect(matchesClientName("   Fernanda advogada  ", "Cristina")).toBe(false);
+  });
+
   it("does not report an incomplete directory as successful after a failed page", async () => {
     const error = { message: "connection failed" };
     const result = await fetchAllPages((from) => Promise.resolve(from === 0
