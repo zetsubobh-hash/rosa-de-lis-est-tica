@@ -461,7 +461,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
     }
 
     const sexValue = editData.sex.trim().toLowerCase();
-    if (!["feminino", "masculino"].includes(sexValue)) {
+    if (sexValue && !["feminino", "masculino"].includes(sexValue)) {
       toast.error("Selecione um sexo válido (feminino ou masculino)");
       return;
     }
@@ -492,7 +492,7 @@ const ClientDetailModal = ({ open, onClose, userId, userName, avatarUrl }: Props
       phone: editData.phone.trim(),
       email: editData.email.trim() || null,
       address: editData.address.trim(),
-      sex: sexValue,
+      sex: sexValue || null,
     };
     if (editData.birth_date) {
       updateData.birth_date = editData.birth_date;
