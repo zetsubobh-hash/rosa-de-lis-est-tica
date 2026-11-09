@@ -1257,6 +1257,10 @@ export type Database = {
       }
       normalize_client_search: { Args: { _value: string }; Returns: string }
       redeem_coupon: { Args: { p_code: string }; Returns: boolean }
+      reset_partner_financials: {
+        Args: { _admin_id: string; _partner_id: string }
+        Returns: Json
+      }
       search_admin_clients: {
         Args: { _search: string }
         Returns: {
