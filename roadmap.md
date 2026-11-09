@@ -1,4 +1,5 @@
-- [ ] Adicionar limpeza segura antes da tabela de clientes.
-- [ ] Remover emojis dos nomes salvos e oferecer limpeza no painel.
-- [ ] Verificar preservação dos dados e testar as operações disponíveis.
-- [ ] Investigar por que Fernanda Cristina não aparece na busca de clientes.
+- [x] Adicionar limpeza segura antes da tabela de clientes.
+- [x] Remover emojis dos nomes salvos e oferecer limpeza no painel (nomes vazios/protegidos preservados).
+- [x] Verificar regras no banco e seis testes; painel logado não verificável neste ambiente.
+- [x] Corrigir busca em Clientes para consultar toda a base antes de paginar.
+- [ ] Localizar o cadastro de Fernanda Cristina: não existe esse nome exato; aguarda telefone ou nome como foi cadastrado.
