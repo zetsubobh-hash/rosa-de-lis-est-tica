@@ -30,6 +30,7 @@ interface TimelineAppointment {
   session_number: number | null;
   notes?: string | null;
   partner_id?: string | null;
+  room_number?: number | null;
   plan_id: string | null;
   total_sessions?: number | null;
   completed_sessions?: number | null;
@@ -397,6 +398,9 @@ const DayTimelineView = ({
                     <User className={cn("shrink-0 opacity-70", isMobile ? "w-5 h-5" : "w-4 h-4")} />
                   )}
                   <span className={cn("font-semibold truncate", isMobile ? "text-[13px]" : "text-[13px]")}>{profile?.full_name || "Cliente"}</span>
+                  {block.room_number ? (
+                    <span className="shrink-0 rounded-full bg-background/60 px-1.5 text-[10px] font-bold">Sala {block.room_number}</span>
+                  ) : null}
                 </div>
                 {height > 50 && (
                   <div className={cn("flex items-center mt-0.5 gap-1.5")}>

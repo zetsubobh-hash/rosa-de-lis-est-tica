@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
+import TreatmentRoomsSetting from "@/components/admin/TreatmentRoomsSetting";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import { cn } from "@/lib/utils";
 import { fetchAllPages } from "@/lib/agendaClients";
@@ -146,7 +147,7 @@ const AdminAgenda = () => {
     const [appointmentsRes, profilesRes, partnersRes, plansRes, servicesRes] = await Promise.all([
       supabase
         .from("appointments")
-        .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number")
+        .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number, room_number")
         .in("status", ["confirmed", "pending", "completed"])
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true }),
@@ -585,7 +586,8 @@ const AdminAgenda = () => {
         <h2 className="font-heading text-lg font-bold text-foreground">
           Agendamentos ({filtered.length})
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <TreatmentRoomsSetting />
           <button
             onClick={() => setFilterDate(new Date())}
             className={cn(
