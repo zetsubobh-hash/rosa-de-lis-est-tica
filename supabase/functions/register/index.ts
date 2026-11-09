@@ -15,9 +15,9 @@ serve(async (req) => {
   try {
     const { username, password, full_name, sex, phone, address, email, birth_date } = await req.json();
 
-    if (!username || !password || !full_name || !phone || !birth_date) {
+    if (!username || !password || !full_name || !phone) {
       return new Response(
-        JSON.stringify({ error: "Campos obrigatórios faltando: Nome, Telefone e Data de Nascimento" }),
+        JSON.stringify({ error: "Campos obrigatórios faltando: Nome e Telefone" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
