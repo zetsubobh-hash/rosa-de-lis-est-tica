@@ -221,6 +221,23 @@ serve(async (req) => {
       return json(data);
     }
 
+    // Point Evolution webhook to the booking bot
+    if (action === "set_bot_webhook") {
+      const { data: tok } = await supabase.from("payment_settings").select("value").eq("key", "whatsapp_bot_webhook_token").maybeSingle();
+      if (!tok?.value) return json({ error: "Token do robô ausente" }, 400);
+      const webhookUrl = `${supabaseUrl}/functions/v1/whatsapp-bot?token=${tok.value}`;
+      const res = await fetch(`${baseUrl}/webhook/set/${instanceName}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          webhook: { enabled: true, url: webhookUrl, byEvents: false, base64: false, events: ["MESSAGES_UPSERT"] },
+          enabled: true, url: webhookUrl, webhookByEvents: false, events: ["MESSAGES_UPSERT"],
+        }),
+      });
+      const data = await readJson(res);
+      return json({ success: res.ok, status: res.status, data }, res.ok ? 200 : 400);
+    }
+
     // Send test message
     if (action === "send_test") {
       if (!phone) return json({ error: "Informe o número de telefone" }, 400);

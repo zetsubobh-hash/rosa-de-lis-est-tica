@@ -190,7 +190,7 @@ Regras: use SEMPRE as ferramentas para serviços e horários; nunca invente pre�
       const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "google/gemini-2.5-flash", messages, tools }),
+        body: JSON.stringify({ model: "google/gemini-3.8-flash", messages, tools }),
       });
       if (!r.ok) { console.error("AI error", r.status, await r.text()); break; }
       const m = (await r.json()).choices?.[0]?.message;
