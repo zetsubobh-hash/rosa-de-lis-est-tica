@@ -4,4 +4,4 @@
 - [x] Corrigir busca em Clientes para consultar toda a base antes de paginar.
 - [x] Fazer busca da agenda diretamente no banco e atualizar listagem após edição de nome; sete testes passaram, painel logado não verificável neste ambiente.
 - [x] Remover a manutenção do banco da limpeza de clientes e identificar explicitamente a remoção de espaços antes/depois dos nomes; RPC existente já remove esses espaços sem apagar fichas ou fotos.
-- [ ] Adicionar busca por telefone na agenda, ignorando formatação e consultando toda a base; preservar busca por nome e restrições de acesso.
+- [x] Adicionar busca por telefone completo/parcial na agenda administrativa, ignorando formatação antes do limite; oito testes passaram e verificações SQL passaram, painel logado indisponível por autenticação externa.
