@@ -231,7 +231,12 @@ const AdminClients = () => {
 
 
 
-      <ClientCleanupActions onNamesCleaned={() => setReloadKey((key) => key + 1)} />
+      <ClientCleanupActions onNamesCleaned={() => {
+        setSearch("");
+        setSearchTerm("");
+        setPage(1);
+        setReloadKey((key) => key + 1);
+      }} />
 
       {filtered.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
