@@ -41,6 +41,7 @@ interface Appointment {
   user_id: string;
   notes: string | null;
   partner_id: string | null;
+  room_number?: number | null;
   plan_id: string | null;
   session_number: number | null;
   profiles?: Profile | null;
@@ -132,6 +133,7 @@ const AdminAgenda = () => {
   const [qbUserId, setQbUserId] = useState("");
   const [qbServiceSlug, setQbServiceSlug] = useState("");
   const [qbPartnerId, setQbPartnerId] = useState("");
+  const [qbRoom, setQbRoom] = useState("");
   const [qbSaving, setQbSaving] = useState(false);
   const [qbShowNewClient, setQbShowNewClient] = useState(false);
   const [qbClientSearch, setQbClientSearch] = useState("");
@@ -643,6 +645,7 @@ const AdminAgenda = () => {
           setQbUserId("");
           setQbServiceSlug("");
           setQbPartnerId("");
+          setQbRoom("");
           setQbShowNewClient(false);
           setQbClientSearch("");
           setQbClientDropdownOpen(false);
@@ -907,6 +910,26 @@ const AdminAgenda = () => {
                 </select>
               </div>
 
+              {/* Room select */}
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground block mb-1.5">Sala</label>
+                <select
+                  value={qbRoom}
+                  onChange={(e) => setQbRoom(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Automática (primeira sala livre)</option>
+                  {Array.from({ length: roomsCount }, (_, i) => i + 1).map((n) => {
+                    const busy = !!filterDate && appointments.some((a) =>
+                      a.appointment_date === format(filterDate, "yyyy-MM-dd") &&
+                      a.appointment_time === quickBook.time &&
+                      ["pending", "confirmed"].includes(a.status) &&
+                      (a.room_number ?? 1) === n);
+                    return <option key={n} value={n} disabled={busy}>Sala {n}{busy ? " (ocupada)" : ""}</option>;
+                  })}
+                </select>
+              </div>
+
               <button
                 disabled={qbSaving || !qbUserId || !qbServiceSlug || !filterDate}
                 onClick={async () => {
@@ -921,6 +944,7 @@ const AdminAgenda = () => {
                     appointment_date: dateStr,
                     appointment_time: quickBook.time,
                     partner_id: qbPartnerId || null,
+                    ...(qbRoom ? { room_number: Number(qbRoom) } : {}),
                     status: "confirmed",
                   }).select("id").single();
                   setQbSaving(false);
