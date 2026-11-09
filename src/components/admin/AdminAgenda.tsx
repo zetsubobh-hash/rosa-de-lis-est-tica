@@ -131,6 +131,7 @@ const AdminAgenda = () => {
   const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);
   const [qbUserId, setQbUserId] = useState("");
   const [qbServiceSlug, setQbServiceSlug] = useState("");
+  const [qbPartnerId, setQbPartnerId] = useState("");
   const [qbSaving, setQbSaving] = useState(false);
   const [qbShowNewClient, setQbShowNewClient] = useState(false);
   const [qbClientSearch, setQbClientSearch] = useState("");
@@ -641,6 +642,7 @@ const AdminAgenda = () => {
           setQuickBook({ time });
           setQbUserId("");
           setQbServiceSlug("");
+          setQbPartnerId("");
           setQbShowNewClient(false);
           setQbClientSearch("");
           setQbClientDropdownOpen(false);
@@ -890,6 +892,21 @@ const AdminAgenda = () => {
                 </select>
               </div>
 
+              {/* Partner select */}
+              <div>
+                <label className="font-body text-xs font-semibold text-foreground block mb-1.5">Profissional que vai atender</label>
+                <select
+                  value={qbPartnerId}
+                  onChange={(e) => setQbPartnerId(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border bg-background px-3 font-body text-sm text-foreground focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Selecione a profissional...</option>
+                  {partnerOptions.map((p) => (
+                    <option key={p.id} value={p.id}>{p.full_name}</option>
+                  ))}
+                </select>
+              </div>
+
               <button
                 disabled={qbSaving || !qbUserId || !qbServiceSlug || !filterDate}
                 onClick={async () => {
@@ -903,11 +920,12 @@ const AdminAgenda = () => {
                     service_title: service?.title || qbServiceSlug,
                     appointment_date: dateStr,
                     appointment_time: quickBook.time,
+                    partner_id: qbPartnerId || null,
                     status: "confirmed",
                   }).select("id").single();
                   setQbSaving(false);
                   if (error) {
-                    toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
+                    toast({ title: "Erro ao agendar", description: error.code === "23505" ? "Esta profissional ou todas as salas já estão ocupadas neste horário." : error.message, variant: "destructive" });
                   } else {
                     toast({ title: "Agendamento criado ✅" });
                     setQuickBook(null);
