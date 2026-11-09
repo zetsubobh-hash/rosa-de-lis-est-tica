@@ -64,7 +64,7 @@ const AdminClients = () => {
     const fetch = async () => {
       setLoading(true);
       let query = searchTerm
-        ? supabase.rpc("search_admin_clients", { _search: searchTerm }).select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette", { count: "exact" })
+        ? supabase.rpc("search_admin_clients", { _search: searchTerm }, { count: "exact" }).select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette")
         : supabase
         .from("profiles")
         .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette", { count: "exact" });
