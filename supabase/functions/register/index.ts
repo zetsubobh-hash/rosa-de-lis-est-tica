@@ -92,7 +92,7 @@ serve(async (req) => {
       sex: sexNormalized,
       phone: phone.trim(),
       address: address?.trim() || null,
-      birth_date: birth_date,
+      birth_date: birth_date || null,
     };
 
     const { error: profileError } = await supabaseAdmin.from("profiles").insert(profileData);
