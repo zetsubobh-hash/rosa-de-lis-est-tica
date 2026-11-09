@@ -1292,7 +1292,7 @@ export type Database = {
         Returns: Json
       }
       search_admin_clients: {
-        Args: { _search: string }
+        Args: { _from?: string; _search: string; _to?: string }
         Returns: {
           address: string | null
           allow_welcome_roulette: boolean | null
