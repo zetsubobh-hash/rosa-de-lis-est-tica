@@ -245,8 +245,8 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName.trim() || !regPassword.trim() || !regPhone.trim() || !regBirthDate) {
-      toast({ title: "Preencha os campos obrigatórios: Nome, Telefone, Data de Nascimento e Senha", variant: "destructive" });
+    if (!regName.trim() || !regPassword.trim() || !regPhone.trim()) {
+      toast({ title: "Preencha os campos obrigatórios: Nome, Telefone e Senha", variant: "destructive" });
       return;
     }
     const fullAddress = buildFullAddress();
@@ -529,7 +529,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reg-birth" className="font-body text-sm">Data de Nascimento *</Label>
+              <Label htmlFor="reg-birth" className="font-body text-sm">Data de Nascimento</Label>
               <BirthDateInput
                 id="reg-birth"
                 value={regBirthDate}

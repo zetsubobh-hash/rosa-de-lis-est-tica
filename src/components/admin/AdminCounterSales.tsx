@@ -253,8 +253,8 @@ const AdminCounterSales = () => {
   /* ─── Create new client ─── */
   const createNewClient = async () => {
     const { full_name, phone, sex, address, email, birth_date } = newClient;
-    if (!full_name || !phone || !birth_date) {
-      toast.error("Preencha os campos obrigatórios: Nome, Telefone e Data de Nascimento");
+    if (!full_name || !phone) {
+      toast.error("Preencha os campos obrigatórios: Nome e Telefone");
       return;
     }
     const username = generateUsername(full_name);
@@ -585,7 +585,7 @@ const AdminCounterSales = () => {
                       <Input value={newClient.phone} onChange={(e) => setNewClient(prev => ({ ...prev, phone: formatPhone(e.target.value) }))} placeholder="(31) 99999-9999" className="font-body" maxLength={15} />
                     </div>
                     <div className="space-y-1">
-                      <label className="font-body text-xs font-medium text-foreground">Data de Nascimento *</label>
+                      <label className="font-body text-xs font-medium text-foreground">Data de Nascimento</label>
                       <Input type="date" value={newClient.birth_date} onChange={(e) => setNewClient(prev => ({ ...prev, birth_date: e.target.value }))} className="font-body" />
                     </div>
                     <div className="space-y-1">
