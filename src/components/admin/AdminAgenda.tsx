@@ -17,6 +17,7 @@ import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import { cn } from "@/lib/utils";
+import { fetchAllPages, matchesClientName } from "@/lib/agendaClients";
 
 interface Profile {
   full_name: string;
@@ -147,11 +148,12 @@ const AdminAgenda = () => {
         .in("status", ["confirmed", "pending", "completed"])
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true }),
-      supabase
+      fetchAllPages((from, to) => supabase
         .from("profiles")
         .select("user_id, full_name, phone, email, sex, address, avatar_url")
         .order("full_name", { ascending: true })
-        .limit(5000),
+        .order("user_id", { ascending: true })
+        .range(from, to)),
       supabase
         .from("partners")
         .select("id, full_name")
@@ -171,6 +173,7 @@ const AdminAgenda = () => {
     if (partnersRes.data) setPartnerOptions(partnersRes.data);
     if (plansRes.data) setClientPlans(plansRes.data as ClientPlan[]);
     if (servicesRes.data) setAllServices(servicesRes.data);
+    if (profilesRes.error) toast({ title: "Não foi possível carregar os clientes. Tente atualizar a agenda.", variant: "destructive" });
 
     const profileMap: Record<string, Profile> = {};
     profilesRes.data?.forEach((p: any) => {
@@ -833,8 +836,7 @@ const AdminAgenda = () => {
                       <div className="absolute z-[9999] top-full left-0 right-0 mt-1 bg-background border border-border rounded-xl shadow-lg max-h-56 overflow-y-auto">
                         {allProfiles
                           .filter((p) =>
-                            !qbClientSearch ||
-                            p.full_name.toLowerCase().includes(qbClientSearch.toLowerCase())
+                            matchesClientName(p.full_name, qbClientSearch)
                           )
                           .slice(0, 500)
                           .map((p) => (
@@ -855,8 +857,7 @@ const AdminAgenda = () => {
                             </button>
                           ))}
                         {allProfiles.filter((p) =>
-                          !qbClientSearch ||
-                          p.full_name.toLowerCase().includes(qbClientSearch.toLowerCase())
+                          matchesClientName(p.full_name, qbClientSearch)
                         ).length === 0 && (
                           <div className="px-3 py-2 font-body text-xs text-muted-foreground">
                             Nenhum cliente encontrado

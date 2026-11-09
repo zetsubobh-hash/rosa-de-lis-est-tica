@@ -18,6 +18,7 @@ import DayTimelineView from "@/components/admin/DayTimelineView";
 import QuickBookModal from "@/components/admin/QuickBookModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
+import { fetchAllPages } from "@/lib/agendaClients";
 
 interface SessionInfo {
   date: string;
@@ -276,11 +277,12 @@ const AdminPartnerView = () => {
   // Fetch all profiles + services for quick-book
   useEffect(() => {
     const load = async () => {
-      const [{ data: profs }, { data: svcs }] = await Promise.all([
-        supabase.from("profiles").select("user_id, full_name").order("full_name"),
+      const [{ data: profs, error: profilesError }, { data: svcs }] = await Promise.all([
+        fetchAllPages((from, to) => supabase.from("profiles").select("user_id, full_name").order("full_name").order("user_id").range(from, to)),
         supabase.from("services").select("slug, title").eq("is_active", true).order("sort_order"),
       ]);
-      setAllProfiles(profs || []);
+      if (profilesError) toast.error("Não foi possível carregar os clientes. Tente atualizar a agenda.");
+      else setAllProfiles(profs || []);
       setAllServices(svcs || []);
     };
     load();
