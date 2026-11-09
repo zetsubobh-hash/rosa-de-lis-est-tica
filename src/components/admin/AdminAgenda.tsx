@@ -17,7 +17,8 @@ import SessionScheduleModal from "@/components/SessionScheduleModal";
 import DayTimelineView from "@/components/admin/DayTimelineView";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import { cn } from "@/lib/utils";
-import { fetchAllPages, matchesClientName } from "@/lib/agendaClients";
+import { fetchAllPages } from "@/lib/agendaClients";
+import { useAgendaClientSearch } from "@/hooks/useAgendaClientSearch";
 
 interface Profile {
   full_name: string;
@@ -132,6 +133,7 @@ const AdminAgenda = () => {
   const [qbShowNewClient, setQbShowNewClient] = useState(false);
   const [qbClientSearch, setQbClientSearch] = useState("");
   const [qbClientDropdownOpen, setQbClientDropdownOpen] = useState(false);
+  const qbSearch = useAgendaClientSearch(qbClientSearch, qbClientDropdownOpen);
   // Client detail modal
   const [clientDetail, setClientDetail] = useState<{ userId: string; userName: string; avatarUrl: string | null } | null>(null);
   const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
@@ -834,12 +836,7 @@ const AdminAgenda = () => {
                     />
                     {qbClientDropdownOpen && (
                       <div className="absolute z-[9999] top-full left-0 right-0 mt-1 bg-background border border-border rounded-xl shadow-lg max-h-56 overflow-y-auto">
-                        {allProfiles
-                          .filter((p) =>
-                            matchesClientName(p.full_name, qbClientSearch)
-                          )
-                          .slice(0, 500)
-                          .map((p) => (
+                        {qbSearch.clients.map((p) => (
                             <button
                               key={p.user_id}
                               type="button"
@@ -856,11 +853,9 @@ const AdminAgenda = () => {
                               {p.full_name}
                             </button>
                           ))}
-                        {allProfiles.filter((p) =>
-                          matchesClientName(p.full_name, qbClientSearch)
-                        ).length === 0 && (
+                        {(qbSearch.loading || qbSearch.error || qbSearch.clients.length === 0) && (
                           <div className="px-3 py-2 font-body text-xs text-muted-foreground">
-                            Nenhum cliente encontrado
+                            {qbSearch.loading ? "Buscando no banco..." : qbSearch.error ? "Não foi possível buscar. Tente novamente." : "Nenhum cliente encontrado"}
                           </div>
                         )}
                       </div>

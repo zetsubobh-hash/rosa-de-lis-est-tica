@@ -464,6 +464,9 @@ const AdminClients = () => {
             if (deletedUserId && typeof deletedUserId === 'string') {
               setClients(prev => prev.filter(c => c.user_id !== deletedUserId));
               setTotalCount(prev => Math.max(0, prev - 1));
+              setResultCount(prev => Math.max(0, prev - 1));
+            } else {
+              setReloadKey(key => key + 1);
             }
           }}
           userId={selectedClient.user_id}
