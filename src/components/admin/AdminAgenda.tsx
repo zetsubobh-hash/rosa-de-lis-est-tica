@@ -643,6 +643,7 @@ const AdminAgenda = () => {
           setQbUserId("");
           setQbServiceSlug("");
           setQbPartnerId("");
+          setQbPartnerId("");
           setQbShowNewClient(false);
           setQbClientSearch("");
           setQbClientDropdownOpen(false);
@@ -925,7 +926,7 @@ const AdminAgenda = () => {
                   }).select("id").single();
                   setQbSaving(false);
                   if (error) {
-                    toast({ title: "Erro ao agendar", description: error.message, variant: "destructive" });
+                    toast({ title: "Erro ao agendar", description: error.code === "23505" ? "Esta profissional ou todas as salas já estão ocupadas neste horário." : error.message, variant: "destructive" });
                   } else {
                     toast({ title: "Agendamento criado ✅" });
                     setQuickBook(null);
