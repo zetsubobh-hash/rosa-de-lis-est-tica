@@ -8,6 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const TreatmentRoomsSetting = ({ onChange }: { onChange?: (rooms: number) => void }) => {
   const { toast } = useToast();
   const [rooms, setRooms] = useState("1");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: ok } = await supabase.rpc("has_role", { _user_id: data.user.id, _role: "admin" });
+      setIsAdmin(!!ok);
+    });
+  }, []);
 
   useEffect(() => {
     supabase.from("site_settings").select("value").eq("key", "treatment_rooms").maybeSingle()
@@ -19,6 +28,7 @@ const TreatmentRoomsSetting = ({ onChange }: { onChange?: (rooms: number) => voi
   }, []);
 
   const save = async (value: string) => {
+    if (!isAdmin) return;
     const prev = rooms;
     setRooms(value);
     onChange?.(parseInt(value));
@@ -36,8 +46,8 @@ const TreatmentRoomsSetting = ({ onChange }: { onChange?: (rooms: number) => voi
   return (
     <div className="flex items-center gap-1.5">
       <DoorOpen className="w-4 h-4 text-muted-foreground" />
-      <Select value={rooms} onValueChange={save}>
-        <SelectTrigger className="h-9 w-[110px] text-xs" aria-label="Salas de atendimento">
+      <Select value={rooms} onValueChange={save} disabled={!isAdmin}>
+        <SelectTrigger className="h-9 w-[110px] text-xs" aria-label="Salas de atendimento" title={isAdmin ? undefined : "Somente o administrador pode alterar"}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="z-[9999]">
