@@ -50,7 +50,26 @@ const AdminClients = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [resultCount, setResultCount] = useState(0);
+  const [datePreset, setDatePreset] = useState<"all" | "today" | "7d" | "30d" | "custom">("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const pageSize = 100;
+
+  const getDateRange = (): { from: string | null; to: string | null } => {
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+    const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
+    const now = new Date();
+    if (datePreset === "today") return { from: startOfDay(now), to: endOfDay(now) };
+    if (datePreset === "7d") { const d = new Date(now); d.setDate(d.getDate() - 6); return { from: startOfDay(d), to: endOfDay(now) }; }
+    if (datePreset === "30d") { const d = new Date(now); d.setDate(d.getDate() - 29); return { from: startOfDay(d), to: endOfDay(now) }; }
+    if (datePreset === "custom") {
+      return {
+        from: dateFrom ? startOfDay(new Date(`${dateFrom}T00:00:00`)) : null,
+        to: dateTo ? endOfDay(new Date(`${dateTo}T00:00:00`)) : null,
+      };
+    }
+    return { from: null, to: null };
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -64,11 +83,17 @@ const AdminClients = () => {
     let active = true;
     const fetch = async () => {
       setLoading(true);
+      const { from: createdFrom, to: createdTo } = getDateRange();
       let query = searchTerm
-        ? supabase.rpc("search_admin_clients", { _search: searchTerm }, { count: "exact" }).select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette")
+        ? supabase.rpc("search_admin_clients", { _search: searchTerm, _from: createdFrom, _to: createdTo }, { count: "exact" }).select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette")
         : supabase
         .from("profiles")
         .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette", { count: "exact" });
+
+      if (!searchTerm) {
+        if (createdFrom) query = query.gte("created_at", createdFrom);
+        if (createdTo) query = query.lte("created_at", createdTo);
+      }
 
       if (sortBy === "name") {
         query = query.order("full_name", { ascending: true });
