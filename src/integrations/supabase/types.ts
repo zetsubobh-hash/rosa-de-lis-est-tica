@@ -1205,6 +1205,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      agenda_phone_matches: {
+        Args: { _phone: string; _search: string }
+        Returns: boolean
+      }
       claim_welcome_roulette: {
         Args: {
           _code: string
