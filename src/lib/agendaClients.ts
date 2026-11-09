@@ -15,10 +15,11 @@ export async function fetchAllPages<T, E>(
 }
 
 const normalizeName = (value: string) => value
-  .normalize("NFD")
+  .normalize("NFKD")
   .replace(/[\u0300-\u036f]/g, "")
   .toLocaleLowerCase("pt-BR")
   .trim()
+  .replace(/^[\s,~.\-]+/, "")
   .replace(/\s+/g, " ");
 
 export function matchesClientName(name: string, search: string): boolean {

@@ -28,6 +28,14 @@ describe("agenda client search", () => {
     expect(matchesClientName("   Fernanda advogada  ", "Cristina")).toBe(false);
   });
 
+  it("finds Mimi after removing only the leading hyphen, without changing the saved client", () => {
+    const client = { user_id: "mimi-id", full_name: "𝑴𝒊𝒎𝒊", phone: "31999991234" };
+    expect(matchesClientName(client.full_name, "Mimi")).toBe(true);
+    expect(matchesClientName(client.full_name, "-Mimi")).toBe(true);
+    expect(matchesClientName(client.full_name, "Mima")).toBe(false);
+    expect(client).toEqual({ user_id: "mimi-id", full_name: "𝑴𝒊𝒎𝒊", phone: "31999991234" });
+  });
+
   it("does not report an incomplete directory as successful after a failed page", async () => {
     const error = { message: "connection failed" };
     const result = await fetchAllPages((from) => Promise.resolve(from === 0
