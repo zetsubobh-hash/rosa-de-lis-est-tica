@@ -106,6 +106,7 @@ const AdminAgenda = () => {
   const { prices: allPrices } = useAllServicePrices();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [roomsCount, setRoomsCount] = useState(1);
   const [partnerOptions, setPartnerOptions] = useState<PartnerOption[]>([]);
   const [clientPlans, setClientPlans] = useState<ClientPlan[]>([]);
   const [expandedApt, setExpandedApt] = useState<string | null>(null);
