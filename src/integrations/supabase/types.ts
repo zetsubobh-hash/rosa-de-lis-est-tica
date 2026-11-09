@@ -158,6 +158,7 @@ export type Database = {
           partner_id: string | null
           plan_id: string | null
           reminder_sent: boolean
+          room_number: number
           service_slug: string
           service_title: string
           session_number: number | null
@@ -174,6 +175,7 @@ export type Database = {
           partner_id?: string | null
           plan_id?: string | null
           reminder_sent?: boolean
+          room_number?: number
           service_slug: string
           service_title: string
           session_number?: number | null
@@ -190,6 +192,7 @@ export type Database = {
           partner_id?: string | null
           plan_id?: string | null
           reminder_sent?: boolean
+          room_number?: number
           service_slug?: string
           service_title?: string
           session_number?: number | null
@@ -1297,6 +1300,7 @@ export type Database = {
       strip_client_name_prefix: { Args: { _name: string }; Returns: string }
       system_health: { Args: never; Returns: Json }
       system_maintenance: { Args: never; Returns: Json }
+      treatment_rooms_count: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user" | "partner"
