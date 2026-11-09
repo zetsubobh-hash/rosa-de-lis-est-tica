@@ -106,6 +106,7 @@ const AdminAgenda = () => {
   const { prices: allPrices } = useAllServicePrices();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [roomsCount, setRoomsCount] = useState(1);
   const [partnerOptions, setPartnerOptions] = useState<PartnerOption[]>([]);
   const [clientPlans, setClientPlans] = useState<ClientPlan[]>([]);
   const [expandedApt, setExpandedApt] = useState<string | null>(null);
@@ -482,16 +483,23 @@ const AdminAgenda = () => {
       }
     }
 
-    // Check if slot is already occupied for the same partner
-    const conflict = appointments.find(
+    // Same partner can never double-book; otherwise one appointment per room
+    const others = appointments.filter(
       (a) =>
         a.id !== appointmentId &&
         a.appointment_date === dateStr &&
         a.appointment_time === newTime &&
-        (a.partner_id || null) === (apt.partner_id || null)
+        ["pending", "confirmed"].includes(a.status)
     );
-    if (conflict) {
-      toast({ title: "Horário ocupado", description: `Já existe um agendamento às ${newTime}.`, variant: "destructive" });
+    const partnerBusy = !!apt.partner_id && others.some((a) => a.partner_id === apt.partner_id);
+    if (partnerBusy || others.length >= roomsCount) {
+      toast({
+        title: "Horário ocupado",
+        description: partnerBusy
+          ? `Esta profissional já tem atendimento às ${newTime}.`
+          : `Todas as ${roomsCount === 1 ? "salas" : roomsCount + " salas"} estão ocupadas às ${newTime}.`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -587,7 +595,7 @@ const AdminAgenda = () => {
           Agendamentos ({filtered.length})
         </h2>
         <div className="flex items-center gap-2 flex-wrap">
-          <TreatmentRoomsSetting />
+          <TreatmentRoomsSetting onChange={setRoomsCount} />
           <button
             onClick={() => setFilterDate(new Date())}
             className={cn(
@@ -628,6 +636,7 @@ const AdminAgenda = () => {
         isRescheduled={isRescheduled}
         getAppointmentPrice={getAppointmentPrice}
         getInitials={getInitials}
+        rooms={roomsCount}
         onSlotClick={(time) => {
           setQuickBook({ time });
           setQbUserId("");
