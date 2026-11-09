@@ -1,0 +1,3 @@
+- [ ] Adicionar limpeza segura antes da tabela de clientes.
+- [ ] Remover emojis dos nomes salvos e oferecer limpeza no painel.
+- [ ] Verificar preservação dos dados e testar as operações disponíveis.
