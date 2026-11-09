@@ -1222,6 +1222,7 @@ export type Database = {
         Returns: Json
       }
       clean_client_name_emojis: { Args: never; Returns: Json }
+      clean_client_name_prefixes: { Args: never; Returns: Json }
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_stale_pending_appointments: { Args: never; Returns: undefined }
       get_booked_slots: {
@@ -1289,6 +1290,7 @@ export type Database = {
         }[]
       }
       strip_client_name_emojis: { Args: { _name: string }; Returns: string }
+      strip_client_name_prefix: { Args: { _name: string }; Returns: string }
       system_health: { Args: never; Returns: Json }
       system_maintenance: { Args: never; Returns: Json }
     }
