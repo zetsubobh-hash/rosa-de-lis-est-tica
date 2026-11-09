@@ -1,0 +1,1 @@
+ALTER FUNCTION public.clean_client_name_emojis() SECURITY INVOKER;
