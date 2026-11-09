@@ -7,6 +7,7 @@ import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import MissingPhoneAlert, { isPhoneMissing } from "@/components/admin/MissingPhoneAlert";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import ClientCleanupActions from "@/components/admin/ClientCleanupActions";
+import { toast } from "sonner";
 
 interface Client {
   user_id: string;
@@ -46,22 +47,27 @@ const AdminClients = () => {
   const [sortBy, setSortBy] = useState<"name" | "recent">("name");
   const [page, setPage] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [resultCount, setResultCount] = useState(0);
   const pageSize = 100;
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    let active = true;
     const fetch = async () => {
       setLoading(true);
-      
-      const { count } = await supabase
+      let query = searchTerm
+        ? supabase.rpc("search_admin_clients", { _search: searchTerm }, { count: "exact" }).select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette")
+        : supabase
         .from("profiles")
-        .select("*", { count: 'exact', head: true });
-
-      const total = count || 0;
-      setTotalCount(total);
-
-      let query = supabase
-        .from("profiles")
-        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette");
+        .select("user_id, full_name, phone, email, avatar_url, address, sex, birth_date, created_at, last_seen, allow_welcome_roulette", { count: "exact" });
 
       if (sortBy === "name") {
         query = query.order("full_name", { ascending: true });
@@ -72,25 +78,28 @@ const AdminClients = () => {
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      const { data } = await query.range(from, to);
-      
-      setClients((data as any[]) || []);
+      const [result, total] = await Promise.all([
+        query.order("user_id").range(from, to),
+        supabase.from("profiles").select("user_id", { count: "exact", head: true }),
+      ]);
+      if (!active) return;
+      if (result.error || total.error) {
+        toast.error("Não foi possível buscar os clientes. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+      setTotalCount(total.count ?? 0);
+      setResultCount(result.count ?? 0);
+      setClients((result.data as Client[]) || []);
       setLoading(false);
     };
     fetch();
-  }, [sortBy, page, reloadKey]);
+    return () => { active = false; };
+  }, [sortBy, page, reloadKey, searchTerm]);
 
-  const filtered = clients.filter((c) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      c.full_name.toLowerCase().includes(q) ||
-      c.phone.includes(q) ||
-      (c.email && c.email.toLowerCase().includes(q))
-    );
-  });
+  const filtered = clients;
 
-  if (loading) {
+  if (loading && clients.length === 0 && !searchTerm) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -182,7 +191,7 @@ const AdminClients = () => {
             <span className="text-xs font-bold uppercase tracking-wider">{totalCount} Clientes Totais</span>
           </div>
           <div className="text-xs text-muted-foreground italic">
-            — exibindo {clients.length} clientes (Página {page} de {Math.ceil(totalCount / pageSize)})
+            {loading ? "Buscando..." : `— exibindo ${clients.length} de ${resultCount} ${searchTerm ? "encontrados" : "clientes"} (Página ${page} de ${Math.max(1, Math.ceil(resultCount / pageSize))})`}
           </div>
         </div>
       </div>
@@ -228,7 +237,7 @@ const AdminClients = () => {
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
           <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="font-body text-muted-foreground">
-            {clients.length === 0 ? "Nenhum cliente cadastrado." : "Nenhum resultado encontrado."}
+            {loading ? "Buscando..." : searchTerm ? "Nenhum resultado encontrado." : "Nenhum cliente cadastrado."}
           </p>
         </div>
       ) : (
@@ -408,7 +417,7 @@ const AdminClients = () => {
       )}
 
       {/* Pagination */}
-      {totalCount > pageSize && (
+      {resultCount > pageSize && (
         <div className="flex items-center justify-center gap-2 py-6">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -418,7 +427,7 @@ const AdminClients = () => {
             Anterior
           </button>
           <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => {
+            {Array.from({ length: Math.min(5, Math.ceil(resultCount / pageSize)) }, (_, i) => {
               const pageNum = i + 1;
               return (
                 <button
@@ -434,11 +443,11 @@ const AdminClients = () => {
                 </button>
               );
             })}
-            {Math.ceil(totalCount / pageSize) > 5 && <span className="px-1 text-muted-foreground">...</span>}
+            {Math.ceil(resultCount / pageSize) > 5 && <span className="px-1 text-muted-foreground">...</span>}
           </div>
           <button
-            onClick={() => setPage((p) => Math.min(Math.ceil(totalCount / pageSize), p + 1))}
-            disabled={page === Math.ceil(totalCount / pageSize)}
+            onClick={() => setPage((p) => Math.min(Math.ceil(resultCount / pageSize), p + 1))}
+            disabled={page === Math.ceil(resultCount / pageSize)}
             className="h-9 px-4 rounded-xl border border-border bg-background text-sm font-semibold hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Próxima

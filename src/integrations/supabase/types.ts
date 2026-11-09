@@ -1250,7 +1250,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      normalize_client_search: { Args: { _value: string }; Returns: string }
       redeem_coupon: { Args: { p_code: string }; Returns: boolean }
+      search_admin_clients: {
+        Args: { _search: string }
+        Returns: {
+          address: string | null
+          allow_welcome_roulette: boolean | null
+          avatar_url: string | null
+          birth_date: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          last_seen: string | null
+          phone: string
+          sex: string | null
+          updated_at: string
+          user_id: string
+          username: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       strip_client_name_emojis: { Args: { _name: string }; Returns: string }
       system_health: { Args: never; Returns: Json }
       system_maintenance: { Args: never; Returns: Json }
