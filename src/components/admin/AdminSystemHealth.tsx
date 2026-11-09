@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Activity, Database, RefreshCw, Wrench, CheckCircle2, AlertTriangle, XCircle, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -104,12 +105,26 @@ const AdminSystemHealth = () => {
 
       <div className="grid gap-3">
         {rows.map((r) => (
-          <div key={r.label} className="rounded-xl border bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div key={r.label} className="rounded-xl border bg-card p-4 flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="font-semibold flex items-center gap-2"><Database className="w-4 h-4 text-primary" />{r.label}</p>
               <p className="text-xs text-muted-foreground">{r.hint}</p>
             </div>
             <div className="flex items-center gap-3"><span className="font-mono text-sm">{r.value}</span><Badge level={r.level} /></div>
+            {r.label === "Espaço usado no banco" && health && (
+              <div className="w-full basis-full space-y-2 pt-2">
+                <Progress
+                  value={Math.min(100, Math.max(0, health.db_size_bytes / LIMIT_BYTES * 100))}
+                  aria-label="Uso do banco de dados"
+                  aria-valuetext={`${mb(health.db_size_bytes)} de 500 MB`}
+                  className={`h-3 ${r.level === "bad" ? "[&>div]:bg-destructive" : r.level === "warn" ? "[&>div]:bg-gold" : ""} [&>div]:motion-reduce:transition-none`}
+                />
+                <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
+                  <span>{(health.db_size_bytes / LIMIT_BYTES * 100).toFixed(1)}% usado</span>
+                  <span>{mb(Math.max(0, LIMIT_BYTES - health.db_size_bytes))} livres</span>
+                </div>
+              </div>
+            )}
           </div>
         ))}
         <div className="rounded-xl border bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
