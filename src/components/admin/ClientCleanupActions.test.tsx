@@ -40,4 +40,25 @@ describe("client cleanup", () => {
     expect(refresh).not.toHaveBeenCalled();
     expect(mocks.success).not.toHaveBeenCalled();
   });
+
+  it("cleans saved prefixes only after confirmation and reloads the directory", async () => {
+    mocks.rpc.mockResolvedValue({ data: { updated: 3, skipped: 1 }, error: null });
+    const refresh = vi.fn();
+    render(<ClientCleanupActions onNamesCleaned={refresh} />);
+    fireEvent.click(screen.getByRole("button", { name: "Limpar sinais no início dos nomes" }));
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar limpeza" }));
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    expect(mocks.rpc.mock.calls).toEqual([["clean_client_name_prefixes"]]);
+    expect(mocks.info).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not change names when prefix cleanup is cancelled", () => {
+    const refresh = vi.fn();
+    render(<ClientCleanupActions onNamesCleaned={refresh} />);
+    fireEvent.click(screen.getByRole("button", { name: "Limpar sinais no início dos nomes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
 });
