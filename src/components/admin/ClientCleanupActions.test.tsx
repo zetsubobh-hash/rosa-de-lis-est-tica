@@ -9,21 +9,21 @@ vi.mock("sonner", () => ({ toast: { success: mocks.success, error: mocks.error, 
 describe("client cleanup", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("requests only technical maintenance after confirmation", async () => {
-    mocks.rpc.mockResolvedValue({ data: { cron_logs: 2, http_logs: 3, page_views: 0, audit_logs: 0 }, error: null });
+  it("requests only name cleanup after confirmation, never database maintenance", async () => {
+    mocks.rpc.mockResolvedValue({ data: { updated: 2, skipped: 0 }, error: null });
     render(<ClientCleanupActions onNamesCleaned={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Liberar espaço no banco" }));
+    fireEvent.click(screen.getByRole("button", { name: "Limpar espaços e emojis dos nomes" }));
     expect(mocks.rpc).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar limpeza" }));
     await waitFor(() => expect(mocks.success).toHaveBeenCalled());
-    expect(mocks.rpc.mock.calls).toEqual([["system_maintenance"]]);
+    expect(mocks.rpc.mock.calls).toEqual([["clean_client_name_emojis"]]);
   });
 
   it("reloads saved client names after emoji cleanup", async () => {
     mocks.rpc.mockResolvedValue({ data: { updated: 4, skipped: 1 }, error: null });
     const refresh = vi.fn();
     render(<ClientCleanupActions onNamesCleaned={refresh} />);
-    fireEvent.click(screen.getByRole("button", { name: "Remover emojis dos nomes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Limpar espaços e emojis dos nomes" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar limpeza" }));
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
     expect(mocks.rpc.mock.calls).toEqual([["clean_client_name_emojis"]]);
@@ -34,7 +34,7 @@ describe("client cleanup", () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { code: "42501" } });
     const refresh = vi.fn();
     render(<ClientCleanupActions onNamesCleaned={refresh} />);
-    fireEvent.click(screen.getByRole("button", { name: "Remover emojis dos nomes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Limpar espaços e emojis dos nomes" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar limpeza" }));
     await waitFor(() => expect(mocks.error).toHaveBeenCalledTimes(1));
     expect(refresh).not.toHaveBeenCalled();
