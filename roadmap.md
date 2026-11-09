@@ -6,4 +6,4 @@
 - [x] Remover a manutenção do banco da limpeza de clientes e identificar explicitamente a remoção de espaços antes/depois dos nomes; RPC existente já remove esses espaços sem apagar fichas ou fotos.
 - [x] Adicionar busca por telefone completo/parcial na agenda administrativa, ignorando formatação antes do limite; oito testes passaram e verificações SQL passaram, painel logado indisponível por autenticação externa.
 - [x] Adicionar botão para remover apenas sinais -, vírgula, ~ e ponto no início dos nomes, mantendo cadastros protegidos e nomes não vazios; verificações SQL e nove testes passaram, painel logado indisponível por autenticação externa.
-- [ ] Investigar desaparecimento de -Mimi após limpeza e corrigir a causa mantendo cadastro e dados vinculados.
+- [x] Investigar -Mimi: cadastro 𝑴𝒊𝒎𝒊 e dois agendamentos preservados; corrigir busca de letras estilizadas/prefixos e reiniciar filtro/página após limpeza; dez testes e verificações SQL passaram. Painel logado não verificável com autenticação externa.
