@@ -5,6 +5,7 @@ import {
   Clock, Eye, EyeOff, Loader2, MessageCircle, FileText, KeyRound, UserPlus, Copy, RefreshCw
 } from "lucide-react";
 import PartnerPaymentHistory from "@/components/admin/PartnerPaymentHistory";
+import PartnerFinancialReset from "@/components/admin/PartnerFinancialReset";
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseUrl";
 import { useToast } from "@/hooks/use-toast";
@@ -645,7 +646,7 @@ const AdminPartners = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto"
-            onClick={() => setEditing(null)}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setEditing(null); }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -729,6 +730,16 @@ const AdminPartners = () => {
                     />
                   </div>
                 </div>
+
+                {!isNew && <PartnerFinancialReset
+                  key={editing.id}
+                  partnerId={editing.id}
+                  partnerName={editing.full_name}
+                  onReset={() => {
+                    setEditing((current) => current ? { ...current, salary_cents: 0, commission_pct: 0 } : null);
+                    void fetchPartners();
+                  }}
+                />}
 
                 {/* Work days */}
                 <div>
