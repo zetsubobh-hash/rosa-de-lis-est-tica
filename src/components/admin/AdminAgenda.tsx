@@ -18,7 +18,6 @@ import DayTimelineView from "@/components/admin/DayTimelineView";
 import TreatmentRoomsSetting from "@/components/admin/TreatmentRoomsSetting";
 import ClientDetailModal from "@/components/admin/ClientDetailModal";
 import { cn } from "@/lib/utils";
-import { fetchAllPages } from "@/lib/agendaClients";
 import { useAgendaClientSearch } from "@/hooks/useAgendaClientSearch";
 
 interface Profile {
@@ -144,23 +143,17 @@ const AdminAgenda = () => {
   const [allProfiles, setAllProfiles] = useState<{ user_id: string; full_name: string }[]>([]);
   const [allServices, setAllServices] = useState<{ slug: string; title: string }[]>([]);
 
-  const fetchAll = async () => {
-    setLoading(true);
+  const fetchAll = async (silent = false) => {
+    if (!silent) setLoading(true);
 
-    // Run ALL queries in parallel
-    const [appointmentsRes, profilesRes, partnersRes, plansRes, servicesRes] = await Promise.all([
+    // Run queries in parallel; only load profiles of clients that have appointments
+    const [appointmentsRes, partnersRes, plansRes, servicesRes] = await Promise.all([
       supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time, status, created_at, user_id, notes, partner_id, plan_id, session_number, room_number")
         .in("status", ["confirmed", "pending", "completed"])
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true }),
-      fetchAllPages((from, to) => supabase
-        .from("profiles")
-        .select("user_id, full_name, phone, email, sex, address, avatar_url")
-        .order("full_name", { ascending: true })
-        .order("user_id", { ascending: true })
-        .range(from, to)),
       supabase
         .from("partners")
         .select("id, full_name")
@@ -176,6 +169,16 @@ const AdminAgenda = () => {
         .eq("is_active", true)
         .order("sort_order"),
     ]);
+
+    const ids = Array.from(new Set((appointmentsRes.data || []).map((a: any) => a.user_id).filter(Boolean)));
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += 200) chunks.push(ids.slice(i, i + 200));
+    const profileResults = await Promise.all(chunks.map((c) => supabase
+      .from("profiles")
+      .select("user_id, full_name, phone, email, sex, address, avatar_url")
+      .in("user_id", c)));
+    const profilesErr = profileResults.find((r) => r.error);
+    const profilesRes = { data: profileResults.flatMap((r) => r.data || []), error: profilesErr?.error || null };
 
     if (partnersRes.data) setPartnerOptions(partnersRes.data);
     if (plansRes.data) setClientPlans(plansRes.data as ClientPlan[]);
@@ -235,7 +238,7 @@ const AdminAgenda = () => {
         "postgres_changes",
         { event: "*", schema: "public", table: "appointments" },
         () => {
-          fetchAll();
+          fetchAll(true);
         }
       )
       .subscribe();

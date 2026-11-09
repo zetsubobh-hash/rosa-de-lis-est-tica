@@ -60,6 +60,14 @@ const Admin = () => {
   });
   useEffect(() => {
     try { localStorage.setItem("admin_active_tab", activeTab); } catch { /* ignore */ }
+    // Keep the current tab in the address so reloads stay on it
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("tab") !== activeTab) {
+        url.searchParams.set("tab", activeTab);
+        window.history.replaceState(window.history.state, "", url.toString());
+      }
+    } catch { /* ignore */ }
   }, [activeTab]);
   const [settingsMap, setSettingsMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -75,8 +83,6 @@ const Admin = () => {
     const tabParam = searchParams.get("tab");
     if (tabParam && tabParam !== activeTab && validTabs.includes(tabParam)) {
       setActiveTab(tabParam as Tab);
-      searchParams.delete("tab");
-      setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams]);
 
@@ -92,11 +98,6 @@ const Admin = () => {
     }
     setActiveTab(tab);
     setMobileMenuOpen(false);
-    // Clean tab param from URL
-    if (searchParams.has("tab")) {
-      searchParams.delete("tab");
-      setSearchParams(searchParams, { replace: true });
-    }
   };
 
   useEffect(() => {

@@ -19,6 +19,7 @@ export const useUserRole = () => {
       return;
     }
 
+    setLoading(true);
     const checkRole = async () => {
       const { data } = await supabase
         .from("user_roles")
