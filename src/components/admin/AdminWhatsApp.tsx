@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import BirthdayRouletteComponent from "@/components/BirthdayRoulette";
 import ClientBirthdayPreview from "@/components/admin/ClientBirthdayPreview";
 import WhatsAppQRGenerator from "@/components/admin/WhatsAppQRGenerator";
+import WhatsAppBookingBot from "@/components/admin/WhatsAppBookingBot";
 
 const CONFIG_KEYS = ["evolution_api_url", "evolution_api_key", "evolution_instance_name", "evolution_enabled", "evolution_notifications_enabled"];
 
@@ -582,6 +583,8 @@ const AdminWhatsApp = () => {
           <Switch checked={isEnabled} onCheckedChange={(checked) => updateField("evolution_enabled", checked ? "true" : "false")} />
         </div>
       </motion.div>
+
+      <WhatsAppBookingBot />
 
       {/* ═══════════ MESSAGE TEMPLATES ═══════════ */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-2xl border border-border p-5 space-y-4">
