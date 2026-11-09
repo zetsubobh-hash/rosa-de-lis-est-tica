@@ -41,6 +41,7 @@ interface Appointment {
   user_id: string;
   notes: string | null;
   partner_id: string | null;
+  room_number?: number | null;
   plan_id: string | null;
   session_number: number | null;
   profiles?: Profile | null;
@@ -644,6 +645,7 @@ const AdminAgenda = () => {
           setQbUserId("");
           setQbServiceSlug("");
           setQbPartnerId("");
+          setQbRoom("");
           setQbRoom("");
           setQbShowNewClient(false);
           setQbClientSearch("");
