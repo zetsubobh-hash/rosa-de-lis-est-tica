@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.check-whatsapp-numbers]
 verify_jwt = false
+
+[functions.whatsapp-bot]
+verify_jwt = false
