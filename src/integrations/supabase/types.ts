@@ -1277,6 +1277,13 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      search_agenda_clients: {
+        Args: { _search: string }
+        Returns: {
+          full_name: string
+          user_id: string
+        }[]
+      }
       strip_client_name_emojis: { Args: { _name: string }; Returns: string }
       system_health: { Args: never; Returns: Json }
       system_maintenance: { Args: never; Returns: Json }
