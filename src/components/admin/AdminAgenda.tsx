@@ -646,7 +646,6 @@ const AdminAgenda = () => {
           setQbServiceSlug("");
           setQbPartnerId("");
           setQbRoom("");
-          setQbRoom("");
           setQbShowNewClient(false);
           setQbClientSearch("");
           setQbClientDropdownOpen(false);
