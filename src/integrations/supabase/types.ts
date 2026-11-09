@@ -1203,6 +1203,33 @@ export type Database = {
           },
         ]
       }
+      whatsapp_bot_sessions: {
+        Row: {
+          created_at: string
+          handed_off: boolean
+          history: Json
+          phone: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          handed_off?: boolean
+          history?: Json
+          phone: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          handed_off?: boolean
+          history?: Json
+          phone?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
