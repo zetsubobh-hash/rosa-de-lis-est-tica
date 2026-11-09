@@ -8,3 +8,4 @@
 - Agenda autocomplete uses `useAgendaClientSearch` and the invoker RPC `search_agenda_clients` on every input change/open; search precedes result limits and must not use a stale in-memory directory after profile edits.
 - Agenda phone search normalizes punctuation server-side before result limits, is restricted to admins, and returns only client IDs/names to preserve partner contact restrictions.
 - Partner financial resets require server-side admin role and password reauthentication; a service-only atomic RPC clears payments and zeroes salary/commission without touching clinical or account data.
+- Room capacity is enforced by the appointments BEFORE trigger (auto-assigns the lowest free room up to site_settings.treatment_rooms, 1-10) plus a unique (date,time,room) index; partner double-booking stays blocked by its own index, so clients never pick rooms themselves.
