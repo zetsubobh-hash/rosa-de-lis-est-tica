@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface Apt { id: string; service_title: string; appointment_date: string; appointment_time: string }
 
@@ -50,6 +52,21 @@ export default function UnassignedPartnerAlert() {
   const [hidden, setHidden] = useState(false);
   const known = useRef<Set<string>>(new Set());
   const hasItems = useRef(false);
+  const [partners, setPartners] = useState<{ id: string; full_name: string }[]>([]);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const assign = async (aptId: string, partnerId: string) => {
+    setSaving(aptId);
+    const { error } = await supabase.from("appointments").update({ partner_id: partnerId }).eq("id", aptId);
+    setSaving(null);
+    if (error) {
+      toast.error(error.message.includes("unique") ? "Essa profissional já tem atendimento nesse horário" : "Não foi possível atribuir: " + error.message);
+      return;
+    }
+    toast.success("Profissional atribuída");
+    setItems((prev) => prev.filter((a) => a.id !== aptId));
+    load();
+  };
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -78,6 +95,8 @@ export default function UnassignedPartnerAlert() {
     window.addEventListener("keydown", unlock, { once: true });
 
     load();
+    supabase.from("partners").select("id, full_name").eq("is_active", true).order("full_name")
+      .then(({ data }) => setPartners(data || []));
     const poll = setInterval(load, 60000);
     const ring = setInterval(() => { if (hasItems.current) playAlert(); }, REPEAT_MS);
     const ch = supabase
@@ -101,16 +120,22 @@ export default function UnassignedPartnerAlert() {
           <p className="font-semibold text-destructive">
             {items.length === 1 ? "1 agendamento sem profissional" : `${items.length} agendamentos sem profissional`}
           </p>
-          <ul className="mt-1 text-sm text-foreground space-y-0.5">
+          <ul className="mt-2 text-sm text-foreground space-y-2 max-h-[50vh] overflow-y-auto pr-1">
             {items.slice(0, 5).map((a) => (
-              <li key={a.id} className="truncate">
-                {fmtDate(a.appointment_date)} às {a.appointment_time.slice(0, 5)} — {a.service_title}
+              <li key={a.id} className="space-y-1 border-b border-border pb-2 last:border-0">
+                <div className="truncate">{fmtDate(a.appointment_date)} às {a.appointment_time.slice(0, 5)} — {a.service_title}</div>
+                <Select disabled={saving === a.id} onValueChange={(v) => assign(a.id, v)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={saving === a.id ? "Salvando..." : "Escolher profissional"} /></SelectTrigger>
+                  <SelectContent className="z-[9999]">
+                    {partners.map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </li>
             ))}
             {items.length > 5 && <li className="text-muted-foreground">e mais {items.length - 5}…</li>}
           </ul>
-          <Button size="sm" variant="destructive" className="mt-2" onClick={() => { navigate("/admin?tab=agenda", { state: { openTab: "agenda", t: Date.now() } }); window.dispatchEvent(new CustomEvent("admin-open-tab", { detail: "agenda" })); }}>
-            Atribuir profissional na Agenda
+          <Button size="sm" variant="outline" className="mt-2" onClick={() => { navigate("/admin?tab=agenda", { state: { openTab: "agenda", t: Date.now() } }); window.dispatchEvent(new CustomEvent("admin-open-tab", { detail: "agenda" })); }}>
+            Abrir Agenda
           </Button>
         </div>
         <button aria-label="Ocultar aviso" onClick={() => setHidden(true)} className="text-muted-foreground hover:text-foreground">
