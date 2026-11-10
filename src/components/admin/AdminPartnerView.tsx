@@ -19,6 +19,7 @@ import QuickBookModal from "@/components/admin/QuickBookModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 import { fetchAllPages } from "@/lib/agendaClients";
+import { loadSharedPartnerAgenda, loadAgendaLabels } from "@/lib/sharedPartnerAgenda";
 
 interface SessionInfo {
   date: string;
@@ -164,14 +165,7 @@ const AdminPartnerView = () => {
     const today = new Date().toISOString().split("T")[0];
 
     const [{ data: upcoming }, { data: past }] = await Promise.all([
-      supabase
-        .from("appointments")
-        .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id, notes")
-        .eq("partner_id", partnerId)
-        .gte("appointment_date", today)
-        .in("status", ["confirmed", "pending", "completed"])
-        .order("appointment_date")
-        .order("appointment_time"),
+      loadSharedPartnerAgenda(),
       supabase
         .from("appointments")
         .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, partner_id, notes")
@@ -185,11 +179,11 @@ const AdminPartnerView = () => {
 
     const allApts = [...(upcoming || []), ...(past || [])];
     const userIds = [...new Set(allApts.map((a) => a.user_id))];
-    const planIds = [...new Set(allApts.filter((a) => a.plan_id).map((a) => a.plan_id!))];
+    const planIds = [...new Set(allApts.filter((a) => a.plan_id).flatMap((a) => a.plan_id ? [a.plan_id] : []))];
 
     const [{ data: profiles }, planByIdResult, clientPlansResult] = await Promise.all([
       userIds.length > 0
-        ? supabase.from("profiles").select("user_id, full_name, avatar_url, phone").in("user_id", userIds)
+        ? loadAgendaLabels(userIds)
         : Promise.resolve({ data: [] as any[] }),
       planIds.length > 0
         ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("id", planIds)

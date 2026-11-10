@@ -19,6 +19,7 @@ import QuickBookModal from "@/components/admin/QuickBookModal";
 import NewClientInlineForm from "@/components/admin/NewClientInlineForm";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 import { fetchAllPages } from "@/lib/agendaClients";
+import { loadSharedPartnerAgenda, loadAgendaLabels } from "@/lib/sharedPartnerAgenda";
 
 interface SessionInfo {
   date: string;
@@ -171,14 +172,7 @@ const PartnerDashboard = () => {
 
       // Fetch upcoming and past appointments in parallel
       const [{ data: upcoming }, { data: past }] = await Promise.all([
-        supabase
-          .from("appointments")
-          .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, notes")
-          .eq("partner_id", partner.id)
-          .gte("appointment_date", today)
-          .in("status", ["confirmed", "pending"])
-          .order("appointment_date")
-          .order("appointment_time"),
+        loadSharedPartnerAgenda(),
         supabase
           .from("appointments")
           .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, notes")
@@ -192,12 +186,12 @@ const PartnerDashboard = () => {
 
       const allApts = [...(upcoming || []), ...(past || [])];
       const userIds = [...new Set(allApts.map((a) => a.user_id))];
-      const planIds = [...new Set(allApts.filter((a) => a.plan_id).map((a) => a.plan_id!))];
+      const planIds = [...new Set(allApts.filter((a) => a.plan_id).flatMap((a) => a.plan_id ? [a.plan_id] : []))];
 
       // Fetch profiles + plans by ID + ALL active plans for these users (to match by service)
       const [{ data: profiles }, planByIdResult, clientPlansResult] = await Promise.all([
         userIds.length > 0
-          ? supabase.from("profiles").select("user_id, full_name, avatar_url, phone").in("user_id", userIds)
+          ? loadAgendaLabels(userIds)
           : Promise.resolve({ data: [] as any[] }),
         planIds.length > 0
           ? supabase.from("client_plans").select("id, total_sessions, completed_sessions, user_id, service_title, plan_name, status, service_slug").in("id", planIds)
@@ -309,20 +303,22 @@ const PartnerDashboard = () => {
     if (!partnerId) return;
 
     const channel = supabase
-      .channel("partner-appointments")
+      .channel(`partner-appointments-${partnerId}-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "appointments", filter: `partner_id=eq.${partnerId}` },
+        { event: "*", schema: "public", table: "appointments" },
         async (payload) => {
-          const apt = payload.new as any;
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("user_id, full_name, phone, avatar_url")
-            .eq("user_id", apt.user_id)
-            .maybeSingle();
+          if (payload.eventType === "DELETE") {
+            setAppointments(prev => prev.filter(a => a.id !== payload.old.id));
+            return;
+          }
+          const apt = payload.new as Appointment;
+          const { data: labels } = await loadAgendaLabels([apt.user_id]);
+          const profile = labels?.find(p => p.user_id === apt.user_id) || null;
 
           setAppointments((prev) => {
-            const updated: Appointment = { ...apt, profile: profile || null };
+            if (!["confirmed", "pending"].includes(apt.status)) return prev.filter(a => a.id !== apt.id);
+            const updated: Appointment = { ...prev.find(a => a.id === apt.id), ...apt, profile: profile || null };
             const exists = prev.find((a) => a.id === apt.id);
             if (exists) return prev.map((a) => a.id === apt.id ? updated : a);
             return [...prev, updated].sort((a, b) =>
@@ -1300,19 +1296,12 @@ const PartnerDashboard = () => {
           // Re-fetch appointments for this partner
           const fetchAppointments = async () => {
             const todayStr = formatLocalDate(new Date());
-            const { data: upcoming } = await supabase
-              .from("appointments")
-              .select("id, service_title, service_slug, appointment_date, appointment_time, status, user_id, plan_id, session_number, notes")
-              .eq("partner_id", partnerId)
-              .gte("appointment_date", todayStr)
-              .in("status", ["confirmed", "pending"])
-              .order("appointment_date")
-              .order("appointment_time");
+            const { data: upcoming } = await loadSharedPartnerAgenda();
 
             if (upcoming) {
               const userIds = [...new Set(upcoming.map((a: any) => a.user_id))];
               const { data: profiles } = userIds.length > 0
-                ? await supabase.from("profiles").select("user_id, full_name, avatar_url, phone").in("user_id", userIds)
+                ? await loadAgendaLabels(userIds)
                 : { data: [] as any[] };
               const profileMap: Record<string, any> = {};
               profiles?.forEach((p: any) => { profileMap[p.user_id] = p; });
