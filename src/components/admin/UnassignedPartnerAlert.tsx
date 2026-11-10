@@ -109,7 +109,7 @@ export default function UnassignedPartnerAlert() {
             ))}
             {items.length > 5 && <li className="text-muted-foreground">e mais {items.length - 5}…</li>}
           </ul>
-          <Button size="sm" variant="destructive" className="mt-2" onClick={() => { setHidden(true); navigate("/admin?tab=agenda", { state: { openTab: "agenda", t: Date.now() } }); window.dispatchEvent(new CustomEvent("admin-open-tab", { detail: "agenda" })); }}>
+          <Button size="sm" variant="destructive" className="mt-2" onClick={() => { navigate("/admin?tab=agenda", { state: { openTab: "agenda", t: Date.now() } }); window.dispatchEvent(new CustomEvent("admin-open-tab", { detail: "agenda" })); }}>
             Atribuir profissional na Agenda
           </Button>
         </div>
