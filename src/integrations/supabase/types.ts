@@ -1255,6 +1255,14 @@ export type Database = {
       clean_client_name_prefixes: { Args: never; Returns: Json }
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_stale_pending_appointments: { Args: never; Returns: undefined }
+      get_agenda_client_labels: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_booked_slots: {
         Args: { p_date: string; p_partner_id?: string }
         Returns: {
