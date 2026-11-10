@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.default_partner_on_appointment() FROM anon, authenticated, public;
