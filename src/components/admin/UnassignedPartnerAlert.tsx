@@ -53,6 +53,7 @@ export default function UnassignedPartnerAlert() {
   const known = useRef<Set<string>>(new Set());
   const hasItems = useRef(false);
   const [partners, setPartners] = useState<{ id: string; full_name: string }[]>([]);
+  const [enabled, setEnabled] = useState<boolean | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
 
   const assign = async (aptId: string, partnerId: string) => {
@@ -89,6 +90,15 @@ export default function UnassignedPartnerAlert() {
 
   useEffect(() => {
     if (loading || !isAdmin) return;
+    supabase.from("site_settings" as any).select("value").eq("key", "unassigned_partner_alert_enabled").maybeSingle()
+      .then(({ data }: any) => setEnabled(data?.value !== "false"));
+    const onSet = (e: Event) => setEnabled(!!(e as CustomEvent).detail);
+    window.addEventListener("unassigned-alert-setting", onSet);
+    return () => window.removeEventListener("unassigned-alert-setting", onSet);
+  }, [isAdmin, loading]);
+
+  useEffect(() => {
+    if (loading || !isAdmin || !enabled) return;
     // desbloqueia o som no primeiro toque/clique
     const unlock = () => { try { getCtx().resume(); } catch { /* */ } };
     window.addEventListener("pointerdown", unlock, { once: true });
@@ -98,7 +108,7 @@ export default function UnassignedPartnerAlert() {
     supabase.from("partners").select("id, full_name").eq("is_active", true).order("full_name")
       .then(({ data }) => setPartners(data || []));
     const poll = setInterval(load, 60000);
-    const ring = setInterval(() => { if (hasItems.current) playAlert(); }, REPEAT_MS);
+    const ring = setInterval(() => { if (hasItems.current) { setHidden(false); playAlert(); } }, REPEAT_MS);
     const ch = supabase
       .channel("unassigned-partner-alert")
       .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => load())
@@ -108,9 +118,9 @@ export default function UnassignedPartnerAlert() {
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);
     };
-  }, [isAdmin, loading, load]);
+  }, [isAdmin, loading, load, enabled]);
 
-  if (!isAdmin || !items.length || hidden) return null;
+  if (!isAdmin || !enabled || !items.length || hidden) return null;
 
   return (
     <div role="alert" className="fixed top-16 right-3 left-3 md:left-auto md:w-96 z-[9998] rounded-xl border-2 border-destructive bg-background p-3 md:p-4 shadow-lg">
@@ -134,7 +144,7 @@ export default function UnassignedPartnerAlert() {
             ))}
             {items.length > 5 && <li className="text-muted-foreground">e mais {items.length - 5}…</li>}
           </ul>
-          <Button size="sm" variant="outline" className="mt-2" onClick={() => { navigate("/admin?tab=agenda", { state: { openTab: "agenda", t: Date.now() } }); window.dispatchEvent(new CustomEvent("admin-open-tab", { detail: "agenda" })); }}>
+          <Button size="sm" variant="outline" className="mt-2" onClick={() => { navigate("/admin?tab=agenda", { state: { openTab: "agenda", t: Date.now() } }); window.dispatchEvent(new CustomEvent("admin-open-tab", { detail: "agenda" })); try { sessionStorage.setItem("agenda_goto_date", items[0].appointment_date); } catch { /* */ } setTimeout(() => window.dispatchEvent(new CustomEvent("agenda-goto-date", { detail: items[0].appointment_date })), 300); }}>
             Abrir Agenda
           </Button>
         </div>

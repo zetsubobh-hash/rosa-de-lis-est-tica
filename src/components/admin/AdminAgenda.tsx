@@ -125,7 +125,22 @@ const AdminAgenda = () => {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [saving, setSaving] = useState(false);
-  const [filterDate, setFilterDate] = useState<Date>(new Date());
+  const [filterDate, setFilterDate] = useState<Date>(() => {
+    try {
+      const d = sessionStorage.getItem("agenda_goto_date");
+      if (d) { sessionStorage.removeItem("agenda_goto_date"); return new Date(d + "T12:00:00"); }
+    } catch { /* */ }
+    return new Date();
+  });
+  useEffect(() => {
+    const go = (e: Event) => {
+      const d = (e as CustomEvent).detail as string;
+      try { sessionStorage.removeItem("agenda_goto_date"); } catch { /* */ }
+      if (d) setFilterDate(new Date(d + "T12:00:00"));
+    };
+    window.addEventListener("agenda-goto-date", go);
+    return () => window.removeEventListener("agenda-goto-date", go);
+  }, []);
 
   // Quick-book from timeline slot
   const [quickBook, setQuickBook] = useState<{ time: string } | null>(null);

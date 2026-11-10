@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, MapPin, Phone, Instagram, Building2, Clock, MessageCircle, CalendarCheck } from "lucide-react";
+import { Save, MapPin, Phone, Instagram, Building2, Clock, MessageCircle, CalendarCheck, BellRing } from "lucide-react";
 
 const formatWhatsApp = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -62,6 +62,14 @@ const AdminSiteSettings = () => {
     setForm((prev) => ({ ...prev, online_booking_enabled: checked ? "true" : "false" }));
   };
 
+  const isAlertEnabled = (settings.unassigned_partner_alert_enabled ?? "true") !== "false";
+  const handleToggleAlert = async (checked: boolean) => {
+    const { error } = await updateSetting("unassigned_partner_alert_enabled", checked ? "true" : "false");
+    if (error) { toast.error("Erro ao salvar"); return; }
+    window.dispatchEvent(new CustomEvent("unassigned-alert-setting", { detail: checked }));
+    toast.success(checked ? "Aviso ligado" : "Aviso desligado");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -101,6 +109,22 @@ const AdminSiteSettings = () => {
           </div>
         </div>
         <Switch checked={isBookingEnabled} onCheckedChange={handleToggleBooking} />
+      </div>
+
+      {/* Unassigned partner alert toggle */}
+      <div className="rounded-xl border border-border p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <BellRing className="w-5 h-5 text-primary" />
+          <div>
+            <p className="font-body text-sm font-semibold text-foreground">Aviso de agendamento sem profissional</p>
+            <p className="font-body text-xs text-muted-foreground">
+              {isAlertEnabled
+                ? "Ligado — aviso na tela e som a cada 5 minutos para o admin."
+                : "Desligado — nenhum aviso nem som."}
+            </p>
+          </div>
+        </div>
+        <Switch checked={isAlertEnabled} onCheckedChange={handleToggleAlert} />
       </div>
 
       <div className="space-y-4">
