@@ -86,6 +86,15 @@ const Admin = () => {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const tab = (e as CustomEvent).detail;
+      if (validTabs.includes(tab)) setActiveTab(tab as Tab);
+    };
+    window.addEventListener("admin-open-tab", onOpen);
+    return () => window.removeEventListener("admin-open-tab", onOpen);
+  }, []);
+
   const handleTabChange = (tab: Tab) => {
     if (tab !== activeTab) {
       setPartnersUnlocked(false);
