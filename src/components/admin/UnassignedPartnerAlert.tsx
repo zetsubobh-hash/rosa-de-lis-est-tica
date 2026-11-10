@@ -69,7 +69,7 @@ export default function UnassignedPartnerAlert({ onOpenAgenda }: { onOpenAgenda:
   if (!items.length || hidden) return null;
 
   return (
-    <div role="alert" className="mb-4 rounded-xl border-2 border-destructive bg-destructive/10 p-3 md:p-4 animate-pulse-slow">
+    <div role="alert" className="mb-4 rounded-xl border-2 border-destructive bg-destructive/10 p-3 md:p-4">
       <div className="flex items-start gap-3">
         <BellRing className="h-6 w-6 text-destructive shrink-0 animate-bounce" />
         <div className="flex-1 min-w-0">
