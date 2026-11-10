@@ -1,5 +1,6 @@
 - [x] Adicionar limpeza segura antes da tabela de clientes.
-- [ ] Corrigir agenda completa para todos os parceiros e visão espelhada; testar carregamento e privacidade dos nomes.
+- [x] Corrigir agenda completa para todos os parceiros e visão espelhada; sete testes passaram e compilação sem erros; nomes via consulta restrita, contatos privados preservados.
+- [ ] Verificar a agenda com parceiro conectado: bloqueado pela autenticação externa sem sessão de teste disponível.
 - [x] Remover emojis dos nomes salvos e oferecer limpeza no painel (nomes vazios/protegidos preservados).
 - [x] Verificar regras no banco e seis testes; painel logado não verificável neste ambiente.
 - [x] Corrigir busca em Clientes para consultar toda a base antes de paginar.
