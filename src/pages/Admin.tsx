@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBrandingLogos } from "@/hooks/useBrandingLogos";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminAgenda from "@/components/admin/AdminAgenda";
-import UnassignedPartnerAlert from "@/components/admin/UnassignedPartnerAlert";
 import AdminPaymentSettings from "@/components/admin/AdminPaymentSettings";
 import AdminBranding from "@/components/admin/AdminBranding";
 import AdminPricing from "@/components/admin/AdminPricing";
@@ -308,7 +307,6 @@ const Admin = () => {
         </div>
 
         <div className="p-4 md:p-8">
-          <UnassignedPartnerAlert onOpenAgenda={() => handleTabChange("agenda" as Tab)} />
           {activeTab === "dashboard" && <AdminDashboard />}
           {activeTab === "agenda" && <AdminAgenda />}
           {activeTab === "cash" && (
