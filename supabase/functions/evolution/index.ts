@@ -60,6 +60,25 @@ const normalizeQrPayload = (payload: any) => {
   };
 };
 
+const freshQr = async (baseUrl: string, name: string, headers: Record<string, string>) => {
+  const enc = encodeURIComponent(name);
+  const connect = async () => {
+    const r = await fetch(`${baseUrl}/instance/connect/${enc}`, { method: "GET", headers });
+    return { ok: r.ok, status: r.status, data: normalizeQrPayload(await readJson(r)) };
+  };
+  let res = await connect();
+  if (res.ok && hasQr(res.data)) return res;
+  // Stale "open"/"connecting" session without QR: log out and request a new QR
+  console.log("No QR returned, forcing logout and reconnect", JSON.stringify(res.data));
+  await fetch(`${baseUrl}/instance/logout/${enc}`, { method: "DELETE", headers }).catch(() => null);
+  for (let i = 0; i < 4; i++) {
+    await new Promise((r) => setTimeout(r, 1500));
+    res = await connect();
+    if (res.ok && hasQr(res.data)) return res;
+  }
+  return res;
+};
+
 const hasQr = (payload: any) => Boolean(payload?.base64 || payload?.code || payload?.qrcode?.base64 || payload?.qrcode?.code);
 
 async function getConfig(supabase: any) {
@@ -148,33 +167,10 @@ serve(async (req) => {
         if ([400, 403, 409].includes(res.status) && (msg.includes("already") || msg.includes("exist") || msg.includes("em uso") || msg.includes("in use"))) {
           console.log("Instance already exists, restarting and fetching QR code...");
 
-          // First try to restart the instance to get a fresh QR
-          try {
-            const restartRes = await fetch(`${baseUrl}/instance/restart/${instanceName}`, {
-              method: "PUT",
-              headers,
-            });
-            const restartData = normalizeQrPayload(await readJson(restartRes));
-            console.log("Restart result:", restartRes.status, JSON.stringify(restartData));
-            if (hasQr(restartData)) {
-              return json({ ...restartData, reused: true, source: "restart" });
-            }
-          } catch (e) {
-            console.log("Restart attempt failed (may not exist), continuing...", e);
-          }
-
-          // Small delay to allow restart
-          await new Promise((r) => setTimeout(r, 1500));
-
-          // Now fetch QR code
-          const qrRes = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
-            method: "GET",
-            headers,
-          });
-          const qrData = normalizeQrPayload(await readJson(qrRes));
-          console.log("QR code response:", qrRes.status, JSON.stringify(qrData));
-          if (!qrRes.ok) {
-            return json({ error: qrData?.message || "Erro ao conectar instância existente", details: qrData }, qrRes.status);
+          const r = await freshQr(baseUrl, instanceName, headers);
+          const qrData = r.data;
+          if (!r.ok) {
+            return json({ error: qrData?.message || "Erro ao conectar instância existente", details: qrData }, r.status);
           }
           return json({ ...qrData, reused: true });
         }
@@ -185,14 +181,11 @@ serve(async (req) => {
 
     // Get QR code
     if (action === "get_qrcode") {
-      const res = await fetch(`${baseUrl}/instance/connect/${instanceName}`, {
-        method: "GET",
-        headers,
-      });
-      const data = normalizeQrPayload(await readJson(res));
-      if (!res.ok) {
-        console.error("Evolution get_qrcode error:", res.status, data);
-        return json({ error: data?.message || "Erro ao obter QR Code" }, res.status);
+      const r = await freshQr(baseUrl, instanceName, headers);
+      const data = r.data;
+      if (!r.ok) {
+        console.error("Evolution get_qrcode error:", r.status, data);
+        return json({ error: data?.message || "Erro ao obter QR Code" }, r.status);
       }
       return json(data);
     }
