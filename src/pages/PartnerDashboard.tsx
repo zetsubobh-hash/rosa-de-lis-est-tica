@@ -30,6 +30,7 @@ interface SessionInfo {
 
 interface Appointment {
   id: string;
+  partner_id?: string | null;
   service_title: string;
   service_slug: string;
   appointment_date: string;
