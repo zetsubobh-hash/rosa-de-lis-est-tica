@@ -520,7 +520,7 @@ const PartnerDashboard = () => {
   const referenceNow = new Date(nowTick);
   const today = formatLocalDate(referenceNow);
   const todayCount = appointments.filter((a) => a.appointment_date === today).length;
-  const overdueAppointments = appointments.filter((a) => isAppointmentOverdue(a, referenceNow));
+  const overdueAppointments = appointments.filter((a) => a.partner_id === partnerId && isAppointmentOverdue(a, referenceNow));
   const overdueCount = overdueAppointments.length;
   const nextOverdueAppointment = overdueAppointments[0] ?? null;
 
