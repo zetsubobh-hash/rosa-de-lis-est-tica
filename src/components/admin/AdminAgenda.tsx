@@ -642,6 +642,7 @@ const AdminAgenda = () => {
       <DayTimelineView
         appointments={filtered}
         timelineDate={filterDateStr}
+        onToday={setFilterDate}
         expandedAptId={expandedApt}
         onSelectAppointment={(id) => setExpandedApt(expandedApt === id ? null : id)}
         clientPlans={clientPlans}

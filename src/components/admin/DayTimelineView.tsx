@@ -3,6 +3,7 @@ import { User, Scissors, X, Phone, MessageCircle, Clock, Handshake, Banknote, Ch
 import { cn } from "@/lib/utils";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { useMemo, useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -83,6 +84,8 @@ interface DayTimelineViewProps {
   onDragReschedule?: (appointmentId: string, newTime: string) => void;
   /** Day represented by this timeline in YYYY-MM-DD */
   timelineDate?: string;
+  /** Selects the current local day in the parent agenda. */
+  onToday: (date: Date) => void;
   /** Read-only mode hides action buttons */
   readOnly?: boolean;
   /** Callback to check if an appointment is overdue and needs attention */
@@ -160,6 +163,7 @@ const DayTimelineView = ({
   rooms = 1,
   onDragReschedule,
   timelineDate,
+  onToday,
   readOnly = false,
   isOverdue: isOverdueFn,
   onMarkNoShow,
@@ -734,12 +738,18 @@ const DayTimelineView = ({
       {/* "Hoje" button */}
       {!mobileMovingId && (
         <div className="sticky bottom-3 flex justify-end pr-3 pb-2 pointer-events-none">
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="pointer-events-auto px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg hover:bg-primary/90 transition-colors"
+          <Button
+            size="sm"
+            onClick={() => {
+              const currentDay = new Date();
+              currentDay.setHours(0, 0, 0, 0);
+              onToday(currentDay);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="pointer-events-auto h-auto px-4 py-1.5 rounded-full text-xs font-bold shadow-lg"
           >
             Hoje
-          </button>
+          </Button>
         </div>
       )}
     </motion.div>
