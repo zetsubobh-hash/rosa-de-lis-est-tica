@@ -11,3 +11,4 @@
 - Room capacity is enforced by the appointments BEFORE trigger (auto-assigns the lowest free room up to site_settings.treatment_rooms, 1-10) plus a unique (date,time,room) index; partner double-booking stays blocked by its own index, so clients never pick rooms themselves.
 - WhatsApp booking bot lives in the `whatsapp-bot` edge function (Evolution webhook, secret token in query) and reads active services live from the database; never hardcode the service catalog in the bot prompt.
 - Partner agenda and admin mirror use the shared paginated appointment loader without professional/date exclusions; client labels use the restricted RPC rather than widening profile access, preserving private contacts.
+- DayTimelineView requires an onToday callback wired to the parent date filter; compute the local day at click time so Today changes the displayed date, including after midnight.

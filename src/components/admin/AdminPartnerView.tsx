@@ -618,6 +618,7 @@ const AdminPartnerView = () => {
                   return (
                     <DayTimelineView
                       timelineDate={dateStr}
+                      onToday={setFilterDate}
                       appointments={dayApts.map((a) => ({
                         ...a,
                         service_slug: a.service_slug || "",
