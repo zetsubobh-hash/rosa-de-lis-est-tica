@@ -79,15 +79,13 @@ export default function MeusCuidados({ userId, onReward, readOnly }: { userId: s
         {canClaim && !readOnly && <Button onClick={claim} disabled={busy} className="mt-3 rounded-full">Resgatar meu mimo</Button>}
       </div>
 
-      {last && (
-        <div className="rounded-2xl bg-card border border-border p-5">
-          <div className="flex items-center gap-2 mb-2"><HeartHandshake className="w-4 h-4 text-primary" /><p className="font-heading text-base font-bold text-foreground">Cuidados após {last.service_title}</p></div>
-          <p className="font-body text-xs text-muted-foreground mb-2">Atendimento em {fmt(last.appointment_date)}</p>
-          <ul className="list-disc pl-5 space-y-1 font-body text-sm text-foreground">
-            {careTipsFor(`${last.service_slug} ${last.service_title}`).map((t) => <li key={t}>{t}</li>)}
-          </ul>
-        </div>
-      )}
+      <div className="rounded-2xl bg-card border border-border p-5">
+        <div className="flex items-center gap-2 mb-2"><HeartHandshake className="w-4 h-4 text-primary" /><p className="font-heading text-base font-bold text-foreground">Dicas pós-atendimento{(last || next) ? `: ${(last || next)!.service_title}` : ""}</p></div>
+        <p className="font-body text-xs text-muted-foreground mb-2">{last ? `Seu último atendimento foi em ${fmt(last.appointment_date)}` : next ? "Para depois do seu próximo atendimento" : "Cuidados gerais para manter seus resultados"}</p>
+        <ul className="list-disc pl-5 space-y-1 font-body text-sm text-foreground">
+          {careTipsFor(last || next ? `${(last || next)!.service_slug} ${(last || next)!.service_title}` : "").map((t) => <li key={t}>{t}</li>)}
+        </ul>
+      </div>
     </div>
   );
 }
