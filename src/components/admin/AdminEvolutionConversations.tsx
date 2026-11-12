@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
-import { ArrowLeft, ImageIcon, Loader2, MessageCircle, Mic, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { ArrowLeft, FileDown, ImageIcon, Loader2, MessageCircle, Mic, Play, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type Message = { id: string; fromMe: boolean; timestamp: number; sender: string; kind: "text" | "image" | "audio"; text: string; seconds: number };
+type Message = { id: string; fromMe: boolean; timestamp: number; sender: string; kind: "text" | "image" | "audio" | "video" | "sticker" | "document"; text: string; seconds: number };
 type Chat = { jid: string; name: string; unread: number; last: Message | null };
 const dateTime = (seconds: number) => seconds ? new Date(seconds * 1000).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "";
 
@@ -39,10 +39,12 @@ function MessageMedia({ message, jid }: { message: Message; jid: string }) {
     finally { if (active.current) setLoading(false); }
   };
   return <div className="space-y-2">
-    {source ? message.kind === "image" ? <img src={source} alt={message.text || "Imagem da conversa"} className="max-h-96 max-w-full rounded object-contain" /> : <audio controls src={source} className="w-full max-w-full" preload="metadata" /> :
+    {source ? (message.kind === "image" || message.kind === "sticker") ? <img src={source} alt={message.text || "Imagem da conversa"} className="max-h-96 max-w-full rounded object-contain" /> : message.kind === "video" ? <video controls src={source} className="max-h-96 max-w-full rounded" preload="metadata" />
+      : message.kind === "document" ? <Button asChild variant="outline" size="sm"><a href={source} download="documento"><FileDown className="h-4 w-4 mr-2" />Baixar documento</a></Button>
+      : <audio controls src={source} className="w-full max-w-full" preload="metadata" /> :
       <Button variant="outline" size="sm" disabled={loading} onClick={load} className="max-w-full whitespace-normal h-auto min-h-9 py-2 gap-2">
-        {loading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : message.kind === "audio" ? <Mic className="h-4 w-4 shrink-0" /> : <ImageIcon className="h-4 w-4 shrink-0" />}
-        {message.kind === "audio" ? `Ouvir áudio${message.seconds ? ` · ${message.seconds}s` : ""}` : "Abrir imagem"}
+        {loading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : message.kind === "audio" ? <Mic className="h-4 w-4 shrink-0" /> : message.kind === "video" ? <Play className="h-4 w-4 shrink-0" /> : message.kind === "document" ? <FileDown className="h-4 w-4 shrink-0" /> : <ImageIcon className="h-4 w-4 shrink-0" />}
+        {message.kind === "audio" ? `Ouvir áudio${message.seconds ? ` · ${message.seconds}s` : ""}` : message.kind === "video" ? "Abrir vídeo" : message.kind === "sticker" ? "Abrir figurinha" : message.kind === "document" ? "Carregar documento" : "Abrir imagem"}
       </Button>}
     {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
   </div>;
@@ -115,7 +117,7 @@ export default function AdminEvolutionConversations() {
         <p className="px-3 pb-2 text-xs text-muted-foreground">{total} conversas</p>
         <div className="max-h-[65vh] overflow-y-auto flex-1">
           {loadingChats ? <p className="p-4 text-muted-foreground" role="status">Carregando conversas…</p> : chatError ? <p role="alert" className="p-4 text-destructive text-sm">{chatError}</p> : chats.length === 0 ? <p className="p-4 text-muted-foreground text-sm">Nenhuma conversa encontrada no histórico do Evolution.</p> : chats.map(chat => <Button key={chat.jid} variant="ghost" onClick={() => setSelected(chat)} className={`w-full h-auto min-h-20 rounded-none justify-start px-3 py-3 border-b border-border whitespace-normal ${selected?.jid === chat.jid ? "bg-accent" : ""}`}>
-            <div className="text-left min-w-0 w-full space-y-1"><div className="font-semibold truncate">{chat.name}</div><div className="text-xs text-muted-foreground truncate">{chat.jid.split("@")[0]}{chat.unread ? ` · ${chat.unread} não lidas` : ""}</div><div className="text-xs text-muted-foreground truncate">{chat.last?.text || (chat.last?.kind === "audio" ? "Áudio" : chat.last?.kind === "image" ? "Imagem" : "")}</div></div>
+            <div className="text-left min-w-0 w-full space-y-1"><div className="font-semibold truncate">{chat.name}</div><div className="text-xs text-muted-foreground truncate">{chat.jid.split("@")[0]}{chat.unread ? ` · ${chat.unread} não lidas` : ""}</div><div className="text-xs text-muted-foreground truncate">{chat.last?.text || (chat.last?.kind === "audio" ? "Áudio" : chat.last?.kind === "image" ? "Imagem" : chat.last?.kind === "video" ? "Vídeo" : chat.last?.kind === "sticker" ? "Figurinha" : chat.last?.kind === "document" ? "Documento" : "")}</div></div>
           </Button>)}
         </div>
         <div className="flex items-center justify-between gap-2 p-3 border-t border-border"><Button variant="outline" size="sm" disabled={page <= 1 || loadingChats} onClick={() => setPage(p => p - 1)}>Anterior</Button><span className="text-xs text-muted-foreground">{page}/{pages}</span><Button variant="outline" size="sm" disabled={page >= pages || loadingChats} onClick={() => setPage(p => p + 1)}>Próxima</Button></div>

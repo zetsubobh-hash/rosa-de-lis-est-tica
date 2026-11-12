@@ -2,6 +2,25 @@ import { describe, expect, it, vi } from "vitest";
 import { canReadConversations, WALLISTON_ID, messageRecord, messageRecords, mediaRequest, readMedia, EvolutionRequestError } from "../../supabase/functions/evolution-conversations/helpers";
 
 describe("Conversas exclusivas de Walliston", () => {
+  it("recupera texto serializado, editado e envelopes adicionais sem expor contexto privado", () => {
+    expect(messageRecord({ message: JSON.stringify({ conversation: "Texto salvo" }) }).text).toBe("Texto salvo");
+    expect(messageRecord({ message: { protocolMessage: { editedMessage: { conversation: "Texto corrigido" } } } }).text).toBe("Texto corrigido");
+    expect(messageRecord({ message: { viewOnceMessageV2Extension: { message: { extendedTextMessage: { text: "Texto encapsulado", contextInfo: { secret: "private" } } } } } })).toMatchObject({ kind: "text", text: "Texto encapsulado" });
+    expect(messageRecord({ message: { extendedTextMessage: { text: "Seguro", contextInfo: { secret: "private" } } } })).not.toHaveProperty("contextInfo");
+  });
+  it("distingue figurinha, vídeo e documento para abrir o tipo correto de arquivo", () => {
+    expect(messageRecord({ message: { stickerMessage: { mediaKey: "private" } } })).toMatchObject({ kind: "sticker", text: "" });
+    expect(messageRecord({ message: { videoMessage: { caption: "Resultado", seconds: 9 } } })).toMatchObject({ kind: "video", text: "Resultado", seconds: 9 });
+    expect(messageRecord({ message: { documentWithCaptionMessage: { message: { documentMessage: { fileName: "ficha.pdf" } } } } })).toMatchObject({ kind: "document", text: "ficha.pdf" });
+  });
+  it("recupera dados de contatos, localização, reações, enquetes e botões", () => {
+    expect(messageRecord({ message: { contactMessage: { displayName: "Ana", vcard: "TEL:5511999999999" } } }).text).toContain("5511999999999");
+    expect(messageRecord({ message: { locationMessage: { degreesLatitude: -23.5, degreesLongitude: -46.6 } } }).text).toContain("-23.5, -46.6");
+    expect(messageRecord({ message: { reactionMessage: { text: "❤️" } } }).text).toContain("❤️");
+    expect(messageRecord({ message: { pollCreationMessageV3: { name: "Horário?", options: [{ optionName: "Manhã" }] } } }).text).toContain("Manhã");
+    expect(messageRecord({ message: { buttonsResponseMessage: { selectedDisplayText: "Confirmar" } } }).text).toBe("Confirmar");
+    expect(messageRecord({ message: { buttonsMessage: { contentText: "Escolha", buttons: [{ buttonText: { displayText: "Agendar" } }] } } }).text).toContain("Agendar");
+  });
   it("autoriza somente Walliston com papel admin", () => {
     expect(canReadConversations("4649913b-f48b-470e-b407-251803756157", ["admin"])).toBe(true);
     expect(canReadConversations("outro-admin", ["admin"])).toBe(false);

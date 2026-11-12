@@ -78,11 +78,14 @@ Deno.serve(async (req) => {
     const record = records.find(r => r.key?.id === input.id && r.key?.remoteJid === input.jid);
     if (!record) return json({ error: "Mensagem não encontrada nesta conversa" }, 404);
     const normalized = messageRecord(record);
-    if (!["audio", "image"].includes(normalized.kind)) return json({ error: "Mídia não suportada" }, 400);
+    if (!["audio", "image", "video", "sticker", "document"].includes(normalized.kind)) return json({ error: "Esta mensagem não contém um arquivo" }, 400);
     const media = await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
     if (!media) return json({ available: false, error: "O WhatsApp não disponibilizou este arquivo. Mídias antigas podem ter expirado; peça o reenvio para abrir aqui." });
     const mime = String(media.mimetype || media.mimeType || "").split(";")[0];
-    const allowedMime = normalized.kind === "image" ? /^image\/(jpeg|png|webp|gif)$/ : /^audio\/(ogg|mpeg|mp4|aac|wav|webm|opus)$/;
+    const allowedMime = normalized.kind === "image" || normalized.kind === "sticker" ? /^image\/(jpeg|png|webp|gif)$/
+      : normalized.kind === "video" ? /^video\/(mp4|webm|quicktime)$/
+      : normalized.kind === "document" ? /^(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-(excel|powerpoint))|text\/plain)$/
+      : /^audio\/(ogg|mpeg|mp4|aac|wav|webm|opus)$/;
     const base64 = String(media.base64 || "").replace(/^data:[^;]+;base64,/, "");
     if (!allowedMime.test(mime) || !base64 || !/^[A-Za-z0-9+/=\r\n]+$/.test(base64)) return json({ error: "Mídia indisponível ou formato não suportado" }, 422);
     if (base64.length > 28_000_000) return json({ error: "Arquivo muito grande para abrir no painel" }, 413);
