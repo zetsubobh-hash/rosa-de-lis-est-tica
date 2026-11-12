@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { HelpCircle, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +12,8 @@ const HELLO: Msg = { role: "assistant", content: "Oi! Eu sou a **Lis**, sua assi
 
 export default function LisAssistant() {
   const { isAdmin, isPartner, loading } = useUserRole();
+  const { pathname } = useLocation();
+  const inStaffArea = pathname.startsWith("/admin") || pathname.startsWith("/parceiro");
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([HELLO]);
@@ -19,7 +22,7 @@ export default function LisAssistant() {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
-  if (loading || (!isAdmin && !isPartner)) return null;
+  if (loading || (!isAdmin && !isPartner) || !inStaffArea) return null;
 
   const send = async () => {
     const text = input.trim();
@@ -56,12 +59,12 @@ export default function LisAssistant() {
   return (
     <>
       {!open && !dismissed && (
-        <div className="fixed bottom-20 left-4 z-[60]">
-          <img src={lis} alt="" aria-hidden className="pointer-events-none absolute bottom-0 left-0 z-20 h-28 w-28 object-cover object-top" />
-          <button onClick={() => setOpen(true)} aria-label="Abrir assistente Lis" className="relative z-10 flex items-center rounded-3xl bg-background py-2 pl-24 pr-4 shadow-lg ring-1 ring-primary/20 transition-transform hover:scale-105">
+        <div className="fixed bottom-20 right-4 z-[60]">
+          <img src={lis} alt="" aria-hidden className="pointer-events-none absolute bottom-0 right-0 z-20 h-28 w-28 object-cover object-top" />
+          <button onClick={() => setOpen(true)} aria-label="Abrir assistente Lis" className="relative z-10 flex items-center rounded-3xl bg-background py-2 pl-4 pr-24 shadow-lg ring-1 ring-primary/20 transition-transform hover:scale-105">
             <span className="text-sm font-semibold text-primary">Posso te ajudar?</span>
           </button>
-          <button onClick={() => setDismissed(true)} aria-label="Fechar assistente" className="absolute -right-2 -top-2 z-30 rounded-full bg-background p-1 shadow ring-1 ring-border transition-transform hover:scale-110">
+          <button onClick={() => setDismissed(true)} aria-label="Fechar assistente" className="absolute -left-2 -top-2 z-30 rounded-full bg-background p-1 shadow ring-1 ring-border transition-transform hover:scale-110">
             <X className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
         </div>
@@ -73,7 +76,7 @@ export default function LisAssistant() {
         </button>
       )}
       {open && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-start bg-foreground/30 p-3 sm:items-end" onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
+        <div className="fixed inset-0 z-[70] flex items-end justify-end bg-foreground/30 p-3" onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
           <div className="flex h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-background">
             <div className="flex items-center gap-3 bg-primary p-3 text-primary-foreground">
               <img src={lis} alt="Lis" className="h-14 w-14 rounded-full bg-primary-foreground object-cover object-top" />
