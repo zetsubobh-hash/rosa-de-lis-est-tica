@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
       .select("value")
       .eq("key", "app_install_url")
       .maybeSingle();
-    const siteBaseUrl = (appUrlRow?.value || settingsMap.site_url || "").replace(/\/+$/, "");
+    const siteBaseUrl = (appUrlRow?.value || settingsMap.site_url || "https://rosadelis.com").replace(/\/+$/, "");
 
     // Get service title if specified
     let serviceTitle = "nossos serviços";

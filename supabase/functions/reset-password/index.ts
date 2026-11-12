@@ -102,7 +102,7 @@ serve(async (req) => {
       const apiUrl = cfg.evolution_api_url.replace(/\/+$/, "");
       const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
 
-      const message = `🔐 *${businessName} - Redefinição de Senha*\n\nOlá, ${profile.full_name}!\n\nSua senha foi redefinida com sucesso.\n\n👤 *Usuário:* ${profile.full_name}\n🔑 *Nova senha:* ${newPassword}\n\nAcesse o app e faça login com sua nova senha. Recomendamos alterá-la depois no seu perfil.\n\n_${businessName}_`;
+      const message = `🔐 *${businessName} - Redefinição de Senha*\n\nOlá, ${profile.full_name}!\n\nSua senha foi redefinida com sucesso.\n\n👤 *Usuário:* ${profile.full_name}\n🔑 *Nova senha:* ${newPassword}\n\nAcesse o app e faça login com sua nova senha. Recomendamos alterá-la depois no seu perfil.\n\n📲 *Acesse o app:* https://rosadelis.com\n\n_${businessName}_`;
 
       try {
         const res = await fetch(`${apiUrl}/message/sendText/${cfg.evolution_instance_name}`, {

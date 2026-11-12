@@ -123,7 +123,7 @@ const sendWhatsAppCredentials = async (phone: string, fullName: string, username
     const cleanPhone = phone.replace(/\D/g, "");
     const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
 
-    const text = `Olá *${fullName}*! 👋\n\nSeu cadastro na *${businessName}* foi criado com sucesso! ✨\n\nAcesse nosso app com os dados abaixo:\n\n👤 *Usuário:* ${username}\n🔑 *Senha:* ${password}\n\nRecomendamos alterar sua senha no primeiro acesso. 💕`;
+    const text = `Olá *${fullName}*! 👋\n\nSeu cadastro na *${businessName}* foi criado com sucesso! ✨\n\nAcesse nosso app com os dados abaixo:\n\n👤 *Usuário:* ${username}\n🔑 *Senha:* ${password}\n\n📲 *Acesse o app:* https://rosadelis.com\n\nRecomendamos alterar sua senha no primeiro acesso. 💕`;
 
     await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
       method: "POST",

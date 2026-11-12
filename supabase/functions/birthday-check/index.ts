@@ -198,7 +198,7 @@ serve(async (req) => {
     const adminTemplate = cfg.whatsapp_msg_birthday_text || "";
     const clientTemplate = cfg.whatsapp_msg_birthday_client_text || "";
     const rouletteInviteTemplate = cfg.whatsapp_msg_roulette_invite_text ||
-      "🎂 *Feliz Aniversário, {nome}!* 🎉\n\nHoje é o seu dia especial e nós da *{empresa}* queremos te parabenizar! 🥳💖\n\n🎰 Temos uma surpresa pra você: uma *Roleta de Prêmios* te esperando no nosso app!\n\nGire a roleta e ganhe um presente exclusivo de aniversário! 🎁✨\n\n👉 Acesse agora e descubra o que preparamos pra você!\n\nUm abraço carinhoso de toda a equipe! 💕\n\n— *{empresa}*";
+      "🎂 *Feliz Aniversário, {nome}!* 🎉\n\nHoje é o seu dia especial e nós da *{empresa}* queremos te parabenizar! 🥳💖\n\n🎰 Temos uma surpresa pra você: uma *Roleta de Prêmios* te esperando no nosso app!\n\nGire a roleta e ganhe um presente exclusivo de aniversário! 🎁✨\n\n👉 Acesse agora e descubra o que preparamos pra você:\n{link}\n\nUm abraço carinhoso de toda a equipe! 💕\n\n— *{empresa}*";
     const results: any[] = [];
 
     for (const profile of birthdayProfiles) {
@@ -243,6 +243,7 @@ serve(async (req) => {
         empresa: businessName,
         brinde: giftText,
         cupom: couponCode || "",
+        link: "https://rosadelis.com/roleta-premio",
       };
 
       // Send roulette invite if roulette is enabled
