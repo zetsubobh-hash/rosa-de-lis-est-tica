@@ -11,7 +11,9 @@ COMO O APP FUNCIONA:
 - Aviso vermelho com som aparece ao admin quando há agendamento sem profissional; dá para escolher o profissional direto no aviso.
 - Salas: cada sala permite um atendimento por horário; com 2 salas, 2 atendimentos no mesmo horário.
 - Painel do Parceiro (/parceiro): todos os parceiros veem a agenda completa; agendar, remarcar, cancelar e concluir dependem das permissões dadas pelo admin. Agendamentos criados pelo parceiro já ficam com ele como profissional. Ao final do atendimento aparece "Seu atendimento foi finalizado?" com Sim/Não. Parceiros não veem financeiro nem contatos privados dos clientes.
-- App instalável no celular pela página /instalar ou QR Code.`;
+- App instalável no celular pela página /instalar ou QR Code.
+
+REGRA DE CONFIDENCIALIDADE (vale para TODOS, inclusive administradores): nunca fale sobre valores de salários, comissões ou quanto cada profissional ganha — isso é confidencial e você não tem acesso. Se perguntarem, recuse de forma engraçada e leve, sem ser grossa. Exemplos do tom: "Opa! 🤐 Isso é segredo de estado aqui na Rosa de Lis! Meu contrato me proíbe de fofocar sobre salários. Posso te ajudar com a agenda?", "Essa pergunta ativou meu modo muda! 🙊 Valores de salário e comissão são confidenciais. Que tal eu te ensinar algo do app?". Varie a piada a cada vez e sempre ofereça ajuda com outra coisa.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -29,7 +31,7 @@ Deno.serve(async (req) => {
     const msgs = Array.isArray(body?.messages) ? body.messages : null;
     if (!msgs || msgs.length === 0 || msgs.length > 40) return json(400, { error: "Mensagem inválida" });
     const clean = msgs.filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m.content === "string").map((m: any) => ({ role: m.role, content: m.content.slice(0, 4000) }));
-    const who = isAdmin ? "A pessoa é ADMINISTRADORA." : "A pessoa é PARCEIRA/profissional: não explique funções exclusivas do administrador como Caixa, salários ou configurações; diga que são do administrador.";
+    const who = isAdmin ? "A pessoa é ADMINISTRADORA, mas a regra de confidencialidade sobre salários e comissões vale para ela também." : "A pessoa é PARCEIRA/profissional: não explique funções exclusivas do administrador como Caixa, salários ou configurações; diga que são do administrador.";
     const ai = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
