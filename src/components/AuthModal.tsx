@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL } from "@/lib/supabaseUrl";
 import { toast } from "@/hooks/use-toast";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { LogIn, UserPlus, Loader2, Eye, EyeOff, Camera, X, Check, Phone } from "lucide-react";
 import Cropper, { Area } from "react-easy-crop";
 import { AnimatePresence, motion } from "framer-motion";
@@ -405,6 +406,8 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
               Enviar nova senha
             </Button>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="flex-1 h-px bg-border" />ou<span className="flex-1 h-px bg-border" /></div>
+            <GoogleSignInButton />
 
             <p className="text-center font-body text-sm text-muted-foreground">
               Lembrou a senha?{" "}
@@ -480,6 +483,8 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
               Entrar
             </Button>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="flex-1 h-px bg-border" />ou<span className="flex-1 h-px bg-border" /></div>
+            <GoogleSignInButton />
             <p className="text-center font-body text-sm text-muted-foreground">
               Não tem conta?{" "}
               <button
