@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, X } from "lucide-react";
+import { HelpCircle, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const HELLO: Msg = { role: "assistant", content: "Oi! Eu sou a **Lis**, sua assi
 export default function LisAssistant() {
   const { isAdmin, isPartner, loading } = useUserRole();
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([HELLO]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -54,10 +55,21 @@ export default function LisAssistant() {
 
   return (
     <>
-      {!open && (
-        <button onClick={() => setOpen(true)} aria-label="Abrir assistente Lis" className="fixed bottom-24 left-4 z-[60] flex items-center gap-2 rounded-3xl bg-background py-1 pl-1 pr-4 shadow-lg ring-1 ring-primary/20 transition-transform hover:scale-105">
-          <img src={lis} alt="Lis" className="h-14 w-14 rounded-2xl object-cover object-top" />
-          <span className="text-sm font-semibold text-primary">Posso te ajudar?</span>
+      {!open && !dismissed && (
+        <div className="fixed bottom-20 left-4 z-[60]">
+          <button onClick={() => setOpen(true)} aria-label="Abrir assistente Lis" className="relative mt-12 flex items-center rounded-3xl bg-background py-2 pl-24 pr-4 shadow-lg ring-1 ring-primary/20 transition-transform hover:scale-105">
+            <img src={lis} alt="Lis" className="absolute -top-14 left-0 h-28 w-28 object-cover object-top" />
+            <span className="text-sm font-semibold text-primary">Posso te ajudar?</span>
+          </button>
+          <button onClick={() => setDismissed(true)} aria-label="Fechar assistente" className="absolute -right-2 top-10 rounded-full bg-background p-1 shadow ring-1 ring-border transition-transform hover:scale-110">
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        </div>
+      )}
+      {!open && dismissed && (
+        <button onClick={() => { setDismissed(false); setOpen(true); }} aria-label="Abrir ajuda" className="fixed right-3 top-3 z-[60] flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-sm font-semibold text-primary shadow-lg ring-1 ring-primary/20 transition-transform hover:scale-105">
+          <HelpCircle className="h-4 w-4" />
+          Ajuda
         </button>
       )}
       {open && (
