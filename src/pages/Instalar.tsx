@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Download, CheckCircle2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import IphoneInstallGuide from "@/components/IphoneInstallGuide";
+import { getIphoneInstallContext } from "@/lib/iphoneInstall";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -13,7 +15,8 @@ const Instalar = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [prompted, setPrompted] = useState(false);
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isIOS = getIphoneInstallContext(navigator.userAgent, navigator.platform, navigator.maxTouchPoints).isIOS;
+  const [showIphoneGuide, setShowIphoneGuide] = useState(isIOS);
   const isAndroid = /Android/i.test(navigator.userAgent);
 
   // QR Code costuma abrir no leitor/navegador do fabricante (Xiaomi, Samsung...), que só cria
@@ -30,7 +33,7 @@ const Instalar = () => {
   }, []);
 
   useEffect(() => {
-    if (window.matchMedia("(display-mode: standalone)").matches) {
+    if (window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone) {
       setIsInstalled(true);
       return;
     }
@@ -76,15 +79,15 @@ const Instalar = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex items-start justify-center px-5 py-8 sm:py-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-sm w-full text-center space-y-6"
+        className="max-w-md w-full text-center space-y-6"
       >
         {isInstalled ? (
           <>
-            <CheckCircle2 className="w-20 h-20 text-emerald-500 mx-auto" />
+            <CheckCircle2 className="w-20 h-20 text-primary mx-auto" />
             <h1 className="font-heading text-2xl font-bold text-foreground">
               App instalado! ✅
             </h1>
@@ -94,9 +97,7 @@ const Instalar = () => {
           </>
         ) : (
           <>
-            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-              <Smartphone className="w-10 h-10 text-primary" />
-            </div>
+            <img src="/icons/rosadelis-app-v3-apple-180.png" alt="Rosa de Lis" className="h-20 w-20 mx-auto object-contain" />
             <h1 className="font-heading text-2xl font-bold text-foreground">
               Instalar Rosa de Lis
             </h1>
@@ -122,20 +123,9 @@ const Instalar = () => {
               </Button>
             )}
 
-            {!deferredPrompt && (
+            {showIphoneGuide ? <IphoneInstallGuide /> : !deferredPrompt && (
               <div className="rounded-xl bg-muted/50 border border-border p-5 text-left space-y-3">
-                {isIOS ? (
-                  <>
-                    <p className="font-body text-sm font-semibold text-foreground">
-                      📱 Como instalar no iPhone/iPad:
-                    </p>
-                    <ol className="font-body text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                      <li>Toque no ícone de <strong className="text-foreground">compartilhar</strong> (↑) do Safari</li>
-                      <li>Role para baixo e toque em <strong className="text-foreground">"Adicionar à Tela de Início"</strong></li>
-                      <li>Toque em <strong className="text-foreground">"Adicionar"</strong></li>
-                    </ol>
-                  </>
-                ) : isAndroid ? (
+                {isAndroid ? (
                   <>
                     <p className="font-body text-sm font-semibold text-foreground">
                       📱 Como instalar no Android:
@@ -148,11 +138,12 @@ const Instalar = () => {
                   </>
                 ) : (
                   <p className="font-body text-sm text-muted-foreground">
-                    Abra este link no navegador <strong className="text-foreground">Chrome</strong> do seu celular para instalar o app.
+                    Abra este link no celular: use o <strong className="text-foreground">Safari no iPhone</strong> ou o Chrome no Android.
                   </p>
                 )}
               </div>
             )}
+            {!isIOS && <Button variant="outline" className="w-full" onClick={() => setShowIphoneGuide((value) => !value)}><Smartphone className="h-4 w-4" />{showIphoneGuide ? "Voltar" : "Ver instalação no iPhone"}</Button>}
           </>
         )}
       </motion.div>

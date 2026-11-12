@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Cropper, { Area } from "react-easy-crop";
+import IphoneInstallGuide from "@/components/IphoneInstallGuide";
+import { getIphoneInstallContext } from "@/lib/iphoneInstall";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -47,6 +49,7 @@ const AdminInstallApp = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [showIphoneGuide, setShowIphoneGuide] = useState(false);
 
   // Icon upload
   const [iconUrl, setIconUrl] = useState<string>("/icons/rosadelis-app-v3-512.png");
@@ -71,7 +74,7 @@ const AdminInstallApp = () => {
     }
 
     const ua = navigator.userAgent;
-    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
+    setIsIOS(getIphoneInstallContext(ua, navigator.platform, navigator.maxTouchPoints).isIOS);
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -117,7 +120,7 @@ const AdminInstallApp = () => {
       setDeferredPrompt(null);
       setInstalling(false);
     } else if (isIOS) {
-      toast.info("No iPhone/iPad, toque no ícone de compartilhar do Safari e depois em \"Adicionar à Tela de Início\".");
+      setShowIphoneGuide(true);
     } else {
       toast.info("Abra este site diretamente no navegador Chrome do seu celular para instalar o app.");
     }
@@ -263,7 +266,7 @@ const AdminInstallApp = () => {
                 className="w-full gap-2 text-base"
               >
                 <Download className="w-5 h-5" />
-                {installing ? "Instalando..." : "Instalar agora"}
+                {installing ? "Instalando..." : isIOS ? "Como instalar no iPhone" : "Instalar agora"}
               </Button>
 
               {!deferredPrompt && (
@@ -273,6 +276,7 @@ const AdminInstallApp = () => {
                     : "Se o botão acima não funcionar, toque no menu ⋮ do navegador e selecione \"Instalar app\"."}
                 </p>
               )}
+              {showIphoneGuide && <IphoneInstallGuide />}
             </div>
           )}
 

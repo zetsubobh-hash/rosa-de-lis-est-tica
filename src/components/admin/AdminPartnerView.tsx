@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -1128,6 +1129,7 @@ const AdminPartnerView = () => {
                   <strong>Android:</strong> Abrir no Chrome → "Instalar aplicativo"
                 </p>
               </div>
+              <Button asChild variant="outline" className="w-full"><a href="/instalar">Ver passo a passo no iPhone</a></Button>
               <button
                 onClick={async () => {
                   if (navigator.share) {

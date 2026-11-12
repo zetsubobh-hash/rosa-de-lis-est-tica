@@ -1,3 +1,4 @@
+- [x] Facilitar instalação no iPhone com guia visual e acesso pelos painéis; quatro testes passaram e guia/cópia de link conferidos em tela móvel simulada. Instalação final no Safari de iPhone físico não verificável neste ambiente.
 - [x] Criar aba Clientes da Roleta com nome, telefone, busca, paginação e histórico de prêmios por cliente; 13 testes passaram. Conferência no painel logado indisponível com autenticação externa.
 - [x] Adicionar limpeza segura antes da tabela de clientes.
 - [x] Adicionar edição, controle de uso e exclusão individual/em lote dos tickets da roleta, com confirmação; testes passaram e regras admin verificadas. Conferência logada indisponível com autenticação externa.

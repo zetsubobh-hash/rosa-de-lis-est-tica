@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Bell, LogOut, Home, CalendarCheck,
@@ -1259,6 +1260,7 @@ const PartnerDashboard = () => {
               <p className="font-body text-xs text-muted-foreground font-semibold mt-2">🤖 Android</p>
               <p className="font-body text-xs text-muted-foreground">Abrir no Chrome → Menu (⋮) → "Instalar aplicativo"</p>
             </div>
+            <Button asChild variant="outline" className="w-full"><a href="/instalar">Ver passo a passo no iPhone</a></Button>
 
             <button
               onClick={async () => {
