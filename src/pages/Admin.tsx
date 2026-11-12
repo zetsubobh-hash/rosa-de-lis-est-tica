@@ -2,7 +2,7 @@ import { useEffect, useState, lazy, Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift, Megaphone, UserCheck, Wallet, FileUp, Activity } from "lucide-react";
+import { Shield, BarChart3, CalendarCheck, CreditCard, LogOut, Home, Palette, DollarSign, Menu, X, Users, Briefcase, Handshake, Eye, MessageCircle, Layers, History, Smartphone, Settings, ShoppingBag, Search, FileText, Bug, Gift, Megaphone, UserCheck, Wallet, FileUp, Activity, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,9 +32,10 @@ import AdminClients from "@/components/admin/AdminClients";
 import AdminCashRegister from "@/components/admin/AdminCashRegister";
 import AdminClientImportExport from "@/components/admin/AdminClientImportExport";
 import AdminSystemHealth from "@/components/admin/AdminSystemHealth";
+import AdminRouletteTickets from "@/components/admin/AdminRouletteTickets";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "promo-broadcast" | "import-export" | "system-health";
+type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "roulette-tickets" | "promo-broadcast" | "import-export" | "system-health";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -45,7 +46,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","promo-broadcast","import-export","system-health"];
+  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","roulette-tickets","promo-broadcast","import-export","system-health"];
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && validTabs.includes(tabParam)) {
@@ -160,6 +161,7 @@ const Admin = () => {
     { key: "partner-view", label: "Visão Parceiro", icon: Eye },
     { key: "client-plans", label: "Planos Clientes", icon: Layers },
     { key: "welcome-roulette", label: "Roleta Boas-Vindas", icon: Gift },
+    { key: "roulette-tickets", label: "Tickets Roleta", icon: Ticket },
     { key: "promo-broadcast", label: "Promoções WhatsApp", icon: Megaphone },
     { key: "history", label: "Finalizados", icon: History },
     { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
@@ -339,6 +341,7 @@ const Admin = () => {
           {activeTab === "whatsapp" && <AdminWhatsApp />}
           {activeTab === "client-plans" && <AdminClientPlans />}
           {activeTab === "welcome-roulette" && <AdminWelcomeRoulette />}
+          {activeTab === "roulette-tickets" && <AdminRouletteTickets />}
           {activeTab === "history" && <AdminHistory />}
           {activeTab === "promo-broadcast" && <AdminPromoBroadcast />}
           {activeTab === "users" && (
