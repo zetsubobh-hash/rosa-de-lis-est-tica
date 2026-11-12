@@ -1,3 +1,4 @@
+- [x] Criar aba Clientes da Roleta com nome, telefone, busca, paginação e histórico de prêmios por cliente; 13 testes passaram. Conferência no painel logado indisponível com autenticação externa.
 - [x] Adicionar limpeza segura antes da tabela de clientes.
 - [x] Adicionar edição, controle de uso e exclusão individual/em lote dos tickets da roleta, com confirmação; testes passaram e regras admin verificadas. Conferência logada indisponível com autenticação externa.
 - [x] Criar aba Prêmios da Roleta para definir os prêmios de cada número sem alterar código; reutiliza configuração vigente da roleta de boas-vindas e oito testes passaram. Conferência logada indisponível com autenticação externa.

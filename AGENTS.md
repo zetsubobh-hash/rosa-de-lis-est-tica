@@ -15,3 +15,4 @@
 - lis-assistant edge function answers staff app questions with a guide prompt kept in the function; update that guide when app features change.
 - Roulette ticket mutations use the existing admin-only coupons RLS and verify returned row IDs before reporting success; bulk deletion targets explicitly selected IDs only.
 - The Prêmios da Roleta tab reuses the welcome roulette editor and its existing payment_settings key; wheel numbers follow item order so editor and client wheel stay aligned without duplicate configurations.
+- Roulette client history reads paginated profiles and existing BV-/ANIV- coupons without mutations; grouping preserves unsuccessful spins but excludes them from prize and redemption totals.
