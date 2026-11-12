@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
-import { canReadConversations, messageRecord, messageRecords } from "./helpers.ts";
+import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError } from "./helpers.ts";
 
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("chats"), search: z.string().max(100).default(""), page: z.number().int().min(1).max(100000).default(1) }),
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       if (!response.ok) {
         // Do not log conversation content, credentials or raw provider payloads.
         console.error("Evolution conversations request failed", path, response.status);
-        throw new Error(`Evolution retornou ${response.status}. Verifique a conexão e o histórico salvo na instância.`);
+        throw new EvolutionRequestError(response.status);
       }
       try { return JSON.parse(text); } catch { throw new Error("Resposta inválida do Evolution"); }
     };
@@ -79,13 +79,14 @@ Deno.serve(async (req) => {
     if (!record) return json({ error: "Mensagem não encontrada nesta conversa" }, 404);
     const normalized = messageRecord(record);
     if (!["audio", "image"].includes(normalized.kind)) return json({ error: "Mídia não suportada" }, 400);
-    const media = await call("chat/getBase64FromMediaMessage", { message: record, convertToMp4: false });
+    const media = await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
+    if (!media) return json({ available: false, error: "O WhatsApp não disponibilizou este arquivo. Mídias antigas podem ter expirado; peça o reenvio para abrir aqui." });
     const mime = String(media.mimetype || media.mimeType || "").split(";")[0];
     const allowedMime = normalized.kind === "image" ? /^image\/(jpeg|png|webp|gif)$/ : /^audio\/(ogg|mpeg|mp4|aac|wav|webm|opus)$/;
     const base64 = String(media.base64 || "").replace(/^data:[^;]+;base64,/, "");
     if (!allowedMime.test(mime) || !base64 || !/^[A-Za-z0-9+/=\r\n]+$/.test(base64)) return json({ error: "Mídia indisponível ou formato não suportado" }, 422);
     if (base64.length > 28_000_000) return json({ error: "Arquivo muito grande para abrir no painel" }, 413);
-    return json({ mime, base64 });
+    return json({ available: true, mime, base64 });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "Não foi possível abrir as conversas" }, 502);
   }

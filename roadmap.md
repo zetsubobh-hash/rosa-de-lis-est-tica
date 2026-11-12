@@ -1,3 +1,4 @@
+- [x] Corrigir pedido de mídia Evolution: normalizar bytes, tentar leitura pela chave verificada e tratar arquivos indisponíveis sem erro fatal; validação por testes, reprodução real depende da sessão de Walliston.
 - [x] Criar Conversas WhatsApp exclusiva de Walliston, com textos, áudios e imagens da instância configurada; três testes passaram, funções publicadas e token inválido recusado com 401.
 - [ ] Conferir conversas e reprodução de mídia com Walliston conectado: bloqueado por autenticação externa sem sessão de teste disponível; depende também do histórico armazenado no Evolution.
 - [x] Facilitar instalação no iPhone com guia visual e acesso pelos painéis; quatro testes passaram e guia/cópia de link conferidos em tela móvel simulada. Instalação final no Safari de iPhone físico não verificável neste ambiente.
