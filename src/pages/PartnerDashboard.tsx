@@ -762,9 +762,9 @@ const PartnerDashboard = () => {
                   <AlertCircle className="w-5 h-5 text-destructive" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-heading text-base font-bold text-foreground">Confirmação obrigatória da sessão</p>
+                  <p className="font-heading text-base font-bold text-foreground">Seu atendimento foi finalizado?</p>
                   <p className="font-body text-sm text-muted-foreground mt-1">
-                    O horário desta sessão já passou. Marque agora se foi realizada ou não.
+                    O horário deste atendimento terminou. Confirme para finalizar a agenda corretamente.
                   </p>
                 </div>
               </div>
@@ -790,9 +790,9 @@ const PartnerDashboard = () => {
                     setExpandedAptId(nextOverdueAppointment.id);
                     openDecisionModal(nextOverdueAppointment, "cancelled");
                   }}
-                  className="h-11 rounded-xl border border-destructive/30 text-destructive font-body text-xs font-bold hover:bg-destructive/10 transition-colors"
+                  className="h-12 rounded-xl border border-destructive/30 text-destructive font-body text-base font-bold hover:bg-destructive/10 transition-colors"
                 >
-                  Não realizada
+                  ❌ Não
                 </button>
                 <button
                   onClick={() => {
@@ -801,9 +801,9 @@ const PartnerDashboard = () => {
                     setExpandedAptId(nextOverdueAppointment.id);
                     openDecisionModal(nextOverdueAppointment, "completed");
                   }}
-                  className="h-11 rounded-xl bg-primary text-primary-foreground font-body text-xs font-bold hover:opacity-90 transition-opacity"
+                  className="h-12 rounded-xl bg-primary text-primary-foreground font-body text-base font-bold hover:opacity-90 transition-opacity"
                 >
-                  Sessão realizada
+                  ✅ Sim
                 </button>
               </div>
             </motion.div>
