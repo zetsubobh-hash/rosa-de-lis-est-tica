@@ -13,6 +13,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import SessionScheduleModal from "@/components/SessionScheduleModal";
 import WelcomeRoulette from "@/components/WelcomeRoulette";
 import { toast } from "sonner";
+import MeusCuidados from "@/components/MeusCuidados";
 
 interface Appointment {
   id: string;
@@ -136,6 +137,7 @@ const MeusAgendamentos = () => {
       </section>
 
       <div className="max-w-2xl mx-auto px-6 py-10">
+        {user && <MeusCuidados userId={user.id} onReward={fetchCoupons} />}
         {/* Active Birthday Coupons */}
         {coupons.length > 0 && (
           <div className="mb-8">

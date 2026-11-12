@@ -1239,6 +1239,7 @@ export type Database = {
         Args: { _phone: string; _search: string }
         Returns: boolean
       }
+      claim_loyalty_reward: { Args: never; Returns: Json }
       claim_welcome_roulette: {
         Args: {
           _code: string
