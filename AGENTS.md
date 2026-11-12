@@ -12,3 +12,4 @@
 - WhatsApp booking bot lives in the `whatsapp-bot` edge function (Evolution webhook, secret token in query) and reads active services live from the database; never hardcode the service catalog in the bot prompt.
 - Partner agenda and admin mirror use the shared paginated appointment loader without professional/date exclusions; client labels use the restricted RPC rather than widening profile access, preserving private contacts.
 - DayTimelineView requires an onToday callback wired to the parent date filter; compute the local day at click time so Today changes the displayed date, including after midnight.
+- lis-assistant edge function answers staff app questions with a guide prompt kept in the function; update that guide when app features change.
