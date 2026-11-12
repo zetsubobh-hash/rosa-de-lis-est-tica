@@ -1,8 +1,23 @@
 import { describe, it, expect } from "vitest";
-import { groupRouletteClients, hasRoulettePrize, matchesRouletteClient, rouletteRecordStatus, roulettePrizeLabel, type RouletteRecord } from "./rouletteClientHistory";
+import { groupRouletteClients, hasRoulettePrize, matchesRouletteClient, matchesRouletteFilter, rouletteRecordStatus, roulettePrizeLabel, type RouletteRecord } from "./rouletteClientHistory";
 
 const record: RouletteRecord = { id: "ticket1", user_id: "client1", code: "BV-123", discount_type: "percent", discount_value: 40, is_used: false, used_at: null, created_at: "2026-11-12T00:00:00Z", expires_at: "2026-12-12T00:00:00Z" };
 describe("roulette client history", () => {
+  const client = { user_id: "client1", full_name: "João", phone: "123", history: [record] };
+  it("filters Contemplados to clients with prizes", () => {
+    expect(matchesRouletteFilter(client, "winners")).toBe(true);
+    expect(matchesRouletteFilter({ ...client, history: [{ ...record, code: "BV-NADA-123" }] }, "winners")).toBe(false);
+  });
+  it("filters Usados to clients with redeemed prizes, not unsuccessful spins", () => {
+    expect(matchesRouletteFilter({ ...client, history: [{ ...record, is_used: true }] }, "used")).toBe(true);
+    expect(matchesRouletteFilter(client, "used")).toBe(false);
+    expect(matchesRouletteFilter({ ...client, history: [{ ...record, code: "BV-NADA-123", is_used: true }] }, "used")).toBe(false);
+  });
+  it("filters Registrados to clients with any recorded roulette outcome", () => {
+    expect(matchesRouletteFilter(client, "registered")).toBe(true);
+    expect(matchesRouletteFilter({ ...client, history: [{ ...record, code: "BV-NADA-123" }] }, "registered")).toBe(true);
+    expect(matchesRouletteFilter({ ...client, history: [] }, "registered")).toBe(false);
+  });
   it("keeps name, phone and all roulette prizes grouped per client", () => {
     const clients = groupRouletteClients([{ user_id: "client1", full_name: "João Silva", phone: "(11) 99999-1234" }], [record, { ...record, id: "ticket2", code: "ANIV-456" }]);
     expect(clients).toHaveLength(1);

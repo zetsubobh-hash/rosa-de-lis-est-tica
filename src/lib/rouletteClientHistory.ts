@@ -9,6 +9,15 @@ export type RouletteClient = { user_id: string; full_name: string; phone: string
 
 export const isRouletteRecord = (record: RouletteRecord) => /^(BV-|ANIV-)/.test(record.code);
 export const hasRoulettePrize = (record: RouletteRecord) => !record.code.startsWith("BV-NADA-");
+export function matchesRouletteFilter(client: RouletteClient, filter: string) {
+  const prizes = client.history.filter(hasRoulettePrize);
+  if (filter === "winners") return prizes.length > 0;
+  if (filter === "used") return prizes.some((record) => record.is_used);
+  if (filter === "registered") return client.history.length > 0;
+  if (filter === "available") return prizes.some((record) => rouletteRecordStatus(record) === "Disponível");
+  if (filter === "not-spun") return client.history.length === 0;
+  return true;
+}
 export function roulettePrizeLabel(record: RouletteRecord) {
   if (!hasRoulettePrize(record)) return "Sem prêmio";
   if (record.discount_type === "service" || record.code.startsWith("BV-SRV") || (record.discount_type === "percent" && record.discount_value === 100)) return "Sessão grátis";

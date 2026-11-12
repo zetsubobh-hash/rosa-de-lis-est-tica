@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchAllPages } from "@/lib/agendaClients";
-import { groupRouletteClients, hasRoulettePrize, matchesRouletteClient, roulettePrizeLabel, rouletteRecordStatus, type RouletteClient } from "@/lib/rouletteClientHistory";
+import { groupRouletteClients, hasRoulettePrize, matchesRouletteClient, matchesRouletteFilter, roulettePrizeLabel, rouletteRecordStatus, type RouletteClient } from "@/lib/rouletteClientHistory";
 
 const PAGE_SIZE = 50;
 const formatDate = (date: string | null) => date ? new Date(date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
@@ -36,18 +36,18 @@ export default function AdminRouletteClients() {
   useEffect(() => { void load(); }, []);
   const filtered = useMemo(() => clients.filter((client) => {
     if (!matchesRouletteClient(client, search)) return false;
-    const prizes = client.history.filter(hasRoulettePrize);
-    if (filter === "winners") return prizes.length > 0;
-    if (filter === "used") return prizes.some((record) => record.is_used);
-    if (filter === "available") return prizes.some((record) => rouletteRecordStatus(record) === "Disponível");
-    if (filter === "not-spun") return client.history.length === 0;
-    return true;
+    return matchesRouletteFilter(client, filter);
   }), [clients, search, filter]);
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const opened = clients.find((client) => client.user_id === openedId);
-  const winners = clients.filter((client) => client.history.some(hasRoulettePrize)).length;
+  const summaries = [
+    { key: "all", label: "Clientes" },
+    { key: "winners", label: "Contemplados" },
+    { key: "used", label: "Usados" },
+    { key: "registered", label: "Registrados" },
+  ];
 
   return <section className="space-y-5">
     <div className="flex items-center gap-3">
@@ -55,10 +55,10 @@ export default function AdminRouletteClients() {
       <h2 className="text-xl font-bold text-foreground">Clientes da Roleta</h2>
       <Button variant="outline" size="icon" className="ml-auto shrink-0" aria-label="Atualizar clientes da roleta" title="Atualizar" disabled={loading} onClick={() => void load()}><RefreshCw /></Button>
     </div>
-    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground"><span>Clientes: <strong className="text-foreground">{clients.length}</strong></span><span>Contemplados: <strong className="text-primary">{winners}</strong></span><span>Prêmios registrados: <strong className="text-foreground">{clients.reduce((total, client) => total + client.history.filter(hasRoulettePrize).length, 0)}</strong></span></div>
+    <div className="flex flex-wrap gap-2" aria-label="Resumo dos clientes da roleta">{summaries.map((summary) => <Button key={summary.key} variant={filter === summary.key ? "default" : "outline"} size="sm" aria-pressed={filter === summary.key} onClick={() => { setFilter(summary.key); setPage(1); }}>{summary.label}: {clients.filter((client) => matchesRouletteFilter(client, summary.key)).length}</Button>)}</div>
     <div className="flex flex-col gap-3 sm:flex-row">
       <div className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="Buscar clientes da roleta" className="pl-9" placeholder="Nome, telefone ou ticket" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} /></div>
-      <Select value={filter} onValueChange={(value) => { setFilter(value); setPage(1); }}><SelectTrigger className="sm:w-56" aria-label="Filtrar clientes da roleta"><SelectValue /></SelectTrigger><SelectContent className="z-[9999]"><SelectItem value="all">Todos os clientes</SelectItem><SelectItem value="winners">Já ganharam prêmios</SelectItem><SelectItem value="available">Com prêmio disponível</SelectItem><SelectItem value="used">Já usaram prêmios</SelectItem><SelectItem value="not-spun">Sem giro registrado</SelectItem></SelectContent></Select>
+      <Select value={filter} onValueChange={(value) => { setFilter(value); setPage(1); }}><SelectTrigger className="sm:w-56" aria-label="Filtrar clientes da roleta"><SelectValue /></SelectTrigger><SelectContent className="z-[9999]"><SelectItem value="all">Todos os clientes</SelectItem><SelectItem value="winners">Já ganharam prêmios</SelectItem><SelectItem value="available">Com prêmio disponível</SelectItem><SelectItem value="used">Já usaram prêmios</SelectItem><SelectItem value="registered">Com giro registrado</SelectItem><SelectItem value="not-spun">Sem giro registrado</SelectItem></SelectContent></Select>
     </div>
     {loading ? <p role="status" className="py-10 text-center text-muted-foreground">Carregando clientes…</p> : error ? <div role="alert" className="space-y-3 py-10 text-center"><p className="text-destructive">Não foi possível carregar os clientes e seus históricos.</p><Button variant="outline" onClick={() => void load()}>Tentar novamente</Button></div> : <>
       {visible.length === 0 ? <p className="py-10 text-center text-muted-foreground">Nenhum cliente encontrado.</p> : <div className="divide-y divide-border border-y border-border">
