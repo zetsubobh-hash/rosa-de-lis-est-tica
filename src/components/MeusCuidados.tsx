@@ -9,7 +9,7 @@ type Apt = { id: string; service_title: string; service_slug: string; appointmen
 
 const fmt = (d: string) => d.split("-").reverse().join("/");
 
-export default function MeusCuidados({ userId, onReward }: { userId: string; onReward?: () => void }) {
+export default function MeusCuidados({ userId, onReward, readOnly }: { userId: string; onReward?: () => void; readOnly?: boolean }) {
   const [next, setNext] = useState<Apt | null>(null);
   const [last, setLast] = useState<Apt | null>(null);
   const [completed, setCompleted] = useState(0);
@@ -76,7 +76,7 @@ export default function MeusCuidados({ userId, onReward }: { userId: string; onR
           ))}
         </div>
         <p className="font-body text-xs text-muted-foreground mt-3">Cada atendimento finalizado vale 1 pétala. Ao completar {PETALS_PER_REWARD}, você ganha um mimo de 15% de desconto.</p>
-        {canClaim && <Button onClick={claim} disabled={busy} className="mt-3 rounded-full">Resgatar meu mimo</Button>}
+        {canClaim && !readOnly && <Button onClick={claim} disabled={busy} className="mt-3 rounded-full">Resgatar meu mimo</Button>}
       </div>
 
       {last && (
