@@ -12,11 +12,11 @@ export default function AdminClientView() {
   const [extra, setExtra] = useState<{ plans: any[]; coupons: any[] }>({ plans: [], coupons: [] });
 
   useEffect(() => {
-    if (q.trim().length < 2) { setRows([]); return; }
     const t = setTimeout(async () => {
-      const { data } = await supabase.rpc("search_admin_clients", { _search: q }).limit(20);
+      const { data, error } = await supabase.rpc("search_admin_clients", { _search: q.trim() }).order("created_at", { ascending: false }).limit(30);
+      if (error) console.error("Visão do Cliente:", error);
       setRows((data as Row[]) || []);
-    }, 300);
+    }, q ? 300 : 0);
     return () => clearTimeout(t);
   }, [q]);
 
@@ -37,11 +37,12 @@ export default function AdminClientView() {
         <h2 className="font-heading text-2xl font-bold text-foreground">Visão do Cliente</h2>
         <p className="font-body text-sm text-muted-foreground">Veja o que a cliente enxerga ao entrar no app (somente leitura).</p>
       </div>
-      <Input placeholder="Buscar cliente por nome ou telefone" value={q} onChange={(e) => setQ(e.target.value)} />
+      <Input placeholder="Buscar cliente por nome ou telefone — ou escolha na lista abaixo" value={q} onChange={(e) => setQ(e.target.value)} />
+      {!sel && rows.length === 0 && <p className="font-body text-sm text-muted-foreground">Nenhuma cliente encontrada.</p>}
       {rows.length > 0 && !sel && (
         <div className="rounded-xl border border-border divide-y divide-border">
           {rows.map((r) => (
-            <button key={r.user_id} onClick={() => { setSel(r); setRows([]); }} className="w-full text-left px-4 py-2 font-body text-sm hover:bg-muted">
+            <button key={r.user_id} onClick={() => setSel(r)} className="w-full text-left px-4 py-2 font-body text-sm hover:bg-muted">
               {r.full_name} <span className="text-muted-foreground">· {r.phone}</span>
             </button>
           ))}
