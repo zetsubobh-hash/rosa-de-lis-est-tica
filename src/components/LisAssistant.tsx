@@ -55,8 +55,9 @@ export default function LisAssistant() {
   return (
     <>
       {!open && (
-        <button onClick={() => setOpen(true)} aria-label="Abrir assistente Lis" className="fixed bottom-24 left-4 z-[60] h-16 w-16 rounded-full bg-primary/10 ring-2 ring-primary transition-transform hover:scale-105">
-          <img src={lis} alt="Lis" className="h-full w-full rounded-full object-cover object-top" />
+        <button onClick={() => setOpen(true)} aria-label="Abrir assistente Lis" className="fixed bottom-24 left-4 z-[60] flex items-center gap-2 rounded-3xl bg-background py-1 pl-1 pr-4 shadow-lg ring-1 ring-primary/20 transition-transform hover:scale-105">
+          <img src={lis} alt="Lis" className="h-14 w-14 rounded-2xl object-cover object-top" />
+          <span className="text-sm font-semibold text-primary">Posso te ajudar?</span>
         </button>
       )}
       {open && (
