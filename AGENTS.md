@@ -18,3 +18,4 @@
 - Roulette client history reads paginated profiles and existing BV-/ANIV- coupons without mutations; grouping preserves unsuccessful spins but excludes them from prize and redemption totals.
 - iPhone installation uses the shared IphoneInstallGuide and browser-context detection, including desktop-mode iPads; show Safari handoff instead of claiming automatic installation or programmatic Safari launch.
 - Client loyalty rewards are issued only by the `claim_loyalty_reward` RPC from completed appointments (FID- coupons); clients cannot insert coupons directly.
+- Evolution conversation reads and media decoding use the dedicated evolution-conversations function with verified JWT, admin role and the authorized account UUID on every call; return normalized records without credentials or media keys and never change the bot webhook.

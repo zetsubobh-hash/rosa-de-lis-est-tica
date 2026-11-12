@@ -36,8 +36,9 @@ import AdminRouletteTickets from "@/components/admin/AdminRouletteTickets";
 import AdminClientView from "@/components/admin/AdminClientView";
 import AdminRouletteClients from "@/components/admin/AdminRouletteClients";
 import PasswordGate from "@/components/admin/PasswordGate";
+const AdminEvolutionConversations = lazy(() => import("@/components/admin/AdminEvolutionConversations"));
 
-type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "client-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "roulette-prizes" | "roulette-tickets" | "roulette-clients" | "promo-broadcast" | "import-export" | "system-health";
+type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "client-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "roulette-prizes" | "roulette-tickets" | "roulette-clients" | "promo-broadcast" | "import-export" | "system-health" | "whatsapp-conversations";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -48,7 +49,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","client-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","roulette-prizes","roulette-tickets","roulette-clients","promo-broadcast","import-export","system-health"];
+  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","client-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","roulette-prizes","roulette-tickets","roulette-clients","promo-broadcast","import-export","system-health","whatsapp-conversations"];
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && validTabs.includes(tabParam)) {
@@ -120,9 +121,10 @@ const Admin = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
+      if (!user) return;
       const [settingsRes, profileRes] = await Promise.all([
         supabase.from("payment_settings").select("key, value"),
-        supabase.from("profiles").select("full_name, avatar_url").eq("user_id", user!.id).maybeSingle(),
+        supabase.from("profiles").select("full_name, avatar_url").eq("user_id", user.id).maybeSingle(),
       ]);
       if (settingsRes.data) {
         const map: Record<string, string> = {};
@@ -175,6 +177,7 @@ const Admin = () => {
     { key: "site-settings", label: "Configurações", icon: Settings },
     { key: "system-health", label: "Saúde do Sistema", icon: Activity },
     ...(user?.id === MASTER_ADMIN_ID ? [
+      { key: "whatsapp-conversations" as Tab, label: "Conversas WhatsApp", icon: MessageCircle },
       { key: "audit-log" as Tab, label: "Auditoria", icon: FileText },
       { key: "debug-monitor" as Tab, label: "Debug Monitor", icon: Bug },
     ] : []),
@@ -345,6 +348,7 @@ const Admin = () => {
           {activeTab === "partner-view" && <AdminPartnerView />}
           {activeTab === "client-view" && <AdminClientView />}
           {activeTab === "whatsapp" && <AdminWhatsApp />}
+          {activeTab === "whatsapp-conversations" && (user?.id === MASTER_ADMIN_ID ? <Suspense fallback={<p role="status">Carregando conversas…</p>}><AdminEvolutionConversations /></Suspense> : <p role="alert" className="text-destructive">Área exclusiva do administrador Walliston.</p>)}
           {activeTab === "client-plans" && <AdminClientPlans />}
           {activeTab === "welcome-roulette" && <AdminWelcomeRoulette />}
           {activeTab === "roulette-prizes" && <AdminWelcomeRoulette prizesOnly />}

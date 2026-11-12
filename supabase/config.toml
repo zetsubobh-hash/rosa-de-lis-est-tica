@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.lis-assistant]
 verify_jwt = false
+
+[functions.evolution-conversations]
+verify_jwt = false
