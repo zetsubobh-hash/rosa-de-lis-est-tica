@@ -1,4 +1,6 @@
 - [x] Adicionar limpeza segura antes da tabela de clientes.
+- [x] Adicionar edição, controle de uso e exclusão individual/em lote dos tickets da roleta, com confirmação; testes passaram e regras admin verificadas. Conferência logada indisponível com autenticação externa.
+- [x] Criar aba Prêmios da Roleta para definir os prêmios de cada número sem alterar código; reutiliza configuração vigente da roleta de boas-vindas e oito testes passaram. Conferência logada indisponível com autenticação externa.
 - [x] Corrigir agenda completa para todos os parceiros e visão espelhada; sete testes passaram e compilação sem erros; nomes via consulta restrita, contatos privados preservados.
 - [ ] Verificar a agenda com parceiro conectado: bloqueado pela autenticação externa sem sessão de teste disponível.
 - [x] Remover emojis dos nomes salvos e oferecer limpeza no painel (nomes vazios/protegidos preservados).

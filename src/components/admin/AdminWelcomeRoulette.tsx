@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { DEFAULT_ITEMS, RouletteItem, computeChances, parseItems } from "@/lib/welcomeRouletteItems";
+import { DEFAULT_ITEMS, RouletteItem, computeChances, parseItems, validateRoulettePrizes } from "@/lib/welcomeRouletteItems";
 import QRCodeCardModal from "./QRCodeCardModal";
 import WelcomePopupSettings from "./WelcomePopupSettings";
 import WelcomeRouletteCampaign from "./WelcomeRouletteCampaign";
@@ -27,7 +27,7 @@ interface WelcomeCoupon {
 
 const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 30, 40, 50];
 
-const AdminWelcomeRoulette = () => {
+const AdminWelcomeRoulette = ({ prizesOnly = false }: { prizesOnly?: boolean }) => {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [coupons, setCoupons] = useState<WelcomeCoupon[]>([]);
@@ -157,6 +157,11 @@ const AdminWelcomeRoulette = () => {
   };
 
   const saveItems = async () => {
+    const validationError = validateRoulettePrizes(items);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     setSavingItems(true);
     const { error } = await supabase
       .from("payment_settings")
@@ -186,22 +191,22 @@ const AdminWelcomeRoulette = () => {
 
   return (
     <div className="space-y-6">
-      <WelcomePopupSettings />
+      {!prizesOnly && <WelcomePopupSettings />}
 
-      <WelcomeRouletteCampaign />
+      {!prizesOnly && <WelcomeRouletteCampaign />}
 
 
       {/* Header */}
-      <div className="bg-card rounded-2xl border border-border p-4 md:p-6">
+      <div className="p-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Gift className="w-5 h-5 text-primary" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-heading text-base font-bold text-foreground">Roleta de Boas-Vindas</h2>
+              <h2 className="font-heading text-base font-bold text-foreground">{prizesOnly ? "Prêmios da Roleta" : "Roleta de Boas-Vindas"}</h2>
               <p className="font-body text-xs text-muted-foreground">
-                Novos usuários podem girar a roleta uma vez ao se cadastrar.
+                {prizesOnly ? "Roleta de Boas-Vindas" : "Novos usuários podem girar a roleta uma vez ao se cadastrar."}
               </p>
             </div>
           </div>
@@ -235,7 +240,7 @@ const AdminWelcomeRoulette = () => {
       <QRCodeCardModal open={showQRModal} onClose={() => setShowQRModal(false)} />
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {!prizesOnly && <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-card rounded-2xl border border-border p-4 text-center">
           <p className="font-heading text-2xl font-bold text-foreground">{coupons.length}</p>
           <p className="font-body text-xs text-muted-foreground">Total de giros</p>
@@ -254,15 +259,15 @@ const AdminWelcomeRoulette = () => {
           </p>
           <p className="font-body text-xs text-muted-foreground">Cupons usados</p>
         </div>
-      </div>
+      </div>}
 
       {/* Items Editor */}
-      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div className="overflow-hidden">
         <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Percent className="w-4 h-4 text-primary" />
             <div>
-              <h3 className="font-heading text-sm font-bold text-foreground">Itens da Roleta</h3>
+              <h3 className="font-heading text-sm font-bold text-foreground">Números e Prêmios</h3>
               <p className="font-body text-xs text-muted-foreground">
                 {items.length}/10 itens — {activeCount} ativo(s) — chances normalizadas automaticamente
               </p>
@@ -296,11 +301,11 @@ const AdminWelcomeRoulette = () => {
         </div>
 
         <div className="divide-y divide-border">
-          {itemsWithChance.map((it) => (
+          {itemsWithChance.map((it, index) => (
             <div key={it.id} className="p-3 sm:grid sm:grid-cols-12 sm:gap-2 sm:items-center space-y-2 sm:space-y-0">
               {/* Mobile card header */}
               <div className="flex items-center justify-between sm:hidden">
-                <span className="font-body text-xs font-semibold text-muted-foreground truncate flex-1">{it.label || "Item sem nome"}</span>
+                <span className="font-body text-xs font-semibold text-muted-foreground truncate flex-1">Nº {index + 1} — {it.label || "Item sem nome"}</span>
                 <span className="text-[10px] font-semibold text-primary flex-shrink-0 ml-2">{it.chance.toFixed(1)}%</span>
               </div>
 
@@ -312,9 +317,11 @@ const AdminWelcomeRoulette = () => {
                 />
               </div>
               <div className="sm:col-span-3">
+                <span className="mb-1 hidden text-xs font-semibold text-primary sm:block">Número {index + 1}</span>
                 <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Nome / Rótulo</label>
                 <Input
                   value={it.label}
+                  aria-label={`Nome do prêmio número ${index + 1}`}
                   onChange={(e) => updateItem(it.id, { label: e.target.value })}
                   placeholder="Texto exibido"
                   className="h-9"
@@ -325,6 +332,7 @@ const AdminWelcomeRoulette = () => {
                   <label className="sm:hidden font-body text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Tipo de Prêmio</label>
                   <select
                     value={it.type}
+                    aria-label={`Tipo do prêmio número ${index + 1}`}
                     onChange={(e) => {
                       const newType = e.target.value as "discount" | "none" | "service";
                       updateItem(it.id, { type: newType });
@@ -341,6 +349,7 @@ const AdminWelcomeRoulette = () => {
                   {it.type === "service" ? (
                     <select
                       value={it.serviceSlug || ""}
+                      aria-label={`Serviço do prêmio número ${index + 1}`}
                       onChange={(e) => {
                         const slug = e.target.value;
                         const svc = services.find((s) => s.slug === slug);
@@ -363,6 +372,7 @@ const AdminWelcomeRoulette = () => {
                         min={0}
                         max={100}
                         value={it.value}
+                        aria-label={`Desconto do prêmio número ${index + 1}`}
                         disabled={it.type === "none"}
                         onChange={(e) => updateItem(it.id, { value: Number(e.target.value) || 0 })}
                         placeholder="% OFF"
@@ -432,7 +442,7 @@ const AdminWelcomeRoulette = () => {
 
 
       {/* All Spins Table */}
-      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      {!prizesOnly && <div className="bg-card rounded-2xl border border-border overflow-hidden">
         <div className="p-4 border-b border-border flex items-center gap-2">
           <Ticket className="w-4 h-4 text-primary" />
           <h3 className="font-heading text-sm font-bold text-foreground">Histórico de Giros (todos)</h3>
@@ -606,7 +616,7 @@ const AdminWelcomeRoulette = () => {
             </div>
           </>
         )}
-      </div>
+      </div>}
 
       {/* Preview modal */}
       {showPreview && (

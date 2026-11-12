@@ -35,7 +35,7 @@ import AdminSystemHealth from "@/components/admin/AdminSystemHealth";
 import AdminRouletteTickets from "@/components/admin/AdminRouletteTickets";
 import PasswordGate from "@/components/admin/PasswordGate";
 
-type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "roulette-tickets" | "promo-broadcast" | "import-export" | "system-health";
+type Tab = "dashboard" | "agenda" | "cash" | "counter-sales" | "clients" | "services" | "pricing" | "payments" | "branding" | "users" | "partners" | "partner-view" | "whatsapp" | "client-plans" | "history" | "install-app" | "site-settings" | "audit-log" | "debug-monitor" | "welcome-roulette" | "roulette-prizes" | "roulette-tickets" | "promo-broadcast" | "import-export" | "system-health";
 
 const MASTER_ADMIN_ID = "4649913b-f48b-470e-b407-251803756157";
 
@@ -46,7 +46,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","roulette-tickets","promo-broadcast","import-export","system-health"];
+  const validTabs = ["dashboard","agenda","cash","counter-sales","clients","services","pricing","payments","branding","users","partners","partner-view","whatsapp","client-plans","history","install-app","site-settings","audit-log","debug-monitor","welcome-roulette","roulette-prizes","roulette-tickets","promo-broadcast","import-export","system-health"];
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam && validTabs.includes(tabParam)) {
@@ -162,6 +162,7 @@ const Admin = () => {
     { key: "client-plans", label: "Planos Clientes", icon: Layers },
     { key: "welcome-roulette", label: "Roleta Boas-Vindas", icon: Gift },
     { key: "roulette-tickets", label: "Tickets Roleta", icon: Ticket },
+    { key: "roulette-prizes", label: "Prêmios da Roleta", icon: Gift },
     { key: "promo-broadcast", label: "Promoções WhatsApp", icon: Megaphone },
     { key: "history", label: "Finalizados", icon: History },
     { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
@@ -341,6 +342,7 @@ const Admin = () => {
           {activeTab === "whatsapp" && <AdminWhatsApp />}
           {activeTab === "client-plans" && <AdminClientPlans />}
           {activeTab === "welcome-roulette" && <AdminWelcomeRoulette />}
+          {activeTab === "roulette-prizes" && <AdminWelcomeRoulette prizesOnly />}
           {activeTab === "roulette-tickets" && <AdminRouletteTickets />}
           {activeTab === "history" && <AdminHistory />}
           {activeTab === "promo-broadcast" && <AdminPromoBroadcast />}

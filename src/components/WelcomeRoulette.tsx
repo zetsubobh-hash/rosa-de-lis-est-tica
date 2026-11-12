@@ -23,7 +23,7 @@ const buildSegments = (items: RouletteItem[]): RouletteSegment[] => {
     .map((it, i) => ({ it, i }))
     .filter(({ it }) => it.enabled && it.weight > 0);
   return enabled.map(({ it, i }, displayIdx) => ({
-    label: it.label,
+    label: `${i + 1}. ${it.label}`,
     type: it.type,
     value: it.value,
     color: ITEM_COLORS[displayIdx % ITEM_COLORS.length],

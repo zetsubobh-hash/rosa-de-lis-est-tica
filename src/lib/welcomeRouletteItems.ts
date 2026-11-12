@@ -14,6 +14,12 @@ export interface RouletteItem {
 
 export const DEFAULT_EXPIRES_DAYS = 30;
 
+export const validateRoulettePrizes = (items: RouletteItem[]): string | null => {
+  if (!items.some((it) => it.enabled && it.weight > 0)) return "Ative pelo menos um número com chance maior que zero.";
+  if (items.some((it) => !it.label.trim() || !Number.isFinite(it.value) || (it.type === "discount" && (it.value < 0 || it.value > 100)) || (it.enabled && it.type === "service" && !it.serviceSlug))) return "Confira os nomes, descontos e serviços de cada prêmio antes de salvar.";
+  return null;
+};
+
 export const DEFAULT_ITEMS: RouletteItem[] = [
   { id: "1", label: "10% OFF", type: "discount", value: 10, weight: 10, enabled: true, expiresDays: 30 },
   { id: "2", label: "Não foi dessa vez", type: "none", value: 0, weight: 15, enabled: true, expiresDays: 30 },
