@@ -19,6 +19,28 @@ export function careTipsFor(slugOrTitle: string): string[] {
   return GUIDES.find((g) => g.keys.some((k) => s.includes(k)))?.tips ?? DEFAULT_TIPS;
 }
 
+export type ClientCareFilter = "all" | "scheduled" | "finished";
+
+/** Classifica clientes por situação na agenda: agendados (pendente/confirmado hoje ou no futuro) e finalizados. */
+export function classifyClientAppointments(
+  userIds: string[],
+  appointments: { user_id: string; status: string; appointment_date: string }[],
+  today: string,
+) {
+  const scheduled = new Set<string>();
+  const finished = new Set<string>();
+  for (const a of appointments) {
+    if (a.status === "completed") finished.add(a.user_id);
+    else if ((a.status === "pending" || a.status === "confirmed") && a.appointment_date >= today) scheduled.add(a.user_id);
+  }
+  const filterIds = (f: ClientCareFilter) =>
+    userIds.filter((id) => (f === "scheduled" ? scheduled.has(id) : f === "finished" ? finished.has(id) : true));
+  return {
+    counts: { all: userIds.length, scheduled: scheduled.size, finished: finished.size },
+    filterIds,
+  };
+}
+
 export function calendarUrl(title: string, date: string, time: string) {
   const [h, m] = time.split(":").map(Number);
   const start = `${date.replace(/-/g, "")}T${String(h).padStart(2, "0")}${String(m || 0).padStart(2, "0")}00`;
