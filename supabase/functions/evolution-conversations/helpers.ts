@@ -49,7 +49,7 @@ export function collectionRecords(payload: any, key: "chats" | "contacts"): any[
 // Baileys expects base64 strings when these fields cross the HTTP boundary.
 export function mediaRequest(record: any) {
   const byteFields = new Set(["mediaKey", "fileSha256", "fileEncSha256", "jpegThumbnail", "streamingSidecar"]);
-  const message = JSON.parse(JSON.stringify(record.message), (key, value) => {
+  const message = JSON.parse(JSON.stringify(messageContent(record.message)), (key, value) => {
     if (!byteFields.has(key) || !value || typeof value !== "object") return value;
     const bytes = Array.isArray(value) ? value : value.type === "Buffer" && Array.isArray(value.data)
       ? value.data : Object.keys(value).every(k => /^\d+$/.test(k))
@@ -57,7 +57,7 @@ export function mediaRequest(record: any) {
     if (!bytes || !bytes.every((b: unknown) => typeof b === "number" && Number.isInteger(b) && b >= 0 && b <= 255)) return value;
     return btoa(bytes.map((b: number) => String.fromCharCode(b)).join(""));
   });
-  return { message: { key: record.key, message }, convertToMp4: false };
+  return { message: { key: record.key, message, messageTimestamp: record.messageTimestamp }, convertToMp4: Boolean(message.audioMessage) };
 }
 
 export class EvolutionRequestError extends Error {
@@ -67,18 +67,21 @@ export class EvolutionRequestError extends Error {
 }
 
 export async function readMedia(record: any, call: (body: object) => Promise<any>) {
-  try {
-    return await call(mediaRequest(record));
-  } catch (error) {
-    if (!(error instanceof EvolutionRequestError) || error.status !== 400) throw error;
-    // Some versions need to hydrate media from their own database instead.
+  const request = mediaRequest(record);
+  const attempts = [request, { message: { key: record.key }, convertToMp4: request.convertToMp4 }];
+  // Database JSON and older Evolution releases may require native numeric byte maps
+  // rather than base64. Keep the normalized content and verified key on every retry.
+  attempts.push({ ...request, message: { ...request.message, message: messageContent(record.message) }, convertToMp4: false });
+  for (const body of attempts) {
     try {
-      return await call({ message: { key: record.key }, convertToMp4: false });
-    } catch (retryError) {
-      if (!(retryError instanceof EvolutionRequestError) || retryError.status !== 400) throw retryError;
-      return null;
+      const result = await call(body);
+      const media = result?.data || result;
+      if (media?.base64) return media;
+    } catch (error) {
+      if (!(error instanceof EvolutionRequestError) || ![400, 404, 410].includes(error.status)) throw error;
     }
   }
+  return null;
 }
 
 function messageContent(value: any): any {

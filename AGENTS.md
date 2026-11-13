@@ -19,7 +19,7 @@
 - iPhone installation uses the shared IphoneInstallGuide and browser-context detection, including desktop-mode iPads; show Safari handoff instead of claiming automatic installation or programmatic Safari launch.
 - Client loyalty rewards are issued only by the `claim_loyalty_reward` RPC from completed appointments (FID- coupons); clients cannot insert coupons directly.
 - Evolution conversation reads and media decoding use the dedicated evolution-conversations function with verified JWT, admin role and the authorized account UUID on every call; return normalized records without credentials or media keys and never change the bot webhook.
-- Evolution media requests normalize protobuf byte fields to base64 and retry provider 400 with the server-verified message key; unavailable files are recoverable results, not page-fatal failures.
+- Evolution media requests unwrap serialized envelopes before byte normalization, request MP4 audio, and retry with the verified message key and native bytes; empty/expired files are recoverable results, never player sources or page-fatal failures.
 
 - Evolution message normalization unwraps serialized and WhatsApp envelope formats centrally in helpers.ts; media kinds stay explicit and downloads require server-verified message ownership and a safe MIME allowlist.
 - Evolution conversations are archived by instance/JID and messages by instance/JID/message ID through authorized resumable page imports; discovery includes global message history, LID identifiers are never presented as phone numbers, and archives retain only normalized content without provider credentials or media keys.

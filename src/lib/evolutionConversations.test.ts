@@ -73,15 +73,31 @@ describe("Conversas exclusivas de Walliston", () => {
     const record = { key: { id: "whatsapp-id", remoteJid: "123@s.whatsapp.net" }, message: { audioMessage: {} } };
     const call = vi.fn().mockRejectedValueOnce(new EvolutionRequestError(400)).mockResolvedValueOnce({ base64: "AQID" });
     expect(await readMedia(record, call)).toEqual({ base64: "AQID" });
-    expect(call).toHaveBeenNthCalledWith(2, { message: { key: record.key }, convertToMp4: false });
+    expect(call).toHaveBeenNthCalledWith(2, { message: { key: record.key }, convertToMp4: true });
   });
   it("trata mídia indisponível como resultado recuperável e não oculta falhas de autorização", async () => {
     const record = { key: { id: "id" }, message: { imageMessage: {} } };
     const expired = vi.fn().mockRejectedValue(new EvolutionRequestError(400));
     expect(await readMedia(record, expired)).toBeNull();
-    expect(expired).toHaveBeenCalledTimes(2);
+    expect(expired).toHaveBeenCalledTimes(3);
     const denied = vi.fn().mockRejectedValue(new EvolutionRequestError(401));
     await expect(readMedia(record, denied)).rejects.toMatchObject({ status: 401 });
     expect(denied).toHaveBeenCalledTimes(1);
+  });
+  it("desencapsula áudio serializado para o download e pede formato reproduzível", () => {
+    const result = mediaRequest({ key: { id: "a" }, message: JSON.stringify({ ephemeralMessage: { message: { audioMessage: { mediaKey: [1, 2, 3] } } } }) });
+    expect(result).toMatchObject({ convertToMp4: true, message: { message: { audioMessage: { mediaKey: "AQID" } } } });
+    expect(result.message.message).not.toHaveProperty("ephemeralMessage");
+  });
+  it("tenta bytes nativos quando o Evolution rejeita base64 e hidratação", async () => {
+    const record = { key: { id: "photo", remoteJid: "5511999999999@s.whatsapp.net" }, message: { imageMessage: { mediaKey: { 0: 1, 1: 2 } } } };
+    const call = vi.fn().mockRejectedValueOnce(new EvolutionRequestError(400)).mockRejectedValueOnce(new EvolutionRequestError(400)).mockResolvedValueOnce({ data: { base64: "AQID", mimetype: "image/jpeg" } });
+    expect(await readMedia(record, call)).toMatchObject({ base64: "AQID", mimetype: "image/jpeg" });
+    expect(call).toHaveBeenNthCalledWith(3, expect.objectContaining({ message: expect.objectContaining({ key: record.key, message: record.message }) }));
+  });
+  it("não considera resposta vazia ou nula como mídia carregada", async () => {
+    const call = vi.fn().mockResolvedValue(null);
+    expect(await readMedia({ key: { id: "a" }, message: { imageMessage: {} } }, call)).toBeNull();
+    expect(call).toHaveBeenCalledTimes(3);
   });
 });

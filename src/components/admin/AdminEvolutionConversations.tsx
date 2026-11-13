@@ -34,7 +34,8 @@ function MessageMedia({ message, jid }: { message: Message; jid: string }) {
   const load = async () => {
     setLoading(true); setError("");
     try {
-      const media = await request<{ mime: string; base64: string }>({ action: "media", jid, id: message.id });
+      const media = await request<{ available: boolean; mime?: string; base64?: string; error?: string }>({ action: "media", jid, id: message.id });
+      if (!media.available || !media.mime || !media.base64) throw new Error(media.error || "Este arquivo não está mais disponível no WhatsApp.");
       if (active.current) setSource(`data:${media.mime};base64,${media.base64}`);
     } catch (e) { if (active.current) setError(e instanceof Error ? e.message : "Não foi possível abrir a mídia"); }
     finally { if (active.current) setLoading(false); }

@@ -1,14 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { z } from "npm:zod@3";
+import { conversationRequestSchema } from "./requestSchema.ts";
 import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage } from "./helpers.ts";
 
-const schema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("sync"), page: z.number().int().min(1).max(100000).default(1) }),
-  z.object({ action: z.literal("chats"), search: z.string().max(100).default(""), page: z.number().int().min(1).max(100000).default(1) }),
-  z.object({ action: z.literal("messages"), jid: z.string().regex(/^[\w.+:-]+@(s\.whatsapp\.net|g\.us|lid|broadcast)$/).max(160), page: z.number().int().min(1).max(100000).default(1) }),
-  z.object({ action: z.literal("media"), jid: z.string().regex(/^[\w.+:-]+@(s\.whatsapp\.net|g\.us|lid|broadcast)$/).max(160), id: z.string().min(1).max(200) }),
-]);
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
 });
@@ -30,8 +24,13 @@ Deno.serve(async (req) => {
     if (roleError || !canReadConversations(user.id, (roles || []).map(r => r.role))) {
       return json({ error: "Área exclusiva do administrador Walliston" }, 403);
     }
-    const parsed = schema.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) return json({ error: "Solicitação inválida" }, 400);
+    const parsed = conversationRequestSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) {
+      const fields = [...new Set(parsed.error.issues.map(issue => issue.path.join(".") || "action"))];
+      // Log only field names, never conversation identifiers or message content.
+      console.warn("Evolution conversations invalid request fields", fields.join(","));
+      return json({ error: `Solicitação inválida: confira ${fields.join(", ")}. Atualize a página e tente novamente.` }, 400);
+    }
     const input = parsed.data;
     const { data: settings, error: configError } = await db.from("payment_settings").select("key,value")
       .in("key", ["evolution_api_url", "evolution_api_key", "evolution_instance_name"]);
@@ -136,7 +135,7 @@ Deno.serve(async (req) => {
     if (!["audio", "image", "video", "sticker", "document"].includes(normalized.kind)) return json({ error: "Esta mensagem não contém um arquivo" }, 400);
     const media = await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
     if (!media) return json({ available: false, error: "O WhatsApp não disponibilizou este arquivo. Mídias antigas podem ter expirado; peça o reenvio para abrir aqui." });
-    const mime = String(media.mimetype || media.mimeType || "").split(";")[0];
+    const mime = String(media.mimetype || media.mimeType || "").split(";")[0].trim().toLowerCase();
     const allowedMime = normalized.kind === "image" || normalized.kind === "sticker" ? /^image\/(jpeg|png|webp|gif)$/
       : normalized.kind === "video" ? /^video\/(mp4|webm|quicktime)$/
       : normalized.kind === "document" ? /^(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-(excel|powerpoint))|text\/plain)$/
