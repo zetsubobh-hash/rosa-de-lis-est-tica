@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { conversationRequestSchema } from "./requestSchema.ts";
+import { searchArchivedMessages } from "./archiveSearch.ts";
 import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage, messageSearchPattern } from "./helpers.ts";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
@@ -116,6 +117,9 @@ Deno.serve(async (req) => {
       if (error) throw new Error("Não foi possível abrir as conversas salvas");
       return json({ chats: (data || []).map(c => ({ jid: c.jid, name: c.name, phone: c.phone, unread: c.unread, last: c.last_message })),
         total: count || 0, pages: Math.max(1, Math.ceil((count || 0) / 50)), instance: cfg.evolution_instance_name });
+    }
+    if (input.action === "global_search") {
+      return json(await searchArchivedMessages(db, archiveInstance, input.search, input.page));
     }
     if (input.action === "messages") {
       let query = db.from("evolution_message_archive").select("content", { count: "exact" })

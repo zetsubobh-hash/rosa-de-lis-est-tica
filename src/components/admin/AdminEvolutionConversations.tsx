@@ -59,6 +59,14 @@ export default function AdminEvolutionConversations() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [globalQuery, setGlobalQuery] = useState("");
+  const [globalPage, setGlobalPage] = useState(1);
+  const [globalPages, setGlobalPages] = useState(1);
+  const [globalTotal, setGlobalTotal] = useState(0);
+  const [globalResults, setGlobalResults] = useState<{ chat: Chat; message: Message }[]>([]);
+  const [globalLoading, setGlobalLoading] = useState(false);
+  const [globalError, setGlobalError] = useState("");
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -109,6 +117,21 @@ export default function AdminEvolutionConversations() {
     return () => clearTimeout(timer);
   }, [search]);
   useEffect(() => {
+    const timer = setTimeout(() => { setGlobalQuery(globalSearch.trim()); setGlobalPage(1); }, 350);
+    return () => clearTimeout(timer);
+  }, [globalSearch]);
+  useEffect(() => {
+    let cancelled = false;
+    setGlobalResults([]); setGlobalError(""); setGlobalTotal(0); setGlobalPages(1);
+    if (!globalQuery) { setGlobalLoading(false); return; }
+    setGlobalLoading(true);
+    request<{ results: { chat: Chat; message: Message }[]; total: number; pages: number }>({ action: "global_search", search: globalQuery, page: globalPage })
+      .then(data => { if (!cancelled) { setGlobalResults(data.results); setGlobalTotal(data.total); setGlobalPages(data.pages); } })
+      .catch(e => { if (!cancelled) setGlobalError(e.message); })
+      .finally(() => { if (!cancelled) setGlobalLoading(false); });
+    return () => { cancelled = true; };
+  }, [globalQuery, globalPage, refresh]);
+  useEffect(() => {
     const timer = setTimeout(() => setMessageQuery(messageSearch.trim().slice(0, 100)), 350);
     return () => clearTimeout(timer);
   }, [messageSearch]);
@@ -153,6 +176,21 @@ export default function AdminEvolutionConversations() {
     {syncStatus && <p role="status" className="text-sm text-muted-foreground">{syncStatus}</p>}
     {syncError && <p role="alert" className="text-sm text-destructive">{syncError}</p>}
     {syncWarning && <p className="text-sm text-muted-foreground">{syncWarning}</p>}
+    <div className="relative"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Buscar assunto em todas as conversas" placeholder="Buscar assunto em todas as conversas" value={globalSearch} onChange={e => setGlobalSearch(e.target.value.slice(0, 100))} className="pl-9 pr-10" />{globalSearch && <Button variant="ghost" size="icon" aria-label="Limpar busca geral" onClick={() => { setGlobalSearch(""); setGlobalQuery(""); setGlobalPage(1); }} className="absolute right-1 top-1.5 h-7 w-7"><X className="w-4 h-4" /></Button>}</div>
+    {globalQuery && <section aria-label="Resultados da busca geral" className="space-y-3 border-y border-border py-3">
+      <h3 className="text-sm font-semibold">{globalLoading ? "Buscando em todas as conversas…" : `${globalTotal} mensagens encontradas com “${globalQuery}”`}</h3>
+      {globalError && <p role="alert" className="text-sm text-destructive">{globalError}</p>}
+      {!globalLoading && !globalError && globalResults.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma mensagem encontrada no histórico salvo.</p>}
+      <div className="max-h-[60vh] overflow-y-auto divide-y divide-border">
+        {globalResults.map(({ chat, message }) => <article key={`${chat.jid}-${message.id}`} className="py-3 space-y-2 min-w-0">
+          <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h4 className="font-semibold break-words">{chat.name}</h4><p className="text-xs text-muted-foreground break-words">{phoneLabel(chat)} · {dateTime(message.timestamp)}</p></div><Button variant="outline" size="sm" onClick={() => { setSelected(chat); setMessageSearch(globalQuery); setMessageQuery(globalQuery); }}>Abrir conversa</Button></div>
+          <p className="text-xs text-muted-foreground">{message.fromMe ? "Número da clínica" : "Contato"}</p>
+          {message.kind !== "text" && <MessageMedia message={message} jid={chat.jid} />}
+          {message.text && <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{highlightParts(message.text, globalQuery).map((part, index) => part.match ? <mark key={index} className="bg-primary/25 text-inherit rounded-sm px-0.5">{part.text}</mark> : <span key={index}>{part.text}</span>)}</p>}
+        </article>)}
+      </div>
+      {globalPages > 1 && <div className="flex items-center justify-between gap-2"><Button variant="outline" size="sm" disabled={globalPage <= 1 || globalLoading} onClick={() => setGlobalPage(p => p - 1)}>Resultados anteriores</Button><span className="text-xs text-muted-foreground">{globalPage}/{globalPages}</span><Button variant="outline" size="sm" disabled={globalPage >= globalPages || globalLoading} onClick={() => setGlobalPage(p => p + 1)}>Mais resultados</Button></div>}
+    </section>}
     <div className="grid md:grid-cols-[minmax(220px,32%)_minmax(0,1fr)] border-y border-border min-h-[560px]">
       <aside className={`${selected ? "hidden md:flex" : "flex"} flex-col min-w-0 md:border-r border-border`}>
         <div className="relative m-3"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Buscar conversa por nome ou número" placeholder="Nome ou número" value={search} onChange={e => setSearch(e.target.value.slice(0, 100))} className="pl-9" /></div>
