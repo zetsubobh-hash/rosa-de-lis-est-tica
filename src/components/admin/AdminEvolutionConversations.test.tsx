@@ -7,6 +7,23 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { functions: { invo
 afterEach(() => { cleanup(); invoke.mockReset(); });
 
 describe("Arquivos indisponíveis nas conversas", () => {
+  it("abre o histórico completo do contato da busca geral e sai da lista de resultados", async () => {
+    const chat = { jid: "5511888888888@s.whatsapp.net", name: "Ana busca", phone: "5511888888888", unread: 0, last: null };
+    invoke.mockImplementation(async (_name, { body }) => {
+      if (body.action === "sync") return { data: { saved: 0, hasMore: false, nextPage: 2, warning: "" } };
+      if (body.action === "chats") return { data: { chats: [], pages: 1, total: 0, instance: "Teste" } };
+      if (body.action === "global_search") return { data: { results: [{ chat, message: { id: "hit", kind: "text", text: "Quero horário", timestamp: 100 } }], total: 1, pages: 1 } };
+      if (body.action === "messages") return { data: { messages: [{ id: "context", kind: "text", text: "Contexto completo", timestamp: 101 }], total: 1, hasMore: false } };
+      throw new Error("Unexpected action");
+    });
+    render(<AdminEvolutionConversations />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Buscar assunto em todas as conversas" }), { target: { value: "horário" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Abrir conversa" }));
+    await screen.findByText("Contexto completo");
+    expect(screen.queryByRole("region", { name: "Resultados da busca geral" })).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Buscar assunto nesta conversa" })).toHaveValue("");
+    expect(invoke).toHaveBeenCalledWith("evolution-conversations", { body: { action: "messages", jid: chat.jid, page: 1, search: "" } });
+  });
   it("mantém a conversa visível e não cria reprodutor inválido ao abrir áudio e imagem expirados", async () => {
     invoke.mockImplementation(async (_name, { body }) => {
       if (body.action === "sync") return { data: { saved: 2, hasMore: false, nextPage: 2, warning: "" } };

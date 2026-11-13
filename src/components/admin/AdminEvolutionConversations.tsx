@@ -88,6 +88,18 @@ export default function AdminEvolutionConversations() {
   const [syncWarning, setSyncWarning] = useState("");
   const [syncRun, setSyncRun] = useState(0);
   const messageRequest = useRef(0);
+  const conversationPanel = useRef<HTMLDivElement>(null);
+  const [openRun, setOpenRun] = useState(0);
+  const openConversation = (chat: Chat) => {
+    setSelected(chat);
+    setGlobalSearch(""); setGlobalQuery(""); setGlobalPage(1);
+    setMessageSearch(""); setMessageQuery("");
+    setMessageRefresh(r => r + 1);
+    setOpenRun(r => r + 1);
+  };
+  useEffect(() => {
+    if (openRun) conversationPanel.current?.scrollIntoView?.({ block: "start", behavior: "auto" });
+  }, [openRun]);
   useEffect(() => {
     let cancelled = false;
     const sync = async () => {
@@ -183,7 +195,7 @@ export default function AdminEvolutionConversations() {
       {!globalLoading && !globalError && globalResults.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma mensagem encontrada no histórico salvo.</p>}
       <div className="max-h-[60vh] overflow-y-auto divide-y divide-border">
         {globalResults.map(({ chat, message }) => <article key={`${chat.jid}-${message.id}`} className="py-3 space-y-2 min-w-0">
-          <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h4 className="font-semibold break-words">{chat.name}</h4><p className="text-xs text-muted-foreground break-words">{phoneLabel(chat)} · {dateTime(message.timestamp)}</p></div><Button variant="outline" size="sm" onClick={() => { setSelected(chat); setMessageSearch(globalQuery); setMessageQuery(globalQuery); }}>Abrir conversa</Button></div>
+          <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h4 className="font-semibold break-words">{chat.name}</h4><p className="text-xs text-muted-foreground break-words">{phoneLabel(chat)} · {dateTime(message.timestamp)}</p></div><Button variant="outline" size="sm" onClick={() => openConversation(chat)}>Abrir conversa</Button></div>
           <p className="text-xs text-muted-foreground">{message.fromMe ? "Número da clínica" : "Contato"}</p>
           {message.kind !== "text" && <MessageMedia message={message} jid={chat.jid} />}
           {message.text && <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{highlightParts(message.text, globalQuery).map((part, index) => part.match ? <mark key={index} className="bg-primary/25 text-inherit rounded-sm px-0.5">{part.text}</mark> : <span key={index}>{part.text}</span>)}</p>}
@@ -196,13 +208,13 @@ export default function AdminEvolutionConversations() {
         <div className="relative m-3"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Buscar conversa por nome ou número" placeholder="Nome ou número" value={search} onChange={e => setSearch(e.target.value.slice(0, 100))} className="pl-9" /></div>
         <p className="px-3 pb-2 text-xs text-muted-foreground">{total} conversas</p>
         <div className="max-h-[65vh] overflow-y-auto flex-1">
-          {loadingChats ? <p className="p-4 text-muted-foreground" role="status">Carregando conversas…</p> : chatError ? <p role="alert" className="p-4 text-destructive text-sm">{chatError}</p> : chats.length === 0 ? <p className="p-4 text-muted-foreground text-sm">Nenhuma conversa encontrada no histórico do Evolution.</p> : chats.map(chat => <Button key={chat.jid} variant="ghost" onClick={() => { setSelected(chat); setMessageSearch(""); setMessageQuery(""); }} className={`w-full h-auto min-h-20 rounded-none justify-start px-3 py-3 border-b border-border whitespace-normal ${selected?.jid === chat.jid ? "bg-accent" : ""}`}>
+          {loadingChats ? <p className="p-4 text-muted-foreground" role="status">Carregando conversas…</p> : chatError ? <p role="alert" className="p-4 text-destructive text-sm">{chatError}</p> : chats.length === 0 ? <p className="p-4 text-muted-foreground text-sm">Nenhuma conversa encontrada no histórico do Evolution.</p> : chats.map(chat => <Button key={chat.jid} variant="ghost" onClick={() => openConversation(chat)} className={`w-full h-auto min-h-20 rounded-none justify-start px-3 py-3 border-b border-border whitespace-normal ${selected?.jid === chat.jid ? "bg-accent" : ""}`}>
             <div className="text-left min-w-0 w-full space-y-1"><div className="font-semibold truncate">{chat.name}</div><div className="text-xs text-muted-foreground break-words">{phoneLabel(chat)}{chat.unread ? ` · ${chat.unread} não lidas` : ""}</div><div className="text-xs text-muted-foreground truncate">{chat.last?.text || (chat.last?.kind === "audio" ? "Áudio" : chat.last?.kind === "image" ? "Imagem" : chat.last?.kind === "video" ? "Vídeo" : chat.last?.kind === "sticker" ? "Figurinha" : chat.last?.kind === "document" ? "Documento" : "")}</div></div>
           </Button>)}
         </div>
         <div className="flex items-center justify-between gap-2 p-3 border-t border-border"><Button variant="outline" size="sm" disabled={page <= 1 || loadingChats} onClick={() => setPage(p => p - 1)}>Anterior</Button><span className="text-xs text-muted-foreground">{page}/{pages}</span><Button variant="outline" size="sm" disabled={page >= pages || loadingChats} onClick={() => setPage(p => p + 1)}>Próxima</Button></div>
       </aside>
-      <div className={`${selected ? "flex" : "hidden md:flex"} min-w-0 flex-col`}>
+      <div ref={conversationPanel} className={`${selected ? "flex" : "hidden md:flex"} min-w-0 flex-col scroll-mt-20`}>
         {selected ? <>
           <header className="p-3 border-b border-border space-y-2">
             <div className="flex items-center gap-2 min-w-0"><Button variant="ghost" size="icon" aria-label="Voltar às conversas" onClick={() => setSelected(null)} className="md:hidden shrink-0"><ArrowLeft className="h-4 w-4" /></Button><div className="min-w-0"><h3 className="font-semibold truncate">{selected.name}</h3><p className="text-xs text-muted-foreground break-words">{phoneLabel(selected)}</p></div></div>
