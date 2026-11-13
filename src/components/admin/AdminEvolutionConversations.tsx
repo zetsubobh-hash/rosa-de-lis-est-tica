@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
-import { ArrowLeft, FileDown, ImageIcon, Loader2, MessageCircle, Mic, Play, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { ArrowLeft, FileDown, ImageIcon, Loader2, MessageCircle, Mic, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { highlightParts } from "@/lib/conversationSearch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -70,6 +71,9 @@ export default function AdminEvolutionConversations() {
   const [messageError, setMessageError] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [messageRefresh, setMessageRefresh] = useState(0);
+  const [messageSearch, setMessageSearch] = useState("");
+  const [messageQuery, setMessageQuery] = useState("");
+  const [matchTotal, setMatchTotal] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState("");
   const [syncError, setSyncError] = useState("");
@@ -105,6 +109,10 @@ export default function AdminEvolutionConversations() {
     return () => clearTimeout(timer);
   }, [search]);
   useEffect(() => {
+    const timer = setTimeout(() => setMessageQuery(messageSearch.trim().slice(0, 100)), 350);
+    return () => clearTimeout(timer);
+  }, [messageSearch]);
+  useEffect(() => {
     let cancelled = false;
     setLoadingChats(true); setChatError("");
     request<{ chats: Chat[]; pages: number; total: number; instance: string }>({ action: "chats", search: query, page })
@@ -116,24 +124,24 @@ export default function AdminEvolutionConversations() {
   const jid = selected?.jid;
   useEffect(() => {
     const version = ++messageRequest.current;
-    setMessages([]); setMessagePage(1); setHasMore(false); setMessageError("");
+    setMessages([]); setMessagePage(1); setHasMore(false); setMessageError(""); setMatchTotal(0);
     if (!jid) { setLoadingMessages(false); return; }
     setLoadingMessages(true);
-    request<{ messages: Message[]; hasMore: boolean }>({ action: "messages", jid, page: 1 })
-      .then(data => { if (version === messageRequest.current) { setMessages(data.messages); setHasMore(data.hasMore); } })
+    request<{ messages: Message[]; hasMore: boolean; total: number }>({ action: "messages", jid, page: 1, search: messageQuery })
+      .then(data => { if (version === messageRequest.current) { setMessages(data.messages); setHasMore(data.hasMore); setMatchTotal(data.total); } })
       .catch(e => { if (version === messageRequest.current) setMessageError(e.message); })
       .finally(() => { if (version === messageRequest.current) setLoadingMessages(false); });
     return () => { messageRequest.current++; };
-  }, [jid, messageRefresh]);
+  }, [jid, messageRefresh, messageQuery]);
   const loadMore = async () => {
     if (!jid) return;
     const version = messageRequest.current;
     setLoadingMessages(true); setMessageError("");
     try {
-      const data = await request<{ messages: Message[]; hasMore: boolean }>({ action: "messages", jid, page: messagePage + 1 });
+      const data = await request<{ messages: Message[]; hasMore: boolean; total: number }>({ action: "messages", jid, page: messagePage + 1, search: messageQuery });
       if (version !== messageRequest.current) return;
       setMessages(current => [...new Map([...current, ...data.messages].map(m => [m.id, m])).values()].sort((a, b) => a.timestamp - b.timestamp));
-      setMessagePage(p => p + 1); setHasMore(data.hasMore);
+      setMessagePage(p => p + 1); setHasMore(data.hasMore); setMatchTotal(data.total);
     } catch (e) { if (version === messageRequest.current) setMessageError(e instanceof Error ? e.message : "Não foi possível carregar"); }
     finally { if (version === messageRequest.current) setLoadingMessages(false); }
   };
@@ -150,7 +158,7 @@ export default function AdminEvolutionConversations() {
         <div className="relative m-3"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Buscar conversa por nome ou número" placeholder="Nome ou número" value={search} onChange={e => setSearch(e.target.value.slice(0, 100))} className="pl-9" /></div>
         <p className="px-3 pb-2 text-xs text-muted-foreground">{total} conversas</p>
         <div className="max-h-[65vh] overflow-y-auto flex-1">
-          {loadingChats ? <p className="p-4 text-muted-foreground" role="status">Carregando conversas…</p> : chatError ? <p role="alert" className="p-4 text-destructive text-sm">{chatError}</p> : chats.length === 0 ? <p className="p-4 text-muted-foreground text-sm">Nenhuma conversa encontrada no histórico do Evolution.</p> : chats.map(chat => <Button key={chat.jid} variant="ghost" onClick={() => setSelected(chat)} className={`w-full h-auto min-h-20 rounded-none justify-start px-3 py-3 border-b border-border whitespace-normal ${selected?.jid === chat.jid ? "bg-accent" : ""}`}>
+          {loadingChats ? <p className="p-4 text-muted-foreground" role="status">Carregando conversas…</p> : chatError ? <p role="alert" className="p-4 text-destructive text-sm">{chatError}</p> : chats.length === 0 ? <p className="p-4 text-muted-foreground text-sm">Nenhuma conversa encontrada no histórico do Evolution.</p> : chats.map(chat => <Button key={chat.jid} variant="ghost" onClick={() => { setSelected(chat); setMessageSearch(""); setMessageQuery(""); }} className={`w-full h-auto min-h-20 rounded-none justify-start px-3 py-3 border-b border-border whitespace-normal ${selected?.jid === chat.jid ? "bg-accent" : ""}`}>
             <div className="text-left min-w-0 w-full space-y-1"><div className="font-semibold truncate">{chat.name}</div><div className="text-xs text-muted-foreground break-words">{phoneLabel(chat)}{chat.unread ? ` · ${chat.unread} não lidas` : ""}</div><div className="text-xs text-muted-foreground truncate">{chat.last?.text || (chat.last?.kind === "audio" ? "Áudio" : chat.last?.kind === "image" ? "Imagem" : chat.last?.kind === "video" ? "Vídeo" : chat.last?.kind === "sticker" ? "Figurinha" : chat.last?.kind === "document" ? "Documento" : "")}</div></div>
           </Button>)}
         </div>
@@ -158,16 +166,20 @@ export default function AdminEvolutionConversations() {
       </aside>
       <div className={`${selected ? "flex" : "hidden md:flex"} min-w-0 flex-col`}>
         {selected ? <>
-          <header className="flex items-center gap-2 p-3 border-b border-border"><Button variant="ghost" size="icon" aria-label="Voltar às conversas" onClick={() => setSelected(null)} className="md:hidden shrink-0"><ArrowLeft className="h-4 w-4" /></Button><div className="min-w-0"><h3 className="font-semibold truncate">{selected.name}</h3><p className="text-xs text-muted-foreground break-words">{phoneLabel(selected)}</p></div></header>
+          <header className="p-3 border-b border-border space-y-2">
+            <div className="flex items-center gap-2 min-w-0"><Button variant="ghost" size="icon" aria-label="Voltar às conversas" onClick={() => setSelected(null)} className="md:hidden shrink-0"><ArrowLeft className="h-4 w-4" /></Button><div className="min-w-0"><h3 className="font-semibold truncate">{selected.name}</h3><p className="text-xs text-muted-foreground break-words">{phoneLabel(selected)}</p></div></div>
+            <div className="relative"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Buscar assunto nesta conversa" placeholder="Buscar assunto nesta conversa" value={messageSearch} onChange={e => setMessageSearch(e.target.value.slice(0, 100))} className="pl-9 pr-9" />{messageSearch && <Button variant="ghost" size="icon" aria-label="Limpar busca nesta conversa" onClick={() => setMessageSearch("")} className="absolute right-1 top-1.5 h-7 w-7"><X className="w-4 h-4" /></Button>}</div>
+          </header>
           <div className="flex-1 max-h-[70vh] overflow-y-auto p-3 md:p-5 space-y-4">
-            {hasMore && <div className="text-center"><Button variant="outline" size="sm" disabled={loadingMessages} onClick={loadMore}>Carregar mais mensagens</Button></div>}
+            {hasMore && <div className="text-center"><Button variant="outline" size="sm" disabled={loadingMessages} onClick={loadMore}>{messageQuery ? "Carregar mais resultados" : "Carregar mais mensagens"}</Button></div>}
+            {messageQuery && <p className="text-xs text-muted-foreground">{matchTotal} {matchTotal === 1 ? "mensagem encontrada" : "mensagens encontradas"} com “{messageQuery}”</p>}
             {loadingMessages && <p role="status" className="text-sm text-muted-foreground">Carregando mensagens…</p>}
             {messageError && <p role="alert" className="text-sm text-destructive">{messageError}</p>}
-            {!loadingMessages && !messageError && messages.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma mensagem salva nesta conversa.</p>}
+            {!loadingMessages && !messageError && messages.length === 0 && <p className="text-sm text-muted-foreground">{messageQuery ? `Nenhuma mensagem com “${messageQuery}” nesta conversa.` : "Nenhuma mensagem salva nesta conversa."}</p>}
             {messages.map(message => <article key={`${jid}-${message.id}`} className={`max-w-[92%] sm:max-w-[85%] w-fit min-w-0 rounded-lg px-3 py-2 ${message.fromMe ? "ml-auto bg-primary/10" : "bg-muted"}`}>
               <p className="text-xs font-medium text-muted-foreground mb-1">{message.fromMe ? "Número da clínica" : message.sender || selected.name}</p>
               {message.kind !== "text" && <MessageMedia key={`${jid}-${message.id}`} message={message} jid={selected.jid} />}
-              {message.text && <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] mt-1">{message.text}</p>}
+              {message.text && <p className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] mt-1">{highlightParts(message.text, messageQuery).map((part, index) => part.match ? <mark key={index} className="bg-primary/25 text-inherit rounded-sm px-0.5">{part.text}</mark> : <span key={index}>{part.text}</span>)}</p>}
               <p className="text-[11px] text-muted-foreground mt-1 text-right">{dateTime(message.timestamp)}</p>
             </article>)}
           </div>

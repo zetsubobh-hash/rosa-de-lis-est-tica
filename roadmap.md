@@ -23,3 +23,5 @@
 - [x] Investigar -Mimi: cadastro 𝑴𝒊𝒎𝒊 e dois agendamentos preservados; corrigir busca de letras estilizadas/prefixos e reiniciar filtro/página após limpeza; dez testes e verificações SQL passaram. Painel logado não verificável com autenticação externa.
 - [x] Adicionar limpeza financeira do parceiro em edição com senha admin, zerando salário/comissão e removendo seus pagamentos sem alterar cadastro, agenda e fichas; três testes passaram, permissões verificadas e serviço recusou token inválido (401). Limpeza real não executada por exigir senha e ser destrutiva.- [x] Meus Cuidados, Pétalas e guia pós-atendimento para clientes
 - [x] Aba Visão do Cliente no admin
+- [x] Adicionar busca por assunto dentro da conversa do WhatsApp: campo no topo da conversa, filtro em todas as mensagens salvas ignorando maiúsculas e acentos, contagem de mensagens encontradas, destaque do termo e botão para limpar; coluna normalizada criada no banco e preenchida nas 17.897 mensagens, 22 testes locais e 3 de validação passaram, função publicada.
+- [ ] Conferir a busca por assunto no painel de Walliston: bloqueado pela autenticação externa sem sessão de teste disponível.

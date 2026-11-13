@@ -465,6 +465,7 @@ export type Database = {
           jid: string
           message_id: string
           message_timestamp: number
+          search_text: string | null
           updated_at: string
         }
         Insert: {
@@ -474,6 +475,7 @@ export type Database = {
           jid: string
           message_id: string
           message_timestamp?: number
+          search_text?: string | null
           updated_at?: string
         }
         Update: {
@@ -483,6 +485,7 @@ export type Database = {
           jid?: string
           message_id?: string
           message_timestamp?: number
+          search_text?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1340,6 +1343,7 @@ export type Database = {
       clean_client_name_prefixes: { Args: never; Returns: Json }
       cleanup_old_audit_logs: { Args: never; Returns: number }
       cleanup_stale_pending_appointments: { Args: never; Returns: undefined }
+      fold_search_text: { Args: { value: string }; Returns: string }
       get_agenda_client_labels: {
         Args: { _user_ids: string[] }
         Returns: {

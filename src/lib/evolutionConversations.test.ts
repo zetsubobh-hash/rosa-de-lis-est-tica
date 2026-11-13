@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { canReadConversations, WALLISTON_ID, messageRecord, messageRecords, mediaRequest, readMedia, EvolutionRequestError, phoneFromRecord, conversationRecord, mergeConversation, hasNextMessagePage } from "../../supabase/functions/evolution-conversations/helpers";
+import { canReadConversations, WALLISTON_ID, messageRecord, messageRecords, mediaRequest, readMedia, EvolutionRequestError, phoneFromRecord, conversationRecord, mergeConversation, hasNextMessagePage, foldSearchText, messageSearchPattern } from "../../supabase/functions/evolution-conversations/helpers";
 
 describe("Conversas exclusivas de Walliston", () => {
   it("identifica celulares sem confundir identificadores LID ou grupos com telefone", () => {
@@ -99,5 +99,12 @@ describe("Conversas exclusivas de Walliston", () => {
     const call = vi.fn().mockResolvedValue(null);
     expect(await readMedia({ key: { id: "a" }, message: { imageMessage: {} } }, call)).toBeNull();
     expect(call).toHaveBeenCalledTimes(3);
+  });
+  it("monta a busca de assunto do mesmo jeito que o texto salvo no banco", () => {
+    expect(foldSearchText("Manutenção")).toBe("manutencao");
+    expect(messageSearchPattern("Horário da Massagem")).toBe("%horario da massagem%");
+    expect(messageSearchPattern("pix 50%")).toBe("%pix 50%");
+    expect(messageSearchPattern("   ")).toBe("");
+    expect(messageSearchPattern("%%%")).toBe("");
   });
 });

@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { conversationRequestSchema } from "./requestSchema.ts";
-import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage } from "./helpers.ts";
+import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage, messageSearchPattern } from "./helpers.ts";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -118,11 +118,17 @@ Deno.serve(async (req) => {
         total: count || 0, pages: Math.max(1, Math.ceil((count || 0) / 50)), instance: cfg.evolution_instance_name });
     }
     if (input.action === "messages") {
-      const { data, count, error } = await db.from("evolution_message_archive").select("content", { count: "exact" })
-        .eq("instance", archiveInstance).eq("jid", input.jid).order("message_timestamp", { ascending: false }).order("message_id")
+      let query = db.from("evolution_message_archive").select("content", { count: "exact" })
+        .eq("instance", archiveInstance).eq("jid", input.jid);
+      // Subject search runs over the stored folded text, so accents and capital letters
+      // never hide a message and the match count covers the whole conversation.
+      const pattern = messageSearchPattern(input.search);
+      if (pattern) query = query.ilike("search_text", pattern);
+      const { data, count, error } = await query.order("message_timestamp", { ascending: false }).order("message_id")
         .range((input.page - 1) * 50, input.page * 50 - 1);
       if (error) throw new Error("Não foi possível abrir as mensagens salvas");
-      return json({ messages: (data || []).map(r => r.content).sort((a: any, b: any) => a.timestamp - b.timestamp), hasMore: input.page * 50 < (count || 0) });
+      return json({ messages: (data || []).map(r => r.content).sort((a: any, b: any) => a.timestamp - b.timestamp),
+        hasMore: input.page * 50 < (count || 0), total: count || 0, searching: Boolean(pattern) });
     }
     const payload = await call("chat/findMessages", {
       where: { key: { remoteJid: input.jid, ...(input.action === "media" ? { id: input.id } : {}) } },

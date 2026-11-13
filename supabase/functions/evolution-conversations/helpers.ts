@@ -157,3 +157,22 @@ export function messageRecords(payload: any): any[] {
   if (Array.isArray(payload?.records)) return payload.records;
   return [];
 }
+
+// evolution_message_archive.search_text stores the message text folded (lowercase, accents
+// removed). Keep this mapping identical to public.fold_search_text in the database.
+const FOLD_PAIRS: [string, string][] = [["á", "a"], ["à", "a"], ["â", "a"], ["ã", "a"], ["ä", "a"], ["é", "e"], ["è", "e"], ["ê", "e"], ["ë", "e"],
+  ["í", "i"], ["ì", "i"], ["î", "i"], ["ï", "i"], ["ó", "o"], ["ò", "o"], ["ô", "o"], ["õ", "o"], ["ö", "o"],
+  ["ú", "u"], ["ù", "u"], ["û", "u"], ["ü", "u"], ["ç", "c"], ["ñ", "n"]];
+
+export function foldSearchText(value: string) {
+  let folded = value.toLowerCase();
+  for (const [from, to] of FOLD_PAIRS) folded = folded.split(from).join(to);
+  return folded;
+}
+
+// LIKE wildcards and the escape character would change what the database looks for, so they
+// become spaces. Every other character is kept so subjects with punctuation still match.
+export function messageSearchPattern(term: string) {
+  const clean = foldSearchText(term).replace(/[%_\\]/g, " ").replace(/\s+/g, " ").trim();
+  return clean ? `%${clean}%` : "";
+}
