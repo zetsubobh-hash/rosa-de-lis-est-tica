@@ -24,3 +24,12 @@ describe("filtros da visão do cliente", () => {
     expect(r.filterIds("all")).toEqual(["a", "b", "c"]);
   });
 });
+
+import { dailyTip as _dailyTip, DAILY_TIPS as _TIPS } from "./clientCare";
+describe("dailyTip", () => {
+  it("changes from one day to the next and repeats within the day", () => {
+    expect(_dailyTip(new Date(2026, 10, 13, 8))).toBe(_dailyTip(new Date(2026, 10, 13, 22)));
+    expect(_dailyTip(new Date(2026, 10, 13))).not.toBe(_dailyTip(new Date(2026, 10, 14)));
+    expect(_TIPS).toContain(_dailyTip());
+  });
+});

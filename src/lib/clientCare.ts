@@ -49,3 +49,25 @@ export function calendarUrl(title: string, date: string, time: string) {
   const p = new URLSearchParams({ action: "TEMPLATE", text: `${title} - Rosa de Lis Estética`, dates: `${start}/${end}`, ctz: "America/Sao_Paulo" });
   return `https://calendar.google.com/calendar/render?${p}`;
 }
+
+export const DAILY_TIPS = [
+  "Beba um copo de água agora: pele hidratada responde melhor aos tratamentos.",
+  "Protetor solar todos os dias, mesmo nublado, preserva seus resultados.",
+  "Durma de 7 a 8 horas: é durante o sono que a pele se renova.",
+  "Troque a fronha a cada 3 dias para evitar acúmulo de oleosidade.",
+  "Uma caminhada de 20 minutos ativa a circulação e reduz o inchaço.",
+  "Frutas vermelhas são ricas em antioxidantes que ajudam a pele.",
+  "Evite banhos muito quentes: eles ressecam a pele.",
+  "Massageie o rosto ao aplicar o hidratante, de baixo para cima.",
+  "Reduza o sal hoje para diminuir a retenção de líquidos.",
+  "Tire um momento só seu: o estresse também aparece na pele.",
+  "Hidrate os lábios e as mãos, regiões que envelhecem primeiro.",
+  "Constância é o segredo: sessões regulares mantêm os resultados.",
+  "Chás como hibisco e cavalinha ajudam a desinchar.",
+  "Remova toda a maquiagem antes de dormir, sem exceção.",
+];
+
+export function dailyTip(date = new Date()): string {
+  const day = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+  return DAILY_TIPS[day % DAILY_TIPS.length];
+}

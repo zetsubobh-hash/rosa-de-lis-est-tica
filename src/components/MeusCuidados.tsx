@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { CalendarPlus, Flower2, HeartHandshake, Sparkles } from "lucide-react";
+import { CalendarCheck, CalendarPlus, Flower2, HeartHandshake, Lightbulb, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { PETALS_PER_REWARD, petalProgress, careTipsFor, calendarUrl } from "@/lib/clientCare";
+import { PETALS_PER_REWARD, petalProgress, careTipsFor, calendarUrl, dailyTip } from "@/lib/clientCare";
 
 type Apt = { id: string; service_title: string; service_slug: string; appointment_date: string; appointment_time: string; status: string; room_number: number | null };
 
@@ -50,6 +51,12 @@ export default function MeusCuidados({ userId, onReward, readOnly }: { userId: s
     <div className="mb-8 space-y-4">
       <div className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /><h2 className="font-heading text-lg font-bold text-foreground">Meus Cuidados</h2></div>
 
+      <div className="rounded-2xl bg-primary/5 border border-primary/20 p-5">
+        <div className="flex items-center gap-2 mb-1"><Lightbulb className="w-4 h-4 text-primary" /><p className="font-body text-xs uppercase tracking-wider text-primary font-semibold">Dica do dia</p></div>
+        <p className="font-body text-sm text-foreground">{dailyTip()}</p>
+        <p className="font-body text-xs text-muted-foreground mt-2">Volte amanhã para uma nova dica ✨</p>
+      </div>
+
       <div className="rounded-2xl bg-card border border-border p-5">
         <p className="font-body text-xs uppercase tracking-wider text-muted-foreground mb-1">Próximo atendimento</p>
         {next ? (
@@ -61,6 +68,11 @@ export default function MeusCuidados({ userId, onReward, readOnly }: { userId: s
             </Button>
           </>
         ) : <p className="font-body text-sm text-muted-foreground">Nenhum horário marcado. Que tal agendar seu próximo momento de cuidado?</p>}
+        {!readOnly && (
+          <Button asChild size="sm" className="mt-3 rounded-full ml-0 sm:ml-2">
+            <Link to={next ? `/agendar/${next.service_slug}` : "/#servicos"}><CalendarCheck className="w-4 h-4 mr-1" />{next ? "Marcar outro atendimento" : "Agendar agora"}</Link>
+          </Button>
+        )}
       </div>
 
       <div className="rounded-2xl bg-primary/5 border border-primary/20 p-5">
