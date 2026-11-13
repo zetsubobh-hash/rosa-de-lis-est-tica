@@ -382,6 +382,42 @@ export type Database = {
         }
         Relationships: []
       }
+      evolution_chat_archive: {
+        Row: {
+          created_at: string
+          instance: string
+          jid: string
+          last_message: Json | null
+          last_timestamp: number
+          name: string
+          phone: string | null
+          unread: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          instance: string
+          jid: string
+          last_message?: Json | null
+          last_timestamp?: number
+          name: string
+          phone?: string | null
+          unread?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          instance?: string
+          jid?: string
+          last_message?: Json | null
+          last_timestamp?: number
+          name?: string
+          phone?: string | null
+          unread?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       evolution_instances: {
         Row: {
           api_key: string
@@ -417,6 +453,36 @@ export type Database = {
           msgs_per_cycle?: number
           name?: string
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      evolution_message_archive: {
+        Row: {
+          content: Json
+          created_at: string
+          instance: string
+          jid: string
+          message_id: string
+          message_timestamp: number
+          updated_at: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          instance: string
+          jid: string
+          message_id: string
+          message_timestamp?: number
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          instance?: string
+          jid?: string
+          message_id?: string
+          message_timestamp?: number
           updated_at?: string
         }
         Relationships: []
