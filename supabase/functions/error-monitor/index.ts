@@ -23,6 +23,10 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const { data: authData } = token ? await supabase.auth.getUser(token) : { data: { user: null } };
+    if (!authData?.user) return json({ skipped: true, reason: "Unauthorized" }, 401);
+
     const raw = await req.text();
     // Hard cap payload size to prevent WhatsApp spam abuse
     if (raw.length > 8000) {

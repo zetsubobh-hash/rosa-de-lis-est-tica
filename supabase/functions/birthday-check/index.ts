@@ -54,6 +54,9 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    const cronOk = await supabase.rpc("verify_cron_secret", { _token: req.headers.get("x-cron-secret") ?? "" });
+    if (cronOk.error || cronOk.data !== true) return json({ error: "Unauthorized" }, 401);
+
     const now = new Date();
     const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
     const month = String(brt.getUTCMonth() + 1).padStart(2, "0");

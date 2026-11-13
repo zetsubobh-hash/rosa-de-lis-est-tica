@@ -1240,18 +1240,6 @@ export type Database = {
         Returns: boolean
       }
       claim_loyalty_reward: { Args: never; Returns: Json }
-      claim_welcome_roulette: {
-        Args: {
-          _code: string
-          _discount_type: string
-          _discount_value: number
-          _expires_at: string
-          _is_used: boolean
-          _service_slug?: string
-          _service_title?: string
-        }
-        Returns: Json
-      }
       clean_client_name_emojis: { Args: never; Returns: Json }
       clean_client_name_prefixes: { Args: never; Returns: Json }
       cleanup_old_audit_logs: { Args: never; Returns: number }
@@ -1332,11 +1320,13 @@ export type Database = {
           user_id: string
         }[]
       }
+      spin_welcome_roulette: { Args: never; Returns: Json }
       strip_client_name_emojis: { Args: { _name: string }; Returns: string }
       strip_client_name_prefix: { Args: { _name: string }; Returns: string }
       system_health: { Args: never; Returns: Json }
       system_maintenance: { Args: never; Returns: Json }
       treatment_rooms_count: { Args: never; Returns: number }
+      verify_cron_secret: { Args: { _token: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "partner"

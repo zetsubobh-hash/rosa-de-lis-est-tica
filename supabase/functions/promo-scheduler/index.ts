@@ -19,6 +19,9 @@ Deno.serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+  const cronOk = await supabase.rpc("verify_cron_secret", { _token: req.headers.get("x-cron-secret") ?? "" });
+  if (cronOk.error || cronOk.data !== true) return json({ error: "Unauthorized" }, 401);
+
   try {
     const nowIso = new Date().toISOString();
 

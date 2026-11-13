@@ -23,6 +23,9 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    const cronOk = await supabase.rpc("verify_cron_secret", { _token: req.headers.get("x-cron-secret") ?? "" });
+    if (cronOk.error || cronOk.data !== true) return json({ error: "Unauthorized" }, 401);
+
     // Check if Evolution notifications are enabled
     const { data: settingsData } = await supabase
       .from("payment_settings")
