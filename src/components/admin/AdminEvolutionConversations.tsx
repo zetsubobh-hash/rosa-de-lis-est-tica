@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Message = { id: string; fromMe: boolean; timestamp: number; sender: string; kind: "text" | "image" | "audio" | "video" | "sticker" | "document"; text: string; seconds: number };
-type Chat = { jid: string; name: string; unread: number; last: Message | null };
+type Chat = { jid: string; name: string; phone: string | null; unread: number; last: Message | null };
+const phoneLabel = (chat: Chat) => chat.phone ? `+${chat.phone}` : chat.jid.endsWith("@g.us") ? "Grupo" : "Celular não informado pelo WhatsApp";
 const dateTime = (seconds: number) => seconds ? new Date(seconds * 1000).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "";
 
 async function request<T>(body: object): Promise<T> {
@@ -68,7 +69,36 @@ export default function AdminEvolutionConversations() {
   const [messageError, setMessageError] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [messageRefresh, setMessageRefresh] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState("");
+  const [syncError, setSyncError] = useState("");
+  const [syncWarning, setSyncWarning] = useState("");
+  const [syncRun, setSyncRun] = useState(0);
   const messageRequest = useRef(0);
+  useEffect(() => {
+    let cancelled = false;
+    const sync = async () => {
+      setSyncing(true); setSyncError(""); setSyncWarning("");
+      let nextPage = 1;
+      let saved = 0;
+      try {
+        while (!cancelled) {
+          setSyncStatus(`Salvando histórico · página ${nextPage} · ${saved} mensagens processadas`);
+          const data = await request<{ saved: number; hasMore: boolean; nextPage: number; warning: string }>({ action: "sync", page: nextPage });
+          if (cancelled) return;
+          saved += data.saved;
+          if (data.warning) setSyncWarning(data.warning);
+          if (nextPage === 1 || !data.hasMore || nextPage % 5 === 0) setRefresh(r => r + 1);
+          if (!data.hasMore) { setSyncStatus(`Histórico salvo · ${saved} mensagens processadas`); setMessageRefresh(r => r + 1); break; }
+          if (data.nextPage <= nextPage) throw new Error("A importação não avançou. Tente atualizar novamente.");
+          nextPage = data.nextPage;
+        }
+      } catch (e) { if (!cancelled) setSyncError(`Importação incompleta. ${e instanceof Error ? e.message : "Tente novamente."} As conversas já salvas foram preservadas.`); }
+      finally { if (!cancelled) setSyncing(false); }
+    };
+    void sync();
+    return () => { cancelled = true; };
+  }, [syncRun]);
   useEffect(() => {
     const timer = setTimeout(() => { setQuery(search); setPage(1); }, 350);
     return () => clearTimeout(timer);
@@ -109,22 +139,25 @@ export default function AdminEvolutionConversations() {
   return <section className="space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-lg font-heading font-semibold">Conversas WhatsApp</h2><p className="text-sm text-muted-foreground flex items-center gap-1"><ShieldCheck className="w-4 h-4" />Walliston{instance ? ` · ${instance}` : ""}</p></div>
-      <Button variant="outline" size="sm" onClick={() => { setRefresh(r => r + 1); setMessageRefresh(r => r + 1); }} disabled={loadingChats || loadingMessages}><RefreshCw className="w-4 h-4 mr-2" />Atualizar</Button>
+      <Button variant="outline" size="sm" onClick={() => setSyncRun(r => r + 1)} disabled={syncing}><RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />{syncing ? "Salvando histórico" : "Atualizar e salvar"}</Button>
     </header>
+    {syncStatus && <p role="status" className="text-sm text-muted-foreground">{syncStatus}</p>}
+    {syncError && <p role="alert" className="text-sm text-destructive">{syncError}</p>}
+    {syncWarning && <p className="text-sm text-muted-foreground">{syncWarning}</p>}
     <div className="grid md:grid-cols-[minmax(220px,32%)_minmax(0,1fr)] border-y border-border min-h-[560px]">
       <aside className={`${selected ? "hidden md:flex" : "flex"} flex-col min-w-0 md:border-r border-border`}>
         <div className="relative m-3"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Buscar conversa por nome ou número" placeholder="Nome ou número" value={search} onChange={e => setSearch(e.target.value.slice(0, 100))} className="pl-9" /></div>
         <p className="px-3 pb-2 text-xs text-muted-foreground">{total} conversas</p>
         <div className="max-h-[65vh] overflow-y-auto flex-1">
           {loadingChats ? <p className="p-4 text-muted-foreground" role="status">Carregando conversas…</p> : chatError ? <p role="alert" className="p-4 text-destructive text-sm">{chatError}</p> : chats.length === 0 ? <p className="p-4 text-muted-foreground text-sm">Nenhuma conversa encontrada no histórico do Evolution.</p> : chats.map(chat => <Button key={chat.jid} variant="ghost" onClick={() => setSelected(chat)} className={`w-full h-auto min-h-20 rounded-none justify-start px-3 py-3 border-b border-border whitespace-normal ${selected?.jid === chat.jid ? "bg-accent" : ""}`}>
-            <div className="text-left min-w-0 w-full space-y-1"><div className="font-semibold truncate">{chat.name}</div><div className="text-xs text-muted-foreground truncate">{chat.jid.split("@")[0]}{chat.unread ? ` · ${chat.unread} não lidas` : ""}</div><div className="text-xs text-muted-foreground truncate">{chat.last?.text || (chat.last?.kind === "audio" ? "Áudio" : chat.last?.kind === "image" ? "Imagem" : chat.last?.kind === "video" ? "Vídeo" : chat.last?.kind === "sticker" ? "Figurinha" : chat.last?.kind === "document" ? "Documento" : "")}</div></div>
+            <div className="text-left min-w-0 w-full space-y-1"><div className="font-semibold truncate">{chat.name}</div><div className="text-xs text-muted-foreground break-words">{phoneLabel(chat)}{chat.unread ? ` · ${chat.unread} não lidas` : ""}</div><div className="text-xs text-muted-foreground truncate">{chat.last?.text || (chat.last?.kind === "audio" ? "Áudio" : chat.last?.kind === "image" ? "Imagem" : chat.last?.kind === "video" ? "Vídeo" : chat.last?.kind === "sticker" ? "Figurinha" : chat.last?.kind === "document" ? "Documento" : "")}</div></div>
           </Button>)}
         </div>
         <div className="flex items-center justify-between gap-2 p-3 border-t border-border"><Button variant="outline" size="sm" disabled={page <= 1 || loadingChats} onClick={() => setPage(p => p - 1)}>Anterior</Button><span className="text-xs text-muted-foreground">{page}/{pages}</span><Button variant="outline" size="sm" disabled={page >= pages || loadingChats} onClick={() => setPage(p => p + 1)}>Próxima</Button></div>
       </aside>
       <div className={`${selected ? "flex" : "hidden md:flex"} min-w-0 flex-col`}>
         {selected ? <>
-          <header className="flex items-center gap-2 p-3 border-b border-border"><Button variant="ghost" size="icon" aria-label="Voltar às conversas" onClick={() => setSelected(null)} className="md:hidden shrink-0"><ArrowLeft className="h-4 w-4" /></Button><div className="min-w-0"><h3 className="font-semibold truncate">{selected.name}</h3><p className="text-xs text-muted-foreground truncate">{selected.jid.split("@")[0]}</p></div></header>
+          <header className="flex items-center gap-2 p-3 border-b border-border"><Button variant="ghost" size="icon" aria-label="Voltar às conversas" onClick={() => setSelected(null)} className="md:hidden shrink-0"><ArrowLeft className="h-4 w-4" /></Button><div className="min-w-0"><h3 className="font-semibold truncate">{selected.name}</h3><p className="text-xs text-muted-foreground break-words">{phoneLabel(selected)}</p></div></header>
           <div className="flex-1 max-h-[70vh] overflow-y-auto p-3 md:p-5 space-y-4">
             {hasMore && <div className="text-center"><Button variant="outline" size="sm" disabled={loadingMessages} onClick={loadMore}>Carregar mais mensagens</Button></div>}
             {loadingMessages && <p role="status" className="text-sm text-muted-foreground">Carregando mensagens…</p>}

@@ -4,6 +4,47 @@ export function canReadConversations(userId: string, roles: string[]) {
   return userId === WALLISTON_ID && roles.includes("admin");
 }
 
+export function phoneFromRecord(record: any): string | null {
+  const candidates = [record.phoneNumber, record.phone, record.remoteJidAlt, record.key?.remoteJidAlt,
+    record.lastMessage?.key?.remoteJidAlt, record.remoteJid, record.key?.remoteJid, record.id];
+  for (const value of candidates) {
+    if (typeof value !== "string" || /@(lid|g\.us|broadcast)$/.test(value)) continue;
+    const digits = value.split("@")[0].split(":")[0].replace(/\D/g, "");
+    if (/^\d{7,15}$/.test(digits)) return digits;
+  }
+  return null;
+}
+
+export function conversationRecord(record: any, isMessage = false) {
+  const jid = String(record.remoteJid || record.key?.remoteJid || record.id || "");
+  if (!/^[\w.+:-]+@(s\.whatsapp\.net|g\.us|lid|broadcast)$/.test(jid)) return null;
+  const last = isMessage ? messageRecord(record) : record.lastMessage ? messageRecord(record.lastMessage) : null;
+  return { jid, name: String(record.name || record.pushName || record.lastMessage?.pushName || ""),
+    phone: phoneFromRecord(record), unread: Number(record.unreadMessages || record.unreadCount) || 0,
+    last_message: last, last_timestamp: last?.timestamp || 0 };
+}
+
+export function mergeConversation(incoming: NonNullable<ReturnType<typeof conversationRecord>>, previous?: any) {
+  const latest = incoming.last_timestamp >= Number(previous?.last_timestamp || 0);
+  return { ...incoming, name: incoming.name || previous?.name || incoming.phone || "Conversa",
+    phone: incoming.phone || previous?.phone || null,
+    last_message: latest ? incoming.last_message || previous?.last_message || null : previous.last_message,
+    last_timestamp: Math.max(incoming.last_timestamp, Number(previous?.last_timestamp || 0)) };
+}
+
+export function hasNextMessagePage(payload: any, page: number, size: number) {
+  const pages = Number(payload?.messages?.pages ?? payload?.pages);
+  return Number.isFinite(pages) && pages > 0 ? page < pages : messageRecords(payload).length === size;
+}
+
+export function collectionRecords(payload: any, key: "chats" | "contacts"): any[] {
+  if (Array.isArray(payload)) return payload;
+  const data = payload?.[key] ?? payload?.data;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.records)) return data.records;
+  throw new Error("O Evolution não retornou uma lista compatível");
+}
+
 // Database JSON can serialize protobuf byte fields as Buffers or numeric maps.
 // Baileys expects base64 strings when these fields cross the HTTP boundary.
 export function mediaRequest(record: any) {

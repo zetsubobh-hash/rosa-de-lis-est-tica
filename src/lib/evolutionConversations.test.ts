@@ -1,7 +1,29 @@
 import { describe, expect, it, vi } from "vitest";
-import { canReadConversations, WALLISTON_ID, messageRecord, messageRecords, mediaRequest, readMedia, EvolutionRequestError } from "../../supabase/functions/evolution-conversations/helpers";
+import { canReadConversations, WALLISTON_ID, messageRecord, messageRecords, mediaRequest, readMedia, EvolutionRequestError, phoneFromRecord, conversationRecord, mergeConversation, hasNextMessagePage } from "../../supabase/functions/evolution-conversations/helpers";
 
 describe("Conversas exclusivas de Walliston", () => {
+  it("identifica celulares sem confundir identificadores LID ou grupos com telefone", () => {
+    expect(phoneFromRecord({ remoteJid: "5511999999999@s.whatsapp.net" })).toBe("5511999999999");
+    expect(phoneFromRecord({ remoteJid: "123456789012345@lid" })).toBeNull();
+    expect(phoneFromRecord({ remoteJid: "123456789012345@g.us" })).toBeNull();
+    expect(phoneFromRecord({ key: { remoteJid: "123456789012345@lid", remoteJidAlt: "5511988888888@s.whatsapp.net" } })).toBe("5511988888888");
+  });
+  it("descobre conversas pelo histórico mesmo quando ausentes em findChats", () => {
+    expect(conversationRecord({ key: { id: "msg1", remoteJid: "5511999999999@s.whatsapp.net" }, pushName: "Ana", messageTimestamp: 100, message: { conversation: "Olá" } }, true))
+      .toMatchObject({ jid: "5511999999999@s.whatsapp.net", phone: "5511999999999", name: "Ana", last_timestamp: 100 });
+  });
+  it("preserva celular, nome e última mensagem ao importar páginas antigas", () => {
+    const previous = { name: "Ana", phone: "5511999999999", last_timestamp: 100, last_message: { text: "Nova" } };
+    const incoming = conversationRecord({ remoteJid: "123456789012345@lid", lastMessage: { messageTimestamp: 50, message: { conversation: "Antiga" } } });
+    if (!incoming) throw new Error("Conversa inválida");
+    expect(mergeConversation(incoming, previous)).toMatchObject(previous);
+  });
+  it("continua após mil mensagens até a última página informada pelo Evolution", () => {
+    expect(hasNextMessagePage({ messages: { records: [], pages: 12 } }, 6, 200)).toBe(true);
+    expect(hasNextMessagePage({ messages: { records: [], pages: 12 } }, 12, 200)).toBe(false);
+    expect(hasNextMessagePage({ records: Array.from({ length: 200 }, (_, id) => ({ id })) }, 30, 200)).toBe(true);
+    expect(hasNextMessagePage({ records: [] }, 31, 200)).toBe(false);
+  });
   it("recupera texto serializado, editado e envelopes adicionais sem expor contexto privado", () => {
     expect(messageRecord({ message: JSON.stringify({ conversation: "Texto salvo" }) }).text).toBe("Texto salvo");
     expect(messageRecord({ message: { protocolMessage: { editedMessage: { conversation: "Texto corrigido" } } } }).text).toBe("Texto corrigido");

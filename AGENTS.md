@@ -22,3 +22,4 @@
 - Evolution media requests normalize protobuf byte fields to base64 and retry provider 400 with the server-verified message key; unavailable files are recoverable results, not page-fatal failures.
 
 - Evolution message normalization unwraps serialized and WhatsApp envelope formats centrally in helpers.ts; media kinds stay explicit and downloads require server-verified message ownership and a safe MIME allowlist.
+- Evolution conversations are archived by instance/JID and messages by instance/JID/message ID through authorized resumable page imports; discovery includes global message history, LID identifiers are never presented as phone numbers, and archives retain only normalized content without provider credentials or media keys.

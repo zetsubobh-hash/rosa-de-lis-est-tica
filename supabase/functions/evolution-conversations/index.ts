@@ -1,9 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
-import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError } from "./helpers.ts";
+import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage } from "./helpers.ts";
 
 const schema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("sync"), page: z.number().int().min(1).max(100000).default(1) }),
   z.object({ action: z.literal("chats"), search: z.string().max(100).default(""), page: z.number().int().min(1).max(100000).default(1) }),
   z.object({ action: z.literal("messages"), jid: z.string().regex(/^[\w.+:-]+@(s\.whatsapp\.net|g\.us|lid|broadcast)$/).max(160), page: z.number().int().min(1).max(100000).default(1) }),
   z.object({ action: z.literal("media"), jid: z.string().regex(/^[\w.+:-]+@(s\.whatsapp\.net|g\.us|lid|broadcast)$/).max(160), id: z.string().min(1).max(200) }),
@@ -52,29 +53,83 @@ Deno.serve(async (req) => {
       }
       try { return JSON.parse(text); } catch { throw new Error("Resposta inválida do Evolution"); }
     };
+    const archiveInstance = `${base}|${cfg.evolution_instance_name}`;
+    const saveChats = async (raw: any[], isMessage = false) => {
+      const merged = new Map<string, NonNullable<ReturnType<typeof conversationRecord>>>();
+      for (const item of raw) {
+        const chat = conversationRecord(item, isMessage);
+        if (chat) merged.set(chat.jid, mergeConversation(chat, merged.get(chat.jid)));
+      }
+      const entries = [...merged.values()];
+      for (let start = 0; start < entries.length; start += 200) {
+        const batch = entries.slice(start, start + 200);
+        const { data: existing, error: readError } = await db.from("evolution_chat_archive").select("*")
+          .eq("instance", archiveInstance).in("jid", batch.map(c => c.jid));
+        if (readError) throw new Error("Não foi possível consultar o arquivo de conversas");
+        const previous = new Map((existing || []).map(c => [c.jid, c]));
+        const { error } = await db.from("evolution_chat_archive").upsert(batch.map(c => ({
+          ...mergeConversation(c, previous.get(c.jid)), instance: archiveInstance,
+        })), { onConflict: "instance,jid" });
+        if (error) throw new Error("Não foi possível salvar as conversas");
+      }
+    };
+    const saveMessages = async (raw: any[]) => {
+      const rows = new Map<string, any>();
+      for (const record of raw) {
+        const chat = conversationRecord(record, true);
+        const content = messageRecord(record);
+        if (!chat || !content.id) continue;
+        rows.set(`${chat.jid}|${content.id}`, { instance: archiveInstance, jid: chat.jid,
+          message_id: content.id, content, message_timestamp: content.timestamp });
+      }
+      if (rows.size) {
+        const { error } = await db.from("evolution_message_archive").upsert([...rows.values()], { onConflict: "instance,jid,message_id" });
+        if (error) throw new Error("Não foi possível salvar as mensagens");
+      }
+      await saveChats(raw, true);
+      return rows.size;
+    };
+    if (input.action === "sync") {
+      let warning = "";
+      if (input.page === 1) {
+        try { await saveChats(collectionRecords(await call("chat/findChats", {}), "chats")); }
+        catch (e) { if (!(e instanceof EvolutionRequestError)) throw e; warning = "Lista de chats indisponível; buscando pelo histórico de mensagens."; }
+      }
+      // Global history discovers chats absent from findChats. Each request saves one page
+      // so large histories do not hit the function execution timeout.
+      const payload = await call("chat/findMessages", { where: {}, page: input.page, offset: 200 });
+      const saved = await saveMessages(messageRecords(payload));
+      const hasMore = hasNextMessagePage(payload, input.page, 200);
+      if (!hasMore) {
+        // Contact data may contain the real phone mapped to a WhatsApp LID.
+        try { await saveChats(collectionRecords(await call("chat/findContacts", { where: {} }), "contacts")); }
+        catch (e) { if (!(e instanceof EvolutionRequestError)) throw e; warning = "Alguns contatos não informaram o celular; os identificadores privados não serão exibidos como números."; }
+      }
+      return json({ saved, hasMore, nextPage: input.page + 1, warning });
+    }
     if (input.action === "chats") {
-      const payload = await call("chat/findChats", {});
-      const raw = Array.isArray(payload) ? payload : payload?.chats || payload?.data;
-      if (!Array.isArray(raw)) throw new Error("O Evolution não retornou uma lista de conversas compatível");
-      const search = input.search.toLocaleLowerCase("pt-BR");
-      const chats = raw.map((c: any) => ({
-        jid: String(c.remoteJid || c.id || ""),
-        name: String(c.name || c.pushName || c.lastMessage?.pushName || c.remoteJid?.split("@")[0] || "Conversa"),
-        unread: Number(c.unreadMessages || c.unreadCount) || 0,
-        last: c.lastMessage ? messageRecord(c.lastMessage) : null,
-      })).filter(c => c.jid && `${c.name} ${c.jid}`.toLocaleLowerCase("pt-BR").includes(search))
-        .sort((a, b) => (b.last?.timestamp || 0) - (a.last?.timestamp || 0));
-      return json({ chats: chats.slice((input.page - 1) * 50, input.page * 50), total: chats.length, pages: Math.max(1, Math.ceil(chats.length / 50)), instance: cfg.evolution_instance_name });
+      let query = db.from("evolution_chat_archive").select("*", { count: "exact" }).eq("instance", archiveInstance);
+      const term = input.search.trim().replace(/[%_*,().\\]/g, " ").trim();
+      const digits = input.search.replace(/\D/g, "");
+      if (term) query = query.or(`name.ilike.%${term}%,phone.ilike.%${digits || term}%`);
+      const { data, count, error } = await query.order("last_timestamp", { ascending: false }).order("jid")
+        .range((input.page - 1) * 50, input.page * 50 - 1);
+      if (error) throw new Error("Não foi possível abrir as conversas salvas");
+      return json({ chats: (data || []).map(c => ({ jid: c.jid, name: c.name, phone: c.phone, unread: c.unread, last: c.last_message })),
+        total: count || 0, pages: Math.max(1, Math.ceil((count || 0) / 50)), instance: cfg.evolution_instance_name });
+    }
+    if (input.action === "messages") {
+      const { data, count, error } = await db.from("evolution_message_archive").select("content", { count: "exact" })
+        .eq("instance", archiveInstance).eq("jid", input.jid).order("message_timestamp", { ascending: false }).order("message_id")
+        .range((input.page - 1) * 50, input.page * 50 - 1);
+      if (error) throw new Error("Não foi possível abrir as mensagens salvas");
+      return json({ messages: (data || []).map(r => r.content).sort((a: any, b: any) => a.timestamp - b.timestamp), hasMore: input.page * 50 < (count || 0) });
     }
     const payload = await call("chat/findMessages", {
       where: { key: { remoteJid: input.jid, ...(input.action === "media" ? { id: input.id } : {}) } },
-      page: input.action === "messages" ? input.page : 1, offset: input.action === "messages" ? 50 : 1,
+      page: 1, offset: 1,
     });
     const records = messageRecords(payload);
-    if (input.action === "messages") {
-      const messages = records.map(messageRecord).sort((a, b) => a.timestamp - b.timestamp);
-      return json({ messages, hasMore: payload.messages?.pages ? input.page < payload.messages.pages : records.length === 50 });
-    }
     const record = records.find(r => r.key?.id === input.id && r.key?.remoteJid === input.jid);
     if (!record) return json({ error: "Mensagem não encontrada nesta conversa" }, 404);
     const normalized = messageRecord(record);
