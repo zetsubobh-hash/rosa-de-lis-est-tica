@@ -5,6 +5,11 @@ export function petalProgress(completed: number) {
   return { filled: safe % PETALS_PER_REWARD, rewardsEarned: Math.floor(safe / PETALS_PER_REWARD) };
 }
 
+/** Para onde o botão de agendar leva: WhatsApp da clínica (agendamento manual) ou página de Serviços (agendamento automático). */
+export function bookingAction(onlineBookingEnabled: boolean, whatsappNumber: string): "whatsapp" | "services" {
+  return !onlineBookingEnabled && !!whatsappNumber ? "whatsapp" : "services";
+}
+
 const GUIDES: { keys: string[]; tips: string[] }[] = [
   { keys: ["limpeza", "pele", "facial", "peeling"], tips: ["Evite maquiagem pelas próximas 12 horas.", "Use protetor solar e evite sol direto por 48 horas.", "Hidrate bem a pele e não esfolie por 5 dias."] },
   { keys: ["drenagem", "linfatica"], tips: ["Beba bastante água ao longo do dia.", "Evite alimentos muito salgados nas próximas 24 horas.", "Faça caminhadas leves para potencializar o resultado."] },

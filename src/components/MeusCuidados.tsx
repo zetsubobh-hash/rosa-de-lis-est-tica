@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { CalendarCheck, CalendarPlus, Flower2, HeartHandshake, Lightbulb, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { PETALS_PER_REWARD, petalProgress, careTipsFor, calendarUrl, dailyTip } from "@/lib/clientCare";
+import { useOnlineBooking } from "@/hooks/useOnlineBooking";
+import { PETALS_PER_REWARD, petalProgress, careTipsFor, calendarUrl, dailyTip, bookingAction } from "@/lib/clientCare";
 
 type Apt = { id: string; service_title: string; service_slug: string; appointment_date: string; appointment_time: string; status: string; room_number: number | null };
 
@@ -32,6 +33,28 @@ export default function MeusCuidados({ userId, onReward, readOnly }: { userId: s
   }, [userId]);
 
   useEffect(() => { load(); }, [load]);
+
+  const navigate = useNavigate();
+  const { isEnabled, whatsappNumber, getWhatsAppUrl } = useOnlineBooking();
+
+  const goToServices = useCallback(() => {
+    if (window.location.pathname !== "/") navigate("/");
+    let tries = 0;
+    const reveal = () => {
+      const el = document.getElementById("servicos");
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      if (tries++ < 50) setTimeout(reveal, 100);
+    };
+    reveal();
+  }, [navigate]);
+
+  const handleBook = () => {
+    if (bookingAction(isEnabled, whatsappNumber) === "whatsapp") {
+      window.open(getWhatsAppUrl(next?.service_title), "_blank", "noopener,noreferrer");
+      return;
+    }
+    goToServices();
+  };
 
   const { filled, rewardsEarned } = petalProgress(completed);
   const canClaim = rewardsEarned > claimed;
@@ -68,11 +91,9 @@ export default function MeusCuidados({ userId, onReward, readOnly }: { userId: s
             </Button>
           </>
         ) : <p className="font-body text-sm text-muted-foreground">Nenhum horário marcado. Que tal agendar seu próximo momento de cuidado?</p>}
-        {(
-          <Button asChild size="sm" className="mt-3 rounded-full ml-0 sm:ml-2">
-            <Link to={next ? `/agendar/${next.service_slug}` : "/#servicos"}><CalendarCheck className="w-4 h-4 mr-1" />{next ? "Marcar outro atendimento" : "Agendar agora"}</Link>
-          </Button>
-        )}
+        <Button size="sm" className="mt-3 rounded-full ml-0 sm:ml-2" onClick={handleBook}>
+          <CalendarCheck className="w-4 h-4 mr-1" />{next ? "Marcar outro atendimento" : "Agendar agora"}
+        </Button>
       </div>
 
       <div className="rounded-2xl bg-primary/5 border border-primary/20 p-5">

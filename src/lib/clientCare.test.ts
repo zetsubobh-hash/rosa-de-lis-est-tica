@@ -41,3 +41,16 @@ describe("dailyTip", () => {
     expect(pool.has("Beba no mínimo 2 litros de água hoje.")).toBe(true);
   });
 });
+
+import { bookingAction } from "./clientCare";
+describe("botão agendar do painel do cliente", () => {
+  it("com agendamento automático ligado leva à página de serviços", () => {
+    expect(bookingAction(true, "5541999998888")).toBe("services");
+  });
+  it("com agendamento automático desligado leva ao WhatsApp da clínica", () => {
+    expect(bookingAction(false, "5541999998888")).toBe("whatsapp");
+  });
+  it("sem número de WhatsApp cadastrado não abre um link vazio", () => {
+    expect(bookingAction(false, "")).toBe("services");
+  });
+});
