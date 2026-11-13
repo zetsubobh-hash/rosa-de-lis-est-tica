@@ -1,3 +1,4 @@
+- [ ] Importar todas as páginas do histórico Evolution para arquivo privado do app, incluindo conversas ausentes da lista de chats e identificação de celular; testar importação e acesso exclusivo.
 - [x] Corrigir mensagens não suportadas: textos encapsulados, figurinhas, vídeos, documentos, contatos, localização, reações e enquetes; nove testes passaram e função publicada. Conferência das conversas reais bloqueada pela autenticação externa de Walliston.
 - [x] Corrigir pedido de mídia Evolution: normalizar bytes, tentar leitura pela chave verificada e tratar arquivos indisponíveis sem erro fatal; validação por testes, reprodução real depende da sessão de Walliston.
 - [x] Criar Conversas WhatsApp exclusiva de Walliston, com textos, áudios e imagens da instância configurada; três testes passaram, funções publicadas e token inválido recusado com 401.
