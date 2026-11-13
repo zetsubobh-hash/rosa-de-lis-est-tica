@@ -101,6 +101,7 @@ export default function AdminEvolutionConversations() {
     if (openRun) conversationPanel.current?.scrollIntoView?.({ block: "start", behavior: "auto" });
   }, [openRun]);
   useEffect(() => {
+    if (syncRun === 0) return;
     let cancelled = false;
     const sync = async () => {
       setSyncing(true); setSyncError(""); setSyncWarning("");
