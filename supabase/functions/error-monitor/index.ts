@@ -108,7 +108,7 @@ serve(async (req) => {
     });
 
     const data = await res.json();
-    console.log(`Debug monitor message sent to ${number}:`, res.status, JSON.stringify(data));
+    console.log("Debug monitor message sent:", res.status);
 
     return json({ success: true, sent_to: number, errors_reported: errors.length });
   } catch (e) {

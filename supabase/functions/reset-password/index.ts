@@ -111,7 +111,7 @@ serve(async (req) => {
           body: JSON.stringify({ number, text: message }),
         });
         whatsappSent = res.ok;
-        console.log(`Password reset WhatsApp sent to ${number}:`, res.status);
+        console.log("Password reset WhatsApp sent:", res.status);
       } catch (e) {
         console.error("WhatsApp send error:", e);
       }

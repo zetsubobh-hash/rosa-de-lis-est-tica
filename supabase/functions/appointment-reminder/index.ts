@@ -144,7 +144,7 @@ serve(async (req) => {
           body: JSON.stringify({ number, text: message }),
         });
         const data = await res.json();
-        console.log(`Reminder sent to ${number}:`, res.status);
+        console.log(`Reminder sent for appointment ${apt.id}:`, res.status);
 
         // Mark as sent
         await supabase
@@ -154,7 +154,7 @@ serve(async (req) => {
 
         results.push({ appointment_id: apt.id, phone: number, success: res.ok });
       } catch (e) {
-        console.error(`Failed to send reminder to ${number}:`, e);
+        console.error(`Failed to send reminder for appointment ${apt.id}:`, e instanceof Error ? e.message : "unknown");
         results.push({ appointment_id: apt.id, phone: number, success: false });
       }
     }

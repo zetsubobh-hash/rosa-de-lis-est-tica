@@ -69,7 +69,7 @@ const freshQr = async (baseUrl: string, name: string, headers: Record<string, st
   let res = await connect();
   if (res.ok && hasQr(res.data)) return res;
   // Stale "open"/"connecting" session without QR: log out and request a new QR
-  console.log("No QR returned, forcing logout and reconnect", JSON.stringify(res.data));
+  console.log("No QR returned, forcing logout and reconnect", res.status);
   await fetch(`${baseUrl}/instance/logout/${enc}`, { method: "DELETE", headers }).catch(() => null);
   for (let i = 0; i < 4; i++) {
     await new Promise((r) => setTimeout(r, 1500));
@@ -162,7 +162,7 @@ serve(async (req) => {
       });
       const data = await readJson(res);
       if (!res.ok) {
-        console.error("Evolution create_instance error:", res.status, data);
+        console.error("Evolution create_instance error:", res.status);
         const msg = JSON.stringify(data).toLowerCase();
         if ([400, 403, 409].includes(res.status) && (msg.includes("already") || msg.includes("exist") || msg.includes("em uso") || msg.includes("in use"))) {
           console.log("Instance already exists, restarting and fetching QR code...");
@@ -184,7 +184,7 @@ serve(async (req) => {
       const r = await freshQr(baseUrl, instanceName, headers);
       const data = r.data;
       if (!r.ok) {
-        console.error("Evolution get_qrcode error:", r.status, data);
+        console.error("Evolution get_qrcode error:", r.status);
         return json({ error: data?.message || "Erro ao obter QR Code" }, r.status);
       }
       return json(data);
@@ -198,7 +198,7 @@ serve(async (req) => {
       });
       const data = await res.json();
       if (!res.ok) {
-        console.error("Evolution check_status error:", res.status, data);
+        console.error("Evolution check_status error:", res.status);
         return json({ error: data?.message || "Erro ao verificar status" }, res.status);
       }
       return json(data);
@@ -263,7 +263,7 @@ serve(async (req) => {
       });
       const data = await res.json();
       if (!res.ok) {
-        console.error("Evolution send_test error:", res.status, data);
+        console.error("Evolution send_test error:", res.status);
         return json({ error: data?.message || "Erro ao enviar mensagem de teste" }, res.status);
       }
       return json({ success: true, data });

@@ -168,10 +168,10 @@ serve(async (req) => {
           }),
         });
         const data = await res.json();
-        console.log(`Message sent to ${number}:`, res.status, JSON.stringify(data));
+        console.log("Message sent:", res.status);
         return { phone: number, success: res.ok };
       } catch (e) {
-        console.error(`Failed to send to ${number}:`, e);
+        console.error("Failed to send message:", e instanceof Error ? e.message : "unknown");
         return { phone: number, success: false };
       }
     };
