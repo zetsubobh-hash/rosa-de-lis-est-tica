@@ -53,7 +53,7 @@ export default function MeusCuidados({ userId, onReward, readOnly }: { userId: s
 
       <div className="rounded-2xl bg-primary/5 border border-primary/20 p-5">
         <div className="flex items-center gap-2 mb-1"><Lightbulb className="w-4 h-4 text-primary" /><p className="font-body text-xs uppercase tracking-wider text-primary font-semibold">Dica do dia</p></div>
-        <p className="font-body text-sm text-foreground">{dailyTip()}</p>
+        <p className="font-body text-sm text-foreground">{dailyTip(userId, last || next ? `${(last || next)!.service_slug} ${(last || next)!.service_title}` : "")}</p>
         <p className="font-body text-xs text-muted-foreground mt-2">Volte amanhã para uma nova dica ✨</p>
       </div>
 

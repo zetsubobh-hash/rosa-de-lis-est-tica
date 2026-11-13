@@ -67,7 +67,10 @@ export const DAILY_TIPS = [
   "Remova toda a maquiagem antes de dormir, sem exceção.",
 ];
 
-export function dailyTip(date = new Date()): string {
+export function dailyTip(userId = "", serviceText = "", date = new Date()): string {
   const day = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
-  return DAILY_TIPS[day % DAILY_TIPS.length];
+  let h = 0;
+  for (const c of userId) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const pool = serviceText ? [...careTipsFor(serviceText), ...DAILY_TIPS] : DAILY_TIPS;
+  return pool[(day + h) % pool.length];
 }

@@ -27,9 +27,17 @@ describe("filtros da visão do cliente", () => {
 
 import { dailyTip as _dailyTip, DAILY_TIPS as _TIPS } from "./clientCare";
 describe("dailyTip", () => {
-  it("changes from one day to the next and repeats within the day", () => {
-    expect(_dailyTip(new Date(2026, 10, 13, 8))).toBe(_dailyTip(new Date(2026, 10, 13, 22)));
-    expect(_dailyTip(new Date(2026, 10, 13))).not.toBe(_dailyTip(new Date(2026, 10, 14)));
-    expect(_TIPS).toContain(_dailyTip());
+  it("is stable within a day and changes the next day", () => {
+    expect(_dailyTip("a", "", new Date(2026, 10, 13, 8))).toBe(_dailyTip("a", "", new Date(2026, 10, 13, 22)));
+    expect(_dailyTip("a", "", new Date(2026, 10, 13))).not.toBe(_dailyTip("a", "", new Date(2026, 10, 14)));
+  });
+  it("differs between clients on the same day", () => {
+    const d = new Date(2026, 10, 13);
+    const tips = new Set(["u1", "u2", "u3", "u4", "u5"].map((u) => _dailyTip(u, "", d)));
+    expect(tips.size).toBeGreaterThan(1);
+  });
+  it("can include tips for the client's own service", () => {
+    const pool = new Set(Array.from({ length: 30 }, (_, i) => _dailyTip("x", "massagem redutora", new Date(2026, 0, 1 + i))));
+    expect(pool.has("Beba no mínimo 2 litros de água hoje.")).toBe(true);
   });
 });
