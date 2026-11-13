@@ -193,8 +193,20 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
 
     const arc = (2 * Math.PI) / segments.length;
 
-    // Weighted random pick using item weights, then map to displayed segment index
-    const winnerOriginalIndex = pickWinnerIndex(items);
+    // Real spins are drawn on the server; test mode picks locally
+    let winnerOriginalIndex: number;
+    if (testMode) {
+      winnerOriginalIndex = pickWinnerIndex(items);
+    } else {
+      const { data: claimResult, error } = await supabase.rpc("spin_welcome_roulette" as any);
+      const res = claimResult as { ok?: boolean; error?: string; index?: number } | null;
+      if (error || !res?.ok || typeof res.index !== "number") {
+        toast.error(res?.error === "already_claimed" ? "Você já usou seu giro de boas-vindas." : "Erro ao processar. Tente novamente.");
+        setSpinning(false);
+        return;
+      }
+      winnerOriginalIndex = res.index;
+    }
     const winIndex = Math.max(0, segments.findIndex((s) => s.originalIndex === winnerOriginalIndex));
 
     const targetRot = (3 * Math.PI / 2) - winIndex * arc - arc / 2;
@@ -222,7 +234,7 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
         const pointerAngle = ((3 * Math.PI / 2) - currentRot) % (2 * Math.PI);
         const normalized = ((pointerAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
         const actualIndex = Math.floor(normalized / arc) % segments.length;
-        const winner = segments[actualIndex];
+        const winner = segments[winIndex] ?? segments[actualIndex];
         setResult(winner);
         saveCoupon(winner);
       }
@@ -248,42 +260,6 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
 
     if (!user) return;
 
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code = "BV-";
-    if (winner.type === "none") code += "NADA-";
-    else if (winner.type === "service") code += "SRV-";
-    for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-    if (winner.type !== "none") {
-      code += "-";
-      for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-    }
-
-    const days = Math.max(1, winnerItem?.expiresDays || 30);
-    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-
-    const { data: claimResult, error } = await supabase.rpc("claim_welcome_roulette", {
-      _code: code,
-      _discount_type: winner.type === "service" ? "service" : "percent",
-      _discount_value: winner.type === "service" ? 0 : winner.value,
-      _expires_at: expiresAt,
-      _is_used: winner.type === "none",
-      _service_slug: winner.type === "service" ? (winnerItem?.serviceSlug ?? null) : null,
-      _service_title: winner.type === "service" ? (winnerItem?.serviceTitle ?? winner.label) : null,
-    });
-
-    const result = claimResult as { ok?: boolean; error?: string } | null;
-
-    if (error || !result?.ok) {
-      console.error("Error creating welcome coupon:", error || result?.error);
-      toast.error(
-        result?.error === "already_claimed"
-          ? "Você já usou seu giro de boas-vindas."
-          : "Erro ao processar. Tente novamente."
-      );
-      setSpinning(false);
-      return;
-    }
-
     setSpinning(false);
 
     if (winner.type === "none") {
@@ -294,19 +270,6 @@ const WelcomeRoulette = ({ testMode = false, onClose, previewItems }: WelcomeRou
       toast.success("🎉 Parabéns! Seu cupom de boas-vindas foi gerado!");
     }
 
-    // If it was an explicit re-spin permission, revoke it after spin
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if ((profile as any)?.allow_welcome_roulette) {
-      await supabase
-        .from("profiles")
-        .update({ allow_welcome_roulette: false } as any)
-        .eq("user_id", user.id);
-    }
   };
 
   if (!testMode && (loading || !show)) return null;

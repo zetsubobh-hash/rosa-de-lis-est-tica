@@ -86,10 +86,9 @@ const generateUsername = (name: string): string => {
 
 const generatePassword = (): string => {
   const chars = "abcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint32Array(10));
   let pass = "";
-  for (let i = 0; i < 6; i++) {
-    pass += chars[Math.floor(Math.random() * chars.length)];
-  }
+  for (let i = 0; i < bytes.length; i++) pass += chars[bytes[i] % chars.length];
   return pass;
 };
 

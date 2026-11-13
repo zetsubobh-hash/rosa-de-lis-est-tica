@@ -13,14 +13,20 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-function generatePassword(): string {
-  const chars = "abcdefghjkmnpqrstuvwxyz23456789";
-  let pwd = "";
-  for (let i = 0; i < 8; i++) {
-    pwd += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return pwd;
+function randomString(chars: string, len: number): string {
+  const bytes = crypto.getRandomValues(new Uint32Array(len));
+  let out = "";
+  for (let i = 0; i < len; i++) out += chars[bytes[i] % chars.length];
+  return out;
 }
+function generatePassword(): string {
+  return randomString("abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789", 10);
+}
+async function sha256(v: string): Promise<string> {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
+  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+const GENERIC = "Se o telefone estiver cadastrado, enviamos um código de verificação para o seu WhatsApp.";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { phone } = await req.json();
+    const { phone, code } = await req.json();
 
     if (!phone || typeof phone !== "string") {
       return json({ error: "Informe o telefone cadastrado." }, 400);
@@ -56,9 +62,63 @@ serve(async (req) => {
       return pDigits === cleanPhone || pDigits === `55${cleanPhone}` || `55${pDigits}` === cleanPhone;
     });
 
-    if (!profile) {
-      return json({ error: "Nenhuma conta encontrada com esse telefone." }, 404);
+    const { data: settingsData } = await supabase
+      .from("payment_settings")
+      .select("key, value")
+      .in("key", ["evolution_enabled", "evolution_api_url", "evolution_api_key", "evolution_instance_name"]);
+    const cfg: Record<string, string> = {};
+    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
+    const waReady = cfg.evolution_enabled === "true" && cfg.evolution_api_url && cfg.evolution_api_key && cfg.evolution_instance_name;
+    const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    const sendWa = async (text: string) => {
+      const apiUrl = cfg.evolution_api_url.replace(/\/+$/, "");
+      const res = await fetch(`${apiUrl}/message/sendText/${cfg.evolution_instance_name}`, {
+        method: "POST",
+        headers: { apikey: cfg.evolution_api_key, "Content-Type": "application/json" },
+        body: JSON.stringify({ number, text }),
+      });
+      return res.ok;
+    };
+
+    // Step 1: send a one-time verification code to the WhatsApp on file
+    if (!code) {
+      if (!profile || !waReady) return json({ success: true, step: "code", message: GENERIC });
+      const otp = randomString("0123456789", 6);
+      await supabase.from("password_reset_codes").update({ used: true }).eq("user_id", profile.user_id).eq("used", false);
+      await supabase.from("password_reset_codes").insert({
+        user_id: profile.user_id,
+        code_hash: await sha256(`${profile.user_id}:${otp}`),
+        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      });
+      try {
+        await sendWa(`🔐 Seu código para redefinir a senha é: *${otp}*\n\nVálido por 10 minutos. Se não foi você, ignore esta mensagem.`);
+      } catch (e) {
+        console.error("WhatsApp send error:", e instanceof Error ? e.message : "unknown");
+      }
+      return json({ success: true, step: "code", message: GENERIC });
     }
+
+    // Step 2: verify the code before changing the password
+    if (typeof code !== "string" || !/^\d{6}$/.test(code) || !profile) {
+      return json({ error: "Código inválido ou expirado." }, 400);
+    }
+    const { data: pending } = await supabase
+      .from("password_reset_codes")
+      .select("id, code_hash, attempts, expires_at")
+      .eq("user_id", profile.user_id)
+      .eq("used", false)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!pending || new Date(pending.expires_at).getTime() < Date.now() || pending.attempts >= 5) {
+      return json({ error: "Código inválido ou expirado." }, 400);
+    }
+    if (pending.code_hash !== (await sha256(`${profile.user_id}:${code}`))) {
+      await supabase.from("password_reset_codes").update({ attempts: pending.attempts + 1 }).eq("id", pending.id);
+      return json({ error: "Código inválido ou expirado." }, 400);
+    }
+    await supabase.from("password_reset_codes").update({ used: true }).eq("id", pending.id);
+
 
     // Generate new password
     const newPassword = generatePassword();
@@ -74,19 +134,6 @@ serve(async (req) => {
       return json({ error: "Erro ao redefinir senha. Tente novamente." }, 500);
     }
 
-    // Send new password via WhatsApp
-    const { data: settingsData } = await supabase
-      .from("payment_settings")
-      .select("key, value")
-      .in("key", [
-        "evolution_enabled",
-        "evolution_api_url",
-        "evolution_api_key",
-        "evolution_instance_name",
-      ]);
-
-    const cfg: Record<string, string> = {};
-    settingsData?.forEach((r: any) => { cfg[r.key] = r.value; });
 
     // Fetch business name
     const { data: siteSetting } = await supabase
@@ -98,22 +145,14 @@ serve(async (req) => {
 
     let whatsappSent = false;
 
-    if (cfg.evolution_enabled === "true" && cfg.evolution_api_url && cfg.evolution_api_key && cfg.evolution_instance_name) {
-      const apiUrl = cfg.evolution_api_url.replace(/\/+$/, "");
-      const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    if (waReady) {
 
       const message = `🔐 *${businessName} - Redefinição de Senha*\n\nOlá, ${profile.full_name}!\n\nSua senha foi redefinida com sucesso.\n\n👤 *Usuário:* ${profile.full_name}\n🔑 *Nova senha:* ${newPassword}\n\nAcesse o app e faça login com sua nova senha. Recomendamos alterá-la depois no seu perfil.\n\n📲 *Acesse o app:* https://rosadelis.com\n\n_${businessName}_`;
 
       try {
-        const res = await fetch(`${apiUrl}/message/sendText/${cfg.evolution_instance_name}`, {
-          method: "POST",
-          headers: { apikey: cfg.evolution_api_key, "Content-Type": "application/json" },
-          body: JSON.stringify({ number, text: message }),
-        });
-        whatsappSent = res.ok;
-        console.log("Password reset WhatsApp sent:", res.status);
+        whatsappSent = await sendWa(message);
       } catch (e) {
-        console.error("WhatsApp send error:", e);
+        console.error("WhatsApp send error:", e instanceof Error ? e.message : "unknown");
       }
     }
 

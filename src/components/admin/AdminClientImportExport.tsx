@@ -209,13 +209,18 @@ const AdminClientImportExport = () => {
         .limit(20000);
       if (error) throw error;
 
+      // Neutralize spreadsheet formulas in user-controlled text
+      const safe = (v: unknown) => {
+        const t = String(v ?? "");
+        return /^[=+\-@\t\r]/.test(t) ? `'${t}` : t;
+      };
       const out = (data || []).map((p: any) => ({
-        Nome: p.full_name || "",
-        Usuario: p.username || "",
-        Telefone: p.phone || "",
-        Email: p.email || "",
+        Nome: safe(p.full_name),
+        Usuario: safe(p.username),
+        Telefone: safe(p.phone),
+        Email: safe(p.email),
         Nascimento: p.birth_date || "",
-        Endereco: p.address || "",
+        Endereco: safe(p.address),
         Cadastro: p.created_at ? new Date(p.created_at).toLocaleDateString("pt-BR") : "",
       }));
 

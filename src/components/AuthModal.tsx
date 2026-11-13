@@ -65,6 +65,8 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [loginError, setLoginError] = useState(false);
   const [forgotPhone, setForgotPhone] = useState("");
+  const [forgotCode, setForgotCode] = useState("");
+  const [forgotStep, setForgotStep] = useState<"phone" | "code">("phone");
   const [forgotResult, setForgotResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Login fields
@@ -344,13 +346,18 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
       const res = await fetch(`${SUPABASE_URL}/functions/v1/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: digits }),
+        body: JSON.stringify(forgotStep === "code" ? { phone: digits, code: forgotCode.replace(/\D/g, "") } : { phone: digits }),
       });
       const result = await res.json();
       if (!res.ok) {
         setForgotResult({ success: false, message: result.error || "Erro ao redefinir senha" });
+      } else if (result.step === "code") {
+        setForgotStep("code");
+        setForgotResult({ success: true, message: result.message });
       } else {
         setForgotResult({ success: true, message: result.message });
+        setForgotStep("phone");
+        setForgotCode("");
       }
     } catch {
       setForgotResult({ success: false, message: "Erro de conexão. Tente novamente." });
@@ -370,7 +377,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
         {mode === "forgot" ? (
           <form onSubmit={handleForgotPassword} className="space-y-4 mt-2">
             <p className="font-body text-sm text-muted-foreground text-center">
-              Informe o telefone cadastrado na sua conta. Uma nova senha será enviada para o seu WhatsApp.
+              Informe o telefone cadastrado. Enviaremos um código ao seu WhatsApp e, após confirmá-lo, sua nova senha.
             </p>
 
             {forgotResult && (
@@ -378,7 +385,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
                 <p className={`font-body text-sm font-medium ${forgotResult.success ? "text-primary" : "text-destructive"}`}>
                   {forgotResult.message}
                 </p>
-                {forgotResult.success && (
+                {forgotResult.success && forgotStep === "phone" && (
                   <button
                     type="button"
                     onClick={() => { setMode("login"); setForgotResult(null); setForgotPhone(""); }}
@@ -396,14 +403,29 @@ const AuthModal = ({ open, onOpenChange, onSuccess, defaultMode = "login" }: Aut
                 id="forgot-phone"
                 placeholder="(00) 00000-0000"
                 value={forgotPhone}
-                onChange={(e) => { setForgotPhone(formatPhone(e.target.value)); setForgotResult(null); }}
+                onChange={(e) => { setForgotPhone(formatPhone(e.target.value)); setForgotResult(null); setForgotStep("phone"); setForgotCode(""); }}
                 autoComplete="tel"
               />
             </div>
 
+            {forgotStep === "code" && (
+              <div className="space-y-2">
+                <Label htmlFor="forgot-code" className="font-body text-sm">Código recebido no WhatsApp</Label>
+                <Input
+                  id="forgot-code"
+                  inputMode="numeric"
+                  placeholder="000000"
+                  maxLength={6}
+                  value={forgotCode}
+                  onChange={(e) => setForgotCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  autoComplete="one-time-code"
+                />
+              </div>
+            )}
+
             <Button type="submit" className="w-full gap-2" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
-              Enviar nova senha
+              {forgotStep === "code" ? "Confirmar código e receber nova senha" : "Enviar código"}
             </Button>
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="flex-1 h-px bg-border" />ou<span className="flex-1 h-px bg-border" /></div>
 

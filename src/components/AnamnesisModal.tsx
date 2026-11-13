@@ -315,8 +315,9 @@ const AnamnesisModal = ({ open, onClose, clientUserId, clientName, partnerId, re
     if (!printContent) return;
     const w = window.open("", "_blank");
     if (!w) return;
+    const safeName = String(clientName ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
     w.document.write(`
-      <html><head><title>Ficha de Anamnese - ${clientName}</title>
+      <html><head><title>Ficha de Anamnese - ${safeName}</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
         h1 { font-size: 20px; border-bottom: 2px solid #d4a0b0; padding-bottom: 8px; }
