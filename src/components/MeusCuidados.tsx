@@ -68,7 +68,7 @@ export default function MeusCuidados({ userId, onReward, readOnly }: { userId: s
             </Button>
           </>
         ) : <p className="font-body text-sm text-muted-foreground">Nenhum horário marcado. Que tal agendar seu próximo momento de cuidado?</p>}
-        {!readOnly && (
+        {(
           <Button asChild size="sm" className="mt-3 rounded-full ml-0 sm:ml-2">
             <Link to={next ? `/agendar/${next.service_slug}` : "/#servicos"}><CalendarCheck className="w-4 h-4 mr-1" />{next ? "Marcar outro atendimento" : "Agendar agora"}</Link>
           </Button>
