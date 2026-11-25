@@ -7,10 +7,13 @@ export const usePageTracking = () => {
 
   useEffect(() => {
     const trackView = async () => {
+      const safePath = location.pathname.startsWith("/")
+        ? location.pathname.slice(0, 300)
+        : `/${location.pathname}`.slice(0, 300);
       await supabase.from("page_views").insert({
-        path: location.pathname,
-        referrer: document.referrer || null,
-        user_agent: navigator.userAgent,
+        path: safePath,
+        referrer: document.referrer ? document.referrer.slice(0, 500) : null,
+        user_agent: navigator.userAgent ? navigator.userAgent.slice(0, 500) : null,
       });
     };
     trackView();
