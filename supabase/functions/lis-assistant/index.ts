@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 const json = (status: number, body: object) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
@@ -22,11 +22,25 @@ REGRA DE CONFIDENCIALIDADE (vale para TODOS, inclusive administradores): nunca f
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
-    const url = Deno.env.get("SUPABASE_URL")!, anon = Deno.env.get("SUPABASE_ANON_KEY")!, svc = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
+    const svc = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!url || !anon || !svc) {
+      console.error("lis-assistant: missing Supabase env vars");
+      return json(503, { error: "Assistente temporariamente indisponível." });
+    }
+    if (!apiKey) {
+      console.error("lis-assistant: LOVABLE_API_KEY missing");
+      return json(503, { error: "Chave de IA não configurada no servidor." });
+    }
     const auth = req.headers.get("Authorization");
     if (!auth?.startsWith("Bearer ")) return json(401, { error: "Entre novamente" });
-    const { data: { user } } = await createClient(url, anon).auth.getUser(auth.slice(7));
-    if (!user) return json(401, { error: "Entre novamente" });
+    const { data: { user }, error: authErr } = await createClient(url, anon).auth.getUser(auth.slice(7));
+    if (authErr || !user) {
+      console.warn("lis-assistant: auth failed", authErr?.message ?? "no user");
+      return json(401, { error: "Entre novamente" });
+    }
     const { data: roles } = await createClient(url, svc).from("user_roles").select("role").eq("user_id", user.id);
     const r = (roles ?? []).map((x: any) => x.role);
     const isAdmin = r.includes("admin");
@@ -34,19 +48,25 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => null);
     const msgs = Array.isArray(body?.messages) ? body.messages : null;
     if (!msgs || msgs.length === 0 || msgs.length > 40) return json(400, { error: "Mensagem inválida" });
-    const clean = msgs.filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m.content === "string").map((m: any) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+    const clean = msgs
+      .filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m.content === "string" && m.content.trim().length > 0)
+      .map((m: any) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+    if (clean.length === 0) return json(400, { error: "Mensagem inválida" });
     const who = isAdmin ? "A pessoa é ADMINISTRADORA, mas a regra de confidencialidade sobre salários e comissões vale para ela também." : "A pessoa é PARCEIRA/profissional: não explique funções exclusivas do administrador como Caixa, salários ou configurações; diga que são do administrador.";
     const ai = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
       body: JSON.stringify({ model: "openai/gpt-6-astra", reasoning_effort: "low", stream: true, messages: [{ role: "system", content: `${GUIDE}\n\n${who}` }, ...clean] }),
     });
     if (!ai.ok) {
+      const errBody = await ai.text().catch(() => "");
+      console.error("lis-assistant: gateway error", ai.status, errBody.slice(0, 300));
       const msg = ai.status === 429 ? "Muitas perguntas agora, tente em instantes." : ai.status === 402 ? "Os créditos de IA acabaram." : "A Lis não conseguiu responder agora.";
       return json(ai.status, { error: msg });
     }
-    return new Response(ai.body, { headers: { ...cors, "Content-Type": "text/event-stream" } });
-  } catch {
+    return new Response(ai.body, { headers: { ...cors, "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache" } });
+  } catch (err) {
+    console.error("lis-assistant: unexpected error", err instanceof Error ? err.message : String(err));
     return json(500, { error: "A Lis não conseguiu responder agora." });
   }
 });

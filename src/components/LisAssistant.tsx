@@ -55,26 +55,59 @@ export default function LisAssistant() {
     setMsgs([...history, { role: "assistant", content: "" }]);
     setInput(""); setBusy(true);
     const put = (c: string) => setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: c }]);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/lis-assistant`, {
+    const callAssistant = (token: string, payload: Msg[]) =>
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/lis-assistant`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ messages: history.slice(1).slice(-20) }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ messages: payload }),
       });
+    try {
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        const refreshed = await supabase.auth.refreshSession();
+        session = refreshed.data.session;
+      }
+      if (!session?.access_token) {
+        put("Sua sessão expirou. Entre novamente para conversar com a Lis.");
+        return;
+      }
+      const payload = history.slice(1).filter((m) => m.content.trim().length > 0).slice(-20);
+      let res = await callAssistant(session.access_token, payload);
+      if (res.status === 401) {
+        const refreshed = await supabase.auth.refreshSession();
+        if (refreshed.data.session?.access_token) {
+          res = await callAssistant(refreshed.data.session.access_token, payload);
+        }
+      }
       if (!res.ok || !res.body) { put((await res.json().catch(() => null))?.error || "Não consegui responder agora."); return; }
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const data = await res.json().catch(() => null);
+        const content = data?.choices?.[0]?.message?.content || data?.error;
+        put(content || "Não consegui responder agora, tente de novo.");
+        return;
+      }
       const reader = res.body.getReader(); const dec = new TextDecoder();
       let buf = "", out = "";
+      const consume = (line: string) => {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) return;
+        const d = trimmed.slice(5).trim();
+        if (!d || d === "[DONE]") return;
+        try { const t = JSON.parse(d).choices?.[0]?.delta?.content; if (t) { out += t; put(out); } } catch { /* parcial */ }
+      };
       for (;;) {
         const { done, value } = await reader.read(); if (done) break;
         buf += dec.decode(value, { stream: true });
         const lines = buf.split("\n"); buf = lines.pop() || "";
-        for (const l of lines) {
-          if (!l.startsWith("data:")) continue;
-          const d = l.slice(5).trim(); if (d === "[DONE]") continue;
-          try { const t = JSON.parse(d).choices?.[0]?.delta?.content; if (t) { out += t; put(out); } } catch { /* parcial */ }
-        }
+        for (const l of lines) consume(l);
       }
+      buf += dec.decode();
+      if (buf.trim()) consume(buf);
       if (!out) put("Não consegui responder agora, tente de novo.");
     } catch { put("Não consegui responder agora, tente de novo."); }
     finally { setBusy(false); }
