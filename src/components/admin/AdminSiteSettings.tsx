@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Save, MapPin, Phone, Instagram, Building2, Clock, MessageCircle, CalendarCheck, BellRing } from "lucide-react";
+import { Save, MapPin, Phone, Instagram, Building2, Clock, MessageCircle, CalendarCheck, BellRing, HelpCircle } from "lucide-react";
 
 const formatWhatsApp = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -66,8 +66,18 @@ const AdminSiteSettings = () => {
   const handleToggleAlert = async (checked: boolean) => {
     const { error } = await updateSetting("unassigned_partner_alert_enabled", checked ? "true" : "false");
     if (error) { toast.error("Erro ao salvar"); return; }
+    setForm((prev) => ({ ...prev, unassigned_partner_alert_enabled: checked ? "true" : "false" }));
     window.dispatchEvent(new CustomEvent("unassigned-alert-setting", { detail: checked }));
     toast.success(checked ? "Aviso ligado" : "Aviso desligado");
+  };
+
+  const isLisEnabled = (settings.lis_assistant_enabled ?? "true") !== "false";
+  const handleToggleLis = async (checked: boolean) => {
+    const { error } = await updateSetting("lis_assistant_enabled", checked ? "true" : "false");
+    if (error) { toast.error("Erro ao salvar"); return; }
+    setForm((prev) => ({ ...prev, lis_assistant_enabled: checked ? "true" : "false" }));
+    window.dispatchEvent(new CustomEvent("lis-assistant-setting", { detail: checked }));
+    toast.success(checked ? "Assistente Lis ligado" : "Assistente Lis desligado");
   };
 
   if (loading) {
@@ -125,6 +135,22 @@ const AdminSiteSettings = () => {
           </div>
         </div>
         <Switch checked={isAlertEnabled} onCheckedChange={handleToggleAlert} />
+      </div>
+
+      {/* Lis assistant toggle */}
+      <div className="rounded-xl border border-border p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <HelpCircle className="w-5 h-5 text-primary" />
+          <div>
+            <p className="font-body text-sm font-semibold text-foreground">Assistente Lis</p>
+            <p className="font-body text-xs text-muted-foreground">
+              {isLisEnabled
+                ? "Ligado — assistente de ajuda visível no painel do admin e do parceiro."
+                : "Desligado — assistente oculto para admin e parceiros."}
+            </p>
+          </div>
+        </div>
+        <Switch checked={isLisEnabled} onCheckedChange={handleToggleLis} aria-label="Ligar ou desligar assistente Lis" />
       </div>
 
       <div className="space-y-4">

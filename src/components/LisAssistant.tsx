@@ -16,13 +16,37 @@ export default function LisAssistant() {
   const inStaffArea = pathname.startsWith("/admin") || pathname.startsWith("/parceiro");
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [enabled, setEnabled] = useState<boolean | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([HELLO]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
-  if (loading || (!isAdmin && !isPartner) || !inStaffArea) return null;
+  useEffect(() => {
+    if (loading || (!isAdmin && !isPartner) || !inStaffArea) return;
+    let active = true;
+    supabase
+      .from("site_settings" as any)
+      .select("value")
+      .eq("key", "lis_assistant_enabled")
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (active) setEnabled(data?.value !== "false");
+      });
+    const onSet = (e: Event) => {
+      const next = !!(e as CustomEvent).detail;
+      setEnabled(next);
+      if (!next) setOpen(false);
+    };
+    window.addEventListener("lis-assistant-setting", onSet);
+    return () => {
+      active = false;
+      window.removeEventListener("lis-assistant-setting", onSet);
+    };
+  }, [isAdmin, isPartner, loading, inStaffArea]);
+
+  if (loading || (!isAdmin && !isPartner) || !inStaffArea || enabled !== true) return null;
 
   const send = async () => {
     const text = input.trim();
@@ -70,7 +94,7 @@ export default function LisAssistant() {
         </div>
       )}
       {!open && dismissed && (
-        <button onClick={() => { setDismissed(false); setOpen(true); }} aria-label="Abrir ajuda" className="fixed right-3 top-3 z-[60] flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-sm font-semibold text-primary shadow-lg ring-1 ring-primary/20 transition-transform hover:scale-105">
+        <button onClick={() => { setDismissed(false); setOpen(true); }} aria-label="Abrir ajuda" className="fixed bottom-4 right-4 z-[60] md:bottom-auto md:right-3 md:top-3 flex items-center gap-1.5 rounded-full bg-background px-3 py-1.5 text-sm font-semibold text-primary shadow-lg ring-1 ring-primary/20 transition-transform hover:scale-105">
           <HelpCircle className="h-4 w-4" />
           Ajuda
         </button>
