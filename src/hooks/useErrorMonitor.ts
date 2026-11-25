@@ -7,24 +7,25 @@ interface CapturedError {
   timestamp: string;
 }
 
+const sentRecently = new Map<string, number>();
+
 /**
  * Global error monitor that captures JS errors and unhandled promise rejections,
  * batches them, and sends to the error-monitor edge function every 30 seconds.
  */
 export const useErrorMonitor = () => {
   const errorQueue = useRef<CapturedError[]>([]);
-  const sentRecently = useRef<Map<string, number>>(new Map());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const pushError = (message: string, source: string) => {
       const normalized = message.slice(0, 300);
       const now = Date.now();
-      const lastSent = sentRecently.current.get(normalized);
+      const lastSent = sentRecently.get(normalized);
       if (lastSent && now - lastSent < 15 * 60_000) return;
       // Deduplicate: don't add if same message already queued
       if (errorQueue.current.some((e) => e.message === normalized)) return;
-      sentRecently.current.set(normalized, now);
+      sentRecently.set(normalized, now);
       errorQueue.current.push({
         message: normalized,
         source: source.slice(0, 200),
