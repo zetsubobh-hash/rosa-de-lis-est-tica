@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildResetOtpDedupKey,
+  claimWhatsappSend,
+} from "../_shared/whatsappDedup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,6 +87,9 @@ serve(async (req) => {
     // Step 1: send a one-time verification code to the WhatsApp on file
     if (!code) {
       if (!profile || !waReady) return json({ success: true, step: "code", message: GENERIC });
+      if (!(await claimWhatsappSend(supabase, buildResetOtpDedupKey(profile.user_id), "reset-password"))) {
+        return json({ success: true, step: "code", message: GENERIC });
+      }
       const otp = randomString("0123456789", 6);
       await supabase.from("password_reset_codes").update({ used: true }).eq("user_id", profile.user_id).eq("used", false);
       await supabase.from("password_reset_codes").insert({

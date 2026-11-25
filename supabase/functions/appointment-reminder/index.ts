@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildReminderDedupKey,
+  claimWhatsappSend,
+  normalizeBrPhone,
+} from "../_shared/whatsappDedup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -122,8 +127,26 @@ serve(async (req) => {
 
     for (const apt of toRemind) {
       const client = profileMap[apt.user_id];
-      if (!client?.phone) {
+      const number = normalizeBrPhone(client?.phone);
+      if (!number) {
         console.log(`Skipping appointment ${apt.id}: no phone for user ${apt.user_id}`);
+        continue;
+      }
+
+      // Atomically mark reminder_sent BEFORE sending so overlapping crons or retries never resend
+      const { data: claimedApt } = await supabase
+        .from("appointments")
+        .update({ reminder_sent: true })
+        .eq("id", apt.id)
+        .eq("reminder_sent", false)
+        .select("id")
+        .maybeSingle();
+      if (!claimedApt) {
+        continue;
+      }
+
+      const dedupKey = buildReminderDedupKey(apt.id, apt.appointment_date, apt.appointment_time, number);
+      if (!(await claimWhatsappSend(supabase, dedupKey, "appointment-reminder"))) {
         continue;
       }
 
@@ -137,24 +160,14 @@ serve(async (req) => {
         .replace(/{hora}/g, apt.appointment_time)
         .replace(/{empresa}/g, businessName);
 
-      const cleanPhone = client.phone.replace(/\D/g, "");
-      const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-
       try {
         const res = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
           method: "POST",
           headers: { apikey: apiKey, "Content-Type": "application/json" },
           body: JSON.stringify({ number, text: message }),
         });
-        const data = await res.json();
+        await res.text().catch(() => "");
         console.log(`Reminder sent for appointment ${apt.id}:`, res.status);
-
-        // Mark as sent
-        await supabase
-          .from("appointments")
-          .update({ reminder_sent: true })
-          .eq("id", apt.id);
-
         results.push({ appointment_id: apt.id, phone: number, success: res.ok });
       } catch (e) {
         console.error(`Failed to send reminder for appointment ${apt.id}:`, e instanceof Error ? e.message : "unknown");

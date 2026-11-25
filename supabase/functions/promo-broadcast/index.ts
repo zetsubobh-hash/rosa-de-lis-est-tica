@@ -1,4 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildPromoDedupKey,
+  claimWhatsappSend,
+} from "../_shared/whatsappDedup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -149,10 +153,13 @@ Deno.serve(async (req) => {
       .select("phone");
     const unsubPhones = new Set((unsubRows || []).map((r: any) => r.phone));
 
-    // Filter out unsubscribed and invalid phones
+    // Filter out unsubscribed, invalid and duplicate phones within the same campaign
+    const seenPhones = new Set<string>();
     const profiles = filteredProfiles.filter((p: any) => {
       const normalized = normalizePhone(p.phone || "");
-      return normalized && !unsubPhones.has(normalized);
+      if (!normalized || unsubPhones.has(normalized) || seenPhones.has(normalized)) return false;
+      seenPhones.add(normalized);
+      return true;
     });
     if (profiles.length === 0) return json({ error: "Nenhum cliente encontrado com os filtros selecionados" }, 400);
 
@@ -236,6 +243,13 @@ Deno.serve(async (req) => {
         totalFailed++;
         await supabase.from("promo_sends")
           .update({ status: "failed", error_message: "Invalid phone", sent_at: new Date().toISOString() })
+          .eq("id", record.id);
+        continue;
+      }
+
+      if (!(await claimWhatsappSend(supabase, buildPromoDedupKey(campaign_id, phone), "promo-broadcast"))) {
+        await supabase.from("promo_sends")
+          .update({ status: "skipped", error_message: "Duplicate send prevented", sent_at: new Date().toISOString() })
           .eq("id", record.id);
         continue;
       }

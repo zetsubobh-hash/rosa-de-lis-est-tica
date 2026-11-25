@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildErrorMonitorDedupKey,
+  claimWhatsappSend,
+  normalizeBrPhone,
+} from "../_shared/whatsappDedup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -102,8 +107,16 @@ serve(async (req) => {
     const message = `🐛 *Debug Monitor - ${businessName}*\n\n${errorLines.join("\n\n")}${errors.length > 5 ? `\n\n...e mais ${errors.length - 5} erro(s)` : ""}\n\n_Monitoramento automático_`;
 
     // Send WhatsApp
-    const cleanPhone = phone.replace(/\D/g, "");
-    const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    const number = normalizeBrPhone(phone);
+    if (!number) {
+      return json({ skipped: true, reason: "Invalid debug phone" });
+    }
+
+    const signature = safeErrors.map((e: any) => e.message || "unknown").sort().join("|");
+    const dedupKey = buildErrorMonitorDedupKey(signature);
+    if (!(await claimWhatsappSend(supabase, dedupKey, "error-monitor"))) {
+      return json({ skipped: true, reason: "Duplicate error within cooldown window" });
+    }
 
     const res = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
       method: "POST",
@@ -111,7 +124,7 @@ serve(async (req) => {
       body: JSON.stringify({ number, text: message }),
     });
 
-    const data = await res.json();
+    await res.text().catch(() => "");
     console.log("Debug monitor message sent:", res.status);
 
     return json({ success: true, sent_to: number, errors_reported: errors.length });

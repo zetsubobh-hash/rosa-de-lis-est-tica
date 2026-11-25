@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildBirthdayDedupKey,
+  claimWhatsappSend,
+  normalizeBrPhone,
+  uniqueBrPhones,
+} from "../_shared/whatsappDedup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -170,20 +176,23 @@ serve(async (req) => {
       const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
       if (adminUserIds.length > 0) {
         const { data: adminProfiles } = await supabase.from("profiles").select("phone").in("user_id", adminUserIds);
-        adminPhones = adminProfiles?.map((p: any) => p.phone).filter(Boolean) || [];
+        adminPhones = uniqueBrPhones(adminProfiles?.map((p: any) => p.phone) || []);
       }
     }
 
-    const sendMessage = async (phone: string, text: string) => {
-      const cleanPhone = phone.replace(/\D/g, "");
-      const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    const sendMessage = async (phone: string, text: string, dedupKey: string) => {
+      const number = normalizeBrPhone(phone);
+      if (!number) return { phone: "", success: false, skipped: true };
+      if (!(await claimWhatsappSend(supabase, dedupKey, "birthday-check"))) {
+        return { phone: number, success: true, skipped: true, reason: "duplicate" };
+      }
       try {
         const res = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
           method: "POST",
           headers: { apikey: apiKey, "Content-Type": "application/json" },
           body: JSON.stringify({ number, text }),
         });
-        await res.json();
+        await res.text().catch(() => "");
         return { phone: number, success: res.ok };
       } catch {
         return { phone: number, success: false };
@@ -206,7 +215,9 @@ serve(async (req) => {
 
     for (const profile of birthdayProfiles) {
       const [year] = profile.birth_date.split("-");
-      const age = String(brt.getUTCFullYear() - parseInt(year));
+      const currentYear = brt.getUTCFullYear();
+      const age = String(currentYear - parseInt(year));
+      const clientPhone = normalizeBrPhone(profile.phone);
 
       let couponCode = "";
       let giftText = baseGiftText;
@@ -214,6 +225,12 @@ serve(async (req) => {
       // Only create coupons from birthday-check if roulette is NOT enabled
       // (when roulette is enabled, coupons are created when the user spins)
       if (!rouletteEnabled && isDiscountGift && discountInfo && profile.user_id) {
+        const couponClaimed = await claimWhatsappSend(
+          supabase,
+          buildBirthdayDedupKey(currentYear, profile.user_id, "coupon", clientPhone || "none"),
+          "birthday-check",
+        );
+        if (couponClaimed) {
         couponCode = generateCouponCode();
         const expiresAt = new Date(brt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -237,6 +254,7 @@ serve(async (req) => {
         }
 
         giftText = `${baseGiftText}\n🎟️ Código do cupom: *${couponCode}*\n📅 Válido por 30 dias`;
+        }
       }
 
       const vars: Record<string, string> = {
@@ -250,9 +268,10 @@ serve(async (req) => {
       };
 
       // Send roulette invite if roulette is enabled
-      if (rouletteEnabled && rouletteInviteEnabled && profile.phone) {
+      if (rouletteEnabled && rouletteInviteEnabled && clientPhone) {
         const inviteMsg = applyTemplate(rouletteInviteTemplate, vars);
-        const r = await sendMessage(profile.phone, inviteMsg);
+        const key = buildBirthdayDedupKey(currentYear, profile.user_id, "roulette_invite", clientPhone);
+        const r = await sendMessage(clientPhone, inviteMsg, key);
         results.push({ ...r, type: "roulette_invite", client: profile.full_name });
       }
 
@@ -269,12 +288,13 @@ serve(async (req) => {
             : `🎂 *Aniversário de Cliente!*\n\n👤 *${vars.nome}* completa *${vars.idade} anos* hoje!\n📱 Telefone: ${vars.telefone}\n🎁 Brinde: ${vars.brinde}\n\n💡 Que tal enviar uma mensagem de parabéns?\n\n_${vars.empresa}_`;
 
           for (const adminPhone of adminPhones) {
-            const r = await sendMessage(adminPhone, adminMsg);
+            const key = buildBirthdayDedupKey(currentYear, profile.user_id, "admin", adminPhone);
+            const r = await sendMessage(adminPhone, adminMsg, key);
             results.push({ ...r, type: "admin", client: profile.full_name, coupon: couponCode || null });
           }
         }
 
-        if (clientEnabled && profile.phone) {
+        if (clientEnabled && clientPhone) {
           const clientTemplateWithFallback =
             clientTemplate && (clientTemplate.includes("{brinde}") || clientTemplate.includes("{cupom}"))
               ? clientTemplate
@@ -284,7 +304,8 @@ serve(async (req) => {
             ? applyTemplate(clientTemplateWithFallback, vars)
             : `🎂 *Parabéns, ${vars.nome}!* 🎉\n\nA *${vars.empresa}* deseja um feliz aniversário! 🥳\n\nPreparamos um presente especial pra você:\n🎁 *${vars.brinde}*\n\nEntre em contato para agendar! 💕`;
 
-          const r = await sendMessage(profile.phone, clientMsg);
+          const key = buildBirthdayDedupKey(currentYear, profile.user_id, "client", clientPhone);
+          const r = await sendMessage(clientPhone, clientMsg, key);
           results.push({ ...r, type: "client", client: profile.full_name, coupon: couponCode || null });
         }
       }

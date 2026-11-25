@@ -13,14 +13,20 @@ interface CapturedError {
  */
 export const useErrorMonitor = () => {
   const errorQueue = useRef<CapturedError[]>([]);
+  const sentRecently = useRef<Map<string, number>>(new Map());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const pushError = (message: string, source: string) => {
+      const normalized = message.slice(0, 300);
+      const now = Date.now();
+      const lastSent = sentRecently.current.get(normalized);
+      if (lastSent && now - lastSent < 15 * 60_000) return;
       // Deduplicate: don't add if same message already queued
-      if (errorQueue.current.some((e) => e.message === message)) return;
+      if (errorQueue.current.some((e) => e.message === normalized)) return;
+      sentRecently.current.set(normalized, now);
       errorQueue.current.push({
-        message: message.slice(0, 300),
+        message: normalized,
         source: source.slice(0, 200),
         timestamp: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
       });

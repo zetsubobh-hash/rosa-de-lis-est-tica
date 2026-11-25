@@ -1,5 +1,6 @@
 // WhatsApp booking bot: receives Evolution API webhooks, answers with AI and books appointments.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildBotMsgDedupKey, claimWhatsappSend } from "../_shared/whatsappDedup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,6 +46,10 @@ Deno.serve(async (req) => {
     if (!msg || msg?.key?.fromMe || !jid.endsWith("@s.whatsapp.net")) return json({ skipped: "não é mensagem de cliente" });
     const text: string = (msg.message?.conversation || msg.message?.extendedTextMessage?.text || "").trim();
     if (!text) return json({ skipped: "sem texto" });
+    const msgId = String(msg?.key?.id || "").trim();
+    if (msgId && !(await claimWhatsappSend(supabase, buildBotMsgDedupKey(msgId), "whatsapp-bot"))) {
+      return json({ skipped: "mensagem já processada" });
+    }
     const phone = jid.split("@")[0].replace(/\D/g, "");
     const local = phone.startsWith("55") ? phone.slice(2) : phone;
 

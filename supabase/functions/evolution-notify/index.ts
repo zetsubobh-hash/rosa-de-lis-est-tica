@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildNotifyDedupKey,
+  claimWhatsappSend,
+  normalizeBrPhone,
+  uniqueBrPhones,
+} from "../_shared/whatsappDedup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,15 +57,16 @@ serve(async (req) => {
     if (!appointment_ids.every((id) => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id))) {
       return json({ error: "IDs inválidos" }, 400);
     }
+    const uniqueAppointmentIds = [...new Set(appointment_ids)];
 
     // Non-admins can only notify for their own appointments
     if (!isAdmin) {
       const { data: owned } = await supabase
         .from("appointments")
         .select("id")
-        .in("id", appointment_ids)
+        .in("id", uniqueAppointmentIds)
         .eq("user_id", user.id);
-      if (!owned || owned.length !== appointment_ids.length) {
+      if (!owned || owned.length !== uniqueAppointmentIds.length) {
         return json({ error: "Acesso negado" }, 403);
       }
     }
@@ -111,7 +118,7 @@ serve(async (req) => {
     const { data: appointments } = await supabase
       .from("appointments")
       .select("id, service_title, appointment_date, appointment_time, user_id, partner_id")
-      .in("id", appointment_ids);
+      .in("id", uniqueAppointmentIds);
 
     if (!appointments || appointments.length === 0) {
       return json({ skipped: true, reason: "No appointments found" });
@@ -140,7 +147,7 @@ serve(async (req) => {
         .from("profiles")
         .select("phone")
         .in("user_id", adminUserIds);
-      adminPhones = adminProfiles?.map((p: any) => p.phone).filter(Boolean) || [];
+      adminPhones = uniqueBrPhones(adminProfiles?.map((p: any) => p.phone) || []);
     }
 
     // Fetch involved partners
@@ -155,9 +162,16 @@ serve(async (req) => {
     }
 
     // Build messages and send
-    const sendMessage = async (phone: string, text: string) => {
-      const cleanPhone = phone.replace(/\D/g, "");
-      const number = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    const sendMessage = async (
+      phone: string,
+      text: string,
+      dedupKey: string,
+    ) => {
+      const number = normalizeBrPhone(phone);
+      if (!number) return { phone: "", success: false, skipped: true };
+      if (!(await claimWhatsappSend(supabase, dedupKey, "evolution-notify"))) {
+        return { phone: number, success: true, skipped: true, reason: "duplicate" };
+      }
       try {
         const res = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
           method: "POST",
@@ -167,7 +181,7 @@ serve(async (req) => {
             text,
           }),
         });
-        const data = await res.json();
+        await res.text().catch(() => "");
         console.log("Message sent:", res.status);
         return { phone: number, success: res.ok };
       } catch (e) {
@@ -194,11 +208,12 @@ serve(async (req) => {
     for (const apt of appointments) {
       const client = profileMap[apt.user_id];
       const clientName = client?.full_name || "Cliente";
-      const clientPhone = client?.phone;
+      const clientPhone = normalizeBrPhone(client?.phone);
       const [y, m, d] = apt.appointment_date.split("-");
       const dateFormatted = `${d}/${m}/${y}`;
 
       const vars = { nome: clientName, servico: apt.service_title, data: dateFormatted, hora: apt.appointment_time, empresa: businessName };
+      const notifiedStaffPhones = new Set<string>();
 
       if (notificationType === "reschedule") {
         // Reschedule notifications — each recipient gets their own message
@@ -223,22 +238,30 @@ serve(async (req) => {
 
         // Send to client
         if (clientPhone) {
-          const r = await sendMessage(clientPhone, clientMsg);
+          const key = buildNotifyDedupKey("reschedule", apt.id, apt.appointment_date, apt.appointment_time, "client", clientPhone);
+          const r = await sendMessage(clientPhone, clientMsg, key);
           results.push({ ...r, type: "reschedule_client", appointment_id: apt.id });
         }
 
         // Send to admins
         if (adminEnabled) {
           for (const phone of adminPhones) {
-            const r = await sendMessage(phone, adminRescheduleMsg);
+            notifiedStaffPhones.add(phone);
+            const key = buildNotifyDedupKey("reschedule", apt.id, apt.appointment_date, apt.appointment_time, "admin", phone);
+            const r = await sendMessage(phone, adminRescheduleMsg, key);
             results.push({ ...r, type: "reschedule_admin", appointment_id: apt.id });
           }
         }
 
         // Send to partner
         if (partnerEnabled && apt.partner_id && partnerPhones[apt.partner_id]) {
-          const r = await sendMessage(partnerPhones[apt.partner_id], partnerRescheduleMsg);
-          results.push({ ...r, type: "reschedule_partner", appointment_id: apt.id });
+          const pPhone = normalizeBrPhone(partnerPhones[apt.partner_id]);
+          if (pPhone && !notifiedStaffPhones.has(pPhone)) {
+            notifiedStaffPhones.add(pPhone);
+            const key = buildNotifyDedupKey("reschedule", apt.id, apt.appointment_date, apt.appointment_time, "partner", pPhone);
+            const r = await sendMessage(pPhone, partnerRescheduleMsg, key);
+            results.push({ ...r, type: "reschedule_partner", appointment_id: apt.id });
+          }
         }
       } else {
         // New appointment notifications
@@ -250,7 +273,8 @@ serve(async (req) => {
             ? applyTemplate(confirmationTemplate, vars)
             : `Olá, aqui é da *${businessName}*! ✅\n\nOlá ${clientName}! Seu agendamento de *${apt.service_title}* foi confirmado para o dia *${dateFormatted}* às *${apt.appointment_time}*. Nos vemos em breve! 💕`;
 
-          const r = await sendMessage(clientPhone, clientMsg);
+          const key = buildNotifyDedupKey("new", apt.id, apt.appointment_date, apt.appointment_time, "client", clientPhone);
+          const r = await sendMessage(clientPhone, clientMsg, key);
           results.push({ ...r, type: "confirmation_client", appointment_id: apt.id });
         }
 
@@ -261,19 +285,26 @@ serve(async (req) => {
             : `📋 *Novo Agendamento*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_${businessName}_`;
 
           for (const phone of adminPhones) {
-            const r = await sendMessage(phone, adminMsg);
+            notifiedStaffPhones.add(phone);
+            const key = buildNotifyDedupKey("new", apt.id, apt.appointment_date, apt.appointment_time, "admin", phone);
+            const r = await sendMessage(phone, adminMsg, key);
             results.push({ ...r, type: "admin", appointment_id: apt.id });
           }
         }
 
         // Send to assigned partner
         if (partnerEnabled && apt.partner_id && partnerPhones[apt.partner_id]) {
-          const partnerMsg = partnerTemplate
-            ? applyTemplate(partnerTemplate, vars)
-            : `📋 *Agendamento Atribuído a Você*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_${businessName}_`;
+          const pPhone = normalizeBrPhone(partnerPhones[apt.partner_id]);
+          if (pPhone && !notifiedStaffPhones.has(pPhone)) {
+            notifiedStaffPhones.add(pPhone);
+            const partnerMsg = partnerTemplate
+              ? applyTemplate(partnerTemplate, vars)
+              : `📋 *Agendamento Atribuído a Você*\n\n👤 *Cliente:* ${clientName}\n💆 *Serviço:* ${apt.service_title}\n📅 *Data:* ${dateFormatted}\n🕐 *Horário:* ${apt.appointment_time}\n\n_${businessName}_`;
 
-          const r = await sendMessage(partnerPhones[apt.partner_id], partnerMsg);
-          results.push({ ...r, type: "partner", appointment_id: apt.id });
+            const key = buildNotifyDedupKey("new", apt.id, apt.appointment_date, apt.appointment_time, "partner", pPhone);
+            const r = await sendMessage(pPhone, partnerMsg, key);
+            results.push({ ...r, type: "partner", appointment_id: apt.id });
+          }
         }
       }
     }
