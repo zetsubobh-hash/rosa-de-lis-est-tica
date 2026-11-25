@@ -1329,6 +1329,24 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_send_dedup: {
+        Row: {
+          created_at: string
+          dedup_key: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          dedup_key: string
+          source: string
+        }
+        Update: {
+          created_at?: string
+          dedup_key?: string
+          source?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1339,6 +1357,10 @@ export type Database = {
         Returns: boolean
       }
       claim_loyalty_reward: { Args: never; Returns: Json }
+      claim_whatsapp_send: {
+        Args: { p_key: string; p_source: string }
+        Returns: boolean
+      }
       clean_client_name_emojis: { Args: never; Returns: Json }
       clean_client_name_prefixes: { Args: never; Returns: Json }
       cleanup_old_audit_logs: { Args: never; Returns: number }
