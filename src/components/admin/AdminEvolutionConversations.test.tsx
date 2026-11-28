@@ -60,4 +60,23 @@ describe("Arquivos indisponíveis nas conversas", () => {
     expect(container.querySelector("img")).toBeNull();
     expect(screen.getByRole("heading", { name: "Conversas WhatsApp" })).toBeVisible();
   });
+  it("exibe todas as imagens na aba Imagens e direciona para a conversa do contato", async () => {
+    const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=";
+    const chat = { jid: "5511777777777@s.whatsapp.net", name: "Maria foto", phone: "5511777777777", unread: 0, last: null };
+    invoke.mockImplementation(async (_name, { body }) => {
+      if (body.action === "chats") return { data: { chats: [chat], pages: 1, total: 1, instance: "Teste" } };
+      if (body.action === "images") return { data: { results: [{ chat, message: { id: "img-99", fromMe: false, timestamp: 150, sender: "Maria foto", kind: "image", text: "Resultado", seconds: 0 } }], total: 1, pages: 1 } };
+      if (body.action === "media") return { data: { available: true, mime: "image/png", base64: png } };
+      if (body.action === "messages") return { data: { messages: [{ id: "m-1", fromMe: false, timestamp: 151, sender: "Maria foto", kind: "text", text: "Oi, segue a foto", seconds: 0 }], total: 1, hasMore: false } };
+      throw new Error("Unexpected action");
+    });
+    render(<AdminEvolutionConversations />);
+    fireEvent.click(screen.getByRole("tab", { name: "Imagens" }));
+    const img = await screen.findByRole("img", { name: "Resultado" });
+    expect(img).toHaveAttribute("src", `data:image/png;base64,${png}`);
+    fireEvent.click(screen.getByRole("button", { name: "Ir para conversa" }));
+    await screen.findByText("Oi, segue a foto");
+    expect(screen.getByRole("tab", { name: "Conversas" })).toHaveAttribute("aria-selected", "true");
+    expect(invoke).toHaveBeenCalledWith("evolution-conversations", { body: { action: "messages", jid: chat.jid, page: 1, search: "" } });
+  });
 });

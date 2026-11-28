@@ -6,6 +6,7 @@ export const conversationRequestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("sync"), page }),
   z.object({ action: z.literal("chats"), search: z.string().max(100).default(""), page }),
   z.object({ action: z.literal("global_search"), search: z.string().min(1).max(100), page }),
+  z.object({ action: z.literal("images"), page }),
   z.object({ action: z.literal("messages"), jid, page, search: z.string().max(100).default("") }),
   z.object({ action: z.literal("media"), jid, id: z.string().min(1).max(200) }),
 ]);

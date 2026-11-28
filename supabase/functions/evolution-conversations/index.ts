@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { conversationRequestSchema } from "./requestSchema.ts";
-import { searchArchivedMessages } from "./archiveSearch.ts";
+import { listArchivedImages, searchArchivedMessages } from "./archiveSearch.ts";
 import { readStoredMedia, downloadStoredMedia } from "./storedMedia.ts";
 import { downloadAndDecryptWhatsAppMedia, extractSavedThumbnail } from "./whatsappMedia.ts";
 import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage, messageSearchPattern } from "./helpers.ts";
@@ -122,6 +122,9 @@ Deno.serve(async (req) => {
     }
     if (input.action === "global_search") {
       return json(await searchArchivedMessages(db, archiveInstance, input.search, input.page));
+    }
+    if (input.action === "images") {
+      return json(await listArchivedImages(db, archiveInstance, input.page));
     }
     if (input.action === "messages") {
       let query = db.from("evolution_message_archive").select("content", { count: "exact" })

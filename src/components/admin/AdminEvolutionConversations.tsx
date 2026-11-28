@@ -3,6 +3,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { ArrowLeft, FileDown, ImageIcon, Loader2, MessageCircle, Mic, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { highlightParts } from "@/lib/conversationSearch";
+import { EvolutionImagesGallery } from "./EvolutionImagesGallery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -55,6 +56,7 @@ function MessageMedia({ message, jid }: { message: Message; jid: string }) {
 }
 
 export default function AdminEvolutionConversations() {
+  const [view, setView] = useState<"chats" | "images">("chats");
   const [chats, setChats] = useState<Chat[]>([]);
   const [selected, setSelected] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -92,6 +94,7 @@ export default function AdminEvolutionConversations() {
   const conversationPanel = useRef<HTMLDivElement>(null);
   const [openRun, setOpenRun] = useState(0);
   const openConversation = (chat: Chat) => {
+    setView("chats");
     setSelected(chat);
     setGlobalSearch(""); setGlobalQuery(""); setGlobalPage(1);
     setMessageSearch(""); setMessageQuery("");
@@ -190,6 +193,17 @@ export default function AdminEvolutionConversations() {
     {syncStatus && <p role="status" className="text-sm text-muted-foreground">{syncStatus}</p>}
     {syncError && <p role="alert" className="text-sm text-destructive">{syncError}</p>}
     {syncWarning && <p className="text-sm text-muted-foreground">{syncWarning}</p>}
+    <div role="tablist" aria-label="Visualização das conversas" className="flex items-center gap-2 border-b border-border pb-2">
+      <Button role="tab" aria-selected={view === "chats"} variant={view === "chats" ? "default" : "outline"} size="sm" onClick={() => setView("chats")} className="gap-1.5">
+        <MessageCircle className="w-4 h-4" />Conversas
+      </Button>
+      <Button role="tab" aria-selected={view === "images"} variant={view === "images" ? "default" : "outline"} size="sm" onClick={() => setView("images")} className="gap-1.5">
+        <ImageIcon className="w-4 h-4" />Imagens
+      </Button>
+    </div>
+    {view === "images" ? (
+      <EvolutionImagesGallery invoke={request} refresh={refresh} onOpenConversation={openConversation} />
+    ) : <>
     <div className="relative"><Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" /><Input aria-label="Buscar assunto em todas as conversas" placeholder="Buscar assunto em todas as conversas" value={globalSearch} onChange={e => setGlobalSearch(e.target.value.slice(0, 100))} className="pl-9 pr-10" />{globalSearch && <Button variant="ghost" size="icon" aria-label="Limpar busca geral" onClick={() => { setGlobalSearch(""); setGlobalQuery(""); setGlobalPage(1); }} className="absolute right-1 top-1.5 h-7 w-7"><X className="w-4 h-4" /></Button>}</div>
     {globalQuery && <section aria-label="Resultados da busca geral" className="space-y-3 border-y border-border py-3">
       <h3 className="text-sm font-semibold">{globalLoading ? "Buscando em todas as conversas…" : `${globalTotal} mensagens encontradas com “${globalQuery}”`}</h3>
@@ -238,5 +252,6 @@ export default function AdminEvolutionConversations() {
         </> : <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground p-8"><MessageCircle className="w-10 h-10" /><p>Selecione uma conversa</p></div>}
       </div>
     </div>
+    </>}
   </section>;
 }

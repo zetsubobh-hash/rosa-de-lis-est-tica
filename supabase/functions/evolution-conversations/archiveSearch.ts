@@ -20,3 +20,28 @@ export async function searchArchivedMessages(db: any, instance: string, search: 
     total: count || 0, pages: Math.max(1, Math.ceil((count || 0) / 50)),
   };
 }
+
+// Lists archived image messages for the configured instance, newest first,
+// resolving contact metadata only for the JIDs returned on the requested page.
+export async function listArchivedImages(db: any, instance: string, page: number) {
+  const pageSize = 24;
+  const { data, count, error } = await db.from("evolution_message_archive")
+    .select("jid,content", { count: "exact" }).eq("instance", instance)
+    .eq("content->>kind", "image")
+    .order("message_timestamp", { ascending: false }).order("jid").order("message_id")
+    .range((page - 1) * pageSize, page * pageSize - 1);
+  if (error) throw new Error("Não foi possível carregar as imagens salvas");
+  const jids = [...new Set((data || []).map((row: any) => row.jid))];
+  const contacts = jids.length ? await db.from("evolution_chat_archive")
+    .select("jid,name,phone,unread").eq("instance", instance).in("jid", jids) : { data: [], error: null };
+  if (contacts.error) throw new Error("Não foi possível identificar os contatos das imagens");
+  const chats = new Map((contacts.data || []).map((chat: any) => [chat.jid, chat]));
+  return {
+    results: (data || []).map((row: any) => ({
+      message: row.content,
+      chat: chats.get(row.jid) || { jid: row.jid, name: "Contato sem nome", phone: null, unread: 0 },
+    })),
+    total: count || 0,
+    pages: Math.max(1, Math.ceil((count || 0) / pageSize)),
+  };
+}
