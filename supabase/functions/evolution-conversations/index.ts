@@ -150,19 +150,36 @@ Deno.serve(async (req) => {
     if (!["audio", "image", "video", "sticker", "document"].includes(normalized.kind)) return json({ error: "Esta mensagem não contém um arquivo" }, 400);
     const resolve = async (host: string) => {
       const results = await Promise.allSettled([Deno.resolveDns(host, "A"), Deno.resolveDns(host, "AAAA")]);
-      return results.flatMap(result => result.status === "fulfilled" ? result.value : []);
+      const ips = results.flatMap(result => result.status === "fulfilled" ? result.value : []);
+      if (ips.length) return ips;
+      // Fallback to DNS-over-HTTPS when the edge runtime blocks direct UDP DNS.
+      try {
+        const doh = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=A`, {
+          headers: { Accept: "application/dns-json" },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!doh.ok) return [];
+        const body = await doh.json();
+        return Array.isArray(body?.Answer) ? body.Answer.filter((a: any) => a?.type === 1 && typeof a?.data === "string").map((a: any) => a.data) : [];
+      } catch {
+        return [];
+      }
     };
     // Prefer Evolution's stored full-size file. Its WhatsApp URL may expire even
     // while the copy saved in Evolution/MinIO is still available.
     const stored = await readStoredMedia(record, call, (url, mime) => downloadStoredMedia(url, mime, resolve));
     // Next, decrypt directly from WhatsApp CDN with the message's mediaKey so
     // Evolution container network/Baileys errors do not block valid media.
-    const direct = stored ? null : await downloadAndDecryptWhatsAppMedia(record, resolve);
+    const diag: string[] = [];
+    const direct = stored ? null : await downloadAndDecryptWhatsAppMedia(record, resolve, fetch, diag);
     const decoded = stored || direct ? null : await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
     // Last resort for images: use the jpegThumbnail saved inside Evolution's message record.
     const thumb = stored || direct || decoded ? null : extractSavedThumbnail(record);
     const media = stored || direct || decoded || thumb;
-    if (!media) return json({ available: false, error: "Não foi possível recuperar o arquivo salvo no Evolution nem baixar pelo WhatsApp. Tente novamente; se continuar, confira o armazenamento de mídias da instância." });
+    if (!media) {
+      console.warn("Evolution media unavailable", normalized.kind, diag.join(",") || "none");
+      return json({ available: false, error: "Não foi possível recuperar o arquivo salvo no Evolution nem baixar pelo WhatsApp. Tente novamente; se continuar, confira o armazenamento de mídias da instância." });
+    }
     const mime = String(media.mimetype || media.mimeType || "").split(";")[0].trim().toLowerCase();
     const allowedMime = normalized.kind === "image" || normalized.kind === "sticker" ? /^image\/(jpeg|png|webp|gif)$/
       : normalized.kind === "video" ? /^video\/(mp4|webm|quicktime)$/

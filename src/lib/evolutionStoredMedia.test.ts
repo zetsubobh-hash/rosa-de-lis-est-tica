@@ -129,4 +129,36 @@ describe("Imagens salvas no Evolution", () => {
       .toEqual({ base64: png, mimetype: "image/png", isThumbnail: true });
     expect(extractSavedThumbnail({ message: { videoMessage: { jpegThumbnail: png } } })).toBeNull();
   });
+
+  it("baixa e decifra áudio Ogg/Opus diretamente do CDN do WhatsApp com mediaKey", async () => {
+    const oggBytes = new TextEncoder().encode("OggS\x00\x02sample-opus-audio-payload");
+    const mediaKey = new Uint8Array(32).map((_, i) => (i * 11 + 5) & 255);
+    const hkdf = await crypto.subtle.importKey("raw", mediaKey, "HKDF", false, ["deriveBits"]);
+    const expanded = new Uint8Array(await crypto.subtle.deriveBits({
+      name: "HKDF", hash: "SHA-256", salt: new Uint8Array(32), info: new TextEncoder().encode("WhatsApp Audio Keys"),
+    }, hkdf, 112 * 8));
+    const iv = expanded.slice(0, 16);
+    const aesKey = await crypto.subtle.importKey("raw", expanded.slice(16, 48), { name: "AES-CBC" }, false, ["encrypt"]);
+    const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-CBC", iv }, aesKey, oggBytes));
+    const macInput = new Uint8Array(iv.length + cipher.length);
+    macInput.set(iv, 0); macInput.set(cipher, iv.length);
+    const hmacKey = await crypto.subtle.importKey("raw", expanded.slice(48, 80), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const mac = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKey, macInput)).subarray(0, 10);
+    const encrypted = new Uint8Array(cipher.length + 10);
+    encrypted.set(cipher, 0); encrypted.set(mac, cipher.length);
+
+    const audioRecord = {
+      message: {
+        audioMessage: {
+          mimetype: "audio/ogg; codecs=opus",
+          url: "https://mmg.whatsapp.net/v/t62.7117-24/voice.enc",
+          mediaKey: btoa(String.fromCharCode(...mediaKey)),
+        },
+      },
+    };
+    const fetchFile = vi.fn().mockResolvedValue(new Response(encrypted));
+    const result = await downloadAndDecryptWhatsAppMedia(audioRecord, async () => ["157.240.1.54"], fetchFile);
+    expect(result?.mimetype).toBe("audio/ogg");
+    expect(atob(result!.base64)).toBe("OggS\x00\x02sample-opus-audio-payload");
+  });
 });

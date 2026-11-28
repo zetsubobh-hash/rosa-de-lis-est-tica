@@ -96,6 +96,17 @@ export function isWhatsAppMediaUrl(value: string): URL | null {
   return /(^|\.)whatsapp\.net$/i.test(url.hostname) ? url : null;
 }
 
+export function detectedAudioMime(bytes: Uint8Array): string | null {
+  if (bytes.length < 4) return null;
+  const head4 = new TextDecoder().decode(bytes.subarray(0, 4));
+  if (head4 === "OggS") return "audio/ogg";
+  if (head4 === "ID3\x03" || head4 === "ID3\x04" || head4.startsWith("ID3") || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)) return "audio/mpeg";
+  if (bytes.length >= 12 && head4 === "RIFF" && new TextDecoder().decode(bytes.subarray(8, 12)) === "WAVE") return "audio/wav";
+  if (bytes.length >= 8 && new TextDecoder().decode(bytes.subarray(4, 8)) === "ftyp") return "audio/mp4";
+  if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) return "audio/webm";
+  return null;
+}
+
 export async function decryptMediaBytes(encrypted: Uint8Array, mediaKey: Uint8Array, kind: MediaKind): Promise<Uint8Array | null> {
   if (mediaKey.length !== 32 || encrypted.length < 26) return null;
   try {
@@ -134,17 +145,22 @@ export async function downloadAndDecryptWhatsAppMedia(
   record: any,
   resolve: (host: string) => Promise<string[]>,
   fetchFile: typeof fetch = fetch,
+  diag?: string[],
 ): Promise<DecryptedMedia | null> {
   const descriptor = whatsappMediaDescriptor(record);
-  if (!descriptor || !descriptor.mediaKey || descriptor.mediaKey.length !== 32 || !descriptor.urls.length) return null;
+  if (!descriptor) { diag?.push("no_descriptor"); return null; }
+  if (!descriptor.mediaKey || descriptor.mediaKey.length !== 32) { diag?.push(`bad_key:${descriptor.mediaKey?.length || 0}`); return null; }
+  if (!descriptor.urls.length) { diag?.push("no_urls"); return null; }
   for (const candidate of descriptor.urls) {
     const url = isWhatsAppMediaUrl(candidate);
-    if (!url) continue;
+    if (!url) { diag?.push("host_rejected"); continue; }
     try {
       const addresses = await resolve(url.hostname);
-      if (!addresses.length || addresses.some(addr => !isPublicAddress(addr))) continue;
+      if (!addresses.length) { diag?.push("dns_empty"); continue; }
+      if (addresses.some(addr => !isPublicAddress(addr))) { diag?.push("dns_private"); continue; }
       const response = await fetchFile(url, { redirect: "error", signal: AbortSignal.timeout(15000) });
-      if (!response.ok || Number(response.headers.get("content-length")) > 20_000_000 || !response.body) continue;
+      if (!response.ok) { diag?.push(`http_${response.status}`); continue; }
+      if (Number(response.headers.get("content-length")) > 20_000_000 || !response.body) { diag?.push("bad_len"); continue; }
       const reader = response.body.getReader();
       const chunks: Uint8Array[] = [];
       let length = 0;
@@ -156,20 +172,25 @@ export async function downloadAndDecryptWhatsAppMedia(
         if (length > 20_000_000) { await reader.cancel(); tooLarge = true; break; }
         chunks.push(part.value);
       }
-      if (tooLarge || length < 26) continue;
+      if (tooLarge || length < 26) { diag?.push("stream_short"); continue; }
       const encrypted = new Uint8Array(length);
       let offset = 0;
       for (const chunk of chunks) { encrypted.set(chunk, offset); offset += chunk.length; }
       const plain = await decryptMediaBytes(encrypted, descriptor.mediaKey, descriptor.kind);
-      if (!plain || !plain.length) continue;
+      if (!plain || !plain.length) { diag?.push("decrypt_fail"); continue; }
       if (descriptor.kind === "image" || descriptor.kind === "sticker") {
         const detected = detectedImageMime(plain);
-        if (!detected) continue;
+        if (!detected) { diag?.push("img_magic_fail"); continue; }
         return { base64: toBase64(plain), mimetype: detected };
       }
-      if (!descriptor.mimetype) continue;
+      if (descriptor.kind === "audio") {
+        const audioMime = detectedAudioMime(plain) || descriptor.mimetype || "audio/ogg";
+        return { base64: toBase64(plain), mimetype: audioMime };
+      }
+      if (!descriptor.mimetype) { diag?.push("no_mime"); continue; }
       return { base64: toBase64(plain), mimetype: descriptor.mimetype };
     } catch {
+      diag?.push("fetch_err");
       continue;
     }
   }
