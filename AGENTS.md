@@ -20,6 +20,7 @@
 - Client loyalty rewards are issued only by the `claim_loyalty_reward` RPC from completed appointments (FID- coupons); clients cannot insert coupons directly.
 - Evolution conversation reads and media decoding use the dedicated evolution-conversations function with verified JWT, admin role and the authorized account UUID on every call; return normalized records without credentials or media keys and never change the bot webhook.
 - Evolution media requests unwrap serialized envelopes before byte normalization, request MP4 audio, and retry with the verified message key and native bytes; empty/expired files are recoverable results, never player sources or page-fatal failures.
+- Evolution media retrieval prefers the stored full-size file and renews S3 URLs using the verified Message relation before WhatsApp decoding; downloads validate public HTTPS/DNS, reject redirects, enforce size/MIME limits and never forward credentials, because stored copies outlive WhatsApp links.
 
 - Evolution message normalization unwraps serialized and WhatsApp envelope formats centrally in helpers.ts; media kinds stay explicit and downloads require server-verified message ownership and a safe MIME allowlist.
 - Evolution conversations are archived by instance/JID and messages by instance/JID/message ID through authorized resumable page imports; discovery includes global message history, LID identifiers are never presented as phone numbers, and archives retain only normalized content without provider credentials or media keys.

@@ -7,6 +7,22 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { functions: { invo
 afterEach(() => { cleanup(); invoke.mockReset(); });
 
 describe("Arquivos indisponíveis nas conversas", () => {
+  it("abre a imagem completa devolvida pelo armazenamento do Evolution", async () => {
+    const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=";
+    invoke.mockImplementation(async (_name, { body }) => {
+      if (body.action === "chats") return { data: { chats: [{ jid: "5511999999999@s.whatsapp.net", name: "Contato imagem", phone: "5511999999999", unread: 0, last: null }], pages: 1, total: 1, instance: "Teste" } };
+      if (body.action === "messages") return { data: { messages: [{ id: "saved-photo", fromMe: false, timestamp: 101, sender: "Contato imagem", kind: "image", text: "Foto salva", seconds: 0 }], hasMore: false } };
+      if (body.action === "media") return { data: { available: true, mime: "image/png", base64: png } };
+      throw new Error("Unexpected action");
+    });
+    render(<AdminEvolutionConversations />);
+    fireEvent.click(await screen.findByRole("button", { name: /Contato imagem/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Abrir imagem" }));
+    const image = await screen.findByRole("img", { name: "Foto salva" });
+    expect(image).toHaveAttribute("src", `data:image/png;base64,${png}`);
+    expect(invoke).toHaveBeenCalledWith("evolution-conversations", { body: { action: "media", jid: "5511999999999@s.whatsapp.net", id: "saved-photo" } });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
   it("abre o histórico completo do contato da busca geral e sai da lista de resultados", async () => {
     const chat = { jid: "5511888888888@s.whatsapp.net", name: "Ana busca", phone: "5511888888888", unread: 0, last: null };
     invoke.mockImplementation(async (_name, { body }) => {

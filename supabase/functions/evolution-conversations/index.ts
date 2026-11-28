@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { conversationRequestSchema } from "./requestSchema.ts";
 import { searchArchivedMessages } from "./archiveSearch.ts";
+import { readStoredMedia, downloadStoredMedia } from "./storedMedia.ts";
 import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage, messageSearchPattern } from "./helpers.ts";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
@@ -143,8 +144,15 @@ Deno.serve(async (req) => {
     if (!record) return json({ error: "Mensagem não encontrada nesta conversa" }, 404);
     const normalized = messageRecord(record);
     if (!["audio", "image", "video", "sticker", "document"].includes(normalized.kind)) return json({ error: "Esta mensagem não contém um arquivo" }, 400);
-    const media = await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
-    if (!media) return json({ available: false, error: "O WhatsApp não disponibilizou este arquivo. Mídias antigas podem ter expirado; peça o reenvio para abrir aqui." });
+    const resolve = async (host: string) => {
+      const results = await Promise.allSettled([Deno.resolveDns(host, "A"), Deno.resolveDns(host, "AAAA")]);
+      return results.flatMap(result => result.status === "fulfilled" ? result.value : []);
+    };
+    // Prefer Evolution's stored full-size file. Its WhatsApp URL may expire even
+    // while the copy saved in Evolution/MinIO is still available.
+    const stored = await readStoredMedia(record, call, (url, mime) => downloadStoredMedia(url, mime, resolve));
+    const media = stored || await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
+    if (!media) return json({ available: false, error: "Não foi possível recuperar o arquivo salvo no Evolution nem baixar pelo WhatsApp. Tente novamente; se continuar, confira o armazenamento de mídias da instância." });
     const mime = String(media.mimetype || media.mimeType || "").split(";")[0].trim().toLowerCase();
     const allowedMime = normalized.kind === "image" || normalized.kind === "sticker" ? /^image\/(jpeg|png|webp|gif)$/
       : normalized.kind === "video" ? /^video\/(mp4|webm|quicktime)$/
