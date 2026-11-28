@@ -61,23 +61,37 @@ export function mediaRequest(record: any) {
 }
 
 export class EvolutionRequestError extends Error {
-  constructor(public status: number) {
+  constructor(public status: number, public reason = "unknown") {
     super(`Evolution retornou ${status}. Verifique a conexão e o histórico salvo na instância.`);
   }
 }
 
-export async function readMedia(record: any, call: (body: object) => Promise<any>) {
+// Only these fixed labels may leave the provider boundary, never its raw payload.
+export function providerMediaFailure(text: string): string {
+  if (/media not found/i.test(text)) return "storage_file_missing";
+  if (/message not found/i.test(text)) return "message_missing";
+  if (/convert.*(?:mp4|audio)|converting audio/i.test(text)) return "audio_conversion_failed";
+  if (/pattern|must.*(?:integer|number)|does not match/i.test(text)) return "storage_schema_rejected";
+  if (/expired|410|404|not found/i.test(text)) return "download_unavailable";
+  if (/ENOTFOUND|ECONN|ETIMEDOUT|fetch failed/i.test(text)) return "provider_network_failed";
+  return "unknown";
+}
+
+export async function readMedia(record: any, call: (body: object) => Promise<any>, diag?: string[]) {
   const request = mediaRequest(record);
   const attempts = [request, { message: { key: record.key }, convertToMp4: request.convertToMp4 }];
   // Database JSON and older Evolution releases may require native numeric byte maps
   // rather than base64. Keep the normalized content and verified key on every retry.
   attempts.push({ ...request, message: { ...request.message, message: messageContent(record.message) }, convertToMp4: false });
+  // A valid audio download must survive an unavailable ffmpeg/MP4 converter.
+  if (request.convertToMp4) attempts.push({ ...request, convertToMp4: false });
   for (const body of attempts) {
     try {
       const result = await call(body);
       const media = result?.data || result;
       if (media?.base64) return media;
     } catch (error) {
+      if (error instanceof EvolutionRequestError) diag?.push(`decoder:${error.reason}`);
       if (!(error instanceof EvolutionRequestError) || ![400, 404, 410].includes(error.status)) throw error;
     }
   }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EvolutionRequestError, readMedia } from "../../supabase/functions/evolution-conversations/helpers";
+import { EvolutionRequestError, readMedia, providerMediaFailure } from "../../supabase/functions/evolution-conversations/helpers";
 import { readStoredMedia, downloadStoredMedia, publicMediaUrl, isPublicAddress, storedMediaMetadata } from "../../supabase/functions/evolution-conversations/storedMedia";
 import { decryptMediaBytes, downloadAndDecryptWhatsAppMedia, extractSavedThumbnail, isWhatsAppMediaUrl } from "../../supabase/functions/evolution-conversations/whatsappMedia";
 
@@ -12,6 +12,30 @@ beforeEach(() => vi.stubGlobal("AbortSignal", { timeout: () => new AbortControll
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Imagens salvas no Evolution", () => {
+  it("recupera áudio original quando o conversor MP4 do Evolution falha", async () => {
+    const audio = { key: record.key, message: { audioMessage: { mimetype: "audio/ogg", mediaKey: "AQID" } } };
+    const call = vi.fn().mockImplementation(async body => {
+      if (body.convertToMp4 || typeof body.message.message?.audioMessage?.mediaKey !== "string") throw new EvolutionRequestError(400);
+      return { base64: "T2dnUw==", mimetype: "audio/ogg" };
+    });
+    expect(await readMedia(audio, call)).toEqual({ base64: "T2dnUw==", mimetype: "audio/ogg" });
+    expect(call).toHaveBeenLastCalledWith(expect.objectContaining({ convertToMp4: false }));
+  });
+
+  it("usa a URL da mensagem vinculada ao S3 antes de renovar IDs incompatíveis", async () => {
+    const linked = { ...record, message: { audioMessage: { mimetype: "audio/ogg" }, mediaUrl: "https://files.example.com/voice.ogg" } };
+    const call = vi.fn().mockResolvedValue([{ id: "cuid-media", Message: linked, mimetype: "audio/ogg" }]);
+    const download = vi.fn().mockImplementation(async url => url.endsWith("voice.ogg") ? { base64: "T2dnUw==", mimetype: "audio/ogg" } : null);
+    expect(await readStoredMedia(record, call, download)).toEqual({ base64: "T2dnUw==", mimetype: "audio/ogg" });
+    expect(call).toHaveBeenCalledTimes(1);
+  });
+
+  it("classifica erros sem expor conteúdo, URLs ou credenciais do servidor", () => {
+    expect(providerMediaFailure('{"message":"Media not found"}')).toBe("storage_file_missing");
+    expect(providerMediaFailure('instance.id does not match pattern "\\d+"')).toBe("storage_schema_rejected");
+    expect(providerMediaFailure("Failed to convert audio to MP4")).toBe("audio_conversion_failed");
+    expect(providerMediaFailure("private-secret https://example.com/private-file")).toBe("unknown");
+  });
   it("recupera a cópia salva mesmo quando o download do WhatsApp falha nas três tentativas", async () => {
     const decoder = vi.fn().mockRejectedValue(new EvolutionRequestError(400));
     expect(await readMedia(record, decoder)).toBeNull();

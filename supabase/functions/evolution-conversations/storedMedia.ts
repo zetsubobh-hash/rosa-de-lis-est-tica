@@ -34,12 +34,14 @@ function belongsToMessage(media: any, record: any) {
     && (!linked?.key || (linked.key.id === record.key?.id && linked.key.remoteJid === record.key?.remoteJid)));
 }
 
-export async function readStoredMedia(record: any, call: ProviderCall, download: Download): Promise<Media | null> {
+export async function readStoredMedia(record: any, call: ProviderCall, download: Download, diag?: string[]): Promise<Media | null> {
   const metadata = storedMediaMetadata(record);
+  const attemptedUrls = new Set<string>();
   if (typeof metadata.base64 === "string" && metadata.base64 && metadata.mime) {
     return { base64: metadata.base64, mimetype: metadata.mime };
   }
   if (typeof metadata.url === "string" && metadata.url) {
+    attemptedUrls.add(metadata.url);
     const saved = await download(metadata.url, metadata.mime);
     if (saved) return saved;
   }
@@ -51,13 +53,29 @@ export async function readStoredMedia(record: any, call: ProviderCall, download:
     const rows = Array.isArray(result) ? result : Array.isArray(result?.data) ? result.data : [];
     for (const row of rows) {
       if (!row?.id || !belongsToMessage(row, record)) continue;
-      const renewed = await call("s3/getMediaUrl", { id: String(row.id), expiry: "900" });
-      const value = renewed?.data || renewed;
-      if (!value?.mediaUrl || (value.Message && !belongsToMessage(value, record))) continue;
-      const saved = await download(value.mediaUrl, String(value.mimetype || row.mimetype || metadata.mime));
-      if (saved) return saved;
+      // Some releases reject CUID storage IDs in getMediaUrl's numeric schema.
+      // Their getMedia result still includes the linked Message's saved URL.
+      const linked = storedMediaMetadata(row.Message || row.message || {});
+      const mime = String(row.mimetype || linked.mime || metadata.mime);
+      for (const url of new Set([row.mediaUrl, linked.url])) {
+        if (typeof url !== "string" || !url || attemptedUrls.has(url)) continue;
+        attemptedUrls.add(url);
+        const saved = await download(url, mime);
+        if (saved) return saved;
+      }
+      try {
+        const renewed = await call("s3/getMediaUrl", { id: String(row.id), expiry: "900" });
+        const value = renewed?.data || renewed;
+        if (!value?.mediaUrl || (value.Message && !belongsToMessage(value, record))) continue;
+        const saved = await download(value.mediaUrl, String(value.mimetype || mime));
+        if (saved) return saved;
+      } catch (error) {
+        if (!(error instanceof EvolutionRequestError) || ![400, 404, 410].includes(error.status)) throw error;
+        diag?.push(`storage_url:${error.reason}`);
+      }
     }
   } catch (error) {
+    if (error instanceof EvolutionRequestError) diag?.push(`storage:${error.reason}`);
     // Installations without S3 still use the WhatsApp decoder; authorization and
     // server errors must never be disguised as an expired file.
     if (!(error instanceof EvolutionRequestError) || ![400, 404, 410].includes(error.status)) throw error;

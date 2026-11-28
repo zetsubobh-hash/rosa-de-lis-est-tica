@@ -4,7 +4,7 @@ import { conversationRequestSchema } from "./requestSchema.ts";
 import { listArchivedImages, searchArchivedMessages } from "./archiveSearch.ts";
 import { readStoredMedia, downloadStoredMedia } from "./storedMedia.ts";
 import { downloadAndDecryptWhatsAppMedia, extractSavedThumbnail } from "./whatsappMedia.ts";
-import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage, messageSearchPattern } from "./helpers.ts";
+import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, providerMediaFailure, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage, messageSearchPattern } from "./helpers.ts";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -50,8 +50,9 @@ Deno.serve(async (req) => {
       const text = await response.text();
       if (!response.ok) {
         // Do not log conversation content, credentials or raw provider payloads.
-        console.error("Evolution conversations request failed", path, response.status);
-        throw new EvolutionRequestError(response.status);
+        const reason = providerMediaFailure(text);
+        console.error("Evolution conversations request failed", path, response.status, reason);
+        throw new EvolutionRequestError(response.status, reason);
       }
       try { return JSON.parse(text); } catch { throw new Error("Resposta inválida do Evolution"); }
     };
@@ -167,18 +168,23 @@ Deno.serve(async (req) => {
     };
     // Prefer Evolution's stored full-size file. Its WhatsApp URL may expire even
     // while the copy saved in Evolution/MinIO is still available.
-    const stored = await readStoredMedia(record, call, (url, mime) => downloadStoredMedia(url, mime, resolve));
+    const diag: string[] = [];
+    const stored = await readStoredMedia(record, call, (url, mime) => downloadStoredMedia(url, mime, resolve), diag);
     // Next, decrypt directly from WhatsApp CDN with the message's mediaKey so
     // Evolution container network/Baileys errors do not block valid media.
-    const diag: string[] = [];
     const direct = stored ? null : await downloadAndDecryptWhatsAppMedia(record, resolve, fetch, diag);
-    const decoded = stored || direct ? null : await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
+    const decoded = stored || direct ? null : await readMedia(record, body => call("chat/getBase64FromMediaMessage", body), diag);
     // Last resort for images: use the jpegThumbnail saved inside Evolution's message record.
     const thumb = stored || direct || decoded ? null : extractSavedThumbnail(record);
     const media = stored || direct || decoded || thumb;
     if (!media) {
       console.warn("Evolution media unavailable", normalized.kind, diag.join(",") || "none");
-      return json({ available: false, error: "Não foi possível recuperar o arquivo salvo no Evolution nem baixar pelo WhatsApp. Tente novamente; se continuar, confira o armazenamento de mídias da instância." });
+      const error = diag.includes("storage:storage_file_missing")
+        ? "O Evolution não encontrou a cópia deste arquivo no armazenamento. O registro da mensagem existe, mas o áudio ou a imagem não foi recuperado. Confira o armazenamento de mídias da instância."
+        : diag.some(reason => reason.includes("storage_schema_rejected"))
+          ? "O Evolution recusou a renovação do arquivo salvo por incompatibilidade na configuração de armazenamento da instância."
+          : "O servidor do Evolution não conseguiu entregar este arquivo, e o link do WhatsApp também falhou. A mensagem está salva, mas o arquivo ainda não foi recuperado.";
+      return json({ available: false, error });
     }
     const mime = String(media.mimetype || media.mimeType || "").split(";")[0].trim().toLowerCase();
     const allowedMime = normalized.kind === "image" || normalized.kind === "sticker" ? /^image\/(jpeg|png|webp|gif)$/
