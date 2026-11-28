@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EvolutionRequestError, readMedia } from "../../supabase/functions/evolution-conversations/helpers";
 import { readStoredMedia, downloadStoredMedia, publicMediaUrl, isPublicAddress, storedMediaMetadata } from "../../supabase/functions/evolution-conversations/storedMedia";
+import { decryptMediaBytes, downloadAndDecryptWhatsAppMedia, extractSavedThumbnail, isWhatsAppMediaUrl } from "../../supabase/functions/evolution-conversations/whatsappMedia";
 
 const record = { id: "db-message-123", key: { id: "wa-photo-123", remoteJid: "5511999999999@s.whatsapp.net" },
   message: { imageMessage: { mimetype: "image/png", url: "https://mmg.whatsapp.net/expired.enc" }, mediaUrl: "https://files.example.com/photo.png" } };
@@ -75,5 +76,57 @@ describe("Imagens salvas no Evolution", () => {
       new Response("x", { headers: { "content-length": "20000001" } })]) {
       expect(await downloadStoredMedia("https://files.example.com/a", "image/png", async () => ["93.184.216.34"], vi.fn().mockResolvedValue(response))).toBeNull();
     }
+  });
+
+  it("baixa e decifra imagem diretamente do CDN do WhatsApp com mediaKey (HKDF + AES-256-CBC)", async () => {
+    const plainBytes = Uint8Array.from(atob(png), c => c.charCodeAt(0));
+    const mediaKey = new Uint8Array(32).map((_, i) => (i * 7 + 3) & 255);
+    const hkdf = await crypto.subtle.importKey("raw", mediaKey, "HKDF", false, ["deriveBits"]);
+    const expanded = new Uint8Array(await crypto.subtle.deriveBits({
+      name: "HKDF", hash: "SHA-256", salt: new Uint8Array(32), info: new TextEncoder().encode("WhatsApp Image Keys"),
+    }, hkdf, 112 * 8));
+    const iv = expanded.subarray(0, 16);
+    const aesKey = await crypto.subtle.importKey("raw", expanded.subarray(16, 48), { name: "AES-CBC" }, false, ["encrypt"]);
+    const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-CBC", iv }, aesKey, plainBytes));
+    const macInput = new Uint8Array(iv.length + cipher.length);
+    macInput.set(iv, 0); macInput.set(cipher, iv.length);
+    const hmacKey = await crypto.subtle.importKey("raw", expanded.subarray(48, 80), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const mac = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKey, macInput)).subarray(0, 10);
+    const encrypted = new Uint8Array(cipher.length + 10);
+    encrypted.set(cipher, 0); encrypted.set(mac, cipher.length);
+
+    const msgRecord = {
+      message: {
+        imageMessage: {
+          mimetype: "image/png",
+          directPath: "/v/t62.7118-24/sample.enc",
+          mediaKey: Object.fromEntries(Array.from(mediaKey).map((b, i) => [String(i), b])),
+        },
+      },
+    };
+    const fetchFile = vi.fn().mockResolvedValue(new Response(encrypted));
+    const result = await downloadAndDecryptWhatsAppMedia(msgRecord, async () => ["157.240.1.54"], fetchFile);
+    expect(result).toEqual({ base64: png, mimetype: "image/png" });
+    expect(fetchFile).toHaveBeenCalledWith(new URL("https://mmg.whatsapp.net/v/t62.7118-24/sample.enc"), expect.objectContaining({ redirect: "error" }));
+
+    const tampered = encrypted.slice();
+    tampered[0] ^= 0xff;
+    expect(await decryptMediaBytes(tampered, mediaKey, "image")).toBeNull();
+  });
+
+  it("aceita apenas domínios whatsapp.net na decifragem direta", () => {
+    expect(isWhatsAppMediaUrl("https://mmg.whatsapp.net/v/t62.7118-24/a.enc")).not.toBeNull();
+    expect(isWhatsAppMediaUrl("https://media-gru2-2.cdn.whatsapp.net/v/a.enc")).not.toBeNull();
+    expect(isWhatsAppMediaUrl("https://evil.example.com/a.enc")).toBeNull();
+  });
+
+  it("recupera a prévia jpegThumbnail salva no registro do Evolution como último recurso", () => {
+    const pngBytes = Array.from(Uint8Array.from(atob(png), c => c.charCodeAt(0)));
+    const numericMap = Object.fromEntries(pngBytes.map((b, i) => [String(i), b]));
+    expect(extractSavedThumbnail({ message: { imageMessage: { jpegThumbnail: numericMap } } }))
+      .toEqual({ base64: png, mimetype: "image/png", isThumbnail: true });
+    expect(extractSavedThumbnail({ message: { imageMessage: { jpegThumbnail: png } } }))
+      .toEqual({ base64: png, mimetype: "image/png", isThumbnail: true });
+    expect(extractSavedThumbnail({ message: { videoMessage: { jpegThumbnail: png } } })).toBeNull();
   });
 });

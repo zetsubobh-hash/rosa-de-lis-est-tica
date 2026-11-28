@@ -3,6 +3,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { conversationRequestSchema } from "./requestSchema.ts";
 import { searchArchivedMessages } from "./archiveSearch.ts";
 import { readStoredMedia, downloadStoredMedia } from "./storedMedia.ts";
+import { downloadAndDecryptWhatsAppMedia, extractSavedThumbnail } from "./whatsappMedia.ts";
 import { canReadConversations, messageRecord, messageRecords, readMedia, EvolutionRequestError, conversationRecord, mergeConversation, collectionRecords, hasNextMessagePage, messageSearchPattern } from "./helpers.ts";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
@@ -151,7 +152,13 @@ Deno.serve(async (req) => {
     // Prefer Evolution's stored full-size file. Its WhatsApp URL may expire even
     // while the copy saved in Evolution/MinIO is still available.
     const stored = await readStoredMedia(record, call, (url, mime) => downloadStoredMedia(url, mime, resolve));
-    const media = stored || await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
+    // Next, decrypt directly from WhatsApp CDN with the message's mediaKey so
+    // Evolution container network/Baileys errors do not block valid media.
+    const direct = stored ? null : await downloadAndDecryptWhatsAppMedia(record, resolve);
+    const decoded = stored || direct ? null : await readMedia(record, body => call("chat/getBase64FromMediaMessage", body));
+    // Last resort for images: use the jpegThumbnail saved inside Evolution's message record.
+    const thumb = stored || direct || decoded ? null : extractSavedThumbnail(record);
+    const media = stored || direct || decoded || thumb;
     if (!media) return json({ available: false, error: "Não foi possível recuperar o arquivo salvo no Evolution nem baixar pelo WhatsApp. Tente novamente; se continuar, confira o armazenamento de mídias da instância." });
     const mime = String(media.mimetype || media.mimeType || "").split(";")[0].trim().toLowerCase();
     const allowedMime = normalized.kind === "image" || normalized.kind === "sticker" ? /^image\/(jpeg|png|webp|gif)$/
@@ -161,7 +168,7 @@ Deno.serve(async (req) => {
     const base64 = String(media.base64 || "").replace(/^data:[^;]+;base64,/, "");
     if (!allowedMime.test(mime) || !base64 || !/^[A-Za-z0-9+/=\r\n]+$/.test(base64)) return json({ error: "Mídia indisponível ou formato não suportado" }, 422);
     if (base64.length > 28_000_000) return json({ error: "Arquivo muito grande para abrir no painel" }, 413);
-    return json({ available: true, mime, base64 });
+    return json({ available: true, mime, base64, isThumbnail: Boolean(thumb) });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "Não foi possível abrir as conversas" }, 502);
   }

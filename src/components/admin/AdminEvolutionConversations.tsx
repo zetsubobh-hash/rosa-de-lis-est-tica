@@ -28,6 +28,7 @@ async function request<T>(body: object): Promise<T> {
 
 function MessageMedia({ message, jid }: { message: Message; jid: string }) {
   const [source, setSource] = useState("");
+  const [isThumbnail, setIsThumbnail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const active = useRef(true);
@@ -35,14 +36,14 @@ function MessageMedia({ message, jid }: { message: Message; jid: string }) {
   const load = async () => {
     setLoading(true); setError("");
     try {
-      const media = await request<{ available: boolean; mime?: string; base64?: string; error?: string }>({ action: "media", jid, id: message.id });
+      const media = await request<{ available: boolean; mime?: string; base64?: string; isThumbnail?: boolean; error?: string }>({ action: "media", jid, id: message.id });
       if (!media.available || !media.mime || !media.base64) throw new Error(media.error || "Este arquivo não está mais disponível no WhatsApp.");
-      if (active.current) setSource(`data:${media.mime};base64,${media.base64}`);
+      if (active.current) { setSource(`data:${media.mime};base64,${media.base64}`); setIsThumbnail(Boolean(media.isThumbnail)); }
     } catch (e) { if (active.current) setError(e instanceof Error ? e.message : "Não foi possível abrir a mídia"); }
     finally { if (active.current) setLoading(false); }
   };
   return <div className="space-y-2">
-    {source ? (message.kind === "image" || message.kind === "sticker") ? <img src={source} alt={message.text || "Imagem da conversa"} className="max-h-96 max-w-full rounded object-contain" /> : message.kind === "video" ? <video controls src={source} className="max-h-96 max-w-full rounded" preload="metadata" />
+    {source ? (message.kind === "image" || message.kind === "sticker") ? <div className="space-y-1"><img src={source} alt={message.text || "Imagem da conversa"} className="max-h-96 max-w-full rounded object-contain" />{isThumbnail && <p className="text-[11px] text-muted-foreground">Prévia salva na conversa (arquivo original indisponível no WhatsApp)</p>}</div> : message.kind === "video" ? <video controls src={source} className="max-h-96 max-w-full rounded" preload="metadata" />
       : message.kind === "document" ? <Button asChild variant="outline" size="sm"><a href={source} download="documento"><FileDown className="h-4 w-4 mr-2" />Baixar documento</a></Button>
       : <audio controls src={source} className="w-full max-w-full" preload="metadata" /> :
       <Button variant="outline" size="sm" disabled={loading} onClick={load} className="max-w-full whitespace-normal h-auto min-h-9 py-2 gap-2">
